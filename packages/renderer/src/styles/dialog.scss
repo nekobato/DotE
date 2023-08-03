@@ -1,0 +1,22 @@
+.nn-dialog-content {
+  width: 100%;
+  padding: 40px;
+  .nn-dialog-title {
+    font-size: 20px;
+  }
+  .nn-dialog-text {
+    margin-top: 16px;
+    color: #666666;
+    font-size: 14px;
+  }
+  .nn-dialog-button-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin: 32px auto auto;
+  }
+}
+
+.nn-modal-content {
+  padding: 40px;
+}

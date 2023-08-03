@@ -1,0 +1,57 @@
+.nn-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  fill: #ffffff;
+
+  &.size-large {
+    width: 32px;
+    height: 32px;
+  }
+  &.size-small {
+    width: 20px;
+    height: 20px;
+  }
+
+  &.size-xsmall {
+    width: 16px;
+    height: 16px;
+  }
+
+  &.size-x2small {
+    width: 12px;
+    height: 12px;
+  }
+
+  &.secondary {
+    fill: #999999;
+  }
+
+  &.disabled {
+    fill: #cccccc;
+  }
+
+  &.accent {
+    fill: #0095ee;
+  }
+
+  &.attention {
+    fill: #ff0211;
+  }
+
+  &.white {
+    fill: #ffffff;
+  }
+
+  &.black {
+    fill: #000000;
+  }
+
+  &.inherit {
+    fill: inherit;
+  }
+
+  &.warning {
+    fill: #ff6f36;
+  }
+}

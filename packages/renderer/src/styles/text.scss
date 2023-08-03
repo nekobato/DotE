@@ -1,0 +1,8 @@
+.nn-link {
+  color: #2f80ed;
+  text-decoration: none;
+  cursor: pointer;
+  &:hover {
+    text-decoration: underline;
+  }
+}

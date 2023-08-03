@@ -1,0 +1,29 @@
+.nn-heading-1 {
+  font-weight: bold;
+  line-height: 1;
+
+  @media (--viewport-sp) {
+    font-size: 20px;
+  }
+
+  @media (--viewport-pc) {
+    font-size: 24px;
+  }
+}
+
+.nn-heading-2 {
+  font-weight: bold;
+  line-height: 1;
+
+  @media (--viewport-sp) {
+    font-size: 20px;
+  }
+
+  @media (--viewport-pc) {
+    font-size: 24px;
+  }
+}
+
+.nn-heading-subtext {
+  margin-top: 8px;
+}

@@ -1,0 +1,59 @@
+$bgcolor: rgba(0, 0, 0, 0.8);
+.nn-tooltip {
+  position: absolute;
+  display: none;
+  padding: 10px;
+  color: #ffffff;
+  font-weight: bold;
+  background: $bgcolor;
+  &::before {
+    position: absolute;
+    width: 0;
+    height: 0;
+    margin: auto;
+    border-color: transparent;
+    border-style: solid;
+    content: "";
+  }
+  &.top {
+    bottom: 100%;
+    &::before {
+      top: 100%;
+      right: 100%;
+      bottom: 0;
+      border-color: $bgcolor transparent transparent transparent;
+      border-width: 12px 8px 0 8px;
+    }
+  }
+  &.left {
+    right: 100%;
+    &::before {
+      top: 0;
+      right: 100%;
+      bottom: 0;
+      border-color: transparent $bgcolor transparent transparent;
+      border-width: 8px 0 8px 12px;
+    }
+  }
+  &.right {
+    left: 100%;
+    margin-left: 12px;
+    &::before {
+      top: 0;
+      right: 100%;
+      bottom: 0;
+      border-color: transparent $bgcolor transparent transparent;
+      border-width: 8px 12px 8px 0;
+    }
+  }
+  &.bottom {
+    top: 100%;
+    &::before {
+      top: 0;
+      right: 100%;
+      bottom: 0;
+      border-color: transparent transparent $bgcolor transparent;
+      border-width: 0 8px 12px 8px;
+    }
+  }
+}
