@@ -41,6 +41,14 @@ const store = createStore({
     },
   },
   actions: {
+    async fetchAndStoreUsers({ commit, state }) {
+      window.ipc.invoke("db:get-users").then((accounts) => {
+        commit("setUsers", accounts);
+        if (!state.timeline.user) {
+          commit("setTimeline", { user: accounts[0] });
+        }
+      });
+    },
     async fetchAndStoreAllMisskeyEmojis({ commit, state }, instanceUrl: string) {
       const data = await ipcInvoke("api", {
         method: "misskey:getEmojis",

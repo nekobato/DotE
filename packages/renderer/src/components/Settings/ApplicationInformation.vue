@@ -8,7 +8,7 @@ const store = useStore();
 </script>
 
 <template>
-  <div class="other hazy-post-list">
+  <div class="information hazy-post-list">
     <SectionTitle title="その他" />
     <div class="hazy-post indent-1">
       <div class="content">バージョン</div>
@@ -26,7 +26,7 @@ const store = useStore();
 </template>
 
 <style lang="scss" scoped>
-.other {
+.information {
   width: 100%;
 }
 

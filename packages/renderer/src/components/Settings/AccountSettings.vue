@@ -7,6 +7,7 @@ import { hazyMisskeyPermissionString } from "@/utils/hazy";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { User } from "@prisma/client";
 import SectionTitle from "../Post/SectionTitle.vue";
+import store from "@/store";
 
 const state = reactive({
   accounts: [] as Account[],
@@ -106,7 +107,7 @@ const resetStatues = () => {
 };
 
 onMounted(() => {
-  getCurrentAccounts();
+  store.dispatch("fetchAndSetUsers");
 });
 </script>
 

@@ -68,13 +68,13 @@ watch(
 onMounted(async () => {
   const accounts = await ipcInvoke("db:get-users");
   state.accounts = accounts;
-  settings.value.accountId = accounts[0].id;
+  settings.value.accountId = accounts[0]?.id || "";
 
   const allSettings = await ipcInvoke("settings:all");
   if (allSettings["timeline:accountId"]) {
     settings.value.accountId = allSettings["timeline:accountId"];
   } else {
-    await ipcInvoke("settings:set", { key: "timeline:accountId", value: accounts[0].id.toString() });
+    await ipcInvoke("settings:set", { key: "timeline:accountId", value: accounts[0]?.id.toString() });
   }
   if (allSettings["timeline:timelineType"]) {
     settings.value.timeline = allSettings["timeline:timelineType"];

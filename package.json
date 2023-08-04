@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev:pre": "NODE_ENV=development-pre node scripts/watch.mjs",
-    "dev": "DATABASE_URL=./db.sqlite NODE_ENV=development node scripts/watch.mjs",
+    "dev": "NODE_ENV=development node scripts/watch.mjs",
     "prebuild": "NODE_ENV=production vue-tsc --project packages/renderer/tsconfig.json --noEmit && node scripts/build.mjs",
     "build": "NODE_ENV=production electron-builder --config ./electron-builder.config.js",
     "publish": "NODE_ENV=production electron-builder --publish always --config ./electron-builder.config.js",
@@ -41,6 +41,7 @@
     "element-plus": "^2.3.8",
     "mfm-js": "^0.23.3",
     "node-gyp": "^9.3.1",
+    "pinia": "^2.1.6",
     "postcss-html": "^1.5.0",
     "prettier": "^3.0.0",
     "sass": "^1.64.2",
