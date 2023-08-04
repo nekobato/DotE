@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
 import { reactive } from "vue";
+import Loading from "@/components/common/HazyLoading.vue";
 
 const getMediaWindowSize = (maxWidth: number, maxHeight: number, width?: number, height?: number) => {
   if (!width || !height) return { width: 0, height: 0 };
@@ -23,7 +24,12 @@ type Media = {
 const state = reactive({
   media: {} as Media,
   size: { width: 0, height: 0 },
+  isLoading: true,
 });
+
+const onLoad = () => {
+  state.isLoading = false;
+};
 
 window.ipc.on("media-viewer:open", (event, data: Media & { maxSize: { width: number; height: number } }) => {
   state.media = data;
@@ -52,17 +58,21 @@ const closeWindow = () => {
       autoplay
       controls
       muted
+      @load="onLoad"
     />
     <img
       v-if="state.media.type === 'image'"
       :src="state.media.url"
       :width="state.size?.width || undefined"
       :height="state.size?.height || undefined"
+      @load="onLoad"
     />
+    <Loading class="loading" v-if="state.isLoading" />
   </div>
 </template>
 <style lang="scss" scoped>
 .media-viewer {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,5 +84,11 @@ video {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>
