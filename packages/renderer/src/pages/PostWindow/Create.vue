@@ -88,16 +88,11 @@ onMounted(() => {
 </template>
 
 <style lang="scss" scoped>
-.suspence {
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.72);
-}
 .post {
   width: 100%;
   height: 100%;
   padding: 16px;
-  background-color: rgba(0, 0, 0, 0.72);
+  background-color: var(--hazy-background-color);
 }
 .tools {
   display: flex;

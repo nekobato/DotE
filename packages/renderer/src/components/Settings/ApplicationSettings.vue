@@ -1,22 +1,24 @@
 <script setup lang="ts">
-import { onMounted, reactive, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import SectionTitle from "../Post/SectionTitle.vue";
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { useSettingsStore } from "@/store/settings";
+import { ref } from "vue";
 
-const state = reactive({
-  settings: {
-    windowOpacity: 50,
-  },
-});
+const settingsStore = useSettingsStore();
+
+const opacity = ref();
 
 const onChangeOpacity = async () => {
-  await ipcInvoke("settings:set", {
-    key: "opacity",
-    value: state.settings.windowOpacity,
-  });
-  ipcSend("settings:get-all");
+  settingsStore.setOpacity(opacity.value);
 };
+
+settingsStore.$onAction(({ name, after }) => {
+  after(() => {
+    if (name === "init") {
+      opacity.value = settingsStore.opacity;
+    }
+  });
+});
 </script>
 
 <template>
@@ -26,16 +28,9 @@ const onChangeOpacity = async () => {
       <div class="content">
         <span class="title"><Icon icon="ion:eye-outline" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
-      <div class="hazy-post-actions">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          class="nn-range"
-          v-model="state.settings.windowOpacity"
-          @change="onChangeOpacity"
-        />
-        <input type="number" min="0" max="100" class="nn-text-field" v-model="state.settings.windowOpacity" />
+      <div class="hazy-post-actions" :class="{ 'hazy-unvisible': !opacity }">
+        <input type="range" min="0" max="100" class="nn-range" v-model="opacity" @change="onChangeOpacity" />
+        <input type="number" min="0" max="100" class="nn-text-field" v-model="opacity" @change="onChangeOpacity" />
       </div>
     </div>
   </div>

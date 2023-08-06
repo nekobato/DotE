@@ -19,6 +19,10 @@ const setActive = (mode: string) => {
 const post = () => {
   ipcSend("post:create");
 };
+
+window.ipc.on("set-hazy-mode", (_, { mode }) => {
+  state.active = mode;
+});
 </script>
 
 <template>
@@ -50,8 +54,9 @@ const post = () => {
   display: inline-flex;
   justify-content: flex-start;
   height: 24px;
+  overflow: hidden;
   color: #fff;
-  background: #000;
+  background: var(--hazy-background-color);
   border-radius: 4px;
 }
 .logo {

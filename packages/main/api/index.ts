@@ -7,6 +7,7 @@ import {
   misskeyGetTimelineHome,
   misskeyGetTimelineLocal,
   misskeyGetNoteReactions,
+  misskeyGetNote,
 } from "./misskey";
 
 export const apiRequest = {
@@ -18,4 +19,5 @@ export const apiRequest = {
   ["misskey:createReaction"]: misskeyCreateReaction,
   ["misskey:deleteReaction"]: misskeyDeleteReaction,
   ["misskey:getNoteReactions"]: misskeyGetNoteReactions,
+  ["misskey:getNote"]: misskeyGetNote,
 };

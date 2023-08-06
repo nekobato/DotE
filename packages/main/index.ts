@@ -68,6 +68,7 @@ app.on("ready", async () => {
           ...result,
         });
       case "set-hazy-mode":
+        menuWindow?.webContents.send("set-hazy-mode", data);
         switch (data.mode) {
           case "show":
           case "settings":
@@ -139,7 +140,8 @@ app.on("ready", async () => {
     switch (event) {
       case "api":
         if (apiRequest[data.method]) {
-          return await apiRequest[data.method](data);
+          const result = await apiRequest[data.method](data);
+          return result || {};
         } else {
           throw new Error(`${data.method} is not defined method.`);
         }
@@ -149,6 +151,10 @@ app.on("ready", async () => {
         return await db.upsertUser(data);
       case "db:delete-user":
         return await db.deleteUser(data.id);
+      case "db:get-timeline-all":
+        return await db.getTimelineAll();
+      case "db:set-timeline":
+        return await db.setTimeline(data);
       case "settings:set":
         return await db.setSetting(data.key, data.value);
       case "settings:all":

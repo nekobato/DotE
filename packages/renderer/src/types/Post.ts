@@ -11,7 +11,7 @@ export type Post = {
     count: number;
     isRemote: boolean;
   }[];
-  replyId: string;
+  replyId: string | null;
 };
 
 export type AttachmentType = "image" | "video" | "audio" | "url" | "poll";

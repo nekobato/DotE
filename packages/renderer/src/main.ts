@@ -1,15 +1,21 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import store, { key } from "./store";
 import "element-plus/dist/index.css";
 import "./styles/index.scss";
 import { createPinia } from "pinia";
 
-const app = createApp(App);
+if (!window.ipc) {
+  window.ipc = {
+    send: () => {},
+    invoke: async (event: string, payload?: any) => {},
+    on: () => {},
+  };
+}
+
 const pinia = createPinia();
+const app = createApp(App);
 
 app.use(router);
-app.use(store, key);
 app.use(pinia);
 app.mount("#app").$nextTick(window.removeLoading);

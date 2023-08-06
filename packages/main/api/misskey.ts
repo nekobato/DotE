@@ -107,7 +107,7 @@ export const misskeyCreateReaction = async ({
       reaction,
     }),
   }).then((res: Response) => {
-    return res.json();
+    return res.text();
   });
 };
 
@@ -115,12 +115,10 @@ export const misskeyDeleteReaction = async ({
   instanceUrl,
   token,
   noteId,
-  reaction,
 }: {
   instanceUrl: string;
   token: string;
   noteId: string;
-  reaction: string;
 }) => {
   return fetch(new URL(`/api/notes/reactions/delete`, instanceUrl).toString(), {
     method: "POST",
@@ -128,10 +126,9 @@ export const misskeyDeleteReaction = async ({
     body: JSON.stringify({
       i: token,
       noteId,
-      reaction,
     }),
   }).then((res: Response) => {
-    return res.json();
+    return res.text();
   });
 };
 
@@ -184,6 +181,27 @@ export const misskeyGetNoteReactions = async ({
   noteId: string;
 }) => {
   return fetch(new URL(`/api/notes/reactions`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      noteId,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
+export const misskeyGetNote = async ({
+  instanceUrl,
+  token,
+  noteId,
+}: {
+  instanceUrl: string;
+  token: string;
+  noteId: string;
+}) => {
+  return fetch(new URL(`/api/notes/show`, instanceUrl).toString(), {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({

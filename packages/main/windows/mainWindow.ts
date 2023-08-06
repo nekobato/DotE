@@ -3,7 +3,7 @@ import { BrowserWindow, screen } from "electron";
 import url from "node:url";
 import path from "node:path";
 
-const pageName = "timeline";
+const pageName = "main/timeline";
 
 export function createMainWindow() {
   const mainWindow = new BrowserWindow({

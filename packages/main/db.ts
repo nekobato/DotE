@@ -14,7 +14,7 @@ export const getUsers = () => {
 };
 
 export const upsertUser = async (user: User) => {
-  if (!user.userId) throw new Error("userId is required");
+  if (!user.instanceUserId) throw new Error("instanceUserId is required");
   if (!user.instanceUrl) throw new Error("instanceUrl is required");
   if (!user.token) throw new Error("token is required");
   if (!user.name) throw new Error("name is required");
@@ -22,7 +22,7 @@ export const upsertUser = async (user: User) => {
 
   const existingUser = await prisma.user.findFirst({
     where: {
-      userId: user.userId,
+      instanceUserId: user.instanceUserId,
       instanceUrl: user.instanceUrl,
     },
   });
@@ -42,7 +42,7 @@ export const upsertUser = async (user: User) => {
   } else {
     return await prisma.user.create({
       data: {
-        userId: user.userId,
+        instanceUserId: user.instanceUserId,
         instanceUrl: user.instanceUrl,
         instanceType: user.instanceType,
         token: user.token,
@@ -93,3 +93,34 @@ export const getSetting = async (key: string) => {
 
   return result?.value;
 };
+
+export function setTimeline(data: { id?: number; userId: number; channel: string; options: string }): any {
+  const { id, userId, channel, options } = data;
+
+  if (!userId) throw new Error("userId is required");
+  if (!channel) throw new Error("channel is required");
+  if (!options) throw new Error("options is required");
+
+  if (id) {
+    return prisma.timeline.update({
+      where: {
+        id: id,
+      },
+      data: {
+        options: options,
+      },
+    });
+  } else {
+    return prisma.timeline.create({
+      data: {
+        userId: userId,
+        channel: channel,
+        options: options,
+      },
+    });
+  }
+}
+
+export function getTimelineAll() {
+  return prisma.timeline.findMany();
+}

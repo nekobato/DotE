@@ -1,21 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { ref } from "vue";
 
-const theme = ref('theme-default');
+const theme = ref("theme-default");
 
-window.ipc.on('theme', (_, theme) => {
-  document.documentElement.setAttribute('data-theme', theme);
-});
-
-window.ipc.on('resize', (_, bounds) => {
-  window.localStorage.setItem('bounds', JSON.stringify(bounds));
-});
-
-onMounted(() => {
-  const bounds = window.localStorage.getItem('bounds');
-  if (bounds) {
-    window.ipc.send('resize', bounds);
-  }
+window.ipc.on("theme", (_, theme) => {
+  document.documentElement.setAttribute("data-theme", theme);
 });
 </script>
 <template>

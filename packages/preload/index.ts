@@ -18,8 +18,10 @@ contextBridge.exposeInMainWorld("ipc", {
   send(event: string, payload: any) {
     ipcRenderer.send("renderer-event", event, payload);
   },
-  invoke(event: string, payload: any) {
-    return ipcRenderer.invoke("renderer-event", event, payload);
+  async invoke(event: string, payload: any) {
+    const result = await ipcRenderer.invoke("renderer-event", event, payload);
+    console.log("result", result);
+    return result;
   },
   on(event: string, callback: (event: IpcRendererEvent, ...args: any[]) => void) {
     ipcRenderer.on(event, callback);

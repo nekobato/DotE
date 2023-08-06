@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useStore } from "@/store";
 import { Post } from "@/types/Post";
 import { ipcSend } from "@/utils/ipc";
 import { PropType, computed } from "vue";
 import PostAttachment from "./PostAttachment.vue";
+import { useTimelineStore } from "@/store/timeline";
 
-const store = useStore();
+const timelineStore = useTimelineStore();
 
 const props = defineProps({
   post: {
@@ -38,36 +38,36 @@ const postAtttachments = computed(() => {
 });
 
 const openPost = () => {
-  ipcSend("post:detail", props.post);
+  ipcSend("open-url", { url: new URL(`/posts/${props.post.id}`, timelineStore.currentUser?.instanceUrl).toString() });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
   if (isMyReaction(reaction, props.post.myReaction)) {
-    deleteReaction(postId, reaction);
+    deleteReaction(postId);
   } else {
     // 既にreactionがある場合は削除してから追加
     if (props.post.myReaction) {
-      deleteReaction(postId, props.post.myReaction);
+      deleteReaction(postId, false);
     }
     createReaction(postId, reaction);
   }
 
-  store.dispatch("fetchMisskeyNoteReactions", {
+  timelineStore.updatePost({
     postId,
   });
 };
 
 const createReaction = (postId: string, reaction: string) => {
-  store.dispatch("createMisskeyReaction", {
+  timelineStore.createReaction({
     postId,
     reaction,
   });
 };
 
-const deleteReaction = (postId: string, reaction: string) => {
-  store.dispatch("deleteMisskeyReaction", {
+const deleteReaction = (postId: string, noUpdate?: boolean) => {
+  timelineStore.deleteReaction({
     postId,
-    reaction,
+    noUpdate,
   });
 };
 

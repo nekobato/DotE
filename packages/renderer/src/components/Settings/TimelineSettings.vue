@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { onMounted, reactive, watch } from "vue";
+import { onMounted, ref } from "vue";
 import SectionTitle from "../Post/SectionTitle.vue";
-import { Account } from "@/types/db";
-import { Icon } from "@iconify/vue";
 import { ElSelect, ElOption } from "element-plus";
-import { useStorage } from "@vueuse/core";
-import { ipcInvoke } from "@/utils/ipc";
+import { useUsersStore } from "@/store/users";
+import { useTimelineStore, TimelineSetting, Timeline, ChannelName } from "@/store/timeline";
+import { useSettingsStore } from "@/store/settings";
 
-const timelineSelect = [
+const channelList = [
   {
     label: "ホーム",
     value: "misskey:homeTimeline",
@@ -36,93 +35,105 @@ const timelineSelect = [
     label: "チャンネル...",
     value: "misskey:channelTimeline",
   },
-];
+] as const;
 
-const state = reactive({
-  accounts: [] as Account[],
-});
+const usersStore = useUsersStore();
+const timelineStore = useTimelineStore();
 
-const settings = useStorage(
-  "settings",
-  {
-    accountId: "",
-    timeline: "misskey:homeTimeline",
-  },
-  localStorage,
-);
+const timelineSettings = ref<TimelineSetting[]>([]);
 
-watch(
-  () => settings.value.accountId,
-  async (accountId) => {
-    await ipcInvoke("settings:set", { key: "timeline:accountId", value: accountId.toString() });
-  },
-);
+const onChangeUser = async (userId: number, timelineId: number) => {
+  const newTimeline = timelineStore.timelines.find((timeline) => timeline.id === timelineId);
+  if (newTimeline) {
+    updateTimeline({ ...newTimeline, userId });
+  }
+};
 
-watch(
-  () => settings.value.timeline,
-  async (timeline) => {
-    await ipcInvoke("settings:set", { key: "timeline:timelineType", value: timeline });
-  },
-);
+const onChangeChannel = async (channel: ChannelName, timelineId: number) => {
+  const newTimeline = timelineStore.timelines.find((timeline) => timeline.id === timelineId);
+  if (newTimeline) {
+    updateTimeline({ ...newTimeline, channel });
+  }
+};
+
+const updateTimeline = async (timeline: Timeline) => {
+  await timelineStore.setTimeline({
+    id: timeline.id,
+    userId: timeline.userId,
+    channel: timeline?.channel || "misskey:homeTimeline",
+    options: timeline?.options || {},
+  });
+};
 
 onMounted(async () => {
-  const accounts = await ipcInvoke("db:get-users");
-  state.accounts = accounts;
-  settings.value.accountId = accounts[0]?.id || "";
+  await timelineStore.init();
+  await usersStore.init();
 
-  const allSettings = await ipcInvoke("settings:all");
-  if (allSettings["timeline:accountId"]) {
-    settings.value.accountId = allSettings["timeline:accountId"];
-  } else {
-    await ipcInvoke("settings:set", { key: "timeline:accountId", value: accounts[0]?.id.toString() });
+  if (timelineStore.$state.timelines.length === 0 && usersStore.$state.length !== 0) {
+    await timelineStore.addTimeline({
+      userId: usersStore.$state[0].id,
+      channel: "misskey:homeTimeline",
+      options: {},
+    });
   }
-  if (allSettings["timeline:timelineType"]) {
-    settings.value.timeline = allSettings["timeline:timelineType"];
-  } else {
-    await ipcInvoke("settings:set", { key: "timeline:timelineType", value: settings.value.timeline });
-  }
+
+  timelineSettings.value.push(
+    ...timelineStore.timelines.map((timeline) => {
+      console.log(timeline);
+      return {
+        id: timeline.id,
+        userId: timeline.userId,
+        channel: timeline.channel,
+        options: timeline.options,
+      };
+    }),
+  );
 });
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list">
+  <div class="account-settings hazy-post-list" v-if="timelineStore.timelines.length !== 0">
     <SectionTitle title="タイムライン" />
-    <div class="hazy-post account indent-1" v-for="account in state.accounts" :key="account.name">
-      <div class="content">
-        <span class="label">アカウント</span>
+    <div class="accounts-container" v-for="timeline in timelineSettings" :key="timeline.id">
+      <div class="hazy-post account indent-1">
+        <div class="content">
+          <span class="label">アカウント</span>
+        </div>
+        <div class="attachments actions">
+          <ElSelect v-model="timeline.userId" size="small">
+            <ElOption
+              v-for="user in usersStore.$state"
+              :key="user.id"
+              :label="`${user.name}@${user.instanceUrl.replace('https://', '')}`"
+              :value="user.id"
+              @change="onChangeUser(user.id, timeline.id)"
+            />
+          </ElSelect>
+        </div>
       </div>
-      <div class="attachments actions">
-        <ElSelect v-model="settings.accountId" size="small">
-          <ElOption
-            v-for="account in state.accounts"
-            :key="account.id"
-            :label="`${account.name}@${account.instanceUrl.replace('https://', '')}`"
-            :value="account.id"
-          />
-        </ElSelect>
+      <div class="hazy-post account indent-1">
+        <div class="content">
+          <span class="label">チャンネル</span>
+        </div>
+        <div class="attachments actions">
+          <ElSelect v-model="timeline.channel" size="small">
+            <ElOption
+              v-for="channel in channelList"
+              :key="channel.value"
+              :label="channel.label"
+              :value="channel.value"
+              @change="onChangeChannel(channel.value, timeline.id)"
+            />
+          </ElSelect>
+        </div>
       </div>
-    </div>
-    <div class="hazy-post account indent-1" v-for="account in state.accounts" :key="account.name">
-      <div class="content">
-        <span class="label">タイムライン</span>
-      </div>
-      <div class="attachments actions">
-        <ElSelect v-model="settings.timeline" size="small">
-          <ElOption
-            v-for="timeline in timelineSelect"
-            :key="timeline.value"
-            :label="timeline.label"
-            :value="timeline.value"
-          />
-        </ElSelect>
-      </div>
-    </div>
-    <div class="hazy-post account indent-1" v-if="false">
-      <div class="content">
-        <span class="label">検索</span>
-      </div>
-      <div class="attachments actions">
-        <input class="nn-text-field" type="search" />
+      <div class="hazy-post account indent-1" v-if="false">
+        <div class="content">
+          <span class="label">検索</span>
+        </div>
+        <div class="attachments actions">
+          <input class="nn-text-field" type="search" />
+        </div>
       </div>
     </div>
   </div>

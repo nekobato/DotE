@@ -13,7 +13,7 @@ window.ipc.on("post:create", () => {
 });
 
 window.ipc.on("post:close", () => {
-  router.push("/");
+  router.push("/post");
 });
 
 window.ipc.on("post:detail", (_, payload) => {

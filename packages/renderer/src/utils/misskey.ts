@@ -70,6 +70,7 @@ export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
       name: parseMisskeyUsername(note.user.name, emojis),
       avatarUrl: note.user.avatarUrl,
     },
+    replyId: note.replyId,
     repost: note.renote ? parseMisskeyNote(note.renote, emojis) : undefined,
     attachments: [
       ...note.files.map(
@@ -86,7 +87,7 @@ export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
           };
         },
         ...linkList,
-        ...poll
+        ...poll,
       ),
     ],
     reactions: Object.keys(note.reactions).map((key) => {

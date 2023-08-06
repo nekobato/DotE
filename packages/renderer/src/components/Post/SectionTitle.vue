@@ -15,10 +15,10 @@ const props = defineProps({
 
 <style lang="scss" scoped>
 .section-title {
-  font-size: 0.8rem;
-  font-weight: bold;
   margin: 0;
   padding: 0;
   color: var(--color-text-title);
+  font-weight: bold;
+  font-size: 0.8rem;
 }
 </style>

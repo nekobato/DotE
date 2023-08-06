@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazyButton from "@/components/common/HazyButton.vue";
-import { useStore } from "@/store";
+import router from "@/router";
+import { information } from "@/store/information";
 
-const store = useStore();
+const gotoTutorial = () => {
+  router.push("/main/tutorial");
+};
 </script>
 
 <template>
@@ -13,13 +15,13 @@ const store = useStore();
     <div class="hazy-post indent-1">
       <div class="content">バージョン</div>
       <div class="hazy-post-actions">
-        <span>{{ store.state.information.version }}</span>
+        <span>{{ information.version }}</span>
       </div>
     </div>
     <div class="hazy-post indent-1">
       <div class="content">チュートリアル</div>
       <div class="hazy-post-actions">
-        <HazyButton>チュートリアルを表示</HazyButton>
+        <HazyButton class="size-small" @click="gotoTutorial">チュートリアルを表示</HazyButton>
       </div>
     </div>
   </div>
@@ -45,6 +47,7 @@ const store = useStore();
   }
 }
 .hazy-post-actions {
+  color: var(--color-text-body);
   font-size: var(--font-size-16);
 }
 .hazy-post {
