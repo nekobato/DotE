@@ -79,16 +79,24 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
 
 <template>
   <div class="hazy-post" :class="[postType]">
-    <div class="post-data-group" @click="openPost">
+    <div class="post-data-group">
       <div class="post-data">
-        <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
-        <span class="username" v-html="props.post.user.name" />
-        <p class="hazy-post-body" v-html="props.post.text" />
+        <div class="hazy-post-info">
+          <span class="username" v-html="props.post.user.name" />
+        </div>
+        <div class="hazy-post-contents">
+          <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
+          <p class="hazy-post-body" v-html="props.post.text" />
+        </div>
       </div>
       <div class="repost-data" v-if="props.post.repost">
-        <img class="hazy-avatar" :src="props.post.repost?.user.avatarUrl" alt="" />
-        <span class="username" v-html="props.post.repost?.user.name" />
-        <p class="hazy-post-body" v-html="props.post.repost?.text" />
+        <div class="hazy-post-info">
+          <span class="username" v-html="props.post.repost?.user.name" />
+        </div>
+        <div class="hazy-post-contents">
+          <img class="hazy-avatar" :src="props.post.repost?.user.avatarUrl" alt="" />
+          <p class="hazy-post-body" v-html="props.post.repost?.text" />
+        </div>
       </div>
     </div>
     <div class="attachments" v-if="postAtttachments">
@@ -111,31 +119,28 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
 
 <style lang="scss" scoped>
 .username {
-  position: absolute;
-  top: -4px;
-  left: 0;
   color: rgba(255, 255, 255, 0.72);
   font-weight: 600;
   font-size: var(--font-size-10);
   font-style: normal;
   line-height: var(--font-size-10);
   white-space: nowrap;
+
+  img.emoji {
+    width: var(--font-size-12);
+    height: var(--font-size-12);
+    margin-bottom: -2px;
+  }
 }
 .post-data,
 .repost-data {
   position: relative;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   width: 100%;
-  padding-top: 8px;
-}
-.post-data {
-  .username {
-    top: -8px;
-  }
 }
 .repost-data {
-  margin-top: 8px;
+  margin-top: 4px;
   padding-left: 8px;
   &::before {
     position: absolute;
@@ -146,10 +151,6 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
     background-color: rgba(255, 255, 255, 0.32);
     border-radius: 2px;
     content: "";
-  }
-  .username {
-    top: -10px;
-    left: 8px;
   }
 }
 
@@ -165,13 +166,13 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
       }
     }
     .repost-data {
-      margin-top: -40px;
+      margin-top: -46px;
       padding-left: 12px;
       &::before {
         display: none;
       }
       .username {
-        left: -8px;
+        margin-left: -12px;
       }
     }
   }

@@ -61,7 +61,7 @@ const observeWebSocketConnection = () => {
     const data = JSON.parse(event.data);
     if (data.body.type === "note") {
       if (timelineStore.current) {
-        const note = parseMisskeyNotes([data.body.body], timelineStore.current.misskey.emojis)[0];
+        const note = parseMisskeyNotes([data.body.body], timelineStore.currentInstance!.misskey.emojis)[0];
         timelineStore.addPost(note);
 
         // スクロール制御
