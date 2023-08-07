@@ -38,7 +38,7 @@ const postAtttachments = computed(() => {
 });
 
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/posts/${props.post.id}`, timelineStore.currentUser?.instanceUrl).toString() });
+  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentUser?.instanceUrl).toString() });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
