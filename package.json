@@ -21,7 +21,7 @@
   "dependencies": {
     "@prisma/client": "^5.1.1",
     "electron-fetch": "^1.9.1",
-    "prisma": "^5.1.0",
+    "prisma": "^5.1.1",
     "uuid": "^9.0.0",
     "vue": "^3.2.45"
   },
