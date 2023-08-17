@@ -3,9 +3,11 @@ import SectionTitle from "../Post/SectionTitle.vue";
 import HazyButton from "@/components/common/HazyButton.vue";
 import router from "@/router";
 import { information } from "@/store/information";
+import { ipcSend } from "@/utils/ipc";
 
 const gotoTutorial = () => {
   router.push("/main/tutorial");
+  ipcSend("set-hazy-mode", { mode: "tutorial" });
 };
 </script>
 

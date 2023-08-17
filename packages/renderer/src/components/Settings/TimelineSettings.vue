@@ -4,7 +4,6 @@ import SectionTitle from "../Post/SectionTitle.vue";
 import { ElSelect, ElOption } from "element-plus";
 import { useUsersStore } from "@/store/users";
 import { useTimelineStore, TimelineSetting, Timeline, ChannelName } from "@/store/timeline";
-import { useSettingsStore } from "@/store/settings";
 
 const channelList = [
   {

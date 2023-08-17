@@ -72,6 +72,7 @@ app.on("ready", async () => {
         switch (data.mode) {
           case "show":
           case "settings":
+          case "tutorial":
             mainWindow?.show();
             mainWindow?.focus();
             mainWindow?.setAlwaysOnTop(false);

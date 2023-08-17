@@ -1,23 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from "vue";
-import { v4 as uuid } from "uuid";
 import Post from "@/components/Post.vue";
+import HazyLoading from "@/components/common/HazyLoading.vue";
 import router from "@/router";
+import { useStore } from "@/store";
+import { useTimelineStore } from "@/store/timeline";
+import { ipcSend } from "@/utils/ipc";
 import { parseMisskeyNotes } from "@/utils/misskey";
 import { connectToMisskeyStream } from "@/utils/websocket";
-import HazyLoading from "@/components/common/HazyLoading.vue";
-import { useUsersStore } from "@/store/users";
-import { useTimelineStore } from "@/store/timeline";
-import { useSettingsStore } from "@/store/settings";
-import { useInstanceStore } from "@/store/instance";
-import { ipcSend } from "@/utils/ipc";
+import { v4 as uuid } from "uuid";
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 let ws: WebSocket | null = null;
 
-const usersStore = useUsersStore();
+const store = useStore();
 const timelineStore = useTimelineStore();
-const instanceStore = useInstanceStore();
-const settingsStore = useSettingsStore();
 
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
@@ -98,13 +94,9 @@ const observeWebSocketConnection = () => {
 };
 
 onMounted(async () => {
-  await settingsStore.init();
-  await usersStore.init();
-  await timelineStore.init();
-  instanceStore.init();
+  store.init();
 
   if (timelineStore.currentUser) {
-    await instanceStore.fetchMisskeyEmoji(timelineStore.currentUser.instanceUrl);
     await timelineStore.fetchPosts();
 
     // Websocket
