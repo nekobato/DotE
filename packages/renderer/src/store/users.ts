@@ -17,7 +17,6 @@ export const useUsersStore = defineStore("users", {
     },
     async create(user: Omit<User, "id">) {
       await ipcInvoke("db:upsert-user", {
-        instanceUserId: user.instanceUserId,
         name: user.name,
         username: user.username,
         instanceType: user.instanceType,

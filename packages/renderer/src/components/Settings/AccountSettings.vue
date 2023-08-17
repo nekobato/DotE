@@ -10,8 +10,6 @@ import { useTimelineStore } from "@/store/timeline";
 import { useUsersStore } from "@/store/users";
 
 const usersStore = useUsersStore();
-const timelineStore = useTimelineStore();
-const settingsStore = useSettingsStore();
 
 const state = ref({
   actions: {
@@ -46,7 +44,6 @@ const checkMiAuth = async () => {
   });
 
   usersStore.create({
-    instanceUserId: check.user.id,
     name: check.user.name,
     username: check.user.username,
     avatarUrl: check.user.avatarUrl,
@@ -109,10 +106,10 @@ const resetStatues = () => {
     <div class="hazy-post account indent-1" v-for="account in usersStore.$state" :key="account.username">
       <img :src="account.avatarUrl || ''" class="hazy-avatar" />
       <div class="content">
-        <span class="nickname">{{ account.username }}</span>
+        <span class="nickname">{{ account.name }}</span>
         <span class="instance">@{{ account.instanceUrl.replace("https://", "") }}</span>
       </div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <button
           class="nn-button size-small action"
           @click="startDeleteAccount(account.id)"
@@ -129,7 +126,7 @@ const resetStatues = () => {
       <div class="content">
         <span class="nickname">確認：削除しますか？</span>
       </div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <button class="nn-button size-small type-warning action" @click="confirmDeleteAccount()">
           <Icon icon="ion:checkmark-done" class="nn-icon" />
         </button>
@@ -140,7 +137,7 @@ const resetStatues = () => {
       <div class="content">
         <span>アカウント追加</span>
       </div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <button
           class="nn-button size-small action"
           v-if="state.actions.newAccount.misskey.progress === 'default'"
@@ -169,7 +166,7 @@ const resetStatues = () => {
           />
         </div>
       </div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <button class="nn-button size-small action" @click="openAuthLink('misskey')">
           <Icon icon="ion:open" class="nn-icon size-small" />
         </button>
@@ -182,7 +179,7 @@ const resetStatues = () => {
       <div class="content">
         <span>認証した？</span>
       </div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <button class="nn-button size-small action" @click="startAuth('misskey')">戻る</button>
         <button class="nn-button size-small action" @click="checkMiAuth()">認証した</button>
       </div>
@@ -215,8 +212,7 @@ const resetStatues = () => {
 }
 .hazy-post {
   display: flex;
-  &.indent-1 {
-    padding-left: 16px;
-  }
+}
+.form-actions {
 }
 </style>

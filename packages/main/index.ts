@@ -121,10 +121,6 @@ app.on("ready", async () => {
         postWindow?.webContents.send(event, data);
         postWindow?.show();
         break;
-      case "settings:get-all":
-        const settings = await db.getAllSettings();
-        mainWindow?.webContents.send("setting:all", settings);
-        break;
       case "resize":
         mainWindow?.setBounds(data);
         break;
@@ -155,6 +151,10 @@ app.on("ready", async () => {
         return await db.getTimelineAll();
       case "db:set-timeline":
         return await db.setTimeline(data);
+      case "db:get-instance-all":
+        return await db.getInstanceAll();
+      case "db:upsert-instance":
+        return await db.upsertInstance(data);
       case "settings:set":
         return await db.setSetting(data.key, data.value);
       case "settings:all":

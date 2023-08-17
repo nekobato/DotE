@@ -24,11 +24,11 @@ settingsStore.$onAction(({ name, after }) => {
 <template>
   <div class="account-settings hazy-post-list">
     <SectionTitle title="設定" />
-    <div class="hazy-post">
+    <div class="hazy-post indent-1">
       <div class="content">
         <span class="title"><Icon icon="ion:eye-outline" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
-      <div class="hazy-post-actions" :class="{ 'hazy-unvisible': !opacity }">
+      <div class="form-actions" :class="{ 'hazy-unvisible': !opacity }">
         <input type="range" min="0" max="100" class="nn-range" v-model="opacity" @change="onChangeOpacity" />
         <input type="number" min="0" max="100" class="nn-text-field" v-model="opacity" @change="onChangeOpacity" />
       </div>

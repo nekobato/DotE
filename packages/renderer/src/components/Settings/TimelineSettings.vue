@@ -99,7 +99,7 @@ onMounted(async () => {
         <div class="content">
           <span class="label">アカウント</span>
         </div>
-        <div class="attachments actions">
+        <div class="attachments form-actions">
           <ElSelect v-model="timeline.userId" size="small">
             <ElOption
               v-for="user in usersStore.$state"
@@ -115,7 +115,7 @@ onMounted(async () => {
         <div class="content">
           <span class="label">チャンネル</span>
         </div>
-        <div class="attachments actions">
+        <div class="attachments form-actions">
           <ElSelect v-model="timeline.channel" size="small">
             <ElOption
               v-for="channel in channelList"
@@ -131,7 +131,7 @@ onMounted(async () => {
         <div class="content">
           <span class="label">検索</span>
         </div>
-        <div class="attachments actions">
+        <div class="attachments form-actions">
           <input class="nn-text-field" type="search" />
         </div>
       </div>
@@ -151,9 +151,6 @@ onMounted(async () => {
 .content {
   color: #fff;
   font-size: var(--font-size-14);
-}
-.actions {
-  margin: 0 0 0 auto;
 }
 .action {
   > svg {

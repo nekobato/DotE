@@ -28,16 +28,6 @@ body,
   height: 100%;
 }
 
-.hazy-post-body {
-
-  img.emoji {
-    width: auto;
-    height: var(--post-body--line-height);
-    margin-bottom: -4px;
-    line-height: var(--post-body--line-height);
-  }
-}
-
 .username {
   img.emoji {
     width: auto;
@@ -57,6 +47,15 @@ body,
   width: 100%;
 }
 
+.hazy-post-body {
+  img.emoji {
+    width: auto;
+    height: var(--post-body--line-height);
+    margin-bottom: -4px;
+    line-height: var(--post-body--line-height);
+  }
+}
+
 .hazy-post {
   width: 100%;
   margin: 0;
@@ -67,10 +66,21 @@ body,
   background-position: top;
   background-size: 6px 1px;
 
-  &.as-thread {
-    background-image: linear-gradient(to right, rgba(255, 255, 255, 16%) 50%, rgba(255, 255, 255, 0) 0%);
+  &:hover {
+    .hazy-post-actions {
+      visibility: visible;
+    }
   }
 
+  &.indent-1 {
+    padding-left: 16px;
+  }
+
+  &.as-thread,
+  &.indent-1,
+  &.indent-2 {
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 16%) 50%, rgba(255, 255, 255, 0) 0%);
+  }
 
   .hazy-post-info {
     display: flex;
@@ -109,7 +119,48 @@ body,
   }
 
   .hazy-post-actions {
-    display: flex;
+    position: relative;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 0 auto;
+    padding: 0;
+    visibility: hidden;
+  }
+
+  .hazy-post-action {
+    position: absolute;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    color: var(---hazy-color-white-t4);
+    font-size: var(--post-action--font-size);
+    line-height: var(--post-action--line-height);
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    &:hover {
+      filter: brightness(0.9);
+    }
+    &.active {
+      color: var(--post-action--active-color);
+    }
+    > .nn-icon {
+      width: 16px;
+      height: 16px;
+      color: var(--hazy-color-white);
+    }
+  }
+
+  .form-actions {
+    display: inline-flex;
     gap: 8px;
     align-items: center;
     justify-content: space-between;

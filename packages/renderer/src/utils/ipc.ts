@@ -1,5 +1,5 @@
 import { ChannelName } from "@/store/timeline";
-import { User } from "@prisma/client";
+import { Instance, Timeline, User } from "@prisma/client";
 
 export const ipcSend = (event: string, payload?: object) => {
   if (typeof window === "undefined") return;
@@ -31,6 +31,14 @@ type invokeEvents = {
     channel: string;
     options: string;
   };
+  "db:get-instance-all": void;
+  "db:upsert-instance": {
+    id?: number;
+    url: string;
+    name: string;
+    description: string;
+    iconUrl: string;
+  };
   "settings:set": {
     key: string;
     value: string;
@@ -43,18 +51,15 @@ type InvokeResults = {
   "db:get-users": User[];
   "db:upsert-user": User;
   "db:delete-user": void;
-  "db:get-timeline-all": {
-    id: number;
-    userId: number;
-    channel: ChannelName;
-    options: string;
-  }[];
+  "db:get-timeline-all": Timeline[];
   "db:set-timeline": void;
+  "db:get-instance-all": Instance[];
+  "db:upsert-instance": Instance;
   "settings:set": void;
   "settings:all": {
-    key: string;
-    value: string;
-  }[];
+    opacity: number;
+    hazyMode: "show" | "haze" | "hide";
+  };
 };
 
 export const ipcInvoke = <K extends keyof invokeEvents>(

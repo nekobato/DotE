@@ -4,6 +4,8 @@ import { ipcSend } from "@/utils/ipc";
 import { PropType, computed } from "vue";
 import PostAttachment from "./PostAttachment.vue";
 import { useTimelineStore } from "@/store/timeline";
+import HazyButton from "./common/HazyButton.vue";
+import { Icon } from "@iconify/vue";
 
 const timelineStore = useTimelineStore();
 
@@ -83,6 +85,11 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
       <div class="post-data">
         <div class="hazy-post-info">
           <span class="username" v-html="props.post.user.name" />
+          <div class="hazy-post-actions">
+            <button class="hazy-post-action" @click="openPost">
+              <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
+            </button>
+          </div>
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />

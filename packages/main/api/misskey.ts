@@ -212,3 +212,12 @@ export const misskeyGetNote = async ({
     return res.json();
   });
 };
+
+export const misskeyGetMeta = async ({ instanceUrl }: { instanceUrl: string }) => {
+  return fetch(new URL(`/api/meta`, instanceUrl).toString(), {
+    method: "GET",
+    headers: baseHeader,
+  }).then((res: Response) => {
+    return res.json();
+  });
+};

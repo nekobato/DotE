@@ -14,13 +14,13 @@ const gotoTutorial = () => {
     <SectionTitle title="その他" />
     <div class="hazy-post indent-1">
       <div class="content">バージョン</div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <span>{{ information.version }}</span>
       </div>
     </div>
     <div class="hazy-post indent-1">
       <div class="content">チュートリアル</div>
-      <div class="hazy-post-actions">
+      <div class="form-actions">
         <HazyButton class="size-small" @click="gotoTutorial">チュートリアルを表示</HazyButton>
       </div>
     </div>
@@ -46,7 +46,7 @@ const gotoTutorial = () => {
     color: var(--color-text-body);
   }
 }
-.hazy-post-actions {
+.form-actions {
   color: var(--color-text-body);
   font-size: var(--font-size-16);
 }

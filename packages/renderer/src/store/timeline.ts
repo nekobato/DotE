@@ -6,64 +6,33 @@ import { useUsersStore } from "./users";
 import { Instance, useInstanceStore } from "./instance";
 import { Emoji } from "@/types/misskey";
 import { parseMisskeyNote, parseMisskeyNotes } from "@/utils/misskey";
+import { Timeline, TimelineSetting, methodOfChannel, useStore } from ".";
 
-export type ChannelName =
-  | "misskey:homeTimeline"
-  | "misskey:localTimeline"
-  | "misskey:socialTimeline"
-  | "misskey:globalTimeline"
-  | "misskey:listTimeline"
-  | "misskey:antennaTimeline"
-  | "misskey:channelTimeline";
-
-export type TimelineSetting = {
-  id: number;
-  userId: number;
-  channel: ChannelName;
-  options: {
-    search?: string;
-    antenna?: string;
-    list?: string;
-  };
-};
-
-export type Timeline = TimelineSetting & {
-  posts: Post[];
-};
-
-type TimelineState = {
-  timelines: Timeline[];
+type State = {
   currentIndex: number;
 };
 
-export const methodOfChannel = {
-  "misskey:homeTimeline": "misskey:getTimelineHome",
-  "misskey:localTimeline": "misskey:getTimelineLocal",
-  "misskey:socialTimeline": "misskey:getTimelineSocial",
-  "misskey:globalTimeline": "misskey:getTimelineGlobal",
-  "misskey:listTimeline": "misskey:getTimelineList",
-  "misskey:antennaTimeline": "misskey:getTimelineAntenna",
-  "misskey:channelTimeline": "misskey:getTimelineChannel",
-};
-
 export const useTimelineStore = defineStore("timeline", {
-  state: (): TimelineState => ({
-    timelines: [],
+  state: (): State => ({
     currentIndex: 0,
   }),
   getters: {
+    timelines() {
+      const store = useStore();
+      return store.$state.timelines;
+    },
     isExist(state): boolean {
-      return state.timelines.length > 0;
+      return this.timelines.length > 0;
     },
     current(state): Timeline {
-      return state.timelines[state.currentIndex];
+      return this.timelines[state.currentIndex];
     },
     currentPosts(state): Post[] {
-      return state.timelines.length ? state.timelines[state.currentIndex].posts : [];
+      return this.timelines.length ? this.timelines[state.currentIndex].posts : [];
     },
     currentUser(state): User | undefined {
       const usersStore = useUsersStore();
-      return usersStore.$state?.find((u) => u.id === state.timelines[state.currentIndex]?.userId);
+      return usersStore.$state?.find((u) => u.id === this.timelines[state.currentIndex]?.userId);
     },
     currentInstance(state): Instance | undefined {
       const instanceStore = useInstanceStore();
@@ -71,16 +40,11 @@ export const useTimelineStore = defineStore("timeline", {
     },
   },
   actions: {
-    async init() {
-      const result = await ipcInvoke("db:get-timeline-all");
-      this.$state.timelines = result?.map((t) => {
-        return { ...t, options: JSON.parse(t.options), posts: [], misskey: { emojis: [] } };
-      });
-    },
+    async current
     async setTimeline(timeline: TimelineSetting) {
-      const index = this.$state.timelines.findIndex((t) => t.id === timeline.id);
+      const index = this.timelines.findIndex((t) => t.id === timeline.id);
       if (index === -1) return;
-      this.$state.timelines[index] = { ...timeline, posts: [] };
+      this.timelines[index] = { ...timeline, posts: [] };
       await ipcInvoke("db:set-timeline", {
         id: timeline.id,
         userId: timeline.userId,
@@ -104,16 +68,13 @@ export const useTimelineStore = defineStore("timeline", {
           token: this.currentUser.token,
           limit: 40,
         });
-        this.$state.timelines[this.$state.currentIndex].posts = parseMisskeyNotes(
-          data,
-          this.currentInstance.misskey.emojis,
-        );
+        this.timelines[this.$state.currentIndex].posts = parseMisskeyNotes(data, this.currentInstance.misskey.emojis);
       } else {
         throw new Error("user not found");
       }
     },
     async addPost(post: Post) {
-      this.$state.timelines[this.$state.currentIndex].posts.unshift(post);
+      this.timelines[this.$state.currentIndex].posts.unshift(post);
     },
     async createReaction({ postId, reaction }: { postId: string; reaction: string }) {
       if (this.currentUser) {
@@ -157,7 +118,7 @@ export const useTimelineStore = defineStore("timeline", {
         });
         const postIndex = this.current?.posts.findIndex((p) => p.id === postId);
         if (this.current && postIndex !== undefined && postIndex !== -1 && this.currentInstance?.misskey.emojis) {
-          this.$state.timelines[this.$state.currentIndex].posts[postIndex] = parseMisskeyNote(
+          this.timelines[this.$state.currentIndex].posts[postIndex] = parseMisskeyNote(
             res,
             this.currentInstance?.misskey.emojis,
           );

@@ -10,20 +10,23 @@ export const getAllSettings = async () => {
 };
 
 export const getUsers = () => {
-  return prisma.user.findMany();
+  return prisma.user.findMany({
+    include: {
+      instance: true,
+    },
+  });
 };
 
 export const upsertUser = async (user: User) => {
-  if (!user.instanceUserId) throw new Error("instanceUserId is required");
-  if (!user.instanceUrl) throw new Error("instanceUrl is required");
+  if (!user.instanceId) throw new Error("instanceId is required");
   if (!user.token) throw new Error("token is required");
   if (!user.name) throw new Error("name is required");
   if (!user.username) throw new Error("username is required");
 
   const existingUser = await prisma.user.findFirst({
     where: {
-      instanceUserId: user.instanceUserId,
-      instanceUrl: user.instanceUrl,
+      name: user.name,
+      instanceId: user.instanceId,
     },
   });
 
@@ -42,13 +45,11 @@ export const upsertUser = async (user: User) => {
   } else {
     return await prisma.user.create({
       data: {
-        instanceUserId: user.instanceUserId,
-        instanceUrl: user.instanceUrl,
-        instanceType: user.instanceType,
         token: user.token,
         name: user.name,
         username: user.username,
         avatarUrl: user.avatarUrl,
+        instanceId: user.instanceId,
       },
     });
   }
@@ -124,3 +125,44 @@ export function setTimeline(data: { id?: number; userId: number; channel: string
 export function getTimelineAll() {
   return prisma.timeline.findMany();
 }
+
+export const getInstanceAll = async () => {
+  return await prisma.instance.findMany();
+};
+
+export const upsertInstance = async (instance: {
+  id?: number;
+  type: "misskey" | "mastodon";
+  name: string;
+  url: string;
+  iconUrl: string;
+}) => {
+  const { id, type, name, url, iconUrl } = instance;
+
+  if (!type) throw new Error("type is required");
+  if (!name) throw new Error("name is required");
+  if (!url) throw new Error("url is required");
+  if (!iconUrl) throw new Error("iconUrl is required");
+
+  if (id) {
+    return await prisma.instance.update({
+      where: {
+        id: id,
+      },
+      data: {
+        name: name,
+        url: url,
+        iconUrl: iconUrl,
+      },
+    });
+  } else {
+    return await prisma.instance.create({
+      data: {
+        type: type,
+        name: name,
+        url: url,
+        iconUrl: iconUrl,
+      },
+    });
+  }
+};

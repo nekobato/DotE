@@ -167,6 +167,11 @@ body::-webkit-scrollbar {
   &.is-adding {
     overflow-y: hidden;
   }
+  > .hazy-post {
+    &:first-of-type {
+      background: none;
+    }
+  }
 }
 .loading {
   display: flex;
