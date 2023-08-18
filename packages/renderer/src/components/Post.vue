@@ -1,11 +1,10 @@
 <script setup lang="ts">
+import { useTimelineStore } from "@/store/timeline";
 import { Post } from "@/types/Post";
 import { ipcSend } from "@/utils/ipc";
+import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import PostAttachment from "./PostAttachment.vue";
-import { useTimelineStore } from "@/store/timeline";
-import HazyButton from "./common/HazyButton.vue";
-import { Icon } from "@iconify/vue";
 
 const timelineStore = useTimelineStore();
 
@@ -40,7 +39,7 @@ const postAtttachments = computed(() => {
 });
 
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentUser?.instanceUrl).toString() });
+  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {

@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { useInstanceStore } from "@/store/instance";
+import { useUsersStore } from "@/store/users";
+import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { v4 as uuid } from "uuid";
-import { hazyMisskeyPermissionString } from "@/utils/hazy";
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { ref } from "vue";
 import SectionTitle from "../Post/SectionTitle.vue";
-import { useSettingsStore } from "@/store/settings";
-import { useTimelineStore } from "@/store/timeline";
-import { useUsersStore } from "@/store/users";
 
 const usersStore = useUsersStore();
+const instanceStore = useInstanceStore();
 
 const state = ref({
   actions: {
@@ -43,13 +42,12 @@ const checkMiAuth = async () => {
     sessionId: state.value.actions.newAccount.misskey.sessionId,
   });
 
-  usersStore.create({
+  usersStore.createUser({
     name: check.user.name,
     username: check.user.username,
     avatarUrl: check.user.avatarUrl,
-    instanceUrl: state.value.actions.newAccount.misskey.instanceUrl.value,
-    instanceType: "misskey",
     token: check.token,
+    instanceUrl: state.value.actions.newAccount.misskey.instanceUrl.value,
   });
   state.value.actions.newAccount.misskey.progress = "default";
 };
@@ -61,27 +59,17 @@ const startDeleteAccount = (id: number) => {
 
 const confirmDeleteAccount = async () => {
   if (state.value.actions.delete.id) {
-    usersStore.delete(state.value.actions.delete.id);
+    usersStore.deleteUser(state.value.actions.delete.id);
   }
   state.value.actions.delete.id = null;
 };
 
-const openAuthLink = (type: "misskey" | "mastodon") => {
+const openMisskeyAuthLink = () => {
   state.value.actions.newAccount.misskey.sessionId = uuid();
-  let endpoint = "";
-  switch (type) {
-    case "misskey":
-      endpoint = `/miauth/${state.value.actions.newAccount.misskey.sessionId}`;
-      break;
-    case "mastodon":
-      endpoint = "/auth/";
-      break;
-  }
-  const url = new URL(endpoint, state.value.actions.newAccount.misskey.instanceUrl.value);
-  url.search = new URLSearchParams({
-    name: "hazy",
-    permission: hazyMisskeyPermissionString(),
-  }).toString();
+  const url = instanceStore.getMisskeyAuthUrl(
+    state.value.actions.newAccount.misskey.instanceUrl.value,
+    state.value.actions.newAccount.misskey.sessionId,
+  );
   ipcSend("open-url", { url });
   state.value.actions.newAccount.misskey.progress = "step2:confirm";
 };
@@ -103,16 +91,16 @@ const resetStatues = () => {
         <span class="nickname">Misskey</span>
       </div>
     </div>
-    <div class="hazy-post account indent-1" v-for="account in usersStore.$state" :key="account.username">
-      <img :src="account.avatarUrl || ''" class="hazy-avatar" />
+    <div class="hazy-post account indent-1" v-for="user in usersStore.users" :key="user.username">
+      <img :src="user.avatarUrl || ''" class="hazy-avatar" />
       <div class="content">
-        <span class="nickname">{{ account.name }}</span>
-        <span class="instance">@{{ account.instanceUrl.replace("https://", "") }}</span>
+        <span class="nickname">{{ user.name }}</span>
+        <span class="instance">@{{ usersStore.userInstance(user.id).url.replace("https://", "") }}</span>
       </div>
       <div class="form-actions">
         <button
           class="nn-button size-small action"
-          @click="startDeleteAccount(account.id)"
+          @click="startDeleteAccount(user.id)"
           v-if="!state.actions.delete.id"
         >
           <Icon icon="ion:trash" class="nn-icon" />
@@ -167,7 +155,7 @@ const resetStatues = () => {
         </div>
       </div>
       <div class="form-actions">
-        <button class="nn-button size-small action" @click="openAuthLink('misskey')">
+        <button class="nn-button size-small action" @click="openMisskeyAuthLink">
           <Icon icon="ion:open" class="nn-icon size-small" />
         </button>
       </div>
@@ -212,7 +200,5 @@ const resetStatues = () => {
 }
 .hazy-post {
   display: flex;
-}
-.form-actions {
 }
 </style>

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
-import { User } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
 import { computed, onMounted, reactive, ref } from "vue";
 import HazyButton from "@/components/common/HazyButton.vue";
 import hazyAlert from "@/components/common/HazyAlert.vue";
+import { User } from "@prisma/client";
 
 const state = reactive({
   users: [] as User[],

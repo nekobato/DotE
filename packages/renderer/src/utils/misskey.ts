@@ -1,5 +1,5 @@
 import { Post } from "@/types/Post";
-import { Emoji, MisskeyFile, MisskeyNote, MisskeyUser } from "@/types/misskey";
+import { MisskeyEntities } from "@/types/misskey";
 
 export type User = {
   id?: string;
@@ -11,7 +11,7 @@ export type User = {
   avatarUrl: string;
 };
 
-export const misskeyUserToUser = (instanceUrl: string, user: MisskeyUser, token: string): Omit<User, "id"> => {
+export const misskeyUserToUser = (instanceUrl: string, user: MisskeyEntities.User, token: string): Omit<User, "id"> => {
   return {
     userId: user.id,
     instanceUrl: instanceUrl,
@@ -22,7 +22,7 @@ export const misskeyUserToUser = (instanceUrl: string, user: MisskeyUser, token:
   };
 };
 
-export const parseMisskeyUsername = (username: string, emojis: Emoji[]): string => {
+export const parseMisskeyUsername = (username: string, emojis: MisskeyEntities.CustomEmoji[]): string => {
   return username
     ? username.replace(/:(\w+):/g, (match, p1) => {
         const emoji = emojis.find((emoji) => emoji.name === p1);
@@ -35,7 +35,7 @@ export const parseMisskeyUsername = (username: string, emojis: Emoji[]): string 
     : "";
 };
 
-export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
+export const parseMisskeyNote = (note: MisskeyEntities.Note, emojis: MisskeyEntities.CustomEmoji[]): Post => {
   const parsedTextHtml = note.text
     // 文中のURLをaタグに変換
     ?.replace(/(https?:\/\/[\w!?/+\-_~;.,*&@#$%()='[\]]+)/g, (match, p1) => {
@@ -64,7 +64,7 @@ export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
 
   return {
     id: note.id,
-    text: parsedTextHtml,
+    text: parsedTextHtml || "",
     user: {
       id: note.user.id,
       name: parseMisskeyUsername(note.user.name, emojis),
@@ -74,7 +74,7 @@ export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
     repost: note.renote ? parseMisskeyNote(note.renote, emojis) : undefined,
     attachments: [
       ...note.files.map(
-        (file: MisskeyFile) => {
+        (file: MisskeyEntities.Note["files"][0]) => {
           return {
             type: file.type.split("/")[0] as "image" | "video",
             url: file.url,
@@ -95,7 +95,8 @@ export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
       const localEmoji = emojis.find((emoji) => emoji.name === reactionName);
       return {
         name: key,
-        url: localEmoji?.url || note.reactionEmojis[reactionName] || "",
+        // lacked type
+        url: localEmoji?.url || (note as any).reactionEmojis[reactionName] || "",
         count: note.reactions[key],
         isRemote: !localEmoji,
       };
@@ -104,11 +105,11 @@ export const parseMisskeyNote = (note: MisskeyNote, emojis: Emoji[]): Post => {
   };
 };
 
-export const parseMisskeyNotes = (notes: MisskeyNote[], emojis: Emoji[]): Post[] => {
+export const parseMisskeyNotes = (notes: MisskeyEntities.Note[], emojis: MisskeyEntities.CustomEmoji[]): Post[] => {
   return notes?.map((note) => parseMisskeyNote(note, emojis));
 };
 
-export const parseMisskeyText = (text: string, emojis: Emoji[]): string => {
+export const parseMisskeyText = (text: string, emojis: MisskeyEntities.CustomEmoji[]): string => {
   const parsedTextHtml = text
     // emojiをimgに変換
     ?.replace(/:(\w+):/g, (match, p1) => {

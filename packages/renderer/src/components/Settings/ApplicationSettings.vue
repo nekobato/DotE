@@ -11,14 +11,6 @@ const opacity = ref();
 const onChangeOpacity = async () => {
   settingsStore.setOpacity(opacity.value);
 };
-
-settingsStore.$onAction(({ name, after }) => {
-  after(() => {
-    if (name === "init") {
-      opacity.value = settingsStore.opacity;
-    }
-  });
-});
 </script>
 
 <template>

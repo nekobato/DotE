@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import router from "@/router";
+import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { onMounted } from "vue";
 import { RouterView } from "vue-router";
 
+const store = useStore();
 const settingsStore = useSettingsStore();
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
@@ -36,7 +38,7 @@ onMounted(() => {
 });
 </script>
 <template>
-  <RouterView :class="{ haze: settingsStore.hazyMode === 'haze' }" />
+  <RouterView :class="{ haze: store.settings.hazyMode === 'haze' }" />
 </template>
 <style lang="scss" scoped>
 .haze {

@@ -14,8 +14,7 @@
     "build": "NODE_ENV=production electron-builder --config ./electron-builder.config.js",
     "publish": "NODE_ENV=production electron-builder --publish always --config ./electron-builder.config.js",
     "debug": "npm run prebuild && vite ./packages/renderer",
-    "electron:generate-icons": "electron-icon-builder --input=./public/icon.png --output=build --flatten",
-    "typecheck": "tsc"
+    "electron:generate-icons": "electron-icon-builder --input=./public/icon.png --output=build --flatten"
   },
   "main": "dist/main/index.cjs",
   "dependencies": {
@@ -40,6 +39,7 @@
     "electron-updater": "^6.1.1",
     "element-plus": "^2.3.8",
     "mfm-js": "^0.23.3",
+    "misskey-js": "^0.0.16",
     "node-gyp": "^9.3.1",
     "pinia": "^2.1.6",
     "postcss-html": "^1.5.0",

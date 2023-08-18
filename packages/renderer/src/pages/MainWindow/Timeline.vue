@@ -25,8 +25,9 @@ const state = reactive({
 const observeWebSocketConnection = () => {
   state.webSocketId = uuid();
   if (!timelineStore.currentUser) throw new Error("No user");
+  if (!timelineStore.currentInstance) throw new Error("No instance");
   ws = connectToMisskeyStream(
-    timelineStore.currentUser.instanceUrl?.replace(/https?:\/\//, ""),
+    timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
     timelineStore.currentUser.token,
   );
   ws.onopen = () => {
@@ -45,10 +46,10 @@ const observeWebSocketConnection = () => {
   };
   ws.onclose = () => {
     console.log("ws:close");
-    if (timelineStore.currentUser) {
+    if (timelineStore.currentUser && timelineStore.currentInstance) {
       ws = connectToMisskeyStream(
-        timelineStore.currentUser?.instanceUrl?.replace(/https?:\/\//, ""),
-        timelineStore.currentUser?.token,
+        timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+        timelineStore.currentUser.token,
       );
       observeWebSocketConnection();
     }
@@ -56,8 +57,8 @@ const observeWebSocketConnection = () => {
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.body.type === "note") {
-      if (timelineStore.current) {
-        const note = parseMisskeyNotes([data.body.body], timelineStore.currentInstance!.misskey.emojis)[0];
+      if (timelineStore.current && timelineStore.currentInstance) {
+        const note = parseMisskeyNotes([data.body.body], timelineStore.currentInstance.misskey!.emojis)[0];
         timelineStore.addPost(note);
 
         // スクロール制御
@@ -127,13 +128,13 @@ onBeforeUnmount(() => {
   <div class="page-container hazy-timeline-container">
     <div
       class="timeline-container"
-      v-if="timelineStore.currentPosts.length"
+      v-if="timelineStore.current.posts.length"
       ref="timelineContainer"
       :class="{
         'is-adding': state.isAdding,
       }"
     >
-      <Post class="post-item" v-for="post in timelineStore.currentPosts" :post="post" />
+      <Post class="post-item" v-for="post in timelineStore.current.posts" :post="post" />
     </div>
     <HazyLoading v-else />
   </div>

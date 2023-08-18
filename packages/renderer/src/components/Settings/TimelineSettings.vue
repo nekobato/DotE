@@ -3,7 +3,8 @@ import { onMounted, ref } from "vue";
 import SectionTitle from "../Post/SectionTitle.vue";
 import { ElSelect, ElOption } from "element-plus";
 import { useUsersStore } from "@/store/users";
-import { useTimelineStore, TimelineSetting, Timeline, ChannelName } from "@/store/timeline";
+import { useTimelineStore } from "@/store/timeline";
+import { ChannelName, TimelineSetting } from "@/store";
 
 const channelList = [
   {
@@ -55,8 +56,8 @@ const onChangeChannel = async (channel: ChannelName, timelineId: number) => {
   }
 };
 
-const updateTimeline = async (timeline: Timeline) => {
-  await timelineStore.setTimeline({
+const updateTimeline = async (timeline: TimelineSetting) => {
+  await timelineStore.updateTimeline({
     id: timeline.id,
     userId: timeline.userId,
     channel: timeline?.channel || "misskey:homeTimeline",
@@ -65,17 +66,6 @@ const updateTimeline = async (timeline: Timeline) => {
 };
 
 onMounted(async () => {
-  await timelineStore.init();
-  await usersStore.init();
-
-  if (timelineStore.$state.timelines.length === 0 && usersStore.$state.length !== 0) {
-    await timelineStore.addTimeline({
-      userId: usersStore.$state[0].id,
-      channel: "misskey:homeTimeline",
-      options: {},
-    });
-  }
-
   timelineSettings.value.push(
     ...timelineStore.timelines.map((timeline) => {
       console.log(timeline);
@@ -101,9 +91,9 @@ onMounted(async () => {
         <div class="attachments form-actions">
           <ElSelect v-model="timeline.userId" size="small">
             <ElOption
-              v-for="user in usersStore.$state"
+              v-for="user in usersStore.users"
               :key="user.id"
-              :label="`${user.name}@${user.instanceUrl.replace('https://', '')}`"
+              :label="`${user.name}@${usersStore.userInstance(user.id).url.replace('https://', '')}`"
               :value="user.id"
               @change="onChangeUser(user.id, timeline.id)"
             />

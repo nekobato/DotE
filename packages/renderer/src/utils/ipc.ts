@@ -1,4 +1,3 @@
-import { ChannelName } from "@/store/timeline";
 import { Instance, Timeline, User } from "@prisma/client";
 
 export const ipcSend = (event: string, payload?: object) => {
@@ -11,16 +10,7 @@ type invokeEvents = {
     method: string;
   } & { [key: string]: any };
   "db:get-users": void;
-  "db:upsert-user": {
-    id?: number;
-    instanceUserId: string;
-    instanceUrl: string;
-    instanceType: string;
-    token: string;
-    name: string;
-    username: string;
-    avatarUrl: string;
-  };
+  "db:upsert-user": Omit<User, "id"> | Partial<User>;
   "db:delete-user": {
     id: number;
   };
@@ -36,7 +26,6 @@ type invokeEvents = {
     id?: number;
     url: string;
     name: string;
-    description: string;
     iconUrl: string;
   };
   "settings:set": {

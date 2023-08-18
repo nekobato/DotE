@@ -1,28 +1,19 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
+import { useStore } from ".";
 
-export const useSettingsStore = defineStore({
-  id: "settings",
-  state: () => ({
-    opacity: 50 as number,
-    hazyMode: "show" as "show" | "haze" | "hide",
-    showOnAllWorkspaces: true as boolean,
-  }),
-  actions: {
-    async init() {
-      const result = await ipcInvoke("settings:all");
-      this.$state = {
-        ...this.$state,
-        ...result,
-      };
-    },
-    async setOpacity(opacity: number) {
-      this.$state.opacity = opacity;
-      await ipcInvoke("settings:set", { key: "opacity", value: opacity.toString() });
-    },
-    async setHazyMode(mode: "show" | "haze" | "hide") {
-      this.$state.hazyMode = mode;
-      await ipcInvoke("settings:set", { key: "hazyMode", value: mode });
-    },
-  },
+export const useSettingsStore = defineStore("settings", () => {
+  const store = useStore();
+
+  const setOpacity = async (opacity: number) => {
+    store.$state.settings.opacity = opacity;
+    await ipcInvoke("settings:set", { key: "opacity", value: opacity.toString() });
+  };
+
+  const setHazyMode = async (mode: "show" | "haze" | "hide") => {
+    store.$state.settings.hazyMode = mode;
+    await ipcInvoke("settings:set", { key: "hazyMode", value: mode });
+  };
+
+  return { setOpacity, setHazyMode };
 });

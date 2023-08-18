@@ -1,54 +1,45 @@
-import { Emoji } from "@/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
+import { entities } from "misskey-js";
 import { defineStore } from "pinia";
-import { useUsersStore } from "./users";
-import { useTimelineStore } from "./timeline";
+import { useStore } from ".";
+import { hazyMisskeyPermissionString } from "@/utils/hazy";
 
-export type Instance = {
-  instanceType: "misskey";
-  instanceUrl: string;
-  misskey: {
-    emojis: Emoji[];
+export const useInstanceStore = defineStore("instance", () => {
+  const store = useStore();
+
+  const createInstance = async (instanceUrl: string) => {
+    const meta = await fetchMisskeyMeta(instanceUrl);
+    const result = await ipcInvoke("db:upsert-instance", {
+      url: meta.uri,
+      name: meta.name || "",
+      iconUrl: meta.iconUrl || "",
+    });
+    return result;
   };
-};
 
-export const useInstanceStore = defineStore({
-  id: "instance",
-  state: () => [] as Instance[],
-  getters: {
-    currentTimelineEmojis(state) {
-      const timelineStore = useTimelineStore();
-      const instance = state.find((instance) => instance.instanceUrl === timelineStore.currentUser?.instanceUrl);
-      return instance?.misskey.emojis || [];
-    },
-  },
-  actions: {
-    init() {
-      const usersStore = useUsersStore();
-      this.$state = usersStore.$state.reduce((acc, user) => {
-        if (user.instanceType === "misskey") {
-          acc.push({
-            instanceType: user.instanceType,
-            instanceUrl: user.instanceUrl,
-            misskey: {
-              emojis: [],
-            },
-          });
-        }
-        return acc;
-      }, [] as Instance[]);
-    },
-    async fetchMisskeyEmoji(instanceUrl: string) {
-      const result = await ipcInvoke("api", {
-        method: "misskey:getEmojis",
-        instanceUrl,
-      });
-      const instance = this.$state.find((instance) => instance.instanceUrl === instanceUrl);
-      if (instance) {
-        instance.misskey.emojis = result.emojis;
-      } else {
-        throw new Error("instance not found");
-      }
-    },
-  },
+  const findInstance = (url: string) => {
+    const instance = store.$state.instances.find((instance) => {
+      return instance.url === url;
+    });
+    return instance;
+  };
+
+  const fetchMisskeyMeta = async (instanceUrl: string) => {
+    const result: entities.DetailedInstanceMetadata = await ipcInvoke("api", {
+      method: "misskey:getMeta",
+      instanceUrl,
+    });
+    return result;
+  };
+
+  const getMisskeyAuthUrl = async (instanceUrl: string, sessionId: string) => {
+    const url = new URL(`/miauth/${sessionId}`, instanceUrl);
+    url.search = new URLSearchParams({
+      name: "hazy",
+      permission: hazyMisskeyPermissionString(),
+    }).toString();
+    return url.toString();
+  };
+
+  return { createInstance, findInstance, fetchMisskeyMeta, getMisskeyAuthUrl };
 });

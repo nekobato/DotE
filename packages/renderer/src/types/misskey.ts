@@ -1,3 +1,5 @@
+export { entities as MisskeyEntities } from "misskey-js";
+
 export type Emoji = {
   aliases: string[];
   name: string;
@@ -8,17 +10,6 @@ export type Emoji = {
 export type Field = {
   name: string;
   value: string;
-};
-
-export type Role = {
-  id: string;
-  name: string;
-  color: string | null;
-  iconUrl: string | null;
-  description: string;
-  isModerator: boolean;
-  isAdministrator: boolean;
-  displayOrder: number;
 };
 
 export type MisskeyUser = {

@@ -1,7 +1,8 @@
 import { ipcInvoke } from "@/utils/ipc";
-import { Instance, User } from "@prisma/client";
+import { Instance as InstanceTable, User } from "@prisma/client";
 import { Post } from "@/types/Post";
 import { defineStore } from "pinia";
+import { Emoji, MisskeyEntities } from "@/types/misskey";
 
 export type ChannelName =
   | "misskey:homeTimeline"
@@ -37,6 +38,12 @@ export type Timeline = TimelineSetting & {
   posts: Post[];
 };
 
+export type Instance = InstanceTable & {
+  misskey?: {
+    emojis: MisskeyEntities.CustomEmoji[];
+  };
+};
+
 // DBから取得した生データ全て
 export const useStore = defineStore({
   id: "store",
@@ -59,6 +66,7 @@ export const useStore = defineStore({
     async init() {
       await this.initUsers();
       await this.initInstances();
+      await this.initMisskeyEmojis();
       await this.initTimelines();
       await this.initSettings();
     },
@@ -66,7 +74,32 @@ export const useStore = defineStore({
       this.$state.users = await ipcInvoke("db:get-users");
     },
     async initInstances() {
-      this.$state.instances = await ipcInvoke("db:get-instance-all");
+      const instances = await ipcInvoke("db:get-instance-all");
+      this.$state.instances = instances.map((instance) => {
+        if (instance.type === "misskey") {
+          return {
+            ...instance,
+            misskey: {
+              emojis: [],
+            },
+          };
+        }
+        return instance;
+      });
+    },
+    async initMisskeyEmojis() {
+      return Promise.all(
+        this.$state.instances.map(async (instance) => {
+          if (instance.type === "misskey") {
+            const result = await ipcInvoke("api", {
+              method: "misskey:getEmojis",
+              instanceUrl: instance.url,
+            });
+            instance.misskey!.emojis = result;
+          }
+          return instance;
+        }),
+      );
     },
     async initTimelines() {
       const timelines = await ipcInvoke("db:get-timeline-all");
