@@ -12,9 +12,7 @@ import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 let ws: WebSocket | null = null;
 
-const store = useStore();
 const timelineStore = useTimelineStore();
-
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
 const state = reactive({
@@ -111,6 +109,7 @@ onMounted(async () => {
     //   );
     // });
   } else {
+    console.log("No user");
     router.replace("/main/settings");
     ipcSend("set-hazy-mode", { mode: "settings", reflect: true });
   }

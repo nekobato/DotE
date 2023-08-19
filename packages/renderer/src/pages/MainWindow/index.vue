@@ -2,11 +2,10 @@
 import router from "@/router";
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
-import { onMounted } from "vue";
+import { onBeforeMount, onMounted } from "vue";
 import { RouterView } from "vue-router";
 
 const store = useStore();
-store.init();
 const settingsStore = useSettingsStore();
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
@@ -31,7 +30,8 @@ window.ipc.on("resize", (_, bounds) => {
   window.localStorage.setItem("bounds", JSON.stringify(bounds));
 });
 
-onMounted(() => {
+onBeforeMount(async () => {
+  await store.init();
   const bounds = window.localStorage.getItem("bounds");
   if (bounds) {
     window.ipc.send("resize", bounds);

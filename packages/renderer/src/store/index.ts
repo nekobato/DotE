@@ -48,6 +48,7 @@ export type Instance = InstanceTable & {
 export const useStore = defineStore({
   id: "store",
   state: () => ({
+    hasInit: false,
     users: [] as User[],
     instances: [] as Instance[],
     timelines: [] as Timeline[],
@@ -63,6 +64,7 @@ export const useStore = defineStore({
       await this.initMisskeyEmojis();
       await this.initTimelines();
       await this.initSettings();
+      this.$state.hasInit = true;
     },
     async initUsers() {
       this.$state.users = await ipcInvoke("db:get-users");
