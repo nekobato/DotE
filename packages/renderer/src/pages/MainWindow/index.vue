@@ -6,6 +6,7 @@ import { onMounted } from "vue";
 import { RouterView } from "vue-router";
 
 const store = useStore();
+store.init();
 const settingsStore = useSettingsStore();
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {

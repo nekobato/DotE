@@ -15,19 +15,9 @@ type invokeEvents = {
     id: number;
   };
   "db:get-timeline-all": void;
-  "db:set-timeline": {
-    id?: number;
-    userId: number;
-    channel: string;
-    options: string;
-  };
+  "db:set-timeline": Omit<Timeline, "id"> | (Partial<Timeline> & { id: number });
   "db:get-instance-all": void;
-  "db:upsert-instance": {
-    id?: number;
-    url: string;
-    name: string;
-    iconUrl: string;
-  };
+  "db:upsert-instance": (Partial<Instance> & { id: number }) | Omit<Instance, "id">;
   "settings:set": {
     key: string;
     value: string;

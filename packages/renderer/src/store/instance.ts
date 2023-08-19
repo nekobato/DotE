@@ -10,6 +10,7 @@ export const useInstanceStore = defineStore("instance", () => {
   const createInstance = async (instanceUrl: string) => {
     const meta = await fetchMisskeyMeta(instanceUrl);
     const result = await ipcInvoke("db:upsert-instance", {
+      type: "misskey",
       url: meta.uri,
       name: meta.name || "",
       iconUrl: meta.iconUrl || "",
@@ -32,7 +33,7 @@ export const useInstanceStore = defineStore("instance", () => {
     return result;
   };
 
-  const getMisskeyAuthUrl = async (instanceUrl: string, sessionId: string) => {
+  const getMisskeyAuthUrl = (instanceUrl: string, sessionId: string) => {
     const url = new URL(`/miauth/${sessionId}`, instanceUrl);
     url.search = new URLSearchParams({
       name: "hazy",

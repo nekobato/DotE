@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useStore } from "@/store";
 import { useInstanceStore } from "@/store/instance";
 import { useUsersStore } from "@/store/users";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
@@ -7,6 +8,7 @@ import { v4 as uuid } from "uuid";
 import { ref } from "vue";
 import SectionTitle from "../Post/SectionTitle.vue";
 
+const store = useStore();
 const usersStore = useUsersStore();
 const instanceStore = useInstanceStore();
 
@@ -36,10 +38,11 @@ const startAuth = (target: "misskey" | "mastodon") => {
 };
 
 const checkMiAuth = async () => {
+  const misskey = state.value.actions.newAccount.misskey;
   const check = await ipcInvoke("api", {
     method: "misskey:checkMiAuth",
-    instanceUrl: state.value.actions.newAccount.misskey.instanceUrl.value,
-    sessionId: state.value.actions.newAccount.misskey.sessionId,
+    instanceUrl: misskey.instanceUrl.value,
+    sessionId: misskey.sessionId,
   });
 
   usersStore.createUser({
@@ -47,7 +50,7 @@ const checkMiAuth = async () => {
     username: check.user.username,
     avatarUrl: check.user.avatarUrl,
     token: check.token,
-    instanceUrl: state.value.actions.newAccount.misskey.instanceUrl.value,
+    instanceUrl: misskey.instanceUrl.value,
   });
   state.value.actions.newAccount.misskey.progress = "default";
 };
@@ -91,11 +94,11 @@ const resetStatues = () => {
         <span class="nickname">Misskey</span>
       </div>
     </div>
-    <div class="hazy-post account indent-1" v-for="user in usersStore.users" :key="user.username">
+    <div class="hazy-post account indent-1" v-for="user in store.users" :key="user.username">
       <img :src="user.avatarUrl || ''" class="hazy-avatar" />
       <div class="content">
-        <span class="nickname">{{ user.name }}</span>
-        <span class="instance">@{{ usersStore.userInstance(user.id).url.replace("https://", "") }}</span>
+        <span class="nickname">{{ user.username }}</span>
+        <span class="instance">@{{ usersStore.findInstance(user.instanceId)?.url.replace("https://", "") }}</span>
       </div>
       <div class="form-actions">
         <button

@@ -1,5 +1,5 @@
 import { Post } from "@/types/Post";
-import { Emoji } from "@/types/misskey";
+import { Emoji, MisskeyEntities } from "@/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { parseMisskeyNote, parseMisskeyNotes } from "@/utils/misskey";
 import { useStorage } from "@vueuse/core";
@@ -36,7 +36,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       // misskeyなら という条件分岐が必要
       store.timelines[currentIndex.value].posts = parseMisskeyNotes(
         data,
-        currentInstance.value.misskey?.emojis as Emoji[],
+        currentInstance.value.misskey?.emojis as MisskeyEntities.CustomEmoji[],
       );
     } else {
       throw new Error("user not found");

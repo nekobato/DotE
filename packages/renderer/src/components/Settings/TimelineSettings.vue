@@ -93,7 +93,7 @@ onMounted(async () => {
             <ElOption
               v-for="user in usersStore.users"
               :key="user.id"
-              :label="`${user.name}@${usersStore.userInstance(user.id).url.replace('https://', '')}`"
+              :label="`${user.name}@${usersStore.findInstance(user.instanceId)?.url.replace('https://', '')}`"
               :value="user.id"
               @change="onChangeUser(user.id, timeline.id)"
             />

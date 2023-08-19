@@ -95,8 +95,6 @@ const observeWebSocketConnection = () => {
 };
 
 onMounted(async () => {
-  store.init();
-
   if (timelineStore.currentUser) {
     await timelineStore.fetchPosts();
 
@@ -128,7 +126,7 @@ onBeforeUnmount(() => {
   <div class="page-container hazy-timeline-container">
     <div
       class="timeline-container"
-      v-if="timelineStore.current.posts.length"
+      v-if="timelineStore.current?.posts.length"
       ref="timelineContainer"
       :class="{
         'is-adding': state.isAdding,

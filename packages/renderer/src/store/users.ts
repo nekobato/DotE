@@ -66,21 +66,12 @@ export const useUsersStore = defineStore("users", () => {
     return result;
   };
 
-  const userInstance = (userId: number) => {
-    const user = users.find((user) => {
-      return user.id === userId;
-    });
-    if (!user) {
-      throw new Error("user not found");
-    }
+  const findInstance = (instanceId?: number) => {
     const instance = store.$state.instances.find((instance) => {
-      return instance.id === user.instanceId;
+      return instance.id === instanceId;
     });
-    if (!instance) {
-      throw new Error("instance not found");
-    }
     return instance;
   };
 
-  return { users, isEmpty, deleteUser, createUser, postMisskeyAuth, userInstance };
+  return { users, isEmpty, deleteUser, createUser, postMisskeyAuth, findInstance };
 });

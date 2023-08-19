@@ -23,6 +23,8 @@ export const upsertUser = async (user: User) => {
   if (!user.name) throw new Error("name is required");
   if (!user.username) throw new Error("username is required");
 
+  console.log("upsertUser", user);
+
   const existingUser = await prisma.user.findFirst({
     where: {
       name: user.name,
@@ -58,6 +60,8 @@ export const upsertUser = async (user: User) => {
 export const deleteUser = async (userId: number) => {
   if (!userId) throw new Error("userId is required");
 
+  console.log("deleteUser", userId);
+
   return await prisma.user.delete({
     where: {
       id: Number(userId),
@@ -68,6 +72,8 @@ export const deleteUser = async (userId: number) => {
 export const setSetting = async (key: string, value: string) => {
   if (!key) throw new Error("key is required");
   if (!value) throw new Error("value is required");
+
+  console.log("setSetting", key, value);
 
   return await prisma.settings.upsert({
     where: {
@@ -101,6 +107,8 @@ export function setTimeline(data: { id?: number; userId: number; channel: string
   if (!userId) throw new Error("userId is required");
   if (!channel) throw new Error("channel is required");
   if (!options) throw new Error("options is required");
+
+  console.log("setTimeline", data);
 
   if (id) {
     return prisma.timeline.update({
@@ -143,6 +151,8 @@ export const upsertInstance = async (instance: {
   if (!name) throw new Error("name is required");
   if (!url) throw new Error("url is required");
   if (!iconUrl) throw new Error("iconUrl is required");
+
+  console.log("upsertInstance", instance);
 
   if (id) {
     return await prisma.instance.update({

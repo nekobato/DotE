@@ -56,12 +56,6 @@ export const useStore = defineStore({
       hazyMode: "show" as "show" | "haze" | "hide",
     },
   }),
-  getters: {
-    users: (state) => state.users,
-    instances: (state) => state.instances,
-    timelines: (state) => state.timelines,
-    settings: (state) => state.settings,
-  },
   actions: {
     async init() {
       await this.initUsers();
@@ -72,6 +66,7 @@ export const useStore = defineStore({
     },
     async initUsers() {
       this.$state.users = await ipcInvoke("db:get-users");
+      console.log(this.$state.users);
     },
     async initInstances() {
       const instances = await ipcInvoke("db:get-instance-all");
@@ -95,7 +90,7 @@ export const useStore = defineStore({
               method: "misskey:getEmojis",
               instanceUrl: instance.url,
             });
-            instance.misskey!.emojis = result;
+            instance.misskey!.emojis = result.emojis;
           }
           return instance;
         }),

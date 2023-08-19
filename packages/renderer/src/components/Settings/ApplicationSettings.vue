@@ -2,8 +2,10 @@
 import { Icon } from "@iconify/vue";
 import SectionTitle from "../Post/SectionTitle.vue";
 import { useSettingsStore } from "@/store/settings";
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
+import { useStore } from "@/store";
 
+const store = useStore();
 const settingsStore = useSettingsStore();
 
 const opacity = ref();
@@ -11,6 +13,10 @@ const opacity = ref();
 const onChangeOpacity = async () => {
   settingsStore.setOpacity(opacity.value);
 };
+
+onMounted(() => {
+  opacity.value = store.settings.opacity || 50;
+});
 </script>
 
 <template>

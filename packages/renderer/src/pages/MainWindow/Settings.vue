@@ -1,20 +1,12 @@
 <script setup lang="ts">
-import AccountSettings from "@/components/Settings/AccountSettings.vue";
-import TimelineSettings from "@/components/Settings/TimelineSettings.vue";
-import ApplicationSettings from "@/components/Settings/ApplicationSettings.vue";
 import SectionTitle from "@/components/Post/SectionTitle.vue";
+import AccountSettings from "@/components/Settings/AccountSettings.vue";
 import ApplicationInformation from "@/components/Settings/ApplicationInformation.vue";
+import ApplicationSettings from "@/components/Settings/ApplicationSettings.vue";
+import TimelineSettings from "@/components/Settings/TimelineSettings.vue";
 import { useUsersStore } from "@/store/users";
-import { onMounted } from "vue";
-import { useSettingsStore } from "@/store/settings";
 
 const usersStore = useUsersStore();
-const settingsStore = useSettingsStore();
-
-onMounted(async () => {
-  await usersStore.init();
-  await settingsStore.init();
-});
 </script>
 
 <template>
