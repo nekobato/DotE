@@ -8,15 +8,9 @@ import { useStore } from "@/store";
 const store = useStore();
 const settingsStore = useSettingsStore();
 
-const opacity = ref();
-
-const onChangeOpacity = async () => {
-  settingsStore.setOpacity(opacity.value);
+const onChangeOpacity = async (e: Event) => {
+  await settingsStore.setOpacity(Number((e.target as HTMLInputElement)?.value));
 };
-
-onMounted(() => {
-  opacity.value = store.settings.opacity || 50;
-});
 </script>
 
 <template>
@@ -26,9 +20,23 @@ onMounted(() => {
       <div class="content">
         <span class="title"><Icon icon="ion:eye-outline" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
-      <div class="form-actions" :class="{ 'hazy-unvisible': !opacity }">
-        <input type="range" min="0" max="100" class="nn-range" v-model="opacity" @change="onChangeOpacity" />
-        <input type="number" min="0" max="100" class="nn-text-field" v-model="opacity" @change="onChangeOpacity" />
+      <div class="form-actions" v-if="store.settings.opacity">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          class="nn-range"
+          :value="store.settings.opacity"
+          @change="onChangeOpacity"
+        />
+        <input
+          type="number"
+          min="0"
+          max="100"
+          class="nn-text-field"
+          :value="store.settings.opacity"
+          @change="onChangeOpacity"
+        />
       </div>
     </div>
   </div>

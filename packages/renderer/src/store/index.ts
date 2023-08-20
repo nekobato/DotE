@@ -53,7 +53,7 @@ export const useStore = defineStore({
     instances: [] as Instance[],
     timelines: [] as Timeline[],
     settings: {
-      opacity: 50 as number,
+      opacity: undefined as number | undefined,
       hazyMode: "show" as "show" | "haze" | "hide",
     },
   }),
@@ -108,6 +108,7 @@ export const useStore = defineStore({
           posts: [],
         };
       });
+      console.log(this.$state.timelines);
     },
     async initSettings() {
       this.$state.settings = await ipcInvoke("settings:all");

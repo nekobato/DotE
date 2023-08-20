@@ -27,6 +27,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const fetchPosts = async () => {
     if (current.value && currentUser.value && currentInstance.value) {
+      store.timelines[currentIndex.value].posts = [];
       const data = await ipcInvoke("api", {
         method: methodOfChannel[current.value.channel] || methodOfChannel["misskey:homeTimeline"],
         instanceUrl: currentInstance.value?.url,
@@ -44,15 +45,13 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updateTimeline = async (timeline: TimelineSetting) => {
-    const index = store.timelines.findIndex((t) => t.id === timeline.id);
-    if (index === -1) return;
-    store.timelines[index] = { ...timeline, posts: [] };
     await ipcInvoke("db:set-timeline", {
       id: timeline.id,
       userId: timeline.userId,
       channel: timeline.channel,
       options: JSON.stringify(timeline.options),
     });
+    await store.initTimelines();
   };
 
   const createTimeline = async (timeline: Omit<TimelineSetting, "id">) => {

@@ -15,8 +15,6 @@ const props = defineProps({
   },
 });
 
-console.log(props.post.reactions);
-
 const postType = computed(() => {
   if (props.post.repost) {
     if (props.post.text) {

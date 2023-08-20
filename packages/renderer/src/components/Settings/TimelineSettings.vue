@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import SectionTitle from "../Post/SectionTitle.vue";
-import { ElSelect, ElOption } from "element-plus";
-import { useUsersStore } from "@/store/users";
+import { TimelineSetting, useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
-import { ChannelName, TimelineSetting } from "@/store";
+import { useUsersStore } from "@/store/users";
+import { ElOption, ElSelect } from "element-plus";
+import SectionTitle from "../Post/SectionTitle.vue";
 
 const channelList = [
   {
@@ -37,22 +36,21 @@ const channelList = [
   },
 ] as const;
 
+const store = useStore();
 const usersStore = useUsersStore();
 const timelineStore = useTimelineStore();
 
-const timelineSettings = ref<TimelineSetting[]>([]);
-
-const onChangeUser = async (userId: number, timelineId: number) => {
-  const newTimeline = timelineStore.timelines.find((timeline) => timeline.id === timelineId);
+const onChangeUser = async (timelineId: number) => {
+  const newTimeline = store.timelines.find((timeline) => timeline.id === timelineId);
   if (newTimeline) {
-    updateTimeline({ ...newTimeline, userId });
+    await updateTimeline(newTimeline);
   }
 };
 
-const onChangeChannel = async (channel: ChannelName, timelineId: number) => {
-  const newTimeline = timelineStore.timelines.find((timeline) => timeline.id === timelineId);
+const onChangeChannel = async (timelineId: number) => {
+  const newTimeline = store.timelines.find((timeline) => timeline.id === timelineId);
   if (newTimeline) {
-    updateTimeline({ ...newTimeline, channel });
+    await updateTimeline(newTimeline);
   }
 };
 
@@ -60,42 +58,27 @@ const updateTimeline = async (timeline: TimelineSetting) => {
   await timelineStore.updateTimeline({
     id: timeline.id,
     userId: timeline.userId,
-    channel: timeline?.channel || "misskey:homeTimeline",
-    options: timeline?.options || {},
+    channel: timeline?.channel,
+    options: timeline?.options,
   });
 };
-
-onMounted(async () => {
-  timelineSettings.value.push(
-    ...timelineStore.timelines.map((timeline) => {
-      console.log(timeline);
-      return {
-        id: timeline.id,
-        userId: timeline.userId,
-        channel: timeline.channel,
-        options: timeline.options,
-      };
-    }),
-  );
-});
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list" v-if="timelineStore.timelines.length !== 0">
+  <div class="account-settings hazy-post-list" v-if="store.timelines.length > 0">
     <SectionTitle title="タイムライン" />
-    <div class="accounts-container" v-for="timeline in timelineSettings" :key="timeline.id">
+    <div class="accounts-container" v-for="timeline in store.timelines" :key="timeline.id">
       <div class="hazy-post account indent-1">
         <div class="content">
           <span class="label">アカウント</span>
         </div>
         <div class="attachments form-actions">
-          <ElSelect v-model="timeline.userId" size="small">
+          <ElSelect v-model="timeline.userId" size="small" @change="onChangeUser(timeline.id)">
             <ElOption
-              v-for="user in usersStore.users"
+              v-for="user in store.users"
               :key="user.id"
               :label="`${user.name}@${usersStore.findInstance(user.instanceId)?.url.replace('https://', '')}`"
               :value="user.id"
-              @change="onChangeUser(user.id, timeline.id)"
             />
           </ElSelect>
         </div>
@@ -105,13 +88,12 @@ onMounted(async () => {
           <span class="label">チャンネル</span>
         </div>
         <div class="attachments form-actions">
-          <ElSelect v-model="timeline.channel" size="small">
+          <ElSelect v-model="timeline.channel" size="small" @change="onChangeChannel(timeline.id)">
             <ElOption
               v-for="channel in channelList"
               :key="channel.value"
               :label="channel.label"
               :value="channel.value"
-              @change="onChangeChannel(channel.value, timeline.id)"
             />
           </ElSelect>
         </div>

@@ -7,12 +7,12 @@ export const useSettingsStore = defineStore("settings", () => {
 
   const setOpacity = async (opacity: number) => {
     store.$state.settings.opacity = opacity;
-    await ipcInvoke("settings:set", { key: "opacity", value: opacity.toString() });
+    return await ipcInvoke("settings:set", { key: "opacity", value: opacity.toString() });
   };
 
   const setHazyMode = async (mode: "show" | "haze" | "hide") => {
     store.$state.settings.hazyMode = mode;
-    await ipcInvoke("settings:set", { key: "hazyMode", value: mode });
+    return await ipcInvoke("settings:set", { key: "hazyMode", value: mode });
   };
 
   return { setOpacity, setHazyMode };
