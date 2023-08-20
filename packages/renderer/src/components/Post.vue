@@ -86,6 +86,9 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
           <span class="username" v-html="props.post.user.name" />
           <div class="hazy-post-actions">
             <button class="hazy-post-action" @click="openPost">
+              <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
+            </button>
+            <button class="hazy-post-action" @click="openPost">
               <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
             </button>
           </div>

@@ -1,6 +1,9 @@
 import { PrismaClient, User } from "@prisma/client";
+import { migrate } from "./migration";
 
 const prisma = new PrismaClient();
+
+migrate(prisma);
 
 export const getAllSettings = async () => {
   const settings = await prisma.settings.findMany();

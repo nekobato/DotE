@@ -119,7 +119,8 @@ body,
   }
 
   .hazy-post-actions {
-    position: relative;
+    position: absolute;
+    right: 0;
     display: inline-flex;
     gap: 8px;
     align-items: center;
@@ -130,8 +131,6 @@ body,
   }
 
   .hazy-post-action {
-    position: absolute;
-    right: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;

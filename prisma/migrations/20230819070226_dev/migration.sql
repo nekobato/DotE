@@ -6,7 +6,11 @@ CREATE TABLE "User" (
     "avatarUrl" TEXT,
     "token" TEXT NOT NULL,
     "instanceId" INTEGER NOT NULL,
-    CONSTRAINT "User_instanceId_fkey" FOREIGN KEY ("instanceId") REFERENCES "Instance" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT "User_instanceId_fkey" FOREIGN KEY
+("instanceId") REFERENCES "Instance"
+("id") ON
+DELETE RESTRICT ON
+UPDATE CASCADE
 );
 
 -- CreateTable
@@ -34,7 +38,8 @@ CREATE TABLE "Post" (
 );
 
 -- CreateTable
-CREATE TABLE "Settings" (
+CREATE TABLE "Settings"
+(
     "key" TEXT NOT NULL,
     "value" TEXT NOT NULL
 );
