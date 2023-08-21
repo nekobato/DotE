@@ -35,6 +35,7 @@
     "electron-icon-builder": "^2.0.1",
     "electron-log": "^4.4.8",
     "electron-rebuild": "^3.2.9",
+    "electron-store": "^8.1.0",
     "electron-updater": "^6.1.1",
     "element-plus": "^2.3.8",
     "mfm-js": "^0.23.3",
