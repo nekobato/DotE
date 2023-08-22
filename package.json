@@ -37,7 +37,7 @@
     "electron-rebuild": "^3.2.9",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.1",
-    "element-plus": "^2.3.8",
+    "element-plus": "^2.3.9",
     "mfm-js": "^0.23.3",
     "misskey-js": "^0.0.16",
     "node-gyp": "^9.3.1",
