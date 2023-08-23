@@ -73,7 +73,7 @@ const updateTimeline = async (timeline: TimelineSetting) => {
           <span class="label">アカウント</span>
         </div>
         <div class="attachments form-actions">
-          <ElSelect v-model="timeline.userId" size="small" @change="onChangeUser(timeline.id)">
+          <ElSelect v-model="timeline.userId" size="small" @change="onChangeUser(timeline.id)" class="select">
             <ElOption
               v-for="user in store.users"
               :key="user.id"
@@ -88,7 +88,7 @@ const updateTimeline = async (timeline: TimelineSetting) => {
           <span class="label">チャンネル</span>
         </div>
         <div class="attachments form-actions">
-          <ElSelect v-model="timeline.channel" size="small" @change="onChangeChannel(timeline.id)">
+          <ElSelect v-model="timeline.channel" size="small" @change="onChangeChannel(timeline.id)" class="select">
             <ElOption
               v-for="channel in channelList"
               :key="channel.value"
@@ -143,6 +143,11 @@ const updateTimeline = async (timeline: TimelineSetting) => {
 .hazy-post {
   &.indent-1 {
     padding-left: 16px;
+  }
+}
+.form-actions {
+  .select {
+    width: 240px;
   }
 }
 </style>

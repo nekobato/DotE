@@ -69,6 +69,9 @@ const confirmDeleteAccount = async () => {
 
 const openMisskeyAuthLink = () => {
   state.value.actions.newAccount.misskey.sessionId = uuid();
+  /^https?:\/\//.test(state.value.actions.newAccount.misskey.instanceUrl.value) ||
+    (state.value.actions.newAccount.misskey.instanceUrl.value =
+      "https://" + state.value.actions.newAccount.misskey.instanceUrl.value);
   const url = instanceStore.getMisskeyAuthUrl(
     state.value.actions.newAccount.misskey.instanceUrl.value,
     state.value.actions.newAccount.misskey.sessionId,
@@ -97,7 +100,7 @@ const resetStatues = () => {
     <div class="hazy-post account indent-1" v-for="user in store.users" :key="user.username">
       <img :src="user.avatarUrl || ''" class="hazy-avatar" />
       <div class="content">
-        <span class="nickname">{{ user.username }}</span>
+        <span class="nickname">{{ user.name }}</span>
         <span class="instance">@{{ usersStore.findInstance(user.instanceId)?.url.replace("https://", "") }}</span>
       </div>
       <div class="form-actions">

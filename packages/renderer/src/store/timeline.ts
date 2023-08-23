@@ -29,11 +29,12 @@ export const useTimelineStore = defineStore("timeline", () => {
     if (current.value && currentUser.value && currentInstance.value) {
       store.timelines[currentIndex.value].posts = [];
       const data = await ipcInvoke("api", {
-        method: methodOfChannel[current.value.channel] || methodOfChannel["misskey:homeTimeline"],
+        method: methodOfChannel[current.value.channel],
         instanceUrl: currentInstance.value?.url,
         token: currentUser.value.token,
         limit: 40,
       });
+      console.log(data);
       // misskeyなら という条件分岐が必要
       store.timelines[currentIndex.value].posts = parseMisskeyNotes(
         data,

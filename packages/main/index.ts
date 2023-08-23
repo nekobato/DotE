@@ -1,4 +1,4 @@
-import electron, { app, BrowserWindow, globalShortcut, ipcMain, Menu, protocol, Tray } from "electron";
+import electron, { app, BrowserWindow, globalShortcut, ipcMain, Menu, protocol, safeStorage, Tray } from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createMenuWindow } from "./windows/menuWindow";
 import { createPostWindow } from "./windows/postWindow";
@@ -8,7 +8,6 @@ import { release } from "os";
 import menuTemplate from "./menu";
 import { setTrayIcon } from "./tray-icon";
 import * as db from "./db";
-import { setupData } from "./model";
 import { apiRequest } from "./api";
 import { autoUpdater } from "electron-updater";
 
@@ -62,11 +61,6 @@ app.on("ready", async () => {
     const data = payload ? JSON.parse(payload) : null;
     console.log(event, data);
     switch (event) {
-      case "setup":
-        const result = await setupData();
-        mainWindow?.webContents.send("setup", {
-          ...result,
-        });
       case "set-hazy-mode":
         menuWindow?.webContents.send("set-hazy-mode", data);
         switch (data.mode) {
@@ -143,7 +137,7 @@ app.on("ready", async () => {
           throw new Error(`${data.method} is not defined method.`);
         }
       case "db:get-users":
-        return await db.getUsers();
+        return await db.getUserAll();
       case "db:upsert-user":
         return await db.upsertUser(data);
       case "db:delete-user":
@@ -159,7 +153,7 @@ app.on("ready", async () => {
       case "settings:set":
         return await db.setSetting(data.key, data.value);
       case "settings:all":
-        return await db.getAllSettings();
+        return await db.getSettingAll();
       default:
         throw new Error(`${event} is not defined event.`);
     }

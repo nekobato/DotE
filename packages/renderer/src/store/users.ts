@@ -32,7 +32,7 @@ export const useUsersStore = defineStore("users", () => {
     if (instance) {
       instanceId = instance.id;
     } else {
-      const newInstance = await instanceStore.createInstance(user.instanceUrl);
+      const newInstance = await instanceStore.createInstance(user.instanceUrl, user.token);
       instanceId = newInstance.id;
     }
 

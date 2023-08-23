@@ -7,8 +7,8 @@ import { hazyMisskeyPermissionString } from "@/utils/hazy";
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
 
-  const createInstance = async (instanceUrl: string) => {
-    const meta = await fetchMisskeyMeta(instanceUrl);
+  const createInstance = async (instanceUrl: string, token: string) => {
+    const meta = await fetchMisskeyMeta(instanceUrl, token);
     const result = await ipcInvoke("db:upsert-instance", {
       type: "misskey",
       url: meta.uri,
@@ -25,10 +25,11 @@ export const useInstanceStore = defineStore("instance", () => {
     return instance;
   };
 
-  const fetchMisskeyMeta = async (instanceUrl: string) => {
+  const fetchMisskeyMeta = async (instanceUrl: string, token: string) => {
     const result: entities.DetailedInstanceMetadata = await ipcInvoke("api", {
       method: "misskey:getMeta",
       instanceUrl,
+      token,
     });
     return result;
   };

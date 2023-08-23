@@ -1,104 +1,107 @@
-import { PrismaClient, User } from "@prisma/client";
-import { migrate } from "./migration";
+import { safeStorage } from "electron";
+import Store from "electron-store";
+import { v4 as uuid } from "uuid";
 
-const prisma = new PrismaClient();
-
-migrate(prisma);
-
-export const getAllSettings = async () => {
-  const settings = await prisma.settings.findMany();
-  return settings.reduce((acc, cur) => {
-    return { ...acc, [cur.key]: cur.value };
-  }, {});
+export type StoreSchema = {
+  timeline: {
+    id: string; // uuid
+    userId: string;
+    channel: string;
+    options: string;
+  }[];
+  instance: {
+    id: string; // uuid
+    type: "misskey" | "mastodon";
+    name: string;
+    url: string;
+    iconUrl: string;
+  }[];
+  user: {
+    id: string; // uuid
+    instanceId: string; // uuid
+    name: string;
+    token: string;
+    avatarUrl: string;
+  }[];
+  setting: {
+    opacity: number;
+    hazyMode: "show" | "haze" | "hide";
+  };
 };
 
-export const getUsers = () => {
-  return prisma.user.findMany({
-    include: {
-      instance: true,
-    },
-  });
-};
-
-export const upsertUser = async (user: User) => {
-  if (!user.instanceId) throw new Error("instanceId is required");
-  if (!user.token) throw new Error("token is required");
-  if (!user.name) throw new Error("name is required");
-  if (!user.username) throw new Error("username is required");
-
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      name: user.name,
-      instanceId: user.instanceId,
-    },
-  });
-
-  if (existingUser) {
-    return await prisma.user.update({
-      where: {
-        id: existingUser.id,
+const schema: Store.Schema<StoreSchema> = {
+  timeline: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        userId: { type: "string" },
+        channel: { type: "string" },
+        options: { type: "string" },
       },
-      data: {
-        token: user.token,
-        name: user.name,
-        username: user.username,
-        avatarUrl: user.avatarUrl,
+      required: ["id", "userId", "channel", "options"],
+    },
+  },
+  instance: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        type: { type: "string" },
+        name: { type: "string" },
+        url: { type: "string" },
+        iconUrl: { type: "string" },
       },
-    });
-  } else {
-    return await prisma.user.create({
-      data: {
-        token: user.token,
-        name: user.name,
-        username: user.username,
-        avatarUrl: user.avatarUrl,
-        instanceId: user.instanceId,
+      required: ["id", "type", "name", "url", "iconUrl"],
+    },
+  },
+  user: {
+    type: "array",
+    items: {
+      type: "object",
+      properties: {
+        id: { type: "string" },
+        instanceId: { type: "string" },
+        name: { type: "string" },
+        token: { type: "string" },
+        avatarUrl: { type: "string" },
       },
-    });
-  }
+      required: ["id", "instanceId", "name", "token", "avatarUrl"],
+    },
+  },
+  setting: {
+    type: "object",
+    properties: {
+      opacity: { type: "number" },
+      hazyMode: { type: "string" },
+    },
+  },
 };
 
-export const deleteUser = async (userId: number) => {
-  if (!userId) throw new Error("userId is required");
-
-  return await prisma.user.delete({
-    where: {
-      id: Number(userId),
+export const store = new Store<StoreSchema>({
+  schema,
+  defaults: {
+    timeline: [],
+    instance: [],
+    user: [],
+    setting: {
+      opacity: 50,
+      hazyMode: "show",
     },
-  });
+  },
+});
+
+// Actions
+
+// Timeline
+
+export const getTimelineAll = () => {
+  return store.get("timeline");
 };
 
-export const setSetting = async (key: string, value: string) => {
-  if (!key) throw new Error("key is required");
-  if (!value) throw new Error("value is required");
-
-  return await prisma.settings.upsert({
-    where: {
-      key: key,
-    },
-    update: {
-      value: value,
-    },
-    create: {
-      key: key,
-      value: value,
-    },
-  });
-};
-
-export const getSetting = async (key: string) => {
-  if (!key) throw new Error("key is required");
-
-  const result = await prisma.settings.findFirst({
-    where: {
-      key: key,
-    },
-  });
-
-  return result?.value;
-};
-
-export function setTimeline(data: { id?: number; userId: number; channel: string; options: string }): any {
+export const setTimeline = (data: { id?: string; userId: string; channel: string; options: string }) => {
   const { id, userId, channel, options } = data;
 
   if (!userId) throw new Error("userId is required");
@@ -106,37 +109,52 @@ export function setTimeline(data: { id?: number; userId: number; channel: string
   if (!options) throw new Error("options is required");
 
   if (id) {
-    return prisma.timeline.update({
-      where: {
-        id: id,
-      },
-      data: {
-        userId: userId,
-        channel: channel,
-        options: options,
-      },
-    });
+    const newTimeline = {
+      id: id,
+      userId: userId,
+      channel: channel,
+      options: options,
+    };
+    store.set(
+      "timeline",
+      store.get("timeline").map((timeline) => {
+        if (timeline.id === id) {
+          return newTimeline;
+        } else {
+          return timeline;
+        }
+      }),
+    );
+    return newTimeline;
   } else {
-    return prisma.timeline.create({
-      data: {
-        userId: userId,
-        channel: channel,
-        options: options,
-      },
-    });
+    const newTimeline = {
+      id: uuid(),
+      userId: userId,
+      channel: channel,
+      options: options,
+    };
+    store.set("timeline", [...store.get("timeline"), newTimeline]);
+    return newTimeline;
   }
-}
-
-export function getTimelineAll() {
-  return prisma.timeline.findMany();
-}
-
-export const getInstanceAll = async () => {
-  return await prisma.instance.findMany();
 };
 
-export const upsertInstance = async (instance: {
-  id?: number;
+export const deleteTimeline = (id: string) => {
+  if (!id) throw new Error("id is required");
+
+  return store.set(
+    "timeline",
+    store.get("timeline").filter((timeline) => timeline.id !== id),
+  );
+};
+
+// Instance
+
+export const getInstanceAll = () => {
+  return store.get("instance");
+};
+
+export const upsertInstance = (instance: {
+  id?: string;
   type: "misskey" | "mastodon";
   name: string;
   url: string;
@@ -150,24 +168,141 @@ export const upsertInstance = async (instance: {
   if (!iconUrl) throw new Error("iconUrl is required");
 
   if (id) {
-    return await prisma.instance.update({
-      where: {
-        id: id,
-      },
-      data: {
-        name: name,
-        url: url,
-        iconUrl: iconUrl,
-      },
-    });
+    store.set(
+      "instance",
+      store.get("instance").map((instance) => {
+        if (instance.id === id) {
+          return {
+            id: id,
+            type: type,
+            name: name,
+            url: url,
+            iconUrl: iconUrl,
+          };
+        } else {
+          return instance;
+        }
+      }),
+    );
+
+    return instance;
   } else {
-    return await prisma.instance.create({
-      data: {
-        type: type,
-        name: name,
-        url: url,
-        iconUrl: iconUrl,
-      },
-    });
+    const newInstance = {
+      id: uuid(),
+      type: type,
+      name: name,
+      url: url,
+      iconUrl: iconUrl,
+    };
+    store.set("instance", [...store.get("instance"), newInstance]);
+
+    return newInstance;
+  }
+};
+
+export const deleteInstance = (id: string) => {
+  if (!id) throw new Error("id is required");
+
+  return store.set(
+    "instance",
+    store.get("instance").filter((instance) => instance.id !== id),
+  );
+};
+
+// User
+
+export const deleteUser = (id: string) => {
+  if (!id) throw new Error("id is required");
+
+  return store.set(
+    "user",
+    store.get("user").filter((user) => user.id !== id),
+  );
+};
+
+export const getUserAll = () => {
+  return store.get("user").map((user) => {
+    const decryptedToken = safeStorage.decryptString(Buffer.from(user.token, "base64"));
+    return {
+      ...user,
+      token: decryptedToken,
+    };
+  });
+};
+
+export const upsertUser = (user: {
+  id?: string;
+  instanceId: string;
+  name: string;
+  token: string;
+  avatarUrl: string;
+}) => {
+  const encryptedToken = safeStorage.encryptString(user.token).toString("base64");
+  if (user.id) {
+    const currentUser = store.get("user").find((user) => user.instanceId === user.instanceId);
+    if (!currentUser) throw new Error("User is not found");
+    const { id, token, ...newUserData } = user;
+    store.set(
+      "user",
+      store.get("user").map((user) => {
+        if (user.id === currentUser.id) {
+          return {
+            ...currentUser,
+            ...newUserData,
+            token: encryptedToken,
+          };
+        } else {
+          return user;
+        }
+      }),
+    );
+    return {
+      ...currentUser,
+      ...newUserData,
+      token: encryptedToken,
+    };
+  } else {
+    const newUser = {
+      id: uuid(),
+      instanceId: user.instanceId,
+      name: user.name,
+      token: encryptedToken,
+      avatarUrl: user.avatarUrl,
+    };
+    store.set("user", [...store.get("user"), newUser]);
+    return newUser;
+  }
+};
+
+// Setting
+
+export const getSettingAll = () => {
+  return store.get("setting");
+};
+
+export const getSetting = (key: string) => {
+  if (!key) throw new Error("key is required");
+
+  switch (key) {
+    case "opacity":
+      return store.get("setting.opacity");
+    case "hazyMode":
+      return store.get("setting.hazyMode");
+    default:
+      throw new Error(`${key} is not defined key.`);
+  }
+};
+
+export const setSetting = (key: string, value: string) => {
+  if (!key) throw new Error("key is required");
+  if (!value) throw new Error("value is required");
+
+  switch (key) {
+    case "opacity":
+      return store.set("setting.opacity", value);
+    case "hazyMode":
+      return store.set("setting.hazyMode", value);
+    default:
+      throw new Error(`${key} is not defined key.`);
   }
 };
