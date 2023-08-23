@@ -15,7 +15,7 @@ export default defineConfig({
     sourcemap: true,
     emptyOutDir: true,
     rollupOptions: {
-      external: ["electron", "sqlite3", ...builtinModules, ...Object.keys(pkg.dependencies || {})],
+      external: ["electron", ...builtinModules, ...Object.keys(pkg.dependencies || {})],
     },
     commonjsOptions: {
       ignoreGlobal: false,

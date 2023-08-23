@@ -4,10 +4,9 @@ import { Icon } from "@iconify/vue";
 import { computed, onMounted, reactive, ref } from "vue";
 import HazyButton from "@/components/common/HazyButton.vue";
 import hazyAlert from "@/components/common/HazyAlert.vue";
-import { User } from "@prisma/client";
 
 const state = reactive({
-  users: [] as User[],
+  users: [] as any,
   currentUserIndex: 0,
   post: {
     isSending: false,

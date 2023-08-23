@@ -1,0 +1,14 @@
+export type Timeline = {
+  id: string; // uuid
+  userId: string;
+  channel: string;
+  options: string;
+};
+
+export type Instance = {
+  id: string; // uuid
+  type: "misskey" | "mastodon";
+  name: string;
+  url: string;
+  iconUrl: string;
+};

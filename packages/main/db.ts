@@ -1,14 +1,10 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
 import { v4 as uuid } from "uuid";
+import { Timeline } from "../shared/types/Store";
 
 export type StoreSchema = {
-  timeline: {
-    id: string; // uuid
-    userId: string;
-    channel: string;
-    options: string;
-  }[];
+  timeline: Timeline[];
   instance: {
     id: string; // uuid
     type: "misskey" | "mastodon";

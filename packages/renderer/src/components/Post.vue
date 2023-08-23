@@ -39,6 +39,7 @@ const postAtttachments = computed(() => {
 });
 
 const openPost = () => {
+  console.log(new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString());
   ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
 };
 
@@ -84,14 +85,6 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
       <div class="post-data">
         <div class="hazy-post-info">
           <span class="username" v-html="props.post.user.name" />
-          <div class="hazy-post-actions">
-            <button class="hazy-post-action" @click="openPost">
-              <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
-            </button>
-            <button class="hazy-post-action" @click="openPost">
-              <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
-            </button>
-          </div>
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
@@ -121,6 +114,14 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
         <img :src="reaction.url" class="emoji" v-if="reaction.url" />
         <span class="emoji-default" v-else>{{ reaction.name }}</span>
         <span class="count">{{ reaction.count }}</span>
+      </button>
+    </div>
+    <div class="hazy-post-actions">
+      <button class="hazy-post-action" @click="openPost">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
+      </button>
+      <button class="hazy-post-action" @click="openPost">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
       </button>
     </div>
   </div>

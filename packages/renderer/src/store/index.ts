@@ -1,5 +1,4 @@
 import { ipcInvoke } from "@/utils/ipc";
-import { Instance as InstanceTable, User } from "@prisma/client";
 import { Post } from "@/types/Post";
 import { defineStore } from "pinia";
 import { Emoji, MisskeyEntities } from "@/types/misskey";
