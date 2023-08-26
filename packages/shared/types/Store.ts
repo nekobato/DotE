@@ -12,3 +12,16 @@ export type Instance = {
   url: string;
   iconUrl: string;
 };
+
+export type User = {
+  id: string; // uuid
+  instanceId: string; // uuid
+  name: string;
+  token: string;
+  avatarUrl: string;
+};
+
+export type Setting = {
+  opacity: number;
+  hazyMode: "show" | "haze" | "hide" | "settings" | "tutorial";
+};

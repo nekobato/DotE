@@ -15,7 +15,7 @@ const instanceStore = useInstanceStore();
 const state = ref({
   actions: {
     delete: {
-      id: null as number | null,
+      id: null as string | null,
     },
     newAccount: {
       misskey: {
@@ -55,7 +55,7 @@ const checkMiAuth = async () => {
   state.value.actions.newAccount.misskey.progress = "default";
 };
 
-const startDeleteAccount = (id: number) => {
+const startDeleteAccount = (id: string) => {
   resetStatues();
   state.value.actions.delete.id = id;
 };
@@ -97,7 +97,7 @@ const resetStatues = () => {
         <span class="nickname">Misskey</span>
       </div>
     </div>
-    <div class="hazy-post account indent-1" v-for="user in store.users" :key="user.username">
+    <div class="hazy-post account indent-1" v-for="user in store.users" :key="user.id">
       <img :src="user.avatarUrl || ''" class="hazy-avatar" />
       <div class="content">
         <span class="nickname">{{ user.name }}</span>

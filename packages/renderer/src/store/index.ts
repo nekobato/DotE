@@ -1,7 +1,9 @@
-import { ipcInvoke } from "@/utils/ipc";
 import { Post } from "@/types/Post";
+import { MisskeyEntities } from "@/types/misskey";
+import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
-import { Emoji, MisskeyEntities } from "@/types/misskey";
+import { Instance, User } from "@@/types/Store";
+import { gotoHazyRoute } from "@/utils/hazy";
 
 export type ChannelName =
   | "misskey:homeTimeline"
@@ -23,8 +25,8 @@ export const methodOfChannel = {
 };
 
 export type TimelineSetting = {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   channel: ChannelName;
   options: {
     search?: string;
@@ -37,10 +39,14 @@ export type Timeline = TimelineSetting & {
   posts: Post[];
 };
 
-export type Instance = InstanceTable & {
+export type InstanceStore = Instance & {
   misskey?: {
     emojis: MisskeyEntities.CustomEmoji[];
   };
+};
+
+export type ErrorItem = {
+  message: string;
 };
 
 // DBから取得した生データ全て
@@ -49,12 +55,13 @@ export const useStore = defineStore({
   state: () => ({
     hasInit: false,
     users: [] as User[],
-    instances: [] as Instance[],
+    instances: [] as InstanceStore[],
     timelines: [] as Timeline[],
     settings: {
       opacity: undefined as number | undefined,
-      hazyMode: "show" as "show" | "haze" | "hide",
+      hazyMode: "show" as "show" | "haze" | "hide" | "settings" | "tutorial",
     },
+    errrors: [] as ErrorItem[],
   }),
   actions: {
     async init() {
@@ -64,10 +71,11 @@ export const useStore = defineStore({
       await this.initTimelines();
       await this.initSettings();
       this.$state.hasInit = true;
+      console.log("store init", this.$state);
+      gotoHazyRoute(this.$state.settings.hazyMode);
     },
     async initUsers() {
       this.$state.users = await ipcInvoke("db:get-users");
-      console.log(this.$state.users);
     },
     async initInstances() {
       const instances = await ipcInvoke("db:get-instance-all");

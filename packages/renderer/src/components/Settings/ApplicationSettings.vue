@@ -1,9 +1,8 @@
 <script setup lang="ts">
+import { useStore } from "@/store";
+import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import SectionTitle from "../Post/SectionTitle.vue";
-import { useSettingsStore } from "@/store/settings";
-import { onMounted, ref } from "vue";
-import { useStore } from "@/store";
 
 const store = useStore();
 const settingsStore = useSettingsStore();

@@ -134,8 +134,13 @@ onBeforeMount(async () => {
   }
 
   if (timelineStore.currentUser) {
-    await timelineStore.fetchPosts();
+    await timelineStore.fetchPosts().catch((error) => {
+      console.log(error);
+    });
     observeWebSocketConnection();
+    if (store.settings.hazyMode === "settings") {
+      router.replace("/main/settings");
+    }
   } else {
     console.log("No user");
     router.replace("/main/settings");

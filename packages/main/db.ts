@@ -1,28 +1,13 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
 import { v4 as uuid } from "uuid";
-import { Timeline } from "../shared/types/Store";
+import { Instance, Timeline, User, Setting } from "../shared/types/Store";
 
 export type StoreSchema = {
   timeline: Timeline[];
-  instance: {
-    id: string; // uuid
-    type: "misskey" | "mastodon";
-    name: string;
-    url: string;
-    iconUrl: string;
-  }[];
-  user: {
-    id: string; // uuid
-    instanceId: string; // uuid
-    name: string;
-    token: string;
-    avatarUrl: string;
-  }[];
-  setting: {
-    opacity: number;
-    hazyMode: "show" | "haze" | "hide";
-  };
+  instance: Instance[];
+  user: User[];
+  setting: Setting;
 };
 
 const schema: Store.Schema<StoreSchema> = {
@@ -276,7 +261,7 @@ export const getSettingAll = () => {
   return store.get("setting");
 };
 
-export const getSetting = (key: string) => {
+export const getSetting = (key: "opacity" | "hazyMode") => {
   if (!key) throw new Error("key is required");
 
   switch (key) {

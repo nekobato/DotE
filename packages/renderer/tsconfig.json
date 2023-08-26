@@ -5,9 +5,9 @@
     "lib": ["esnext", "dom"],
     "allowJs": true,
     "paths": {
-      "@/*": ["./src/*"],
-      "@@/*": ["../*"]
+      "@/*": ["packages/renderer/src/*"],
+      "@@/*": ["packages/shared/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["./src/**/*.ts", "./src/**/*.d.ts", "./src/**/*.tsx", "./src/**/*.vue"]
 }

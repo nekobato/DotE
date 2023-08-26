@@ -14,7 +14,6 @@ export function createPostWindow() {
     show: false,
     resizable: true,
     webPreferences: {
-      webSecurity: false,
       nodeIntegration: true,
       preload: join(__dirname, "../preload/index.cjs"),
     },

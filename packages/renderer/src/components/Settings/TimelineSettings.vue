@@ -40,14 +40,14 @@ const store = useStore();
 const usersStore = useUsersStore();
 const timelineStore = useTimelineStore();
 
-const onChangeUser = async (timelineId: number) => {
+const onChangeUser = async (timelineId: string) => {
   const newTimeline = store.timelines.find((timeline) => timeline.id === timelineId);
   if (newTimeline) {
     await updateTimeline(newTimeline);
   }
 };
 
-const onChangeChannel = async (timelineId: number) => {
+const onChangeChannel = async (timelineId: string) => {
   const newTimeline = store.timelines.find((timeline) => timeline.id === timelineId);
   if (newTimeline) {
     await updateTimeline(newTimeline);
@@ -65,7 +65,7 @@ const updateTimeline = async (timeline: TimelineSetting) => {
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list" v-if="store.timelines.length > 0">
+  <div class="account-settings hazy-post-list">
     <SectionTitle title="タイムライン" />
     <div class="accounts-container" v-for="timeline in store.timelines" :key="timeline.id">
       <div class="hazy-post account indent-1">

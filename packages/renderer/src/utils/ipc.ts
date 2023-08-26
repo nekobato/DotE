@@ -1,4 +1,4 @@
-import { Instance, Timeline, User } from "@prisma/client";
+import { Instance, Timeline, User } from "@@/types/Store";
 
 export const ipcSend = (event: string, payload?: object) => {
   if (typeof window === "undefined") return;
@@ -12,10 +12,10 @@ type invokeEvents = {
   "db:get-users": void;
   "db:upsert-user": Omit<User, "id"> | Partial<User>;
   "db:delete-user": {
-    id: number;
+    id: string;
   };
   "db:get-timeline-all": void;
-  "db:set-timeline": Omit<Timeline, "id"> | (Partial<Timeline> & { id: number });
+  "db:set-timeline": Omit<Timeline, "id"> | (Partial<Timeline> & { id: string });
   "db:get-instance-all": void;
   "db:upsert-instance": (Partial<Instance> & { id: number }) | Omit<Instance, "id">;
   "settings:set": {

@@ -10,6 +10,7 @@ import { setTrayIcon } from "./tray-icon";
 import * as db from "./db";
 import { apiRequest } from "./api";
 import { autoUpdater } from "electron-updater";
+import { Setting } from "packages/shared/types/Store";
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
@@ -35,6 +36,34 @@ protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: tru
 const initialize = async () => {
   const opacity = await db.getSetting("opacity");
   mainWindow?.setOpacity(Number(opacity) / 100);
+  const hazyMode = (await db.getSetting("hazyMode")) as Setting["hazyMode"];
+  setMainWindowMode(hazyMode);
+};
+
+const setMainWindowMode = async (mode: string) => {
+  switch (mode) {
+    case "show":
+    case "settings":
+    case "tutorial":
+      mainWindow?.show();
+      mainWindow?.focus();
+      mainWindow?.setAlwaysOnTop(false);
+      mainWindow?.setIgnoreMouseEvents(false);
+      mainWindow?.setOpacity(1);
+      mainWindow?.setVisibleOnAllWorkspaces(false);
+      break;
+    case "haze":
+      const opacity = (await db.getSetting("opacity")) || 50;
+      mainWindow?.show();
+      mainWindow?.setAlwaysOnTop(true, "floating");
+      mainWindow?.setIgnoreMouseEvents(true);
+      mainWindow?.setOpacity(Number(opacity) / 100);
+      mainWindow?.setVisibleOnAllWorkspaces(true);
+      break;
+    case "hide":
+      mainWindow?.hide();
+      break;
+  }
 };
 
 app.on("ready", async () => {
@@ -62,30 +91,7 @@ app.on("ready", async () => {
     console.log(event, data);
     switch (event) {
       case "set-hazy-mode":
-        menuWindow?.webContents.send("set-hazy-mode", data);
-        switch (data.mode) {
-          case "show":
-          case "settings":
-          case "tutorial":
-            mainWindow?.show();
-            mainWindow?.focus();
-            mainWindow?.setAlwaysOnTop(false);
-            mainWindow?.setIgnoreMouseEvents(false);
-            mainWindow?.setOpacity(1);
-            mainWindow?.setVisibleOnAllWorkspaces(false);
-            break;
-          case "haze":
-            const opacity = (await db.getSetting("opacity")) || 50;
-            mainWindow?.show();
-            mainWindow?.setAlwaysOnTop(true, "floating");
-            mainWindow?.setIgnoreMouseEvents(true);
-            mainWindow?.setOpacity(Number(opacity) / 100);
-            mainWindow?.setVisibleOnAllWorkspaces(true);
-            break;
-          case "hide":
-            mainWindow?.hide();
-            break;
-        }
+        setMainWindowMode(data.mode);
         mainWindow?.webContents.send("set-hazy-mode", data);
         break;
       case "open-url":
@@ -130,8 +136,9 @@ app.on("ready", async () => {
     console.log(event, data);
     switch (event) {
       case "api":
-        if (apiRequest[data.method]) {
-          const result = await apiRequest[data.method](data);
+        const method: keyof typeof apiRequest = data.method;
+        if (apiRequest[method]) {
+          const result = await apiRequest[method](data);
           return result || {};
         } else {
           throw new Error(`${data.method} is not defined method.`);

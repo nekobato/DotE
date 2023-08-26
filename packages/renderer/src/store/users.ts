@@ -1,10 +1,10 @@
 import { ipcInvoke } from "@/utils/ipc";
-import { Instance, User } from "@prisma/client";
 import { defineStore } from "pinia";
 import { useStore } from ".";
 import { MisskeyEntities } from "@/types/misskey";
 import { useInstanceStore } from "./instance";
 import { useTimelineStore } from "./timeline";
+import { User } from "@@/types/Store";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
@@ -24,7 +24,7 @@ export const useUsersStore = defineStore("users", () => {
   };
 
   const createUser = async (user: NewUser) => {
-    let instanceId: number;
+    let instanceId: string | undefined;
 
     // Instanceが無ければ作成
     const instance = instanceStore.findInstance(user.instanceUrl);
@@ -43,7 +43,6 @@ export const useUsersStore = defineStore("users", () => {
     // User作成
     await ipcInvoke("db:upsert-user", {
       name: user.name,
-      username: user.username,
       avatarUrl: user.avatarUrl || "",
       token: user.token,
       instanceId,
@@ -66,7 +65,7 @@ export const useUsersStore = defineStore("users", () => {
     return result;
   };
 
-  const findInstance = (instanceId?: number) => {
+  const findInstance = (instanceId?: string) => {
     const instance = store.$state.instances.find((instance) => {
       return instance.id === instanceId;
     });

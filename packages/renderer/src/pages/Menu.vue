@@ -1,18 +1,20 @@
 <script setup lang="ts">
+import { useStore } from "@/store";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { reactive } from "vue";
+import { onBeforeMount, ref } from "vue";
+import { Setting } from "@@/types/Store";
 
-const state = reactive({
-  active: "show",
-});
+const store = useStore();
 
-const isActive = (mode: string) => {
-  return state.active === mode;
+const hazyMode = ref<Setting["hazyMode"] | null>();
+
+const isActive = (mode: Setting["hazyMode"]) => {
+  return hazyMode.value === mode;
 };
 
-const setActive = (mode: string) => {
-  state.active = mode;
+const setActive = (mode: Setting["hazyMode"]) => {
+  hazyMode.value = mode;
   ipcSend("set-hazy-mode", { mode });
 };
 
@@ -21,7 +23,12 @@ const post = () => {
 };
 
 window.ipc.on("set-hazy-mode", (_, { mode }) => {
-  state.active = mode;
+  hazyMode.value = mode;
+});
+
+onBeforeMount(async () => {
+  await store.initSettings();
+  hazyMode.value = store.settings.hazyMode;
 });
 </script>
 
