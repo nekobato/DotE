@@ -65,6 +65,9 @@ export const useStore = defineStore({
         height: 0,
       },
       maxPostCount: 1000,
+      shortcut: {
+        toggleTimeline: "",
+      },
     },
     errors: [] as ErrorItem[],
   }),

@@ -1,7 +1,7 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
-import url from "node:url";
-import path from "node:path";
+import url from "url";
+import path from "path";
 
 const pageName = "post";
 

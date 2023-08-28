@@ -40,6 +40,12 @@ window.ipc.on("media-viewer:open", (event, data: Media & { maxSize: { width: num
   }
 });
 
+window.ipc.on("media-viewer:close", () => {
+  state.media = {} as Media;
+  state.size = { width: 0, height: 0 };
+  state.isLoading = true;
+});
+
 const closeWindow = () => {
   ipcSend("media-viewer:close");
   // reset state

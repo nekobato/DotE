@@ -116,6 +116,7 @@ app.on("ready", async () => {
         mediaViewerWindow?.show();
         break;
       case "media-viewer:close":
+        mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.hide();
         break;
       case "post:create":

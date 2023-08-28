@@ -58,6 +58,22 @@ const onChangeMaxPostCount = async (e: Event) => {
         />
       </div>
     </div>
+    <SectionTitle title="グローバルショートカットキー" />
+    <div class="hazy-post indent-1">
+      <div class="content">
+        <span class="title">タイムライン表示切り替え</span>
+      </div>
+      <div class="form-actions">
+        <input
+          type="text"
+          min="10"
+          max="2000"
+          class="nn-text-field shortcut-key"
+          :value="store.settings.shortcut.toggleTimeline"
+          @change="onChangeMaxPostCount"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -86,5 +102,8 @@ const onChangeMaxPostCount = async (e: Event) => {
 
 .max-post-count {
   width: 80px;
+}
+.shortcut-key {
+  width: 120px;
 }
 </style>

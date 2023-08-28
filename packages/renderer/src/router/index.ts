@@ -7,7 +7,6 @@ import Tutorial from "@/pages/MainWindow/Tutorial.vue";
 import MediaViewer from "../pages/MediaViewer.vue";
 import PostIndex from "../pages/PostWindow/index.vue";
 import Create from "../pages/PostWindow/Create.vue";
-import Detail from "../pages/PostWindow/Detail.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -51,11 +50,6 @@ const routes: RouteRecordRaw[] = [
         path: "new",
         name: "PostCreate",
         component: Create,
-      },
-      {
-        path: "detail",
-        name: "PostDetail",
-        component: Detail,
       },
     ],
   },

@@ -65,6 +65,12 @@ const schema: Store.Schema<StoreSchema> = {
         },
       },
       maxPostCount: { type: "number" },
+      shortcut: {
+        type: "object",
+        properties: {
+          toggleTimeline: { type: "string" },
+        },
+      },
     },
   },
 };
@@ -83,6 +89,9 @@ export const store = new Store<StoreSchema>({
         height: 600,
       },
       maxPostCount: 1000,
+      shortcut: {
+        toggleTimeline: "",
+      },
     },
   },
 });
@@ -299,6 +308,8 @@ export const setSetting = (key: string, value: any) => {
     case "windowSize":
       return store.set("setting.windowSize", value);
     case "maxPostCount":
+      return store.set("setting.maxPostCount", Number(value));
+    case "shortcut.toggleTimeline":
       return store.set("setting.maxPostCount", Number(value));
     default:
       throw new Error(`${key} is not defined key.`);

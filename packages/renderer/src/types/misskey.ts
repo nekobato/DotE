@@ -53,7 +53,6 @@ export type MisskeyUser = {
   twoFactorEnabled: boolean;
   usePasswordLessLogin: boolean;
   securityKeys: boolean;
-  roles: Role[];
 };
 
 export type MisskeyFile = {
