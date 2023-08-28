@@ -33,6 +33,10 @@ export const useTimelineStore = defineStore("timeline", () => {
         instanceUrl: currentInstance.value?.url,
         token: currentUser.value.token,
         limit: 40,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
+        });
       });
       console.log(data);
       // misskeyなら という条件分岐が必要
@@ -76,6 +80,10 @@ export const useTimelineStore = defineStore("timeline", () => {
         token: currentUser.value.token,
         noteId: postId,
         reaction: reaction,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${postId}へのリアクション失敗`,
+        });
       });
       await updatePost({
         postId,
@@ -92,6 +100,10 @@ export const useTimelineStore = defineStore("timeline", () => {
         instanceUrl: currentInstance.value?.url,
         token: currentUser.value.token,
         noteId: postId,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${postId}のリアクション削除失敗`,
+        });
       });
       if (noUpdate) return;
       await updatePost({
@@ -109,6 +121,10 @@ export const useTimelineStore = defineStore("timeline", () => {
         instanceUrl: currentInstance.value?.url,
         token: currentUser.value.token,
         noteId: postId,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${postId}の取得失敗`,
+        });
       });
       const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
       if (current.value && postIndex !== undefined && postIndex !== -1 && currentInstance.value?.misskey?.emojis) {

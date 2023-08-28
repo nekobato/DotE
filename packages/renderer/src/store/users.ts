@@ -18,7 +18,7 @@ export const useUsersStore = defineStore("users", () => {
   const users = store.$state.users;
   const isEmpty = store.$state.users.length === 0;
 
-  const deleteUser = async (id: number) => {
+  const deleteUser = async (id: string) => {
     await ipcInvoke("db:delete-user", { id });
     await store.initUsers();
   };
@@ -61,6 +61,10 @@ export const useUsersStore = defineStore("users", () => {
       method: "misskey:checkMiAuth",
       instanceUrl: instanceUrl,
       sessionId: sessionId,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${instanceUrl}の認証失敗`,
+      });
     });
     return result;
   };

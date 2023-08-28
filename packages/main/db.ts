@@ -57,6 +57,14 @@ const schema: Store.Schema<StoreSchema> = {
     properties: {
       opacity: { type: "number" },
       hazyMode: { type: "string" },
+      windowSize: {
+        type: "object",
+        properties: {
+          width: { type: "number" },
+          height: { type: "number" },
+        },
+      },
+      maxPostCount: { type: "number" },
     },
   },
 };
@@ -70,6 +78,11 @@ export const store = new Store<StoreSchema>({
     setting: {
       opacity: 50,
       hazyMode: "show",
+      windowSize: {
+        width: 475,
+        height: 600,
+      },
+      maxPostCount: 1000,
     },
   },
 });
@@ -274,7 +287,7 @@ export const getSetting = (key: "opacity" | "hazyMode") => {
   }
 };
 
-export const setSetting = (key: string, value: string) => {
+export const setSetting = (key: string, value: any) => {
   if (!key) throw new Error("key is required");
   if (!value) throw new Error("value is required");
 
@@ -283,6 +296,10 @@ export const setSetting = (key: string, value: string) => {
       return store.set("setting.opacity", value);
     case "hazyMode":
       return store.set("setting.hazyMode", value);
+    case "windowSize":
+      return store.set("setting.windowSize", value);
+    case "maxPostCount":
+      return store.set("setting.maxPostCount", Number(value));
     default:
       throw new Error(`${key} is not defined key.`);
   }

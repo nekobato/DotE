@@ -43,11 +43,14 @@ const checkMiAuth = async () => {
     method: "misskey:checkMiAuth",
     instanceUrl: misskey.instanceUrl.value,
     sessionId: misskey.sessionId,
+  }).catch(() => {
+    store.$state.errors.push({
+      message: `${state.value.actions.newAccount.misskey.instanceUrl.value}の認証失敗`,
+    });
   });
 
   usersStore.createUser({
     name: check.user.name,
-    username: check.user.username,
     avatarUrl: check.user.avatarUrl,
     token: check.token,
     instanceUrl: misskey.instanceUrl.value,

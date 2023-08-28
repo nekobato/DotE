@@ -15,7 +15,6 @@ export function createMainWindow() {
     show: true,
     resizable: true,
     webPreferences: {
-      webSecurity: true,
       nodeIntegration: true,
       preload: join(__dirname, "../preload/index.cjs"),
     },

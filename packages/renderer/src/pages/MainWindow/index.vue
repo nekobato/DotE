@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ErrorPost from "@/components/ErrorPost.vue";
 import router from "@/router";
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
@@ -21,6 +22,7 @@ const state = reactive({
 });
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
+  console.log(mode);
   if (reflect) return;
 
   settingsStore.setHazyMode(mode);
@@ -154,6 +156,11 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
+  <div class="hazy-timeline-container" v-if="store.errors.length">
+    <div class="timeline-container">
+      <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
+    </div>
+  </div>
   <RouterView :class="{ haze: store.settings.hazyMode === 'haze' }" />
 </template>
 <style lang="scss" scoped>

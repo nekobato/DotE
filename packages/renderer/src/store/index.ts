@@ -60,8 +60,13 @@ export const useStore = defineStore({
     settings: {
       opacity: undefined as number | undefined,
       hazyMode: "show" as "show" | "haze" | "hide" | "settings" | "tutorial",
+      windowSize: {
+        width: 0,
+        height: 0,
+      },
+      maxPostCount: 1000,
     },
-    errrors: [] as ErrorItem[],
+    errors: [] as ErrorItem[],
   }),
   actions: {
     async init() {
@@ -98,8 +103,13 @@ export const useStore = defineStore({
             const result = await ipcInvoke("api", {
               method: "misskey:getEmojis",
               instanceUrl: instance.url,
+            }).catch(() => {
+              this.$state.errors.push({
+                message: `${instance.name}のemojiがうまく取得できませんでした インターネット接続またはデータがおかしいです`,
+              });
             });
-            instance.misskey!.emojis = result.emojis;
+            console.log(result);
+            instance.misskey!.emojis = result?.emojis || [];
           }
           return instance;
         }),

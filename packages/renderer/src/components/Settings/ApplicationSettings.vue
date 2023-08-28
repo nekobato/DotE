@@ -10,16 +10,20 @@ const settingsStore = useSettingsStore();
 const onChangeOpacity = async (e: Event) => {
   await settingsStore.setOpacity(Number((e.target as HTMLInputElement)?.value));
 };
+
+const onChangeMaxPostCount = async (e: Event) => {
+  await settingsStore.setMaxPostCount(Number((e.target as HTMLInputElement)?.value));
+};
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list">
+  <div class="account-settings hazy-post-list" v-if="store.settings">
     <SectionTitle title="設定" />
     <div class="hazy-post indent-1">
       <div class="content">
         <span class="title"><Icon icon="ion:eye-outline" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
-      <div class="form-actions" v-if="store.settings.opacity">
+      <div class="form-actions">
         <input
           type="range"
           min="0"
@@ -35,6 +39,22 @@ const onChangeOpacity = async (e: Event) => {
           class="nn-text-field"
           :value="store.settings.opacity"
           @change="onChangeOpacity"
+        />
+      </div>
+    </div>
+
+    <div class="hazy-post indent-1">
+      <div class="content">
+        <span class="title">タイムラインに保持する投稿の最大数</span>
+      </div>
+      <div class="form-actions">
+        <input
+          type="number"
+          min="10"
+          max="2000"
+          class="nn-text-field max-post-count"
+          :value="store.settings.maxPostCount"
+          @change="onChangeMaxPostCount"
         />
       </div>
     </div>
@@ -62,5 +82,9 @@ const onChangeOpacity = async (e: Event) => {
 
 .hazy-post {
   display: flex;
+}
+
+.max-post-count {
+  width: 80px;
 }
 </style>

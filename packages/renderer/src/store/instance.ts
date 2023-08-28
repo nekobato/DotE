@@ -30,6 +30,10 @@ export const useInstanceStore = defineStore("instance", () => {
       method: "misskey:getMeta",
       instanceUrl,
       token,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${instanceUrl}の詳細データを取得できませんでした`,
+      });
     });
     return result;
   };

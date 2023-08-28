@@ -1,4 +1,14 @@
-import electron, { app, BrowserWindow, globalShortcut, ipcMain, Menu, protocol, safeStorage, Tray } from "electron";
+import electron, {
+  app,
+  BrowserWindow,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  protocol,
+  safeStorage,
+  session,
+  Tray,
+} from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createMenuWindow } from "./windows/menuWindow";
 import { createPostWindow } from "./windows/postWindow";
@@ -68,6 +78,7 @@ const setMainWindowMode = async (mode: string) => {
 
 app.on("ready", async () => {
   autoUpdater.checkForUpdatesAndNotify();
+
   tray = setTrayIcon();
 
   tray.on("click", () => {
@@ -92,6 +103,7 @@ app.on("ready", async () => {
     switch (event) {
       case "set-hazy-mode":
         setMainWindowMode(data.mode);
+        db.setSetting("hazyMode", data.mode);
         mainWindow?.webContents.send("set-hazy-mode", data);
         break;
       case "open-url":

@@ -15,5 +15,10 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "hazyMode", value: mode });
   };
 
-  return { setOpacity, setHazyMode };
+  const setMaxPostCount = async (count: number) => {
+    store.$state.settings.maxPostCount = count;
+    return await ipcInvoke("settings:set", { key: "maxPostCount", value: count.toString() });
+  };
+
+  return { setOpacity, setHazyMode, setMaxPostCount };
 });

@@ -24,4 +24,9 @@ export type User = {
 export type Setting = {
   opacity: number;
   hazyMode: "show" | "haze" | "hide" | "settings" | "tutorial";
+  windowSize: {
+    width: number;
+    height: number;
+  };
+  maxPostCount: number;
 };
