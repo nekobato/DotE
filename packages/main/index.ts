@@ -1,14 +1,4 @@
-import electron, {
-  app,
-  BrowserWindow,
-  globalShortcut,
-  ipcMain,
-  Menu,
-  protocol,
-  safeStorage,
-  session,
-  Tray,
-} from "electron";
+import electron, { app, BrowserWindow, globalShortcut, ipcMain, Menu, protocol, Tray } from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createMenuWindow } from "./windows/menuWindow";
 import { createPostWindow } from "./windows/postWindow";

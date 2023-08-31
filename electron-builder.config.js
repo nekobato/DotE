@@ -14,7 +14,7 @@ module.exports = {
       },
     ],
   },
-  asar: true,
+  asar: false,
   directories: {
     output: "release/${version}",
   },

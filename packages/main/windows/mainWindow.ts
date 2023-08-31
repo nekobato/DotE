@@ -1,7 +1,6 @@
 import { join } from "path";
 import { BrowserWindow, screen } from "electron";
 import url from "url";
-import path from "path";
 
 const pageName = "main/timeline";
 
@@ -34,7 +33,7 @@ export function createMainWindow() {
       url.format({
         protocol: "app",
         slashes: true,
-        pathname: path.join(__dirname, `../renderer/index.html#/${pageName}`),
+        pathname: join(__dirname, `../renderer/index.html#/${pageName}`),
       }),
     );
   }

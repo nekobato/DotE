@@ -1,7 +1,6 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
 import url from "url";
-import path from "path";
 
 const pageName = "menu";
 
@@ -33,7 +32,7 @@ export function createMenuWindow() {
       url.format({
         protocol: "app",
         slashes: true,
-        pathname: path.join(__dirname, `../renderer/index.html#/${pageName}`),
+        pathname: join(__dirname, `../renderer/index.html#/${pageName}`),
       }),
     );
   }
