@@ -28,3 +28,6 @@ token.ts
 prisma/dev.db
 prisma/dev.db-journal
 release
+dist-electron
+.output
+.nuxt

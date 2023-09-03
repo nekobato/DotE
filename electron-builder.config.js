@@ -2,9 +2,15 @@ const package = require("./package.json");
 
 module.exports = {
   appId: "net.nekobato.hazy",
+  asar: false,
+  directories: {
+    output: "release/${version}",
+  },
+  files: [".output/**/*", "dist-electron"],
   mac: {
     category: "public.app-category.social-networking",
-    icon: "./build/icon.icns",
+    icon: "./build/icons/mac/icon.icns",
+    artifactName: "${productName}_${version}.${ext}",
     target: ["dmg"],
     publish: [
       {
@@ -14,10 +20,20 @@ module.exports = {
       },
     ],
   },
-  asar: true,
-  directories: {
-    output: "release/${version}",
+  // win: {
+  //   target: [
+  //     {
+  //       target: "nsis",
+  //       arch: ["x64"],
+  //     },
+  //   ],
+  //   artifactName: "${productName}_${version}.${ext}",
+  // },
+  nsis: {
+    oneClick: false,
+    perMachine: false,
+    allowToChangeInstallationDirectory: true,
+    deleteAppDataOnUninstall: false,
   },
-  files: ["dist"],
   buildVersion: package.version,
 };
