@@ -188,17 +188,21 @@ const start = () => {
     app.quit();
   });
 
-  menuWindow.on("closed", () => {
-    postWindow = null;
+  menuWindow.on("blur", () => {
+    menuWindow?.hide();
   });
 
-  postWindow.on("closed", () => {
-    postWindow = null;
-  });
+  // menuWindow.on("closed", () => {
+  //   postWindow = null;
+  // });
 
-  mediaViewerWindow.on("closed", () => {
-    mediaViewerWindow = null;
-  });
+  // postWindow.on("closed", () => {
+  //   postWindow = null;
+  // });
+
+  // mediaViewerWindow.on("closed", () => {
+  //   mediaViewerWindow = null;
+  // });
 
   initialize();
 };
@@ -231,4 +235,4 @@ if (DEBUG) {
 app
   .whenReady()
   .then(start)
-  .catch((error) => dialog.showErrorBox("Error", error.message));
+  .catch((error: Error) => dialog.showErrorBox("Error", error.message));

@@ -8,7 +8,7 @@ import { parseMisskeyNotes } from "@/utils/misskey";
 import { connectToMisskeyStream } from "@/utils/websocket";
 import { v4 as uuid } from "uuid";
 import { onBeforeMount, onBeforeUnmount, reactive } from "vue";
-import { RouterView } from "vue-router";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 
@@ -163,7 +163,7 @@ onBeforeUnmount(() => {
       <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
     </div>
   </div>
-  <NuxtPage :class="{ haze: store.settings.hazyMode === 'haze' }" />
+  <NuxtPage />
 </template>
 <style lang="scss" scoped>
 .haze {
