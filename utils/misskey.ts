@@ -39,7 +39,7 @@ export const parseMisskeyNote = (note: MisskeyEntities.Note, emojis: MisskeyEnti
   const parsedTextHtml = note.text
     // 文中のURLをaタグに変換
     ?.replace(/(https?:\/\/[\w!?/+\-_~;.,*&@#$%()='[\]]+)/g, (_: any, p1: string) => {
-      return `<a onclick="(e) => window.OpenUrl(e, '${p1}')">${p1}</a>`;
+      return `<a href="${p1}">${p1}</a>`;
     })
     // emojiをimgに変換
     ?.replace(/:(\w+):/g, (match: any, p1: string) => {

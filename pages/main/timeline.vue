@@ -44,9 +44,9 @@ body::-webkit-scrollbar {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 4px;
   // inset grow
-  box-shadow: inset -1px -1px 2px rgba(255,255,255, 0.5);
+  border: 1px solid rgba( 255, 255, 255, 0.18 );
+  border-radius: 4px;
 
   &.haze {
     pointer-events: none;
