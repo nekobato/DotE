@@ -3,6 +3,7 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import SectionTitle from "../Post/SectionTitle.vue";
+import { Setting } from "~/types/store";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
@@ -13,6 +14,12 @@ const onChangeOpacity = async (e: Event) => {
 
 const onChangeMaxPostCount = async (e: Event) => {
   await settingsStore.setMaxPostCount(Number((e.target as HTMLInputElement)?.value));
+};
+
+const onKeyDownOn = (key: keyof Setting["shortcuts"]) => async (e: KeyboardEvent) => {
+  e.preventDefault();
+  const newKey = e.key;
+  await settingsStore.setShortcutKey(key, newKey);
 };
 </script>
 
@@ -61,16 +68,15 @@ const onChangeMaxPostCount = async (e: Event) => {
     <SectionTitle title="グローバルショートカットキー" />
     <div class="hazy-post indent-1">
       <div class="content">
-        <span class="title">タイムライン表示切り替え</span>
+        <span class="title">タイムライン表示/非表示切り替え</span>
       </div>
       <div class="form-actions">
         <input
           type="text"
-          min="10"
-          max="2000"
+          readonly
           class="nn-text-field shortcut-key"
-          :value="store.settings.shortcut.toggleTimeline"
-          @change="onChangeMaxPostCount"
+          :value="store.settings.shortcuts.toggleTimeline"
+          @keydown="onKeyDownOn('toggleTimeline')($event)"
         />
       </div>
     </div>

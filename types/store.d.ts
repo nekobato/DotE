@@ -29,7 +29,7 @@ export type Setting = {
     height: number;
   };
   maxPostCount: number;
-  shortcut: {
+  shortcuts: {
     toggleTimeline: string;
   };
 };

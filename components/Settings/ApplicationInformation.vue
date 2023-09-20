@@ -55,8 +55,5 @@ const gotoTutorial = () => {
 }
 .hazy-post {
   display: flex;
-  &.indent-1 {
-    padding-left: 16px;
-  }
 }
 </style>

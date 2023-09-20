@@ -2,7 +2,6 @@
 import { TimelineSetting, useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { useUsersStore } from "@/store/users";
-import { ElOption, ElSelect } from "element-plus";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
 
@@ -140,11 +139,6 @@ const updateTimeline = async (timeline: TimelineSetting) => {
   gap: 8px;
   > button {
     flex: 0 0 auto;
-  }
-}
-.hazy-post {
-  &.indent-1 {
-    padding-left: 16px;
   }
 }
 .form-actions {
