@@ -3,7 +3,10 @@ import Post from "@/components/Post.vue";
 import HazyLoading from "@/components/common/HazyLoading.vue";
 import { useTimelineStore } from "@/store/timeline";
 import { reactive, ref } from "vue";
+import { useStore } from "~/store";
+import { useSettingsStore } from "~/store/settings";
 
+const store = useStore();
 const timelineStore = useTimelineStore();
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
@@ -13,7 +16,10 @@ const state = reactive({
 </script>
 
 <template>
-  <div class="page-container hazy-timeline-container">
+  <div
+    class="page-container hazy-timeline-container"
+    :class="{ haze: store.settings.hazyMode === 'haze' }"
+  > 
     <div
       class="timeline-container"
       v-if="timelineStore.current?.posts.length"
@@ -39,6 +45,12 @@ body::-webkit-scrollbar {
   height: 100%;
   overflow: hidden;
   border-radius: 4px;
+  // inset grow
+  box-shadow: inset -1px -1px 2px rgba(255,255,255, 0.5);
+
+  &.haze {
+    pointer-events: none;
+  }
 }
 .timeline-container {
   width: 100%;
@@ -63,4 +75,5 @@ body::-webkit-scrollbar {
   color: #fff;
   text-shadow: 1px 0 1px #000;
 }
+
 </style>

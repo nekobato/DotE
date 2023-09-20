@@ -192,18 +192,6 @@ const start = () => {
     menuWindow?.hide();
   });
 
-  // menuWindow.on("closed", () => {
-  //   postWindow = null;
-  // });
-
-  // postWindow.on("closed", () => {
-  //   postWindow = null;
-  // });
-
-  // mediaViewerWindow.on("closed", () => {
-  //   mediaViewerWindow = null;
-  // });
-
   initialize();
 };
 
