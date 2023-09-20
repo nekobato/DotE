@@ -40,10 +40,12 @@ const store = useStore();
 const usersStore = useUsersStore();
 const timelineStore = useTimelineStore();
 
-const accountOptions = usersStore.users.map((user) => ({
-  label: user.name,
-  value: user.id,
-}));
+const accountOptions = computed(() =>
+  store.users.map((user) => ({
+    label: user.name,
+    value: user.id,
+  })),
+);
 
 const timelineOptions = channelList.map((channel) => ({
   label: channel.label,
@@ -83,7 +85,13 @@ const updateTimeline = async (timeline: TimelineSetting) => {
           <span class="label">アカウント</span>
         </div>
         <div class="attachments form-actions">
-          <HazySelect placeholder="--" :options="accountOptions" @change="onChangeUser(timeline.id)" class="select" />
+          <HazySelect
+            placeholder="--"
+            :options="accountOptions"
+            @change="onChangeUser(timeline.id)"
+            class="select"
+            :default="timeline.userId"
+          />
         </div>
       </div>
       <div class="hazy-post account indent-1">
@@ -96,6 +104,7 @@ const updateTimeline = async (timeline: TimelineSetting) => {
             :options="timelineOptions"
             @change="onChangeChannel(timeline.id)"
             class="select"
+            :default="timeline.channel"
           />
         </div>
       </div>
@@ -142,6 +151,7 @@ const updateTimeline = async (timeline: TimelineSetting) => {
   }
 }
 .form-actions {
+  width: 160px;
   .select {
     width: 240px;
   }

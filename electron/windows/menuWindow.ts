@@ -1,21 +1,20 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
-import { format } from "url";
-import { indexHtml, preloadJs } from "../static";
+import { pageRoot, preload } from "../static";
 
-const pageName = "menu";
+const pageName = "/menu";
 
 export function createMenuWindow() {
-  const menuWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     x: 0,
     y: 0,
     width: 250,
     height: 32,
-    show: true,
+    show: false,
     resizable: false,
     webPreferences: {
       nodeIntegration: true,
-      preload: preloadJs,
+      preload: preload,
     },
     frame: false,
     transparent: true,
@@ -26,16 +25,11 @@ export function createMenuWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    menuWindow.loadURL(`${indexHtml}#/${pageName}`);
-    // menuWindow.webContents.openDevTools();
+    win.loadURL(join(pageRoot.development, "#", pageName));
+    // win.webContents.openDevTools();
   } else {
-    menuWindow.loadURL(
-      format({
-        protocol: "app",
-        slashes: true,
-        pathname: `${indexHtml}#/${pageName}`,
-      }),
-    );
+    win.loadFile(join(pageRoot.production), { hash: pageName });
   }
-  return menuWindow;
+
+  return win;
 }

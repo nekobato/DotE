@@ -2,8 +2,8 @@
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
-import SectionTitle from "../Post/SectionTitle.vue";
 import { Setting } from "~/types/store";
+import SectionTitle from "../Post/SectionTitle.vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();

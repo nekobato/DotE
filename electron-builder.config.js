@@ -9,7 +9,7 @@ module.exports = {
   files: [".output/**/*", "dist-electron"],
   mac: {
     category: "public.app-category.social-networking",
-    icon: "./build/icons/mac/icon.icns",
+    icon: ".output/public/icons/mac/icon.icns",
     artifactName: "${productName}_${version}.${ext}",
     target: ["dmg"],
     publish: [

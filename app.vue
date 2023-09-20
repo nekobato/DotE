@@ -10,6 +10,10 @@ const theme = useStorage("theme", "default");
   </div>
 </template>
 
+<style lang="scss">
+@import "~/assets/styles/index";
+</style>
+
 <style lang="scss" scoped>
 .theme {
   display: contents;

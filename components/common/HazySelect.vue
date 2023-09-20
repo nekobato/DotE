@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import { Teleport } from "vue";
-import { Select, SelectContent, SelectLabel, SelectOption, SelectPositioner, SelectTrigger } from "@ark-ui/vue";
-import { useProp } from "element-plus";
-
 const props = defineProps({
   placeholder: {
     type: String,
@@ -12,24 +8,19 @@ const props = defineProps({
     type: Array as PropType<{ label: string; value: string }[]>,
     required: true,
   },
+  default: {
+    type: String,
+    default: "",
+  },
 });
 </script>
 <template>
-  <Select>
-    <SelectTrigger>
-      <button>{{ placeholder }}</button>
-    </SelectTrigger>
-    <Teleport to="body">
-      <SelectPositioner>
-        <SelectContent>
-          <SelectOption
-            v-for="option in props.options"
-            :key="option.value"
-            :value="option.value"
-            :label="option.label"
-          />
-        </SelectContent>
-      </SelectPositioner>
-    </Teleport>
-  </Select>
+  <select class="nn-select size-small" :value="props.default" @change="$emit('change')">
+    <option value="" disabled>{{ placeholder }}</option>
+    <option v-for="option in options" :key="option.value" :value="option.value">
+      {{ option.label }}
+    </option>
+  </select>
 </template>
+
+<style lang="scss" scoped></style>

@@ -1,4 +1,4 @@
-import { nativeTheme, Tray } from "electron";
+import { Tray } from "electron";
 import { trayIcon } from "./static";
 
 export function setTrayIcon(): Tray {

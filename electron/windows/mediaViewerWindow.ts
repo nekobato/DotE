@@ -1,18 +1,17 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
-import { format } from "url";
-import { indexHtml, preloadJs } from "../static";
+import { pageRoot, preload } from "../static";
 
-const pageName = "media-viewer";
+const pageName = "/media-viewer";
 
 export function createMediaViewerWindow() {
-  const mediaViewer = new BrowserWindow({
+  const win = new BrowserWindow({
     useContentSize: true,
     show: false,
     resizable: true,
     webPreferences: {
       nodeIntegration: true,
-      preload: preloadJs,
+      preload: preload,
     },
     frame: false,
     transparent: true,
@@ -24,16 +23,11 @@ export function createMediaViewerWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    mediaViewer.loadURL(`${indexHtml}#/${pageName}`);
-    // mediaViewer.webContents.openDevTools();
+    win.loadURL(join(pageRoot.development, "#", pageName));
+    // win.webContents.openDevTools();
   } else {
-    mediaViewer.loadURL(
-      format({
-        protocol: "app",
-        slashes: true,
-        pathname: `${indexHtml}#/${pageName}`,
-      }),
-    );
+    win.loadFile(join(pageRoot.production), { hash: pageName });
   }
-  return mediaViewer;
+
+  return win;
 }

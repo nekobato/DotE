@@ -13,8 +13,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "prebuild": "npm run generate",
-    "build": "NODE_ENV=production electron-builder -c ./electron-builder.config.js",
-    "publish": "NODE_ENV=production electron-builder --publish always -c ./electron-builder.config.js",
+    "build": "NODE_ENV=development electron-builder -c ./electron-builder.config.js",
+    "publish": "NODE_ENV=development electron-builder --publish always -c ./electron-builder.config.js",
     "build:icon": "electron-icon-builder --input=./assets/icons/app_icon.png --output=./public"
   },
   "main": "./dist-electron/index.js",

@@ -1,12 +1,11 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
-import { format } from "url";
-import { indexHtml, preloadJs } from "../static";
+import { pageRoot, preload } from "../static";
 
-const pageName = "post";
+const pageName = "/post";
 
 export function createPostWindow() {
-  const postWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     x: 0,
     y: 0,
     height: 320,
@@ -15,7 +14,7 @@ export function createPostWindow() {
     resizable: true,
     webPreferences: {
       nodeIntegration: true,
-      preload: preloadJs,
+      preload: preload,
     },
     useContentSize: false,
     frame: true,
@@ -28,17 +27,11 @@ export function createPostWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    postWindow.loadURL(`${indexHtml}#/${pageName}`);
-    // postWindow.webContents.openDevTools();
+    win.loadURL(join(pageRoot.development, "#", pageName));
+    // win.webContents.openDevTools();
   } else {
-    postWindow.loadURL(
-      format({
-        protocol: "app",
-        slashes: true,
-        pathname: `${indexHtml}#/${pageName}`,
-      }),
-    );
+    win.loadFile(join(pageRoot.production), { hash: pageName });
   }
 
-  return postWindow;
+  return win;
 }

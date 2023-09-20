@@ -1,4 +1,4 @@
-import electron, { app, BrowserWindow, globalShortcut, ipcMain, Menu, protocol, Tray } from "electron";
+import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, protocol, Tray } from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createMenuWindow } from "./windows/menuWindow";
 import { createPostWindow } from "./windows/postWindow";
@@ -66,7 +66,7 @@ const setMainWindowMode = async (mode: string) => {
   }
 };
 
-app.on("ready", async () => {
+const start = () => {
   autoUpdater.checkForUpdatesAndNotify();
 
   tray = setTrayIcon();
@@ -75,6 +75,14 @@ app.on("ready", async () => {
     if (menuWindow?.isVisible()) {
       menuWindow?.hide();
     } else {
+      // show below the tray icon
+      const position = tray?.getBounds();
+      const size = menuWindow?.getSize();
+      const x = position?.x || 0;
+      const y = position?.y || 0;
+      const width = size?.[0] || 0;
+      const height = size?.[1] || 0;
+      menuWindow?.setBounds({ x: x - width / 2 + 16, y: y + 32, width, height });
       menuWindow?.show();
     }
   });
@@ -147,23 +155,23 @@ app.on("ready", async () => {
           throw new Error(`${data.method} is not defined method.`);
         }
       case "db:get-users":
-        return await db.getUserAll();
+        return db.getUserAll();
       case "db:upsert-user":
-        return await db.upsertUser(data);
+        return db.upsertUser(data);
       case "db:delete-user":
-        return await db.deleteUser(data.id);
+        return db.deleteUser(data.id);
       case "db:get-timeline-all":
-        return await db.getTimelineAll();
+        return db.getTimelineAll();
       case "db:set-timeline":
-        return await db.setTimeline(data);
+        return db.setTimeline(data);
       case "db:get-instance-all":
-        return await db.getInstanceAll();
+        return db.getInstanceAll();
       case "db:upsert-instance":
-        return await db.upsertInstance(data);
+        return db.upsertInstance(data);
       case "settings:set":
-        return await db.setSetting(data.key, data.value);
+        return db.setSetting(data.key, data.value);
       case "settings:all":
-        return await db.getSettingAll();
+        return db.getSettingAll();
       default:
         throw new Error(`${event} is not defined event.`);
     }
@@ -193,7 +201,7 @@ app.on("ready", async () => {
   });
 
   initialize();
-});
+};
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
@@ -219,3 +227,8 @@ if (DEBUG) {
     });
   }
 }
+
+app
+  .whenReady()
+  .then(start)
+  .catch((error) => dialog.showErrorBox("Error", error.message));
