@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { useTimelineStore } from "@/store/timeline";
-import { Post } from "@/types/post";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
-import PostAttachment from "./PostAttachment.vue";
 import { MisskeyNote } from "~/types/misskey";
 import { parseMisskeyAttachments } from "~/utils/misskey";
+import PostAttachment from "./PostAttachment.vue";
 
 const timelineStore = useTimelineStore();
 
