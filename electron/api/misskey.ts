@@ -146,7 +146,7 @@ export const misskeyCreateNote = async ({
   instanceUrl: string;
   token: string;
   text: string;
-  cw?: string;
+  cw: string | null;
   visibility?: string;
   replyId?: string;
   renoteId?: string;

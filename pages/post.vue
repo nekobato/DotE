@@ -2,11 +2,12 @@
 import { RouterView } from "vue-router";
 import { PropType, reactive } from "vue";
 import { Post } from "@/types/post";
+import { MisskeyEntities } from "~/types/misskey";
 
 const router = useRouter();
 
 const pagedata = reactive({
-  post: null as PropType<Post> | null,
+  post: null as PropType<MisskeyNote> | null,
 });
 
 window.ipc.on("post:create", () => {

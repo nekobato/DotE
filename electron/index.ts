@@ -126,10 +126,7 @@ const start = () => {
       case "post:close":
         postWindow?.hide();
         break;
-      case "post:detail":
-        if (!postWindow) {
-          postWindow = createPostWindow();
-        }
+      case "post:reaction":
         postWindow?.webContents.send(event, data);
         postWindow?.show();
         break;

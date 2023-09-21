@@ -1,4 +1,4 @@
-import { MisskeyEntities } from "@/types/misskey";
+import { MisskeyNote } from "@/types/misskey";
 
 // https://misskey-hub.net/docs/api/streaming/channel/
 export type MisskeyStreamChannel = "globalTimeline" | "homeTimeline" | "hybridTimeline" | "localTimeline" | "main";
@@ -6,7 +6,7 @@ export type MisskeyStreamChannel = "globalTimeline" | "homeTimeline" | "hybridTi
 export type MisskeyStreamMessage = {
   id: string;
   type: "note";
-  body: MisskeyEntities.Note;
+  body: MisskeyNote;
 };
 
 // https://misskey-hub.net/docs/api/streaming

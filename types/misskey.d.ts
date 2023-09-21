@@ -1,1 +1,9 @@
-export { entities as MisskeyEntities } from "misskey-js";
+import { entities } from "misskey-js";
+
+export type MisskeyNote = entities.Note & {
+  reactionEmojis: {
+    [key: string]: string;
+  };
+};
+
+export { api as MisskeyApi, entities as MisskeyEntities };

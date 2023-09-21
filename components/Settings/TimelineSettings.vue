@@ -151,9 +151,9 @@ const updateTimeline = async (timeline: TimelineSetting) => {
   }
 }
 .form-actions {
-  width: 160px;
+  width: 200px;
   .select {
-    width: 240px;
+    width: 100%;
   }
 }
 </style>

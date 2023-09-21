@@ -4,7 +4,6 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
-import { parseMisskeyNotes } from "@/utils/misskey";
 import { connectToMisskeyStream } from "@/utils/websocket";
 import { v4 as uuid } from "uuid";
 import { onBeforeMount, onBeforeUnmount, reactive } from "vue";
@@ -83,8 +82,7 @@ const observeWebSocketConnection = () => {
     const data = JSON.parse(event.data);
     if (data.body.type === "note") {
       if (timelineStore.current && timelineStore.currentInstance) {
-        const note = parseMisskeyNotes([data.body.body], timelineStore.currentInstance.misskey!.emojis)[0];
-        timelineStore.addPost(note);
+        timelineStore.addPost(data.body.body);
 
         // スクロール制御
         // const container = timelineContainer.value;

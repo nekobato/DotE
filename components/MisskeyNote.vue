@@ -5,22 +5,32 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import PostAttachment from "./PostAttachment.vue";
+import { MisskeyNote } from "~/types/misskey";
+import { parseMisskeyAttachments } from "~/utils/misskey";
 
 const timelineStore = useTimelineStore();
 
 const props = defineProps({
   post: {
-    type: Object as PropType<Post>,
+    type: Object as PropType<MisskeyNote>,
     required: true,
   },
 });
 
+const cwHtml = computed(() => {
+  return parseMisskeyNoteText(props.post.cw, timelineStore.currentInstance?.misskey?.emojis || []);
+});
+
+const textHtml = computed(() => {
+  return parseMisskeyNoteText(props.post.text, timelineStore.currentInstance?.misskey?.emojis || []);
+});
+
 const postType = computed(() => {
-  if (props.post.repost) {
+  if (props.post.renote) {
     if (props.post.text) {
       return "quote";
     } else {
-      return "repost";
+      return "renote";
     }
   } else if (props.post.replyId) {
     return "reply";
@@ -30,17 +40,36 @@ const postType = computed(() => {
 });
 
 const postAtttachments = computed(() => {
-  if (props.post.attachments?.length) {
-    return props.post.attachments;
-  } else if (props.post.repost?.attachments?.length) {
-    return props.post.repost.attachments;
+  if (props.post.files?.length) {
+    return parseMisskeyAttachments(props.post.files);
+  } else if (props.post.renote?.files?.length) {
+    return parseMisskeyAttachments(props.post.renote.files);
   }
   return undefined;
 });
 
+const reactions = computed(() => {
+  const reactions = (props.post.renote ? props.post.renote?.reactions : props.post.reactions) || {};
+  return Object.keys(reactions)
+    .map((key) => {
+      const reactionName = key.replace(/:|@\./g, "");
+      const localEmoji = timelineStore.currentInstance?.misskey?.emojis.find((emoji) => emoji.name === reactionName);
+      return {
+        name: key,
+        url: localEmoji?.url || props.post.reactionEmojis[reactionName] || "",
+        count: reactions[key],
+        isRemote: !localEmoji,
+      };
+    })
+    .sort((a, b) => b.count - a.count);
+});
+
 const openPost = () => {
-  console.log(new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString());
   ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
+};
+
+const openReactionWindow = () => {
+  ipcSend("post:reaction", { instanceUrl: timelineStore.currentInstance?.url, postId: props.post.id });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
@@ -88,16 +117,17 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
-          <p class="hazy-post-body" v-html="props.post.text" />
+          <p class="hazy-post-body" v-html="cwHtml" v-if="props.post.cw" />
+          <p class="hazy-post-body" v-html="textHtml" v-if="props.post.text" />
         </div>
       </div>
-      <div class="repost-data" v-if="props.post.repost">
+      <div class="renote-data" v-if="props.post.renote">
         <div class="hazy-post-info">
-          <span class="username" v-html="props.post.repost?.user.name" />
+          <span class="username" v-html="props.post.renote?.user.name" />
         </div>
         <div class="hazy-post-contents">
-          <img class="hazy-avatar" :src="props.post.repost?.user.avatarUrl" alt="" />
-          <p class="hazy-post-body" v-html="props.post.repost?.text" />
+          <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
+          <p class="hazy-post-body" v-html="props.post.renote?.text" />
         </div>
       </div>
     </div>
@@ -107,7 +137,7 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
     <div class="reactions">
       <button
         class="reaction"
-        v-for="reaction in (props.post.reactions || props.post.repost?.reactions).sort((a, b) => b.count - a.count)"
+        v-for="reaction in reactions"
         :class="{ remote: reaction.isRemote, reacted: isMyReaction(reaction.name, props.post.myReaction) }"
         @click="onClickReaction(props.post.id, reaction.name)"
       >
@@ -117,7 +147,7 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
       </button>
     </div>
     <div class="hazy-post-actions">
-      <button class="hazy-post-action" @click="openPost">
+      <button class="hazy-post-action" @click="openReactionWindow">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
       </button>
       <button class="hazy-post-action" @click="openPost">
@@ -143,13 +173,13 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
   }
 }
 .post-data,
-.repost-data {
+.renote-data {
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
 }
-.repost-data {
+.renote-data {
   margin-top: 4px;
   padding-left: 8px;
   &::before {
@@ -165,7 +195,7 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
 }
 
 .hazy-post {
-  &.repost {
+  &.renote {
     .post-data {
       .username {
         display: none;
@@ -175,7 +205,7 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
         height: 20px;
       }
     }
-    .repost-data {
+    .renote-data {
       margin-top: -46px;
       padding-left: 12px;
       &::before {

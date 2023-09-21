@@ -1,7 +1,5 @@
-import { Post } from "@/types/post";
-import { MisskeyEntities } from "@/types/misskey";
+import { MisskeyNote } from "@/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
-import { parseMisskeyNote, parseMisskeyNotes } from "@/utils/misskey";
 import { useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed } from "vue";
@@ -38,12 +36,9 @@ export const useTimelineStore = defineStore("timeline", () => {
           message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
         });
       });
-      console.log(data);
+      console.log("Notes", data);
       // misskeyなら という条件分岐が必要
-      store.timelines[currentIndex.value].posts = parseMisskeyNotes(
-        data,
-        currentInstance.value.misskey?.emojis as MisskeyEntities.CustomEmoji[],
-      );
+      store.timelines[currentIndex.value].posts = data;
     } else {
       throw new Error("user not found");
     }
@@ -68,7 +63,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
-  const addPost = (post: Post) => {
+  const addPost = (post: MisskeyNote) => {
     store.timelines[currentIndex.value].posts.unshift(post);
   };
 
@@ -128,10 +123,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       });
       const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
       if (current.value && postIndex !== undefined && postIndex !== -1 && currentInstance.value?.misskey?.emojis) {
-        store.timelines[currentIndex.value].posts[postIndex] = parseMisskeyNote(
-          res,
-          currentInstance.value?.misskey?.emojis,
-        );
+        store.timelines[currentIndex.value].posts[postIndex] = res;
       }
     } else {
       throw new Error("user not found");

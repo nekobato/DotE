@@ -1,5 +1,4 @@
-import { MisskeyEntities } from "@/types/misskey";
-import { Post } from "@/types/post";
+import { MisskeyEntities, MisskeyNote } from "@/types/misskey";
 import { Instance, Setting, User } from "@/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
@@ -36,7 +35,7 @@ export type TimelineSetting = {
 };
 
 export type Timeline = TimelineSetting & {
-  posts: Post[];
+  posts: MisskeyNote[];
 };
 
 export type InstanceStore = Instance & {

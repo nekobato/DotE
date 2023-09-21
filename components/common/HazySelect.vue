@@ -22,5 +22,3 @@ const props = defineProps({
     </option>
   </select>
 </template>
-
-<style lang="scss" scoped></style>

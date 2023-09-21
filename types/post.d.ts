@@ -1,16 +1,12 @@
 export type Post = {
   id: string;
+  cw: string | null;
   text: string;
   repost?: Post;
   user: { id: string | number; name: string; avatarUrl: string };
   attachments?: Attachment[];
   myReaction?: string;
-  reactions: {
-    name: string;
-    url: string;
-    count: number;
-    isRemote: boolean;
-  }[];
+  reactions: { [key: string]: number };
   replyId: string | null;
 };
 

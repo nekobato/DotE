@@ -16,10 +16,7 @@ const state = reactive({
 </script>
 
 <template>
-  <div
-    class="page-container hazy-timeline-container"
-    :class="{ haze: store.settings.hazyMode === 'haze' }"
-  > 
+  <div class="page-container hazy-timeline-container" :class="{ haze: store.settings.hazyMode === 'haze' }">
     <div
       class="timeline-container"
       v-if="timelineStore.current?.posts.length"
@@ -28,7 +25,7 @@ const state = reactive({
         'is-adding': state.isAdding,
       }"
     >
-      <Post class="post-item" v-for="post in timelineStore.current.posts" :post="post" />
+      <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" />
     </div>
     <HazyLoading v-else />
   </div>
@@ -45,7 +42,7 @@ body::-webkit-scrollbar {
   height: 100%;
   overflow: hidden;
   // inset grow
-  border: 1px solid rgba( 255, 255, 255, 0.18 );
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 4px;
 
   &.haze {
@@ -75,5 +72,4 @@ body::-webkit-scrollbar {
   color: #fff;
   text-shadow: 1px 0 1px #000;
 }
-
 </style>
