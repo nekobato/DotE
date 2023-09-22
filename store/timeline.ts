@@ -7,25 +7,27 @@ import { TimelineSetting, methodOfChannel, useStore } from ".";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
-  const currentIndex = useStorage("timeline-current-index", 0);
-  const current = computed(() => store.$state.timelines[currentIndex.value]);
+  const current = computed(() => store.$state.timelines.find((timeline) => timeline.available));
   const timelines = computed(() => store.$state.timelines);
 
-  const setCurrentIndex = (index: number) => {
-    currentIndex.value = index;
-  };
-
   const currentUser = computed(() => {
-    return store.users.find((user) => user.id === current.value?.userId);
+    return store.users.find((user) => user.id === current?.value?.userId);
   });
 
   const currentInstance = computed(() => {
-    return store.instances.find((instance) => instance.id === currentUser.value?.instanceId);
+    return store.instances.find((instance) => instance.id === currentUser?.value?.instanceId);
   });
 
-  const fetchPosts = async () => {
+  const setPosts = (posts: MisskeyNote[]) => {
+    const availableTimeline = store.timelines.find((timeline) => timeline.available);
+    if (availableTimeline) {
+      availableTimeline.posts = posts;
+    }
+  };
+
+  const fetchInitialPosts = async () => {
     if (current.value && currentUser.value && currentInstance.value) {
-      store.timelines[currentIndex.value].posts = [];
+      setPosts([]);
       const data = await ipcInvoke("api", {
         method: methodOfChannel[current.value.channel],
         instanceUrl: currentInstance.value?.url,
@@ -38,7 +40,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       });
       console.log("Notes", data);
       // misskeyなら という条件分岐が必要
-      store.timelines[currentIndex.value].posts = data;
+      setPosts(data);
     } else {
       throw new Error("user not found");
     }
@@ -50,6 +52,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       userId: timeline.userId,
       channel: timeline.channel,
       options: JSON.stringify(timeline.options),
+      available: timeline.available,
     });
     await store.initTimelines();
   };
@@ -59,12 +62,15 @@ export const useTimelineStore = defineStore("timeline", () => {
       userId: timeline.userId,
       channel: timeline.channel,
       options: JSON.stringify(timeline.options),
+      available: timeline.available,
     });
     await store.initTimelines();
   };
 
   const addPost = (post: MisskeyNote) => {
-    store.timelines[currentIndex.value].posts.unshift(post);
+    const availableTimeline = store.timelines.find((timeline) => timeline.available);
+    if (!availableTimeline) return;
+    availableTimeline.posts.unshift(post);
   };
 
   const createReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
@@ -110,6 +116,9 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updatePost = async ({ postId }: { postId: string }) => {
+    const availableTimeline = store.timelines.find((timeline) => timeline.available);
+    if (!availableTimeline) return;
+
     if (currentUser.value) {
       const res = await ipcInvoke("api", {
         method: "misskey:getNote",
@@ -123,7 +132,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       });
       const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
       if (current.value && postIndex !== undefined && postIndex !== -1 && currentInstance.value?.misskey?.emojis) {
-        store.timelines[currentIndex.value].posts[postIndex] = res;
+        availableTimeline.posts[postIndex] = res;
       }
     } else {
       throw new Error("user not found");
@@ -132,12 +141,10 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   return {
     timelines,
-    currentIndex,
     current,
-    setCurrentIndex,
     currentUser,
     currentInstance,
-    fetchPosts,
+    fetchInitialPosts,
     updateTimeline,
     createTimeline,
     addPost,

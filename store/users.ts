@@ -52,7 +52,12 @@ export const useUsersStore = defineStore("users", () => {
 
     // Timelineの長さが0ならば作成
     if (store.timelines.length === 0) {
-      await timelineStore.createTimeline({ userId: store.users[0].id, channel: "misskey:homeTimeline", options: {} });
+      await timelineStore.createTimeline({
+        userId: store.users[0].id,
+        channel: "misskey:homeTimeline",
+        options: {},
+        available: true,
+      });
     }
   };
 

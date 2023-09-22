@@ -3,6 +3,7 @@ export type Timeline = {
   userId: string;
   channel: string;
   options: string;
+  available: boolean;
 };
 
 export type Instance = {

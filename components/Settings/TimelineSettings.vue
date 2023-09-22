@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { TimelineSetting, useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
-import { useUsersStore } from "@/store/users";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
 
@@ -37,7 +36,6 @@ const channelList = [
 ] as const;
 
 const store = useStore();
-const usersStore = useUsersStore();
 const timelineStore = useTimelineStore();
 
 const accountOptions = computed(() =>
@@ -72,6 +70,7 @@ const updateTimeline = async (timeline: TimelineSetting) => {
     userId: timeline.userId,
     channel: timeline?.channel,
     options: timeline?.options,
+    available: timeline?.available,
   });
 };
 </script>

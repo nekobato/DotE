@@ -120,10 +120,8 @@ const observeWebSocketConnection = () => {
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {
-    if (store.timelines[timelineStore.currentIndex].id === action.args[0].id) {
-      timelineStore.fetchPosts();
-      observeWebSocketConnection();
-    }
+    timelineStore.fetchInitialPosts();
+    observeWebSocketConnection();
   }
 });
 
@@ -136,7 +134,7 @@ onBeforeMount(async () => {
   }
 
   if (timelineStore.currentUser) {
-    await timelineStore.fetchPosts().catch((error) => {
+    await timelineStore.fetchInitialPosts().catch((error) => {
       console.log(error);
     });
     observeWebSocketConnection();

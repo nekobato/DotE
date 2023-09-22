@@ -32,6 +32,7 @@ export type TimelineSetting = {
     antenna?: string;
     list?: string;
   };
+  available: boolean;
 };
 
 export type Timeline = TimelineSetting & {

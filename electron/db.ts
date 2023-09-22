@@ -20,6 +20,7 @@ const schema: Store.Schema<StoreSchema> = {
         userId: { type: "string" },
         channel: { type: "string" },
         options: { type: "string" },
+        available: { type: "boolean" },
       },
       required: ["id", "userId", "channel", "options"],
     },
@@ -104,37 +105,27 @@ export const getTimelineAll = () => {
   return store.get("timeline");
 };
 
-export const setTimeline = (data: { id?: string; userId: string; channel: string; options: string }) => {
-  const { id, userId, channel, options } = data;
+export const setTimeline = (data: Timeline) => {
+  if (!data.userId) throw new Error("userId is required");
+  if (!data.channel) throw new Error("channel is required");
+  if (!data.options) throw new Error("options is required");
 
-  if (!userId) throw new Error("userId is required");
-  if (!channel) throw new Error("channel is required");
-  if (!options) throw new Error("options is required");
-
-  if (id) {
-    const newTimeline = {
-      id: id,
-      userId: userId,
-      channel: channel,
-      options: options,
-    };
+  if (data.id) {
     store.set(
       "timeline",
       store.get("timeline").map((timeline) => {
-        if (timeline.id === id) {
-          return newTimeline;
+        if (timeline.id === data.id) {
+          return data;
         } else {
           return timeline;
         }
       }),
     );
-    return newTimeline;
+    return data;
   } else {
     const newTimeline = {
+      ...data,
       id: uuid(),
-      userId: userId,
-      channel: channel,
-      options: options,
     };
     store.set("timeline", [...store.get("timeline"), newTimeline]);
     return newTimeline;

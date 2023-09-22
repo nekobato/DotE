@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import Post from "@/components/Post.vue";
 import HazyLoading from "@/components/common/HazyLoading.vue";
 import { useTimelineStore } from "@/store/timeline";
 import { reactive, ref } from "vue";
 import { useStore } from "~/store";
-import { useSettingsStore } from "~/store/settings";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
