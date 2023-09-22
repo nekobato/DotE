@@ -1,9 +1,9 @@
 import { MisskeyNote } from "@/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
-import { useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed } from "vue";
-import { TimelineSetting, methodOfChannel, useStore } from ".";
+import { TimelineStore, methodOfChannel, useStore } from ".";
+import { Timeline } from "~/types/store";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -46,22 +46,22 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updateTimeline = async (timeline: TimelineSetting) => {
+  const updateTimeline = async (timeline: TimelineStore) => {
     await ipcInvoke("db:set-timeline", {
       id: timeline.id,
       userId: timeline.userId,
       channel: timeline.channel,
-      options: JSON.stringify(timeline.options),
+      options: timeline.options,
       available: timeline.available,
     });
     await store.initTimelines();
   };
 
-  const createTimeline = async (timeline: Omit<TimelineSetting, "id">) => {
+  const createTimeline = async (timeline: Omit<Timeline, "id">) => {
     await ipcInvoke("db:set-timeline", {
       userId: timeline.userId,
       channel: timeline.channel,
-      options: JSON.stringify(timeline.options),
+      options: timeline.options,
       available: timeline.available,
     });
     await store.initTimelines();

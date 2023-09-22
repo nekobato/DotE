@@ -1,8 +1,19 @@
+export type ChannelName =
+  | "misskey:homeTimeline"
+  | "misskey:localTimeline"
+  | "misskey:socialTimeline"
+  | "misskey:globalTimeline"
+  | "misskey:listTimeline"
+  | "misskey:antennaTimeline"
+  | "misskey:channelTimeline";
+
 export type Timeline = {
   id: string; // uuid
   userId: string;
-  channel: string;
-  options: string;
+  channel: ChannelName;
+  options: {
+    query?: string;
+  };
   available: boolean;
 };
 
@@ -22,7 +33,7 @@ export type User = {
   avatarUrl: string;
 };
 
-export type Setting = {
+export type Settings = {
   opacity: number;
   hazyMode: "show" | "haze" | "hide" | "settings" | "tutorial";
   windowSize: {

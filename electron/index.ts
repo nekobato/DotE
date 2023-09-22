@@ -10,7 +10,7 @@ import { setTrayIcon } from "./tray-icon";
 import * as db from "./db";
 import { apiRequest } from "./api";
 import { autoUpdater } from "electron-updater";
-import { Setting } from "@/types/store";
+import { Settings } from "@/types/store";
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
@@ -34,7 +34,7 @@ let postWindow: BrowserWindow | null = null;
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }]);
 
 const initialize = async () => {
-  const hazyMode = (await db.getSetting("hazyMode")) as Setting["hazyMode"];
+  const hazyMode = (await db.getSetting("hazyMode")) as Settings["hazyMode"];
   setMainWindowMode(hazyMode);
 };
 

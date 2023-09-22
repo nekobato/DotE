@@ -1,69 +1,49 @@
 <script setup lang="ts">
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
-import { Icon } from "@iconify/vue";
-import { computed, onMounted, reactive, ref } from "vue";
-import HazyButton from "@/components/common/HazyButton.vue";
-import hazyAlert from "@/components/common/HazyAlert.vue";
+import { MisskeyEntities } from "~/types/misskey";
+import { Instance, Timeline } from "~/types/store";
+import { ipcInvoke } from "~/utils/ipc";
 
-const state = reactive({
-  users: [] as any,
-  currentUserIndex: 0,
-  post: {
-    isSending: false,
-    error: "",
-  },
+const instance = ref<Instance>();
+const meta = ref<MisskeyEntities.DetailedInstanceMetadata>();
+
+const categoryFilter = ref<string[]>([]);
+
+const categories = computed(() => {
+  const categories = new Set<string>();
+  for (const emoji of meta.value?.emojis ?? []) {
+    categories.add(emoji.category);
+  }
+  return Array.from(categories);
+});
+
+const filteredEmojis = computed(() => {
+  return meta.value?.emojis?.filter((emoji) => {
+    if (categoryFilter.value.length === 0) return true;
+    return categoryFilter.value.includes(emoji.category);
+  });
+});
+
+onMounted(async () => {
+  instance.value = await ipcInvoke("pipe:current-instance");
+  meta.value = await ipcInvoke("api", {
+    method: "misskey:getMeta",
+  });
 });
 </script>
 
 <template>
-  <div class="post">
-    <div class="post-form">
-      <div class="tools">
-        <img :src="currentUser?.avatarUrl" class="hazy-avatar" />
-        <span class="username">{{ currentUser?.name }}@{{ currentUser?.instanceUrl.replace("https://", "") }}</span>
-        <HazyButton
-          class="post-action"
-          @click="post"
-          :disabled="text.length === 0 || state.post.isSending"
-          :loading="state.post.isSending"
-        >
-          <span>Note</span>
-          <Icon slot="icon" icon="ion:send" class="nn-icon size-xsmall" />
-        </HazyButton>
-      </div>
-      <textarea class="nn-text-field post-field" v-model="text"></textarea>
-      <hazyAlert class="mt-4" type="error" v-if="state.post.error">
-        {{ state.post.error }}
-      </hazyAlert>
-    </div>
+  <div class="reaction">
+    <ul>
+      <li v-for="category in categories">
+        <span>{{ category }}</span>
+      </li>
+      <ul>
+        <li v-for="emoji in filteredEmojis">
+          <img :src="emoji.url" :alt="emoji.name" width="24" height="24" />
+        </li>
+      </ul>
+    </ul>
   </div>
 </template>
 
-<style lang="scss" scoped>
-.post {
-  width: 100%;
-  height: 100%;
-  padding: 16px;
-  background-color: var(--hazy-background-color);
-}
-.tools {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  .post-action {
-    margin: 0 0 0 auto;
-    color: rgba(0, 0, 0, 0.72);
-    background-color: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.72);
-  }
-  .username {
-    color: #fff;
-    font-size: 0.8rem;
-  }
-}
-.post-field {
-  width: 100%;
-  min-height: 120px;
-  margin: 16px 0 0;
-}
-</style>
+<style lang="scss" scoped></style>

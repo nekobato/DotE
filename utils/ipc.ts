@@ -1,4 +1,4 @@
-import { Instance, Timeline, User, Setting } from "@/types/store";
+import { Instance, Timeline, User, Settings } from "@/types/store";
 
 export const ipcSend = (event: string, payload?: object) => {
   if (typeof window === "undefined") return;
@@ -35,7 +35,7 @@ type InvokeResults = {
   "db:get-instance-all": Instance[];
   "db:upsert-instance": Instance;
   "settings:set": void;
-  "settings:all": Setting;
+  "settings:all": Settings;
 };
 
 export const ipcInvoke = <K extends keyof invokeEvents>(

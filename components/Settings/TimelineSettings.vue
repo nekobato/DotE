@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TimelineSetting, useStore } from "@/store";
+import { TimelineStore, useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
@@ -64,7 +64,7 @@ const onChangeChannel = async (timelineId: string) => {
   }
 };
 
-const updateTimeline = async (timeline: TimelineSetting) => {
+const updateTimeline = async (timeline: TimelineStore) => {
   await timelineStore.updateTimeline({
     id: timeline.id,
     userId: timeline.userId,

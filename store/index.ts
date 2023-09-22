@@ -1,17 +1,8 @@
 import { MisskeyEntities, MisskeyNote } from "@/types/misskey";
-import { Instance, Setting, User } from "@/types/store";
+import { ChannelName, Instance, Settings, Timeline, User } from "@/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { gotoHazyRoute } from "~/composables/hazyRoute";
-
-export type ChannelName =
-  | "misskey:homeTimeline"
-  | "misskey:localTimeline"
-  | "misskey:socialTimeline"
-  | "misskey:globalTimeline"
-  | "misskey:listTimeline"
-  | "misskey:antennaTimeline"
-  | "misskey:channelTimeline";
 
 export const methodOfChannel = {
   "misskey:homeTimeline": "misskey:getTimelineHome",
@@ -23,19 +14,7 @@ export const methodOfChannel = {
   "misskey:channelTimeline": "misskey:getTimelineChannel",
 };
 
-export type TimelineSetting = {
-  id: string;
-  userId: string;
-  channel: ChannelName;
-  options: {
-    search?: string;
-    antenna?: string;
-    list?: string;
-  };
-  available: boolean;
-};
-
-export type Timeline = TimelineSetting & {
+export type TimelineStore = Timeline & {
   posts: MisskeyNote[];
 };
 
@@ -56,7 +35,7 @@ export const useStore = defineStore({
     hasInit: false,
     users: [] as User[],
     instances: [] as InstanceStore[],
-    timelines: [] as Timeline[],
+    timelines: [] as TimelineStore[],
     settings: {
       opacity: undefined as number | undefined,
       hazyMode: "show" as "show" | "haze" | "hide" | "settings" | "tutorial",
@@ -65,7 +44,7 @@ export const useStore = defineStore({
         height: 0,
       },
       maxPostCount: 1000,
-      shortcuts: {} as Setting["shortcuts"],
+      shortcuts: {} as Settings["shortcuts"],
     },
     errors: [] as ErrorItem[],
   }),
@@ -125,7 +104,7 @@ export const useStore = defineStore({
         return {
           ...timeline,
           channel: timeline.channel as ChannelName,
-          options: JSON.parse(timeline.options),
+          options: timeline.options,
           posts: [],
         };
       });

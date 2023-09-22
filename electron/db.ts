@@ -1,17 +1,18 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
 import { v4 as uuid } from "uuid";
-import { Instance, Timeline, User, Setting } from "@/types/store";
+import { Instance, Timeline, User, Settings } from "@/types/store";
+import { storeDefaults } from "~/utils/statics";
 
 export type StoreSchema = {
-  timeline: Timeline[];
-  instance: Instance[];
-  user: User[];
-  setting: Setting;
+  timelines: Timeline[];
+  instances: Instance[];
+  users: User[];
+  settings: Settings;
 };
 
 const schema: Store.Schema<StoreSchema> = {
-  timeline: {
+  timelines: {
     type: "array",
     items: {
       type: "object",
@@ -19,13 +20,19 @@ const schema: Store.Schema<StoreSchema> = {
         id: { type: "string" },
         userId: { type: "string" },
         channel: { type: "string" },
-        options: { type: "string" },
+        options: {
+          type: "object",
+          required: [""],
+          properties: {
+            query: { type: "string" },
+          },
+        },
         available: { type: "boolean" },
       },
       required: ["id", "userId", "channel", "options"],
     },
   },
-  instance: {
+  instances: {
     type: "array",
     items: {
       type: "object",
@@ -39,7 +46,7 @@ const schema: Store.Schema<StoreSchema> = {
       required: ["id", "type", "name", "url", "iconUrl"],
     },
   },
-  user: {
+  users: {
     type: "array",
     items: {
       type: "object",
@@ -53,7 +60,7 @@ const schema: Store.Schema<StoreSchema> = {
       required: ["id", "instanceId", "name", "token", "avatarUrl"],
     },
   },
-  setting: {
+  settings: {
     type: "object",
     properties: {
       opacity: { type: "number" },
@@ -78,23 +85,7 @@ const schema: Store.Schema<StoreSchema> = {
 
 export const store = new Store<StoreSchema>({
   schema,
-  defaults: {
-    timeline: [],
-    instance: [],
-    user: [],
-    setting: {
-      opacity: 50,
-      hazyMode: "show",
-      windowSize: {
-        width: 475,
-        height: 600,
-      },
-      maxPostCount: 1000,
-      shortcuts: {
-        toggleTimeline: "CmdOrCtrl+Shift+T",
-      },
-    },
-  },
+  defaults: storeDefaults,
 });
 
 // Actions
@@ -102,7 +93,7 @@ export const store = new Store<StoreSchema>({
 // Timeline
 
 export const getTimelineAll = () => {
-  return store.get("timeline");
+  return store.get("timelines");
 };
 
 export const setTimeline = (data: Timeline) => {
@@ -113,7 +104,7 @@ export const setTimeline = (data: Timeline) => {
   if (data.id) {
     store.set(
       "timeline",
-      store.get("timeline").map((timeline) => {
+      store.get("timelines").map((timeline) => {
         if (timeline.id === data.id) {
           return data;
         } else {
@@ -127,7 +118,7 @@ export const setTimeline = (data: Timeline) => {
       ...data,
       id: uuid(),
     };
-    store.set("timeline", [...store.get("timeline"), newTimeline]);
+    store.set("timeline", [...store.get("timelines"), newTimeline]);
     return newTimeline;
   }
 };
@@ -137,14 +128,14 @@ export const deleteTimeline = (id: string) => {
 
   return store.set(
     "timeline",
-    store.get("timeline").filter((timeline) => timeline.id !== id),
+    store.get("timelines").filter((timeline) => timeline.id !== id),
   );
 };
 
 // Instance
 
 export const getInstanceAll = () => {
-  return store.get("instance");
+  return store.get("instances");
 };
 
 export const upsertInstance = (instance: {
@@ -164,7 +155,7 @@ export const upsertInstance = (instance: {
   if (id) {
     store.set(
       "instance",
-      store.get("instance").map((instance) => {
+      store.get("instances").map((instance) => {
         if (instance.id === id) {
           return {
             id: id,
@@ -188,7 +179,7 @@ export const upsertInstance = (instance: {
       url: url,
       iconUrl: iconUrl,
     };
-    store.set("instance", [...store.get("instance"), newInstance]);
+    store.set("instance", [...store.get("instances"), newInstance]);
 
     return newInstance;
   }
@@ -199,7 +190,7 @@ export const deleteInstance = (id: string) => {
 
   return store.set(
     "instance",
-    store.get("instance").filter((instance) => instance.id !== id),
+    store.get("instances").filter((instance) => instance.id !== id),
   );
 };
 
@@ -210,12 +201,12 @@ export const deleteUser = (id: string) => {
 
   return store.set(
     "user",
-    store.get("user").filter((user) => user.id !== id),
+    store.get("users").filter((user) => user.id !== id),
   );
 };
 
 export const getUserAll = () => {
-  return store.get("user").map((user) => {
+  return store.get("users").map((user) => {
     const decryptedToken = safeStorage.decryptString(Buffer.from(user.token, "base64"));
     return {
       ...user,
@@ -233,12 +224,12 @@ export const upsertUser = (user: {
 }) => {
   const encryptedToken = safeStorage.encryptString(user.token).toString("base64");
   if (user.id) {
-    const currentUser = store.get("user").find((user) => user.instanceId === user.instanceId);
+    const currentUser = store.get("users").find((user) => user.instanceId === user.instanceId);
     if (!currentUser) throw new Error("User is not found");
     const { id, token, ...newUserData } = user;
     store.set(
       "user",
-      store.get("user").map((user) => {
+      store.get("users").map((user) => {
         if (user.id === currentUser.id) {
           return {
             ...currentUser,
@@ -263,7 +254,7 @@ export const upsertUser = (user: {
       token: encryptedToken,
       avatarUrl: user.avatarUrl,
     };
-    store.set("user", [...store.get("user"), newUser]);
+    store.set("user", [...store.get("users"), newUser]);
     return newUser;
   }
 };

@@ -1,7 +1,7 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { useStore } from ".";
-import { Setting } from "~/types/store";
+import { Settings } from "~/types/store";
 
 export const useSettingsStore = defineStore("settings", () => {
   const store = useStore();
@@ -21,7 +21,7 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "maxPostCount", value: count.toString() });
   };
 
-  const setShortcutKey = async (key: keyof Setting["shortcuts"], value: string) => {
+  const setShortcutKey = async (key: keyof Settings["shortcuts"], value: string) => {
     store.$state.settings.shortcuts[key] = value;
     return await ipcInvoke("settings:set", { key: `shortcuts.${key}`, value });
   };
