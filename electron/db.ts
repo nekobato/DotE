@@ -302,7 +302,7 @@ export const setSetting = (key: string, value: any) => {
 
   switch (key) {
     case "opacity":
-      return store.set("setting.opacity", value);
+      return store.set("setting.opacity", Number(value));
     case "hazyMode":
       return store.set("setting.hazyMode", value);
     case "windowSize":

@@ -24,6 +24,8 @@ export function createMenuWindow() {
     roundedCorners: false,
   });
 
+  win.setVisibleOnAllWorkspaces(true);
+
   if (process.env.NODE_ENV === "development") {
     win.loadURL(join(pageRoot.development, "#", pageName));
     // win.webContents.openDevTools();

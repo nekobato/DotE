@@ -34,8 +34,6 @@ let postWindow: BrowserWindow | null = null;
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }]);
 
 const initialize = async () => {
-  const opacity = await db.getSetting("opacity");
-  mainWindow?.setOpacity(Number(opacity) / 100);
   const hazyMode = (await db.getSetting("hazyMode")) as Setting["hazyMode"];
   setMainWindowMode(hazyMode);
 };
@@ -46,18 +44,15 @@ const setMainWindowMode = async (mode: string) => {
     case "settings":
     case "tutorial":
       mainWindow?.show();
-      mainWindow?.focus();
       mainWindow?.setAlwaysOnTop(false);
       mainWindow?.setIgnoreMouseEvents(false);
       mainWindow?.setOpacity(1);
       mainWindow?.setVisibleOnAllWorkspaces(false);
       break;
     case "haze":
-      const opacity = (await db.getSetting("opacity")) || 50;
       mainWindow?.show();
       mainWindow?.setAlwaysOnTop(true, "floating");
       mainWindow?.setIgnoreMouseEvents(true);
-      mainWindow?.setOpacity(Number(opacity) / 100);
       mainWindow?.setVisibleOnAllWorkspaces(true);
       break;
     case "hide":

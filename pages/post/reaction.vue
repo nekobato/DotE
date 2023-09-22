@@ -13,53 +13,6 @@ const state = reactive({
     error: "",
   },
 });
-const text = ref("");
-const textCw = ref("");
-
-const currentUser = computed(() => {
-  return state.users.length ? state.users[state.currentUserIndex] : undefined;
-});
-
-const getUsers = async () => {
-  const users = await ipcInvoke("db:get-users");
-  state.users = users;
-};
-
-const post = async () => {
-  if (text) {
-    state.post.isSending = true;
-    const res = await ipcInvoke("api", {
-      method: "misskey:createNote",
-      instanceUrl: currentUser.value?.instanceUrl,
-      token: currentUser.value?.token,
-      i: currentUser.value?.token,
-      // visibility: "public",
-      // visibleUserIds: [],
-      text: text.value,
-      cw: textCw.value || null,
-      // localOnly: false,
-      // noExtractMentions: false,
-      // noExtractHashtags: false,
-      // noExtractEmojis: false,
-      // noExtractLinks: false,
-      // poll: null,
-      // replyId: null,
-      // renoteId: null,
-      // renote: null,
-      // fileIds: [],
-    });
-    if (res.status === 200) {
-      text.value = "";
-      ipcSend("post:sent", res.data);
-    } else {
-    }
-    state.post.isSending = false;
-  }
-};
-
-onMounted(() => {
-  getUsers();
-});
 </script>
 
 <template>

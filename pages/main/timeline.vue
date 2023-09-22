@@ -10,13 +10,21 @@ const store = useStore();
 const timelineStore = useTimelineStore();
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
+const hazeOpacity = computed(() => {
+  return (store.settings.hazyMode === "haze" ? store.settings.opacity || 0 : 100) / 100;
+});
+
 const state = reactive({
   isAdding: false,
 });
 </script>
 
 <template>
-  <div class="page-container hazy-timeline-container" :class="{ haze: store.settings.hazyMode === 'haze' }">
+  <div
+    class="page-container hazy-timeline-container"
+    :class="{ haze: store.settings.hazyMode === 'haze' }"
+    :style="{ opacity: hazeOpacity }"
+  >
     <div
       class="timeline-container"
       v-if="timelineStore.current?.posts.length"
