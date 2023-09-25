@@ -3,6 +3,7 @@ import { TimelineStore, useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
+import { Timeline } from "~/types/store";
 
 const channelList = [
   {
@@ -64,7 +65,7 @@ const onChangeChannel = async (timelineId: string) => {
   }
 };
 
-const updateTimeline = async (timeline: TimelineStore) => {
+const updateTimeline = async (timeline: Timeline) => {
   await timelineStore.updateTimeline({
     id: timeline.id,
     userId: timeline.userId,

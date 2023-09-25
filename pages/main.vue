@@ -5,7 +5,7 @@ import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { connectToMisskeyStream } from "@/utils/websocket";
-import { v4 as uuid } from "uuid";
+import { nanoid } from "nanoid/non-secure";
 import { onBeforeMount, onBeforeUnmount, reactive } from "vue";
 import { useRouter } from "vue-router";
 
@@ -40,14 +40,10 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
   }
 });
 
-window.ipc.on("resize", (_, bounds) => {
-  window.localStorage.setItem("bounds", JSON.stringify(bounds));
-});
-
 const observeWebSocketConnection = () => {
   if (ws) ws.close();
   ws = null;
-  state.webSocketId = uuid();
+  state.webSocketId = nanoid();
   if (!timelineStore.currentUser) throw new Error("No user");
   if (!timelineStore.currentInstance) throw new Error("No instance");
   ws = connectToMisskeyStream(
@@ -155,7 +151,7 @@ onBeforeUnmount(() => {
 </script>
 <template>
   <div class="hazy-timeline-container" v-if="store.errors.length">
-    <div class="timeline-container">
+    <div class="hazy-post-list">
       <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
     </div>
   </div>

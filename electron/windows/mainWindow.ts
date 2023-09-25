@@ -1,14 +1,17 @@
 import { join } from "path";
 import { BrowserWindow, screen } from "electron";
+import { getSettingAll } from "../db";
 import { pageRoot, preload } from "../static";
 
 const pageName = "/main";
 
 export function createMainWindow() {
+  const settings = getSettingAll();
   const win = new BrowserWindow({
     x: 0,
     y: 0,
-    height: screen.getPrimaryDisplay().workAreaSize.height - 24, // size of Mac tray size
+    width: settings.windowSize.width || 360,
+    height: settings.windowSize.height || screen.getPrimaryDisplay().workAreaSize.height - 24, // size of Mac tray size
     minWidth: 360,
     minHeight: 240,
     resizable: true,

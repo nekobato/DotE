@@ -46,7 +46,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updateTimeline = async (timeline: TimelineStore) => {
+  const updateTimeline = async (timeline: Timeline) => {
     await ipcInvoke("db:set-timeline", {
       id: timeline.id,
       userId: timeline.userId,

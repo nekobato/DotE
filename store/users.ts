@@ -49,6 +49,7 @@ export const useUsersStore = defineStore("users", () => {
     });
 
     await store.initUsers();
+    await store.initInstances();
 
     // Timelineの長さが0ならば作成
     if (store.timelines.length === 0) {
@@ -59,6 +60,8 @@ export const useUsersStore = defineStore("users", () => {
         available: true,
       });
     }
+
+    store.initTimelines();
   };
 
   const postMisskeyAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: String }) => {
