@@ -40,7 +40,7 @@
     "nuxt": "^3.7.3",
     "nuxt-electron": "^0.6.0",
     "postcss-html": "^1.5.0",
-    "prettier": "^3.0.2",
+    "prettier": "^3.0.3",
     "sass": "^1.64.2",
     "stylelint": "^15.10.3",
     "stylelint-config-rational-order": "^0.1.2",
