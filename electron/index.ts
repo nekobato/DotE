@@ -128,6 +128,8 @@ const start = () => {
       case "resize":
         mainWindow?.setBounds(data);
         break;
+      case "test":
+        console.log("test");
       default:
         throw new Error(`${event} is not defined event.`);
     }

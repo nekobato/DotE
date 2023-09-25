@@ -1,49 +1,134 @@
 <script setup lang="ts">
 import { MisskeyEntities } from "~/types/misskey";
 import { Instance, Timeline } from "~/types/store";
-import { ipcInvoke } from "~/utils/ipc";
 
-const instance = ref<Instance>();
-const meta = ref<MisskeyEntities.DetailedInstanceMetadata>();
+type PageProps = {
+  instanceUrl: string;
+  token: string;
+  noteId: string;
+  emojis: MisskeyEntities.CustomEmoji[];
+};
+
+const props = defineProps({
+  data: {
+    type: Object as PropType<PageProps>,
+    required: true,
+  },
+});
 
 const categoryFilter = ref<string[]>([]);
 
 const categories = computed(() => {
   const categories = new Set<string>();
-  for (const emoji of meta.value?.emojis ?? []) {
+  for (const emoji of props.data.emojis || []) {
     categories.add(emoji.category);
   }
   return Array.from(categories);
 });
 
 const filteredEmojis = computed(() => {
-  return meta.value?.emojis?.filter((emoji) => {
+  return props.data.emojis?.filter((emoji) => {
     if (categoryFilter.value.length === 0) return true;
     return categoryFilter.value.includes(emoji.category);
   });
 });
 
-onMounted(async () => {
-  instance.value = await ipcInvoke("pipe:current-instance");
-  meta.value = await ipcInvoke("api", {
-    method: "misskey:getMeta",
+const selectCategory = (category: string) => {
+  if (categoryFilter.value.includes(category)) {
+    categoryFilter.value = categoryFilter.value.filter((c) => c !== category);
+  } else {
+    categoryFilter.value.push(category);
+  }
+};
+
+const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
+  await ipcInvoke("api", {
+    method: "misskeyCreateReaction",
+    instanceUrl: props.data.instanceUrl,
+    token: props.data.token,
+    noteId: props.data.noteId,
+    reaction: emoji.name,
   });
-});
+  window.ipc.send("post:close");
+};
 </script>
 
 <template>
   <div class="reaction">
-    <ul>
+    <ul class="category-list">
       <li v-for="category in categories">
-        <span>{{ category }}</span>
+        <button
+          class="nn-button size-small"
+          @click="selectCategory(category)"
+          :class="{ selected: categoryFilter.includes(category) }"
+        >
+          <span>{{ category }}</span>
+        </button>
       </li>
-      <ul>
-        <li v-for="emoji in filteredEmojis">
+    </ul>
+    <ul class="emoji-list">
+      <li v-for="emoji in filteredEmojis">
+        <button class="nn-button size-small" @click="selectEmoji(emoji)">
           <img :src="emoji.url" :alt="emoji.name" width="24" height="24" />
-        </li>
-      </ul>
+        </button>
+      </li>
     </ul>
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.reaction {
+  display: flex;
+  background-color: var(--hazy-background-color);
+}
+.category-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 50%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: scroll;
+  list-style: none;
+
+  > li {
+    display: inline-flex;
+    padding: 0 4px;
+    color: #343434;
+    font-size: var(--font-size-14);
+
+    .nn-button {
+      &.selected {
+        color: #343434;
+        background-color: #fff;
+      }
+    }
+  }
+}
+
+.emoji-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-content: flex-start;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: 50%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: scroll;
+  list-style: none;
+  > li {
+    display: inline-flex;
+    flex: 0 0 auto;
+    > .nn-button {
+      width: auto;
+      height: 32px;
+      padding: 0;
+      border-color: var(--hazy-color-white-t1);
+    }
+  }
+}
+</style>

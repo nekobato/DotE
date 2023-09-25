@@ -6,6 +6,7 @@ import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
 import { parseMisskeyAttachments } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
+import { useUsersStore } from "~/store/users";
 
 const timelineStore = useTimelineStore();
 
@@ -68,7 +69,12 @@ const openPost = () => {
 };
 
 const openReactionWindow = () => {
-  ipcSend("post:reaction", { instanceUrl: timelineStore.currentInstance?.url, postId: props.post.id });
+  ipcSend("post:reaction", {
+    instanceUrl: timelineStore.currentInstance?.url,
+    token: timelineStore.currentUser?.token,
+    noteId: props.post.id,
+    emojis: timelineStore.currentInstance?.misskey?.emojis,
+  });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
