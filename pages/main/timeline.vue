@@ -31,7 +31,9 @@ const state = reactive({
         'is-adding': state.isAdding,
       }"
     >
-      <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" />
+      <div class="hazy-post-list">
+        <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" />
+      </div>
     </div>
     <HazyLoading v-else />
   </div>

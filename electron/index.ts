@@ -174,6 +174,7 @@ const start = () => {
   mainWindow.on("resize", () => {
     const [width, height] = mainWindow?.getSize() || [0, 0];
     const [x, y] = mainWindow?.getPosition() || [0, 0];
+    db.setSetting("windowSize", { width, height });
     mainWindow?.webContents.send("resize", { width, height, x, y });
   });
 

@@ -2,11 +2,15 @@
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
-import { Setting } from "~/types/store";
+import { Settings } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
+
+const shortcuts = reactive<Settings["shortcuts"]>({
+  toggleTimeline: store.settings?.shortcuts.toggleTimeline || "",
+});
 
 const onChangeOpacity = async (e: Event) => {
   await settingsStore.setOpacity(Number((e.target as HTMLInputElement)?.value));
@@ -16,10 +20,27 @@ const onChangeMaxPostCount = async (e: Event) => {
   await settingsStore.setMaxPostCount(Number((e.target as HTMLInputElement)?.value));
 };
 
-const onKeyDownOn = (key: keyof Setting["shortcuts"]) => async (e: KeyboardEvent) => {
+const onKeyDownOn = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEvent) => {
   e.preventDefault();
-  const newKey = e.key;
-  await settingsStore.setShortcutKey(key, newKey);
+
+  let shortcut = "";
+  shortcut += e.metaKey ? "Meta+" : "";
+  shortcut += e.ctrlKey ? "Ctrl+" : "";
+  shortcut += e.shiftKey ? "Shift+" : "";
+  shortcut += e.altKey ? "Alt+" : "";
+
+  if (e.key !== "Meta" && e.key !== "Ctrl" && e.key !== "Shift" && e.key !== "Alt") {
+    shortcut += e.key === " " ? "Space" : e.key;
+  }
+
+  shortcuts[key] = shortcut;
+};
+
+const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
+  console.log("1");
+  if (!/\+$/.test(shortcuts[key])) {
+    await settingsStore.setShortcutKey(key, shortcuts[key]);
+  }
 };
 </script>
 
@@ -75,8 +96,9 @@ const onKeyDownOn = (key: keyof Setting["shortcuts"]) => async (e: KeyboardEvent
           type="text"
           readonly
           class="nn-text-field shortcut-key"
-          :value="store.settings.shortcuts.toggleTimeline"
+          v-model="shortcuts.toggleTimeline"
           @keydown="onKeyDownOn('toggleTimeline')($event)"
+          @input="onChangeShortcut('toggleTimeline')"
         />
       </div>
     </div>
@@ -111,5 +133,6 @@ const onKeyDownOn = (key: keyof Setting["shortcuts"]) => async (e: KeyboardEvent
 }
 .shortcut-key {
   width: 120px;
+  font-size: var(--font-size-12);
 }
 </style>

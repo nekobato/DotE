@@ -96,7 +96,6 @@ export const useStore = defineStore({
           return instance;
         }),
       );
-      console.log("misskey emojis initted", this.$state.instances);
     },
     async initTimelines() {
       const timelines = await ipcInvoke("db:get-timeline-all");

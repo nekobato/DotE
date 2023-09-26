@@ -4,7 +4,7 @@ import { useInstanceStore } from "@/store/instance";
 import { useUsersStore } from "@/store/users";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { v4 as uuid } from "uuid";
+import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
 import SectionTitle from "../Post/SectionTitle.vue";
 
@@ -71,7 +71,7 @@ const confirmDeleteAccount = async () => {
 };
 
 const openMisskeyAuthLink = () => {
-  state.value.actions.newAccount.misskey.sessionId = uuid();
+  state.value.actions.newAccount.misskey.sessionId = nanoid();
   /^https?:\/\//.test(state.value.actions.newAccount.misskey.instanceUrl.value) ||
     (state.value.actions.newAccount.misskey.instanceUrl.value =
       "https://" + state.value.actions.newAccount.misskey.instanceUrl.value);

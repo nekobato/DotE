@@ -1,8 +1,8 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
-import { v4 as uuid } from "uuid";
+import { nanoid } from "nanoid/non-secure";
 import { Instance, Timeline, User, Settings } from "@/types/store";
-import { storeDefaults } from "~/utils/statics";
+import { storeDefaults } from "../utils/statics";
 
 export type StoreSchema = {
   timelines: Timeline[];
@@ -22,14 +22,13 @@ const schema: Store.Schema<StoreSchema> = {
         channel: { type: "string" },
         options: {
           type: "object",
-          required: [""],
           properties: {
             query: { type: "string" },
           },
         },
         available: { type: "boolean" },
       },
-      required: ["id", "userId", "channel", "options"],
+      required: ["id", "userId", "channel", "available"],
     },
   },
   instances: {
@@ -103,7 +102,7 @@ export const setTimeline = (data: Timeline) => {
 
   if (data.id) {
     store.set(
-      "timeline",
+      "timelines",
       store.get("timelines").map((timeline) => {
         if (timeline.id === data.id) {
           return data;
@@ -116,9 +115,9 @@ export const setTimeline = (data: Timeline) => {
   } else {
     const newTimeline = {
       ...data,
-      id: uuid(),
+      id: nanoid(),
     };
-    store.set("timeline", [...store.get("timelines"), newTimeline]);
+    store.set("timelines", [...store.get("timelines"), newTimeline]);
     return newTimeline;
   }
 };
@@ -127,7 +126,7 @@ export const deleteTimeline = (id: string) => {
   if (!id) throw new Error("id is required");
 
   return store.set(
-    "timeline",
+    "timelines",
     store.get("timelines").filter((timeline) => timeline.id !== id),
   );
 };
@@ -154,7 +153,7 @@ export const upsertInstance = (instance: {
 
   if (id) {
     store.set(
-      "instance",
+      "instances",
       store.get("instances").map((instance) => {
         if (instance.id === id) {
           return {
@@ -173,13 +172,13 @@ export const upsertInstance = (instance: {
     return instance;
   } else {
     const newInstance = {
-      id: uuid(),
+      id: nanoid(),
       type: type,
       name: name,
       url: url,
       iconUrl: iconUrl,
     };
-    store.set("instance", [...store.get("instances"), newInstance]);
+    store.set("instances", [...store.get("instances"), newInstance]);
 
     return newInstance;
   }
@@ -189,7 +188,7 @@ export const deleteInstance = (id: string) => {
   if (!id) throw new Error("id is required");
 
   return store.set(
-    "instance",
+    "instances",
     store.get("instances").filter((instance) => instance.id !== id),
   );
 };
@@ -200,13 +199,14 @@ export const deleteUser = (id: string) => {
   if (!id) throw new Error("id is required");
 
   return store.set(
-    "user",
+    "users",
     store.get("users").filter((user) => user.id !== id),
   );
 };
 
 export const getUserAll = () => {
   return store.get("users").map((user) => {
+    console.log("users", user.name);
     const decryptedToken = safeStorage.decryptString(Buffer.from(user.token, "base64"));
     return {
       ...user,
@@ -228,7 +228,7 @@ export const upsertUser = (user: {
     if (!currentUser) throw new Error("User is not found");
     const { id, token, ...newUserData } = user;
     store.set(
-      "user",
+      "users",
       store.get("users").map((user) => {
         if (user.id === currentUser.id) {
           return {
@@ -248,21 +248,21 @@ export const upsertUser = (user: {
     };
   } else {
     const newUser = {
-      id: uuid(),
+      id: nanoid(),
       instanceId: user.instanceId,
       name: user.name,
       token: encryptedToken,
       avatarUrl: user.avatarUrl,
     };
-    store.set("user", [...store.get("users"), newUser]);
+    store.set("users", [...store.get("users"), newUser]);
     return newUser;
   }
 };
 
 // Setting
 
-export const getSettingAll = () => {
-  return store.get("setting");
+export const getSettingAll = (): StoreSchema["settings"] => {
+  return store.get("settings");
 };
 
 export const getSetting = (key: "opacity" | "hazyMode") => {
@@ -270,9 +270,9 @@ export const getSetting = (key: "opacity" | "hazyMode") => {
 
   switch (key) {
     case "opacity":
-      return store.get("setting.opacity");
+      return store.get("settings.opacity");
     case "hazyMode":
-      return store.get("setting.hazyMode");
+      return store.get("settings.hazyMode");
     default:
       throw new Error(`${key} is not defined key.`);
   }
@@ -284,15 +284,15 @@ export const setSetting = (key: string, value: any) => {
 
   switch (key) {
     case "opacity":
-      return store.set("setting.opacity", Number(value));
+      return store.set("settings.opacity", Number(value));
     case "hazyMode":
-      return store.set("setting.hazyMode", value);
+      return store.set("settings.hazyMode", value);
     case "windowSize":
-      return store.set("setting.windowSize", value);
+      return store.set("settings.windowSize", value);
     case "maxPostCount":
-      return store.set("setting.maxPostCount", Number(value));
-    case "shortcuts.toggleTimeline":
-      return store.set("setting.maxPostCount", Number(value));
+      return store.set("settings.maxPostCount", Number(value));
+    case "shortcuts.toggleTimelines":
+      return store.set("settings.maxPostCount", Number(value));
     default:
       throw new Error(`${key} is not defined key.`);
   }
