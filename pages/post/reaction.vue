@@ -69,7 +69,7 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
     <ul class="emoji-list">
       <li v-for="emoji in filteredEmojis">
         <button class="nn-button size-small" @click="selectEmoji(emoji)">
-          <img :src="emoji.url" :alt="emoji.name" width="24" height="24" />
+          <img :src="emoji.url" :alt="emoji.name" />
         </button>
       </li>
     </ul>
@@ -83,7 +83,7 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
 }
 .category-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
   width: 50%;
   height: 100vh;
@@ -99,9 +99,15 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
     font-size: var(--font-size-14);
 
     .nn-button {
+      justify-content: flex-start;
+      font-size: var(--font-size-12);
       &.selected {
         color: #343434;
         background-color: #fff;
+      }
+      > img {
+        width: auto;
+        height: 24px;
       }
     }
   }

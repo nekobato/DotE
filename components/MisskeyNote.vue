@@ -6,7 +6,6 @@ import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
 import { parseMisskeyAttachments } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
-import { useUsersStore } from "~/store/users";
 
 const timelineStore = useTimelineStore();
 
