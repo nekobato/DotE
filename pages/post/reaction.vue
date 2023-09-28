@@ -55,6 +55,15 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
 
 <template>
   <div class="reaction">
+    <div class="history-list-container">
+      <ul class="history-list">
+        <li v-for="emoji in histories">
+          <button class="nn-button size-small" @click="selectEmoji(emoji)">
+            <img :src="emoji.url" :alt="emoji.name" />
+          </button>
+        </li>
+      </ul>
+    </div>
     <ul class="category-list">
       <li v-for="category in categories">
         <button
@@ -66,6 +75,9 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
         </button>
       </li>
     </ul>
+    <div class="search-container">
+      <input type="search" placeholder="検索" @input="onInputSearchEmoji" />
+    </div>
     <ul class="emoji-list">
       <li v-for="emoji in filteredEmojis">
         <button class="nn-button size-small" @click="selectEmoji(emoji)">
@@ -130,10 +142,12 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
     display: inline-flex;
     flex: 0 0 auto;
     > .nn-button {
-      width: auto;
-      height: 32px;
       padding: 0;
       border-color: var(--hazy-color-white-t1);
+      > img {
+        width: auto;
+        height: 32px;
+      }
     }
   }
 }
