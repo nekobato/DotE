@@ -37,7 +37,6 @@ const onKeyDownOn = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEven
 };
 
 const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
-  console.log("1");
   if (!/\+$/.test(shortcuts[key])) {
     await settingsStore.setShortcutKey(key, shortcuts[key]);
   }

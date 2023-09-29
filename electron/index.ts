@@ -23,7 +23,7 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-console.log(isMac);
+console.info(isMac);
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -92,7 +92,7 @@ const start = () => {
 
   ipcMain.on("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.log(event, data);
+    console.info(event, data);
     switch (event) {
       case "set-hazy-mode":
         setMainWindowMode(data.mode);
@@ -138,7 +138,7 @@ const start = () => {
   // invoke
   ipcMain.handle("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.log(event, data);
+    console.info(event, data);
     switch (event) {
       case "api":
         const method: keyof typeof apiRequest = data.method;
@@ -196,7 +196,7 @@ app.on("will-quit", () => {
 
 app.on("window-all-closed", () => {
   if (isMac) {
-    console.log("quit");
+    console.info("quit");
     app.quit();
   }
 });

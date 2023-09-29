@@ -15,6 +15,7 @@ window.ipc.on("post:close", () => {
 
 window.ipc.on("post:detail", (_, payload) => {
   pagedata.value = payload;
+  console.info(pagedata);
   router.push("/post/detail");
 });
 

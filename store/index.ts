@@ -56,12 +56,12 @@ export const useStore = defineStore({
       await this.initTimelines();
       await this.initSettings();
       this.$state.hasInit = true;
-      console.log("store init", this.$state);
+      console.info("store init", this.$state);
       gotoHazyRoute(this.$state.settings.hazyMode);
     },
     async initUsers() {
       this.$state.users = await ipcInvoke("db:get-users");
-      console.log("users initted", this.$state.users);
+      console.info("users initted", this.$state.users);
     },
     async initInstances() {
       const instances = await ipcInvoke("db:get-instance-all");
@@ -76,7 +76,7 @@ export const useStore = defineStore({
         }
         return instance;
       });
-      console.log("instances initted", this.$state.instances);
+      console.info("instances initted", this.$state.instances);
     },
     async initMisskeyEmojis() {
       return Promise.all(
@@ -90,7 +90,7 @@ export const useStore = defineStore({
                 message: `${instance.name}のemojiがうまく取得できませんでした インターネット接続またはデータがおかしいです`,
               });
             });
-            console.log(result);
+            console.info(result);
             instance.misskey!.emojis = result?.emojis || [];
           }
           return instance;
@@ -107,11 +107,11 @@ export const useStore = defineStore({
           posts: [],
         };
       });
-      console.log("timelines initted", this.$state.timelines);
+      console.info("timelines initted", this.$state.timelines);
     },
     async initSettings() {
       this.$state.settings = await ipcInvoke("settings:all");
-      console.log("settings initted", this.$state.settings);
+      console.info("settings initted", this.$state.settings);
     },
   },
 });
