@@ -38,7 +38,7 @@ export const useTimelineStore = defineStore("timeline", () => {
           message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
         });
       });
-      console.log("Notes", data);
+      console.info("Notes", data);
       // misskeyなら という条件分岐が必要
       setPosts(data);
     } else {

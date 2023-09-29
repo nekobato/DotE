@@ -206,7 +206,7 @@ export const deleteUser = (id: string) => {
 
 export const getUserAll = () => {
   return store.get("users").map((user) => {
-    console.log("users", user.name);
+    console.info("users", user.name);
     const decryptedToken = safeStorage.decryptString(Buffer.from(user.token, "base64"));
     return {
       ...user,

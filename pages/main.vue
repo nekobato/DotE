@@ -22,7 +22,7 @@ const state = reactive({
 });
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
-  console.log(mode);
+  console.info(mode);
   if (reflect) return;
 
   settingsStore.setHazyMode(mode);
@@ -51,7 +51,7 @@ const observeWebSocketConnection = () => {
     timelineStore.currentUser.token,
   );
   ws.onopen = () => {
-    console.log("ws:open");
+    console.info("ws:open");
     if (timelineStore.current) {
       ws!.send(
         JSON.stringify({
@@ -62,10 +62,10 @@ const observeWebSocketConnection = () => {
     }
   };
   ws.onerror = () => {
-    console.log("ws:error");
+    console.info("ws:error");
   };
   ws.onclose = () => {
-    console.log("ws:close");
+    console.info("ws:close");
     if (timelineStore.currentUser && timelineStore.currentInstance) {
       ws = connectToMisskeyStream(
         timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
@@ -123,7 +123,7 @@ timelineStore.$onAction((action) => {
 
 onBeforeMount(async () => {
   await store.init();
-  console.log("store", store);
+  console.info("store", store);
   const bounds = window.localStorage.getItem("bounds");
   if (bounds) {
     window.ipc.send("resize", bounds);
@@ -131,14 +131,14 @@ onBeforeMount(async () => {
 
   if (timelineStore.currentUser) {
     await timelineStore.fetchInitialPosts().catch((error) => {
-      console.log(error);
+      console.error(error);
     });
     observeWebSocketConnection();
     if (store.settings.hazyMode === "settings") {
       router.replace("/main/settings");
     }
   } else {
-    console.log("No user");
+    console.info("No user");
     router.replace("/main/settings");
     ipcSend("set-hazy-mode", { mode: "settings", reflect: true });
   }
