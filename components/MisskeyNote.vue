@@ -114,6 +114,18 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
   if (!myReaction) return false;
   return reaction === myReaction;
 };
+
+onMounted(() => {
+  ipcSend("stream:sub-note", {
+    postId: props.post.id,
+  });
+});
+
+onBeforeUnmount(() => {
+  ipcSend("stream:un-sub-note", {
+    postId: props.post.id,
+  });
+});
 </script>
 
 <template>

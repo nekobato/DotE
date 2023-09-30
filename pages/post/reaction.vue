@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useStorage } from "@vueuse/core";
 import { MisskeyEntities } from "~/types/misskey";
 import { Instance, Timeline } from "~/types/store";
 
@@ -8,6 +9,10 @@ type PageProps = {
   noteId: string;
   emojis: MisskeyEntities.CustomEmoji[];
 };
+
+const histories = useStorage<MisskeyEntities.CustomEmoji[]>("reaction-histories", []);
+
+const search = ref("");
 
 const props = defineProps({
   data: {
@@ -27,10 +32,18 @@ const categories = computed(() => {
 });
 
 const filteredEmojis = computed(() => {
-  return props.data.emojis?.filter((emoji) => {
-    if (categoryFilter.value.length === 0) return true;
-    return categoryFilter.value.includes(emoji.category);
-  });
+  return (
+    props.data.emojis
+      ?.filter((emoji) => {
+        if (categoryFilter.value.length === 0) return true;
+        return categoryFilter.value.includes(emoji.category);
+      })
+      // from search
+      .filter((emoji) => {
+        if (search.value === "") return true;
+        return emoji.name.includes(search.value);
+      })
+  );
 });
 
 const selectCategory = (category: string) => {
@@ -49,21 +62,24 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
     noteId: props.data.noteId,
     reaction: emoji.name,
   });
+  window.ipc.send("reaction", {
+    instanceUrl: props.data.instanceUrl,
+    token: props.data.token,
+    noteId: props.data.noteId,
+    emoji,
+  });
   window.ipc.send("post:close");
+};
+
+const onInputSearchEmoji = () => {
+  search.value = search.value.trim();
+  if (search.value === "") return;
+  categoryFilter.value = [];
 };
 </script>
 
 <template>
-  <div class="reaction">
-    <div class="history-list-container">
-      <ul class="history-list">
-        <li v-for="emoji in histories">
-          <button class="nn-button size-small" @click="selectEmoji(emoji)">
-            <img :src="emoji.url" :alt="emoji.name" />
-          </button>
-        </li>
-      </ul>
-    </div>
+  <div class="page">
     <ul class="category-list">
       <li v-for="category in categories">
         <button
@@ -75,34 +91,62 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
         </button>
       </li>
     </ul>
-    <div class="search-container">
-      <input type="search" placeholder="検索" @input="onInputSearchEmoji" />
+    <div class="emojis-container">
+      <div class="search-container">
+        <input class="nn-text-field" type="search" placeholder="検索" v-model="search" @input="onInputSearchEmoji" />
+      </div>
+      <div class="emoji-list-group">
+        <div class="history-list-container">
+          <ul class="emoji-list">
+            <li v-for="emoji in histories">
+              <button class="nn-button size-small reaction-button" @click="selectEmoji(emoji)">
+                <img :src="emoji.url" :alt="emoji.name" />
+              </button>
+            </li>
+          </ul>
+        </div>
+        <ul class="emoji-list">
+          <li v-for="emoji in filteredEmojis">
+            <button class="nn-button size-small reaction-button" @click="selectEmoji(emoji)">
+              <img :src="emoji.url" :alt="emoji.name" />
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
-    <ul class="emoji-list">
-      <li v-for="emoji in filteredEmojis">
-        <button class="nn-button size-small" @click="selectEmoji(emoji)">
-          <img :src="emoji.url" :alt="emoji.name" />
-        </button>
-      </li>
-    </ul>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.reaction {
+.page {
   display: flex;
   background-color: var(--hazy-background-color);
 }
+
+.reaction-button {
+  height: 32px;
+  padding: 0;
+  border-color: var(--hazy-color-white-t1);
+  > img {
+    width: auto;
+    height: 100%;
+  }
+  &:hover {
+    border-color: var(--hazy-color-white-t2);
+  }
+}
+
 .category-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: 50%;
+  width: 40%;
   height: 100vh;
   margin: 0;
   padding: 0;
   overflow-y: scroll;
   list-style: none;
+  border-right: 1px solid var(--hazy-color-white-t1);
 
   > li {
     display: inline-flex;
@@ -124,7 +168,27 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
     }
   }
 }
+.emojis-container {
+  display: flex;
+  flex-direction: column;
+  width: 60%;
+  height: 100vh;
+}
+.search-container {
+  padding: 8px;
+  border-bottom: 1px solid var(--hazy-color-white-t1);
+}
 
+.emoji-list-group {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  list-style: none;
+}
 .emoji-list {
   display: flex;
   flex-wrap: wrap;
@@ -132,23 +196,10 @@ const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
   align-content: flex-start;
   align-items: flex-start;
   justify-content: flex-start;
-  width: 50%;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
-  overflow-y: scroll;
-  list-style: none;
+  width: 100%;
   > li {
     display: inline-flex;
     flex: 0 0 auto;
-    > .nn-button {
-      padding: 0;
-      border-color: var(--hazy-color-white-t1);
-      > img {
-        width: auto;
-        height: 32px;
-      }
-    }
   }
 }
 </style>

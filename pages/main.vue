@@ -76,42 +76,78 @@ const observeWebSocketConnection = () => {
   };
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    if (data.body.type === "note") {
-      if (timelineStore.current && timelineStore.currentInstance) {
-        timelineStore.addPost(data.body.body);
+    switch (data.type) {
+      case "noteUpdated":
+        switch (data.body.type) {
+          case "note":
+            if (timelineStore.current && timelineStore.currentInstance) {
+              timelineStore.addPost(data.body.body);
 
-        // スクロール制御
-        // const container = timelineContainer.value;
-        // state.isAdding = true;
-        // container?.scrollTo({ top: 88, behavior: "auto" });
-        // nextTick(() => {
-        //   container?.scrollTo({ top: 0, behavior: "smooth" });
-        //   state.isAdding = false;
-        //   // スクロールしている場合はスクロールを維持する
-        //   // if (container?.scrollTop !== 0) {
-        //   //   container?.scrollTo({
-        //   //     top: container.scrollTop + container.querySelectorAll(".post-item")[0].clientHeight,
-        //   //     behavior: "auto",
-        //   //   });
-        //   //   // state.isAdding = false;
-        //   // } else {
-        //   //   // container?.querySelectorAll(".post-item")[1].scrollIntoView({
-        //   //   //   behavior: "auto",
-        //   //   // });
-        //   //   // container?.scrollTo({
-        //   //   //   top: container.querySelectorAll(".post-item")[0].clientHeight,
-        //   //   //   behavior: "auto",
-        //   //   // });
-        //   //   nextTick(() => {
-        //   //     container?.scrollTo({ top: 0, behavior: "smooth" });
-        //   //     state.isAdding = false;
-        //   //   });
-        //   // }
-        // });
-      }
+              // スクロール制御
+              // const container = timelineContainer.value;
+              // state.isAdding = true;
+              // container?.scrollTo({ top: 88, behavior: "auto" });
+              // nextTick(() => {
+              //   container?.scrollTo({ top: 0, behavior: "smooth" });
+              //   state.isAdding = false;
+              //   // スクロールしている場合はスクロールを維持する
+              //   // if (container?.scrollTop !== 0) {
+              //   //   container?.scrollTo({
+              //   //     top: container.scrollTop + container.querySelectorAll(".post-item")[0].clientHeight,
+              //   //     behavior: "auto",
+              //   //   });
+              //   //   // state.isAdding = false;
+              //   // } else {
+              //   //   // container?.querySelectorAll(".post-item")[1].scrollIntoView({
+              //   //   //   behavior: "auto",
+              //   //   // });
+              //   //   // container?.scrollTo({
+              //   //   //   top: container.querySelectorAll(".post-item")[0].clientHeight,
+              //   //   //   behavior: "auto",
+              //   //   // });
+              //   //   nextTick(() => {
+              //   //     container?.scrollTo({ top: 0, behavior: "smooth" });
+              //   //     state.isAdding = false;
+              //   //   });
+              //   // }
+              // });
+            }
+            break;
+          case "reacted":
+            timelineStore.addReaction({
+              postId: data.body.id,
+              reaction: data.body.body.reaction,
+            });
+            break;
+          default:
+            console.info("unhandled note", event);
+            break;
+        }
+        break;
+      default:
+        console.info("unhandled stream message", event);
+        break;
     }
   };
 };
+
+window.ipc.on("stream:sub-note", (data: { postId: string }) => {
+  ws?.send(
+    JSON.stringify({
+      type: "subNote",
+      body: { id: data.postId },
+    }),
+  );
+});
+
+window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
+  ws?.send(
+    JSON.stringify({
+      type: "unsubNote",
+      body: { id: data.postId },
+    }),
+  );
+});
 
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {

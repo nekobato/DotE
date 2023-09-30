@@ -8,6 +8,7 @@ import { Timeline } from "~/types/store";
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
   const current = computed(() => store.$state.timelines.find((timeline) => timeline.available));
+  const currentIndex = computed(() => store.$state.timelines.findIndex((timeline) => timeline.available));
   const timelines = computed(() => store.$state.timelines);
 
   const currentUser = computed(() => {
@@ -139,6 +140,18 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
+  const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+    // TODO: reactionがremote serverだった場合
+    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId);
+    if (!post) return;
+    const reactions = post.renote ? post.renote.reactions : post.reactions;
+    if (Object.keys(reactions).includes(reaction)) {
+      reactions[reaction] += 1;
+    } else {
+      reactions[reaction] = 1;
+    }
+  };
+
   return {
     timelines,
     current,
@@ -148,6 +161,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     updateTimeline,
     createTimeline,
     addPost,
+    addReaction,
     createReaction,
     deleteReaction,
     updatePost,

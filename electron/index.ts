@@ -128,6 +128,12 @@ const start = () => {
       case "resize":
         mainWindow?.setBounds(data);
         break;
+      case "stream:sub-note":
+        // TODO: main processへ移植
+        mainWindow?.webContents?.send("stream:sub-note", data);
+      case "stream:unsub-note":
+        // TODO: main processへ移植
+        mainWindow?.webContents?.send("stream:unsub-note", data);
       case "test":
         console.log("test");
       default:
