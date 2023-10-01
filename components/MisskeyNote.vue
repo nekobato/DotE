@@ -4,7 +4,7 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
-import { parseMisskeyAttachments } from "~/utils/misskey";
+import { createReaction, deleteReaction, isMyReaction, parseMisskeyAttachments } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
 
 const timelineStore = useTimelineStore();
@@ -82,7 +82,7 @@ const openReactionWindow = () => {
 
 const onClickReaction = (postId: string, reaction: string) => {
   if (isMyReaction(reaction, props.post.myReaction)) {
-    deleteReaction(postId);
+    deleteReaction(postId, false);
   } else {
     // 既にreactionがある場合は削除してから追加
     if (props.post.myReaction) {
@@ -94,25 +94,6 @@ const onClickReaction = (postId: string, reaction: string) => {
   timelineStore.updatePost({
     postId,
   });
-};
-
-const createReaction = (postId: string, reaction: string) => {
-  timelineStore.createReaction({
-    postId,
-    reaction,
-  });
-};
-
-const deleteReaction = (postId: string, noUpdate?: boolean) => {
-  timelineStore.deleteReaction({
-    postId,
-    noUpdate,
-  });
-};
-
-const isMyReaction = (reaction: string, myReaction?: string) => {
-  if (!myReaction) return false;
-  return reaction === myReaction;
 };
 
 onMounted(() => {

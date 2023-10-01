@@ -55,20 +55,11 @@ const selectCategory = (category: string) => {
 };
 
 const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
-  await ipcInvoke("api", {
-    method: "misskeyCreateReaction",
-    instanceUrl: props.data.instanceUrl,
-    token: props.data.token,
-    noteId: props.data.noteId,
+  ipcSend("main:reaction", {
+    postId: props.data.noteId,
     reaction: emoji.name,
   });
-  window.ipc.send("reaction", {
-    instanceUrl: props.data.instanceUrl,
-    token: props.data.token,
-    noteId: props.data.noteId,
-    emoji,
-  });
-  window.ipc.send("post:close");
+  ipcSend("post:close");
 };
 
 const onInputSearchEmoji = () => {

@@ -35,10 +35,10 @@ export function createPostWindow() {
   }
 
   // close to hide
-  win.on("close", (e) => {
-    e.preventDefault();
-    win.hide();
-  });
+  // win.on("close", (e) => {
+  //   e.preventDefault();
+  //   win.hide();
+  // });
 
   return win;
 }

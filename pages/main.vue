@@ -8,10 +8,17 @@ import { connectToMisskeyStream } from "@/utils/websocket";
 import { nanoid } from "nanoid/non-secure";
 import { onBeforeMount, onBeforeUnmount, reactive } from "vue";
 import { useRouter } from "vue-router";
+import { createReaction, deleteReaction, isMyReaction } from "~/utils/misskey";
 
 const router = useRouter();
 
 let ws: WebSocket | null = null;
+const wsState = reactive({
+  isConnecting: false,
+  isConnected: false,
+});
+// コネクションが張れていない場合はキューに追加する
+const wsNoteSubScriptionQueue: string[] = [];
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -42,6 +49,8 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
 
 const observeWebSocketConnection = () => {
   if (ws) ws.close();
+  wsState.isConnecting = true;
+  wsState.isConnected = false;
   ws = null;
   state.webSocketId = nanoid();
   if (!timelineStore.currentUser) throw new Error("No user");
@@ -52,8 +61,9 @@ const observeWebSocketConnection = () => {
   );
   ws.onopen = () => {
     console.info("ws:open");
+
     if (timelineStore.current) {
-      ws!.send(
+      ws?.send(
         JSON.stringify({
           type: "connect",
           body: { channel: timelineStore.current.channel.split(":")[1], id: state.webSocketId, params: {} },
@@ -66,6 +76,7 @@ const observeWebSocketConnection = () => {
   };
   ws.onclose = () => {
     console.info("ws:close");
+    wsState.isConnected = false;
     if (timelineStore.currentUser && timelineStore.currentInstance) {
       ws = connectToMisskeyStream(
         timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
@@ -77,42 +88,36 @@ const observeWebSocketConnection = () => {
   ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
     switch (data.type) {
-      case "noteUpdated":
+      case "connected":
+        console.log("coneccted");
+        wsState.isConnecting = false;
+        wsState.isConnected = true;
+        if (wsNoteSubScriptionQueue.length) {
+          wsNoteSubScriptionQueue.forEach((postId) => {
+            ws?.send(
+              JSON.stringify({
+                type: "subNote",
+                body: { id: postId },
+              }),
+            );
+          });
+          wsNoteSubScriptionQueue.length = 0;
+        }
+        break;
+      case "channel":
         switch (data.body.type) {
           case "note":
             if (timelineStore.current && timelineStore.currentInstance) {
               timelineStore.addPost(data.body.body);
-
-              // スクロール制御
-              // const container = timelineContainer.value;
-              // state.isAdding = true;
-              // container?.scrollTo({ top: 88, behavior: "auto" });
-              // nextTick(() => {
-              //   container?.scrollTo({ top: 0, behavior: "smooth" });
-              //   state.isAdding = false;
-              //   // スクロールしている場合はスクロールを維持する
-              //   // if (container?.scrollTop !== 0) {
-              //   //   container?.scrollTo({
-              //   //     top: container.scrollTop + container.querySelectorAll(".post-item")[0].clientHeight,
-              //   //     behavior: "auto",
-              //   //   });
-              //   //   // state.isAdding = false;
-              //   // } else {
-              //   //   // container?.querySelectorAll(".post-item")[1].scrollIntoView({
-              //   //   //   behavior: "auto",
-              //   //   // });
-              //   //   // container?.scrollTo({
-              //   //   //   top: container.querySelectorAll(".post-item")[0].clientHeight,
-              //   //   //   behavior: "auto",
-              //   //   // });
-              //   //   nextTick(() => {
-              //   //     container?.scrollTo({ top: 0, behavior: "smooth" });
-              //   //     state.isAdding = false;
-              //   //   });
-              //   // }
-              // });
             }
             break;
+          default:
+            console.info("unhandled note", data);
+            break;
+        }
+        break;
+      case "noteUpdated":
+        switch (data.body.type) {
           case "reacted":
             timelineStore.addReaction({
               postId: data.body.id,
@@ -120,18 +125,41 @@ const observeWebSocketConnection = () => {
             });
             break;
           default:
-            console.info("unhandled note", event);
+            console.info("unhandled noteUpdated", data);
             break;
         }
         break;
       default:
-        console.info("unhandled stream message", event);
+        console.info("unhandled stream message", data);
         break;
     }
   };
 };
 
+window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) => {
+  const post = timelineStore.current?.posts.find((post) => post.id === data.postId);
+  if (!post) return;
+
+  if (isMyReaction(data.reaction, post.myReaction)) {
+    deleteReaction(data.postId, false);
+  } else {
+    // 既にreactionがある場合は削除してから追加
+    if (post.myReaction) {
+      deleteReaction(data.postId, false);
+    }
+    createReaction(data.postId, data.reaction);
+  }
+
+  timelineStore.updatePost({
+    postId: data.postId,
+  });
+});
+
 window.ipc.on("stream:sub-note", (data: { postId: string }) => {
+  if (wsState.isConnecting || wsState.isConnected) {
+    wsNoteSubScriptionQueue.push(data.postId);
+    return;
+  }
   ws?.send(
     JSON.stringify({
       type: "subNote",
@@ -141,6 +169,7 @@ window.ipc.on("stream:sub-note", (data: { postId: string }) => {
 });
 
 window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
+  if (wsState.isConnecting || wsState.isConnected) return;
   ws?.send(
     JSON.stringify({
       type: "unsubNote",
@@ -152,8 +181,8 @@ window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {
-    timelineStore.fetchInitialPosts();
     observeWebSocketConnection();
+    timelineStore.fetchInitialPosts();
   }
 });
 
