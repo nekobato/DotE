@@ -3,17 +3,17 @@ import { useStore } from "@/store";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { onBeforeMount, ref } from "vue";
-import { Setting } from "@/types/store";
+import { Settings } from "@/types/store";
 
 const store = useStore();
 
-const hazyMode = ref<Setting["hazyMode"] | null>();
+const hazyMode = ref<Settings["hazyMode"] | null>();
 
-const isActive = (mode: Setting["hazyMode"]) => {
+const isActive = (mode: Settings["hazyMode"]) => {
   return hazyMode.value === mode;
 };
 
-const setActive = (mode: Setting["hazyMode"]) => {
+const setActive = (mode: Settings["hazyMode"]) => {
   hazyMode.value = mode;
   ipcSend("set-hazy-mode", { mode });
 };

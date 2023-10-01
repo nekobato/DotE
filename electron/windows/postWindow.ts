@@ -17,6 +17,7 @@ export function createPostWindow() {
       preload: preload,
     },
     useContentSize: false,
+    center: true,
     frame: true,
     transparent: false,
     hasShadow: true,
@@ -32,6 +33,12 @@ export function createPostWindow() {
   } else {
     win.loadFile(join(pageRoot.production), { hash: pageName });
   }
+
+  // close to hide
+  // win.on("close", (e) => {
+  //   e.preventDefault();
+  //   win.hide();
+  // });
 
   return win;
 }

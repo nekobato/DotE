@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import HazyLoading from "@/components/common/HazyLoading.vue";
+import MisskeyNote from "@/components/MisskeyNote.vue";
 import { useTimelineStore } from "@/store/timeline";
 import { reactive, ref } from "vue";
 import { useStore } from "~/store";
@@ -49,9 +50,6 @@ body::-webkit-scrollbar {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  // inset grow
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
 
   &.haze {
     pointer-events: none;
@@ -60,6 +58,7 @@ body::-webkit-scrollbar {
 .timeline-container {
   width: 100%;
   height: 100%;
+  overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
   &.is-adding {

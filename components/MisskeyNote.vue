@@ -4,7 +4,7 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
-import { parseMisskeyAttachments } from "~/utils/misskey";
+import { createReaction, deleteReaction, isMyReaction, parseMisskeyAttachments } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
 
 const timelineStore = useTimelineStore();
@@ -55,7 +55,11 @@ const reactions = computed(() => {
       const localEmoji = timelineStore.currentInstance?.misskey?.emojis.find((emoji) => emoji.name === reactionName);
       return {
         name: key,
-        url: localEmoji?.url || props.post.reactionEmojis[reactionName] || "",
+        url:
+          localEmoji?.url ||
+          props.post.reactionEmojis[reactionName] ||
+          (props.post.renote as MisskeyNote)?.reactionEmojis[reactionName] ||
+          "",
         count: reactions[key],
         isRemote: !localEmoji,
       };
@@ -68,12 +72,17 @@ const openPost = () => {
 };
 
 const openReactionWindow = () => {
-  ipcSend("post:reaction", { instanceUrl: timelineStore.currentInstance?.url, postId: props.post.id });
+  ipcSend("post:reaction", {
+    instanceUrl: timelineStore.currentInstance?.url,
+    token: timelineStore.currentUser?.token,
+    noteId: props.post.id,
+    emojis: timelineStore.currentInstance?.misskey?.emojis,
+  });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
   if (isMyReaction(reaction, props.post.myReaction)) {
-    deleteReaction(postId);
+    deleteReaction(postId, false);
   } else {
     // 既にreactionがある場合は削除してから追加
     if (props.post.myReaction) {
@@ -87,32 +96,25 @@ const onClickReaction = (postId: string, reaction: string) => {
   });
 };
 
-const createReaction = (postId: string, reaction: string) => {
-  timelineStore.createReaction({
-    postId,
-    reaction,
+onMounted(() => {
+  ipcSend("stream:sub-note", {
+    postId: props.post.id,
   });
-};
+});
 
-const deleteReaction = (postId: string, noUpdate?: boolean) => {
-  timelineStore.deleteReaction({
-    postId,
-    noUpdate,
+onBeforeUnmount(() => {
+  ipcSend("stream:un-sub-note", {
+    postId: props.post.id,
   });
-};
-
-const isMyReaction = (reaction: string, myReaction?: string) => {
-  if (!myReaction) return false;
-  return reaction === myReaction;
-};
+});
 </script>
 
 <template>
   <div class="hazy-post" :class="[postType]">
     <div class="post-data-group">
-      <div class="post-data">
+      <div class="post-data" :class="{ notext: !props.post.text }">
         <div class="hazy-post-info">
-          <span class="username" v-html="props.post.user.name" />
+          <span class="username" v-if="props.post.text || !props.post.renote" v-html="props.post.user.name" />
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
@@ -158,6 +160,7 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
 
 <style lang="scss" scoped>
 .username {
+  display: block;
   color: rgba(255, 255, 255, 0.72);
   font-weight: 600;
   font-size: var(--font-size-10);
@@ -178,41 +181,19 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
   flex-direction: column;
   width: 100%;
 }
-.renote-data {
-  margin-top: 4px;
-  padding-left: 8px;
-  &::before {
-    position: absolute;
-    left: 0;
-    display: inline-flex;
-    width: 4px;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.32);
-    border-radius: 2px;
-    content: "";
-  }
-}
 
-.hazy-post {
-  &.renote {
-    .post-data {
-      .username {
-        display: none;
-      }
-      .hazy-avatar {
-        width: 20px;
-        height: 20px;
-      }
+.hazy-post.renote {
+  .post-data {
+    position: absolute;
+    .hazy-avatar {
+      width: 20px;
+      height: 20px;
     }
-    .renote-data {
-      margin-top: -46px;
-      padding-left: 12px;
-      &::before {
-        display: none;
-      }
-      .username {
-        margin-left: -12px;
-      }
+  }
+  .renote-data {
+    padding-left: 12px;
+    .username {
+      margin-left: -12px;
     }
   }
 }
@@ -239,17 +220,17 @@ const isMyReaction = (reaction: string, myReaction?: string) => {
     height: 24px;
     padding: 0 2px;
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--hazy-color-white-t1);
     border-radius: 4px;
     &:not(.remote) {
       cursor: pointer;
       &:hover {
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid var(--hazy-color-white-t3);
       }
     }
     &.reacted {
-      background-color: rgba(255, 255, 255, 0.2);
-      border: 1px solid rgba(255, 255, 255, 0.4);
+      background-color: var(--hazy-color-white-t1);
+      border: 1px solid var(--hazy-color-white-t4);
     }
     .emoji {
       height: 20px;

@@ -1,14 +1,9 @@
 <script lang="ts" setup>
 import { RouterView } from "vue-router";
-import { PropType, reactive } from "vue";
-import { Post } from "@/types/post";
-import { MisskeyEntities } from "~/types/misskey";
 
 const router = useRouter();
 
-const pagedata = reactive({
-  post: null as PropType<MisskeyNote> | null,
-});
+const pagedata = ref<any>({});
 
 window.ipc.on("post:create", () => {
   router.push("/post/create");
@@ -19,9 +14,15 @@ window.ipc.on("post:close", () => {
 });
 
 window.ipc.on("post:detail", (_, payload) => {
-  pagedata.post = payload;
+  pagedata.value = payload;
   console.info(pagedata);
   router.push("/post/detail");
+});
+
+window.ipc.on("post:reaction", (_, payload) => {
+  pagedata.value = payload;
+  console.log(payload);
+  router.push("/post/reaction");
 });
 </script>
 

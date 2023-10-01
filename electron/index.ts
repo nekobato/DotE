@@ -12,6 +12,10 @@ import { apiRequest } from "./api";
 import { autoUpdater } from "electron-updater";
 import { Settings } from "@/types/store";
 
+process.on("uncaughtException", function (error) {
+  dialog.showErrorBox("Error", error.message);
+});
+
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 
@@ -23,7 +27,7 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-console.info(isMac);
+console.log(isMac);
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -92,7 +96,7 @@ const start = () => {
 
   ipcMain.on("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.info(event, data);
+    console.log(event);
     switch (event) {
       case "set-hazy-mode":
         setMainWindowMode(data.mode);
@@ -112,6 +116,10 @@ const start = () => {
         mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.hide();
         break;
+      case "main:reaction":
+        console.log(data);
+        mainWindow?.webContents.send(event, data);
+        break;
       case "post:create":
         if (!postWindow) {
           postWindow = createPostWindow();
@@ -128,6 +136,17 @@ const start = () => {
       case "resize":
         mainWindow?.setBounds(data);
         break;
+      case "stream:sub-note":
+        // TODO: main processへ移植
+        mainWindow?.webContents.send("stream:sub-note", data);
+        break;
+      case "stream:unsub-note":
+        // TODO: main processへ移植
+        mainWindow?.webContents.send("stream:unsub-note", data);
+        break;
+      case "test":
+        console.log("test");
+        break;
       default:
         throw new Error(`${event} is not defined event.`);
     }
@@ -136,7 +155,7 @@ const start = () => {
   // invoke
   ipcMain.handle("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.info(event, data);
+    console.log(event, data);
     switch (event) {
       case "api":
         const method: keyof typeof apiRequest = data.method;
@@ -186,6 +205,7 @@ const start = () => {
   });
 
   initialize();
+  console.log("initialized");
 };
 
 app.on("will-quit", () => {
@@ -194,7 +214,7 @@ app.on("will-quit", () => {
 
 app.on("window-all-closed", () => {
   if (isMac) {
-    console.info("quit");
+    console.log("quit");
     app.quit();
   }
 });

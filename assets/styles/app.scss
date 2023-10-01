@@ -36,18 +36,6 @@ body,
   border-radius: 8px;
 }
 
-.username {
-  img.emoji {
-    width: auto;
-    height: var(--font-size-12);
-    margin-bottom: -2px;
-    line-height: var(--font-size-12);
-  }
-}
-
-.hazy-timeline-container {
-}
-
 .hazy-post-list {
   display: flex;
   flex-direction: column;

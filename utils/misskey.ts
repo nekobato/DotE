@@ -1,4 +1,5 @@
 import { Post } from "@/types/post";
+import { useTimelineStore } from "~/store/timeline";
 import { MisskeyEntities, MisskeyNote } from "~/types/misskey";
 
 export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
@@ -33,4 +34,25 @@ export const parseMisskeyNoteText = (text: string | null, emojis: MisskeyEntitie
         }
       }) ?? ""
   );
+};
+
+export const isMyReaction = (reaction: string, myReaction?: string) => {
+  if (!myReaction) return false;
+  return reaction === myReaction;
+};
+
+export const createReaction = (postId: string, reaction: string) => {
+  const timelineStore = useTimelineStore();
+  timelineStore.createReaction({
+    postId,
+    reaction,
+  });
+};
+
+export const deleteReaction = (postId: string, noUpdate: boolean) => {
+  const timelineStore = useTimelineStore();
+  timelineStore.deleteReaction({
+    postId,
+    noUpdate,
+  });
 };

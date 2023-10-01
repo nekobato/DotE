@@ -9,6 +9,9 @@ type invokeEvents = {
   api: {
     method: string;
   } & { [key: string]: any };
+  pipe: {
+    method: string;
+  } & { [key: string]: any };
   "db:get-users": void;
   "db:upsert-user": Omit<User, "id"> | Partial<User>;
   "db:delete-user": {
@@ -27,6 +30,7 @@ type invokeEvents = {
 
 type InvokeResults = {
   api: any;
+  pipe: any;
   "db:get-users": User[];
   "db:upsert-user": User;
   "db:delete-user": void;
