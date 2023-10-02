@@ -3,7 +3,7 @@ import { TimelineStore, useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
-import { Timeline } from "~/types/store";
+import { ChannelName, Timeline } from "~/types/store";
 
 const channelList = [
   {
@@ -39,6 +39,9 @@ const channelList = [
 const store = useStore();
 const timelineStore = useTimelineStore();
 
+const selectedUserId = ref(timelineStore.currentUser?.id || "");
+const selectedChannel = ref<ChannelName>(timelineStore.current?.channel || "misskey:homeTimeline");
+
 const accountOptions = computed(() =>
   store.users.map((user) => ({
     label: user.name,
@@ -51,17 +54,22 @@ const timelineOptions = channelList.map((channel) => ({
   value: channel.value,
 }));
 
-const onChangeUser = async (timelineId: string) => {
-  const newTimeline = store.timelines.find((timeline) => timeline.id === timelineId);
-  if (newTimeline) {
-    await updateTimeline(newTimeline);
+const onChangeUser = async (e: InputEvent, timelineId: string) => {
+  if (!e) return;
+  selectedUserId.value = (e.target as HTMLInputElement).value;
+
+  const timeline = store.timelines.find((timeline) => timeline.id === timelineId);
+  if (timeline) {
+    await updateTimeline({ ...timeline, userId: selectedUserId.value });
   }
 };
 
-const onChangeChannel = async (timelineId: string) => {
-  const newTimeline = store.timelines.find((timeline) => timeline.id === timelineId);
-  if (newTimeline) {
-    await updateTimeline(newTimeline);
+const onChangeChannel = async (e: InputEvent, timelineId: string) => {
+  if (!e) return;
+  selectedChannel.value = (e.target as HTMLInputElement).value as ChannelName;
+  const timeline = store.timelines.find((timeline) => timeline.id === timelineId);
+  if (timeline) {
+    await updateTimeline({ ...timeline, channel: selectedChannel.value });
   }
 };
 
@@ -86,11 +94,12 @@ const updateTimeline = async (timeline: Timeline) => {
         </div>
         <div class="attachments form-actions">
           <HazySelect
-            placeholder="--"
+            name="user"
             :options="accountOptions"
-            @change="onChangeUser(timeline.id)"
+            :value="timeline.userId"
+            @change="onChangeUser($event, timeline.id)"
+            placeholder="--"
             class="select"
-            :default="timeline.userId"
           />
         </div>
       </div>
@@ -100,11 +109,12 @@ const updateTimeline = async (timeline: Timeline) => {
         </div>
         <div class="attachments form-actions">
           <HazySelect
-            placeholder="--"
+            name="channel"
             :options="timelineOptions"
-            @change="onChangeChannel(timeline.id)"
+            :value="timeline.channel"
+            @change="onChangeChannel($event, timeline.id)"
+            placeholder="--"
             class="select"
-            :default="timeline.channel"
           />
         </div>
       </div>

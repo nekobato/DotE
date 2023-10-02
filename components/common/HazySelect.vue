@@ -8,14 +8,17 @@ const props = defineProps({
     type: Array as PropType<{ label: string; value: string }[]>,
     required: true,
   },
-  default: {
+  value: {
     type: String,
-    default: "",
+  },
+  name: {
+    type: String,
+    required: true,
   },
 });
 </script>
 <template>
-  <select class="nn-select size-small" :value="props.default" @change="$emit('change')">
+  <select class="nn-select size-small" :name="props.name" @change="$emit('change')" :value="props.value">
     <option value="" disabled>{{ placeholder }}</option>
     <option v-for="option in options" :key="option.value" :value="option.value">
       {{ option.label }}

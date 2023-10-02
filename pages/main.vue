@@ -156,6 +156,7 @@ window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) =
 });
 
 window.ipc.on("stream:sub-note", (data: { postId: string }) => {
+  console.log("sub", data.postId, wsState);
   if (wsState.isConnecting || wsState.isConnected) {
     wsNoteSubScriptionQueue.push(data.postId);
     return;
@@ -182,7 +183,9 @@ window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {
     observeWebSocketConnection();
-    timelineStore.fetchInitialPosts();
+    nextTick(() => {
+      timelineStore.fetchInitialPosts();
+    });
   }
 });
 
