@@ -4,24 +4,43 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
-import { connectToMisskeyStream } from "@/utils/websocket";
-import { nanoid } from "nanoid/non-secure";
-import { onBeforeMount, onBeforeUnmount, reactive } from "vue";
+import { useMisskeyStream } from "@/utils/websocket";
+import { onBeforeMount, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import { createReaction, deleteReaction, isMyReaction } from "~/utils/misskey";
 
 const router = useRouter();
 
-let ws: WebSocket | null = null;
-// コネクションが張れていない場合はキューに追加する
-const wsNoteSubScriptionQueue: string[] = [];
-
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
 
-const state = reactive({
-  webSocketId: "",
+const misskeyStream = useMisskeyStream({
+  onChannel: (event, data) => {
+    console.info("onChannel", event, data);
+    switch (event) {
+      case "note":
+        timelineStore.addPost(data.body.body);
+        break;
+      default:
+        console.info("unhandled note", data);
+        break;
+    }
+  },
+  onNoteUpdated: (event, data) => {
+    console.info("onNoteUpdated", data);
+    switch (event) {
+      case "reacted":
+        timelineStore.addReaction({
+          postId: data.body.id,
+          reaction: data.body.body.reaction,
+        });
+        break;
+      default:
+        console.info("unhandled noteUpdated", data);
+        break;
+    }
+  },
 });
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
@@ -43,99 +62,6 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
   }
 });
 
-const disconnectWebSocket = () => {
-  if (!ws) return;
-  ws.close();
-  ws.onopen = null;
-  ws.onerror = null;
-  ws.onclose = null;
-  ws.onmessage = null;
-  ws = null;
-};
-
-const observeWebSocketConnection = () => {
-  if (ws) disconnectWebSocket();
-  state.webSocketId = nanoid();
-  if (!timelineStore.currentUser) throw new Error("No user");
-  if (!timelineStore.currentInstance) throw new Error("No instance");
-  ws = connectToMisskeyStream(
-    timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-    timelineStore.currentUser.token,
-  );
-  ws.onopen = () => {
-    console.info("ws:open");
-
-    if (timelineStore.current) {
-      ws?.send(
-        JSON.stringify({
-          type: "connect",
-          body: { channel: timelineStore.current.channel.split(":")[1], id: state.webSocketId, params: {} },
-        }),
-      );
-    }
-  };
-  ws.onerror = () => {
-    console.info("ws:error");
-  };
-  ws.onclose = () => {
-    console.info("ws:close");
-    if (timelineStore.currentUser && timelineStore.currentInstance) {
-      ws = connectToMisskeyStream(
-        timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-        timelineStore.currentUser.token,
-      );
-      observeWebSocketConnection();
-    }
-  };
-  ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    switch (data.type) {
-      case "connected":
-        console.log("coneccted");
-        if (wsNoteSubScriptionQueue.length) {
-          wsNoteSubScriptionQueue.forEach((postId) => {
-            ws?.send(
-              JSON.stringify({
-                type: "subNote",
-                body: { id: postId },
-              }),
-            );
-          });
-          wsNoteSubScriptionQueue.length = 0;
-        }
-        break;
-      case "channel":
-        switch (data.body.type) {
-          case "note":
-            if (timelineStore.current && timelineStore.currentInstance) {
-              timelineStore.addPost(data.body.body);
-            }
-            break;
-          default:
-            console.info("unhandled note", data);
-            break;
-        }
-        break;
-      case "noteUpdated":
-        switch (data.body.type) {
-          case "reacted":
-            timelineStore.addReaction({
-              postId: data.body.id,
-              reaction: data.body.body.reaction,
-            });
-            break;
-          default:
-            console.info("unhandled noteUpdated", data);
-            break;
-        }
-        break;
-      default:
-        console.info("unhandled stream message", data);
-        break;
-    }
-  };
-};
-
 window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) => {
   const post = timelineStore.current?.posts.find((post) => post.id === data.postId);
   if (!post) return;
@@ -156,32 +82,23 @@ window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) =
 });
 
 window.ipc.on("stream:sub-note", (data: { postId: string }) => {
-  if (!ws?.OPEN) {
-    wsNoteSubScriptionQueue.push(data.postId);
-    return;
-  }
-  ws?.send(
-    JSON.stringify({
-      type: "subNote",
-      body: { id: data.postId },
-    }),
-  );
+  misskeyStream.subNote(data.postId);
 });
 
 window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
-  if (!ws?.OPEN) return;
-  ws?.send(
-    JSON.stringify({
-      type: "unsubNote",
-      body: { id: data.postId },
-    }),
-  );
+  misskeyStream.unsubNote(data.postId);
 });
 
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {
-    observeWebSocketConnection();
+    if (timelineStore.currentInstance && timelineStore.current && timelineStore.currentUser) {
+      misskeyStream.connect({
+        host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+        channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
+        token: timelineStore.currentUser.token,
+      });
+    }
     nextTick(() => {
       timelineStore.fetchInitialPosts();
     });
@@ -196,11 +113,15 @@ onBeforeMount(async () => {
     window.ipc.send("resize", bounds);
   }
 
-  if (timelineStore.currentUser) {
+  if (timelineStore.current) {
     await timelineStore.fetchInitialPosts().catch((error) => {
       console.error(error);
     });
-    observeWebSocketConnection();
+    misskeyStream.connect({
+      host: timelineStore.currentInstance!.url.replace(/https?:\/\//, ""),
+      channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
+      token: timelineStore.currentUser!.token,
+    });
     if (store.settings.hazyMode === "settings") {
       router.replace("/main/settings");
     }
@@ -212,7 +133,7 @@ onBeforeMount(async () => {
 });
 
 onBeforeUnmount(() => {
-  disconnectWebSocket();
+  misskeyStream.disconnect();
 });
 </script>
 <template>
