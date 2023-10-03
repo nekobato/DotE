@@ -13,10 +13,6 @@ import { createReaction, deleteReaction, isMyReaction } from "~/utils/misskey";
 const router = useRouter();
 
 let ws: WebSocket | null = null;
-const wsState = reactive({
-  isConnecting: false,
-  isConnected: false,
-});
 // コネクションが張れていない場合はキューに追加する
 const wsNoteSubScriptionQueue: string[] = [];
 
@@ -47,11 +43,18 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
   }
 });
 
-const observeWebSocketConnection = () => {
-  if (ws) ws.close();
-  wsState.isConnecting = true;
-  wsState.isConnected = false;
+const disconnectWebSocket = () => {
+  if (!ws) return;
+  ws.close();
+  ws.onopen = null;
+  ws.onerror = null;
+  ws.onclose = null;
+  ws.onmessage = null;
   ws = null;
+};
+
+const observeWebSocketConnection = () => {
+  if (ws) disconnectWebSocket();
   state.webSocketId = nanoid();
   if (!timelineStore.currentUser) throw new Error("No user");
   if (!timelineStore.currentInstance) throw new Error("No instance");
@@ -76,7 +79,6 @@ const observeWebSocketConnection = () => {
   };
   ws.onclose = () => {
     console.info("ws:close");
-    wsState.isConnected = false;
     if (timelineStore.currentUser && timelineStore.currentInstance) {
       ws = connectToMisskeyStream(
         timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
@@ -90,8 +92,6 @@ const observeWebSocketConnection = () => {
     switch (data.type) {
       case "connected":
         console.log("coneccted");
-        wsState.isConnecting = false;
-        wsState.isConnected = true;
         if (wsNoteSubScriptionQueue.length) {
           wsNoteSubScriptionQueue.forEach((postId) => {
             ws?.send(
@@ -156,8 +156,7 @@ window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) =
 });
 
 window.ipc.on("stream:sub-note", (data: { postId: string }) => {
-  console.log("sub", data.postId, wsState);
-  if (wsState.isConnecting || wsState.isConnected) {
+  if (!ws?.OPEN) {
     wsNoteSubScriptionQueue.push(data.postId);
     return;
   }
@@ -170,7 +169,7 @@ window.ipc.on("stream:sub-note", (data: { postId: string }) => {
 });
 
 window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
-  if (wsState.isConnecting || wsState.isConnected) return;
+  if (!ws?.OPEN) return;
   ws?.send(
     JSON.stringify({
       type: "unsubNote",
@@ -213,8 +212,7 @@ onBeforeMount(async () => {
 });
 
 onBeforeUnmount(() => {
-  ws?.close();
-  ws = null;
+  disconnectWebSocket();
 });
 </script>
 <template>
