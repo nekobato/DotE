@@ -41,6 +41,10 @@ const misskeyStream = useMisskeyStream({
         break;
     }
   },
+  onEmojiAdded: (event, data) => {
+    console.info("onEmojiAdded", data);
+    timelineStore.addEmoji(data.body.emoji);
+  },
 });
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
@@ -92,6 +96,7 @@ window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {
+    console.log("updateTimeline");
     if (timelineStore.currentInstance && timelineStore.current && timelineStore.currentUser) {
       misskeyStream.connect({
         host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),

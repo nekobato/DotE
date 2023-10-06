@@ -2,7 +2,7 @@ import { MisskeyNote } from "@/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { computed } from "vue";
-import { TimelineStore, methodOfChannel, useStore } from ".";
+import { methodOfChannel, useStore } from ".";
 import { Timeline } from "~/types/store";
 
 export const useTimelineStore = defineStore("timeline", () => {
@@ -20,9 +20,8 @@ export const useTimelineStore = defineStore("timeline", () => {
   });
 
   const setPosts = (posts: MisskeyNote[]) => {
-    const availableTimeline = store.timelines.find((timeline) => timeline.available);
-    if (availableTimeline) {
-      availableTimeline.posts = posts;
+    if (store.timelines[currentIndex.value]) {
+      store.timelines[currentIndex.value].posts = posts;
     }
   };
 
@@ -69,9 +68,19 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const addPost = (post: MisskeyNote) => {
-    const availableTimeline = store.timelines.find((timeline) => timeline.available);
-    if (!availableTimeline) return;
-    availableTimeline.posts.unshift(post);
+    if (!store.timelines[currentIndex.value]) return;
+    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
+  };
+
+  const addEmoji = async ({ postId, name }: { postId: string; name: string }) => {
+    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId);
+    const reactions = post?.renote ? post.renote.reactions : post?.reactions;
+    if (!reactions) return;
+    if (Object.keys(reactions).includes(name)) {
+      reactions[name] += 1;
+    } else {
+      reactions[name] = 1;
+    }
   };
 
   const createReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
@@ -117,8 +126,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updatePost = async ({ postId }: { postId: string }) => {
-    const availableTimeline = store.timelines.find((timeline) => timeline.available);
-    if (!availableTimeline) return;
+    if (!store.timelines[currentIndex.value]) return;
 
     if (currentUser.value) {
       const res = await ipcInvoke("api", {
@@ -133,7 +141,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       });
       const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
       if (current.value && postIndex !== undefined && postIndex !== -1 && currentInstance.value?.misskey?.emojis) {
-        availableTimeline.posts[postIndex] = res;
+        store.timelines[currentIndex.value].posts[postIndex] = res;
       }
     } else {
       throw new Error("user not found");
@@ -161,6 +169,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     updateTimeline,
     createTimeline,
     addPost,
+    addEmoji,
     addReaction,
     createReaction,
     deleteReaction,

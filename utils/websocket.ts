@@ -50,9 +50,11 @@ export const disconnectWebSocket = (ws: WebSocket | null) => {
 export const useMisskeyStream = ({
   onChannel,
   onNoteUpdated,
+  onEmojiAdded,
 }: {
   onChannel: (event: string, data: any) => void;
   onNoteUpdated: (event: string, data: any) => void;
+  onEmojiAdded: (event: string, data: any) => void;
 }) => {
   let ws: WebSocket;
   const shouldConnect = ref(false);
@@ -114,6 +116,9 @@ export const useMisskeyStream = ({
           break;
         case "noteUpdated":
           onNoteUpdated(data.body.type, data.body);
+          break;
+        case "emojiAdded":
+          onEmojiAdded(data.body.type, data.body);
           break;
         default:
           console.info("unhandled stream message", data);

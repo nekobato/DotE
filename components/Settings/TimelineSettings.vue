@@ -44,7 +44,10 @@ const selectedChannel = ref<ChannelName>(timelineStore.current?.channel || "miss
 
 const accountOptions = computed(() =>
   store.users.map((user) => ({
-    label: user.name,
+    label:
+      user.name +
+      "@" +
+      store.instances.find((instance) => instance.id === user.instanceId)?.url.replace("https://", ""),
     value: user.id,
   })),
 );

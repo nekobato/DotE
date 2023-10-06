@@ -103,7 +103,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  ipcSend("stream:un-sub-note", {
+  ipcSend("stream:unsub-note", {
     postId: props.post.id,
   });
 });
