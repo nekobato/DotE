@@ -68,7 +68,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const addPost = (post: MisskeyNote) => {
-    if (!store.timelines[currentIndex.value]) return;
+    if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
   };
 
