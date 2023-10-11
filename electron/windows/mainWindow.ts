@@ -1,5 +1,5 @@
 import { join } from "path";
-import { BrowserWindow, screen } from "electron";
+import electron, { BrowserWindow, screen } from "electron";
 import { getSettingAll } from "../db";
 import { pageRoot, preload } from "../static";
 
@@ -37,6 +37,13 @@ export function createMainWindow() {
 
   win.on("ready-to-show", () => {
     win.show();
+  });
+
+  win.webContents?.on("will-navigate", (e, url) => {
+    if (url !== win.webContents.getURL()) {
+      e.preventDefault();
+    }
+    electron.shell.openExternal(url);
   });
 
   return win;
