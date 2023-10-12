@@ -1,6 +1,7 @@
 import { Post } from "@/types/post";
 import { useTimelineStore } from "~/store/timeline";
 import { MisskeyEntities, MisskeyNote } from "~/types/misskey";
+import { parse } from "mfm-js";
 
 export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
   return files.map((file) => {
@@ -34,6 +35,23 @@ export const parseMisskeyNoteText = (text: string | null, emojis: MisskeyEntitie
         }
       }) ?? ""
   );
+};
+
+export const structMisskeyNoteText = (text: string | null, emojis: MisskeyEntities.CustomEmoji[]): string => {
+  const parsed = parse(text ?? "");
+  return parsed
+    .map((node) => {
+      switch (node.type) {
+        case "text":
+          return node.props.text;
+        case "small":
+          return `<small>${node.props?.text}</small>`;
+
+        default:
+          break;
+      }
+    })
+    .join("");
 };
 
 export const isMyReaction = (reaction: string, myReaction?: string) => {

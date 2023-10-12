@@ -1,6 +1,8 @@
 import electron from "electron";
 
-const menuTemplate: (electron.MenuItemConstructorOptions | electron.MenuItem)[] = [
+type MenuTemplate = (electron.MenuItemConstructorOptions | electron.MenuItem)[];
+
+const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | null }): MenuTemplate => [
   // @ts-ignore: appMenu is not defined in d.ts
   {
     label: "hazy",
@@ -9,6 +11,13 @@ const menuTemplate: (electron.MenuItemConstructorOptions | electron.MenuItem)[] 
         id: "quit",
         label: "Quit hazy",
         role: "quit",
+      },
+      {
+        id: "reload",
+        label: "Reload Timeline",
+        click: () => {
+          mainWindow?.webContents.reload();
+        },
       },
     ],
   },

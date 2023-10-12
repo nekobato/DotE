@@ -1,4 +1,5 @@
 import { entities } from "misskey-js";
+import * as mfm from "mfm-js";
 
 export type MisskeyNote = entities.Note & {
   reactionEmojis: {

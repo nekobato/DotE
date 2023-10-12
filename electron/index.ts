@@ -27,8 +27,6 @@ if (!app.requestSingleInstanceLock()) {
   process.exit(0);
 }
 
-console.log(isMac);
-
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
 let menuWindow: BrowserWindow | null = null;
@@ -86,7 +84,11 @@ const start = () => {
     }
   });
 
-  const menu = Menu.buildFromTemplate(menuTemplate);
+  const menu = Menu.buildFromTemplate(
+    menuTemplate({
+      mainWindow,
+    }),
+  );
   Menu.setApplicationMenu(menu);
 
   mainWindow = createMainWindow();

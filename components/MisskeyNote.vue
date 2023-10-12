@@ -6,6 +6,7 @@ import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
 import { createReaction, deleteReaction, isMyReaction, parseMisskeyAttachments } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
+import Mfm from "./misskey/Mfm.vue";
 
 const timelineStore = useTimelineStore();
 
