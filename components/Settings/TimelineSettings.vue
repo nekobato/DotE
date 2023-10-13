@@ -88,7 +88,7 @@ const updateTimeline = async (timeline: Timeline) => {
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list">
+  <div class="account-settings hazy-post-list" v-if="store.$state.users.length">
     <SectionTitle title="タイムライン" />
     <div class="accounts-container" v-for="timeline in store.timelines" :key="timeline.id">
       <div class="hazy-post account indent-1">

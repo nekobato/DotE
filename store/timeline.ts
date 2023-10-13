@@ -67,6 +67,41 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
+  const deleteTimelineByUserId = async (userId: string) => {
+    store.$state.timelines.forEach(async (timeline) => {
+      console.log(timeline.userId, userId);
+      if (timeline.userId === userId) {
+        await ipcInvoke("db:delete-timeline", {
+          id: timeline.id,
+        });
+      }
+    });
+    // 更新してみる
+    await store.initTimelines();
+    // UserもTimelineも無いなら終わり
+    if (store.$state.users.length === 0) {
+      return;
+    }
+    if (store.$state.timelines.length === 0) {
+      await createTimeline({
+        userId: store.users[0].id,
+        channel: "misskey:homeTimeline",
+        options: {},
+        available: true,
+      });
+      return;
+    }
+
+    if (!store.$state.timelines.some((timeline) => !timeline.available)) {
+      await updateTimeline({
+        ...store.$state.timelines[0],
+        available: true,
+      });
+    }
+
+    await store.initTimelines();
+  };
+
   const addPost = (post: MisskeyNote) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
@@ -162,6 +197,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   return {
     timelines,
+    deleteTimelineByUserId,
     current,
     currentUser,
     currentInstance,

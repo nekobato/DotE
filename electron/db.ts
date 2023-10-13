@@ -84,8 +84,10 @@ const schema: Store.Schema<StoreSchema> = {
 };
 
 export const store = new Store<StoreSchema>({
+  name: "hazy",
   schema,
   defaults: storeDefaults,
+  clearInvalidConfig: true,
 });
 
 // Actions

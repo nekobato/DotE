@@ -118,7 +118,7 @@ onBeforeMount(async () => {
     window.ipc.send("resize", bounds);
   }
 
-  if (timelineStore.current) {
+  if (timelineStore.current && store.settings.hazyMode !== "settings") {
     await timelineStore.fetchInitialPosts().catch((error) => {
       console.error(error);
     });
@@ -127,11 +127,7 @@ onBeforeMount(async () => {
       channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
       token: timelineStore.currentUser!.token,
     });
-    if (store.settings.hazyMode === "settings") {
-      router.replace("/main/settings");
-    }
   } else {
-    console.info("No user");
     router.replace("/main/settings");
     ipcSend("set-hazy-mode", { mode: "settings", reflect: true });
   }

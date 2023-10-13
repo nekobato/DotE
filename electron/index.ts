@@ -180,6 +180,8 @@ const start = () => {
         return db.getTimelineAll();
       case "db:set-timeline":
         return db.setTimeline(data);
+      case "db:delete-timeline":
+        return db.deleteTimeline(data.id);
       case "db:get-instance-all":
         return db.getInstanceAll();
       case "db:upsert-instance":

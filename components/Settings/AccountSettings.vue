@@ -2,6 +2,7 @@
 import { useStore } from "@/store";
 import { useInstanceStore } from "@/store/instance";
 import { useUsersStore } from "@/store/users";
+import { useTimelineStore } from "~/store/timeline";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { nanoid } from "nanoid/non-secure";
@@ -10,6 +11,7 @@ import SectionTitle from "../Post/SectionTitle.vue";
 
 const store = useStore();
 const usersStore = useUsersStore();
+const timelineStore = useTimelineStore();
 const instanceStore = useInstanceStore();
 
 const state = ref({
@@ -66,6 +68,7 @@ const startDeleteAccount = (id: string) => {
 const confirmDeleteAccount = async () => {
   if (state.value.actions.delete.id) {
     usersStore.deleteUser(state.value.actions.delete.id);
+    timelineStore.deleteTimelineByUserId(state.value.actions.delete.id);
   }
   state.value.actions.delete.id = null;
 };
@@ -100,33 +103,35 @@ const resetStatues = () => {
         <span class="nickname">Misskey</span>
       </div>
     </div>
-    <div class="hazy-post account indent-1" v-for="user in store.users" :key="user.id">
-      <img :src="user.avatarUrl || ''" class="hazy-avatar" />
-      <div class="content">
-        <span class="nickname">{{ user.name }}</span>
-        <span class="instance">@{{ usersStore.findInstance(user.instanceId)?.url.replace("https://", "") }}</span>
+    <div class="accounts-container" v-for="user in store.users" :key="user.id">
+      <div class="hazy-post account indent-1">
+        <img :src="user.avatarUrl || ''" class="hazy-avatar" />
+        <div class="content">
+          <span class="nickname">{{ user.name }}</span>
+          <span class="instance">@{{ usersStore.findInstance(user.instanceId)?.url.replace("https://", "") }}</span>
+        </div>
+        <div class="form-actions">
+          <button
+            class="nn-button size-small action"
+            @click="startDeleteAccount(user.id)"
+            v-if="!state.actions.delete.id"
+          >
+            <Icon icon="ion:trash" class="nn-icon" />
+          </button>
+          <button class="nn-button size-small action" @click="resetStatues" v-if="state.actions.delete.id === user.id">
+            <Icon icon="ion:close" class="nn-icon" />
+          </button>
+        </div>
       </div>
-      <div class="form-actions">
-        <button
-          class="nn-button size-small action"
-          @click="startDeleteAccount(user.id)"
-          v-if="!state.actions.delete.id"
-        >
-          <Icon icon="ion:trash" class="nn-icon" />
-        </button>
-        <button class="nn-button size-small action" @click="resetStatues" v-if="state.actions.delete.id">
-          <Icon icon="ion:close" class="nn-icon" />
-        </button>
-      </div>
-    </div>
-    <div class="hazy-post account as-thread indent-1" v-if="state.actions.delete.id">
-      <div class="content">
-        <span class="nickname">確認：削除しますか？</span>
-      </div>
-      <div class="form-actions">
-        <button class="nn-button size-small type-warning action" @click="confirmDeleteAccount()">
-          <Icon icon="ion:checkmark-done" class="nn-icon" />
-        </button>
+      <div class="hazy-post account as-thread indent-1" v-if="state.actions.delete.id === user.id">
+        <div class="content">
+          <span class="nickname">確認：削除しますか？</span>
+        </div>
+        <div class="form-actions">
+          <button class="nn-button size-small type-warning action" @click="confirmDeleteAccount()">
+            <Icon icon="ion:checkmark-done" class="nn-icon" />
+          </button>
+        </div>
       </div>
     </div>
     <!-- new accounts -->

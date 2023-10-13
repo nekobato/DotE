@@ -19,6 +19,7 @@ type invokeEvents = {
   };
   "db:get-timeline-all": void;
   "db:set-timeline": Omit<Timeline, "id"> | (Partial<Timeline> & { id: string });
+  "db:delete-timeline": { id: string };
   "db:get-instance-all": void;
   "db:upsert-instance": (Partial<Instance> & { id: number }) | Omit<Instance, "id">;
   "settings:set": {
@@ -36,6 +37,7 @@ type InvokeResults = {
   "db:delete-user": void;
   "db:get-timeline-all": Timeline[];
   "db:set-timeline": void;
+  "db:delete-timleine": void;
   "db:get-instance-all": Instance[];
   "db:upsert-instance": Instance;
   "settings:set": void;
