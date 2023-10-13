@@ -34,11 +34,5 @@ export function createPostWindow() {
     win.loadFile(join(pageRoot.production), { hash: pageName });
   }
 
-  // close to hide
-  // win.on("close", (e) => {
-  //   e.preventDefault();
-  //   win.hide();
-  // });
-
   return win;
 }

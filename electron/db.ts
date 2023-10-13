@@ -72,6 +72,7 @@ const schema: Store.Schema<StoreSchema> = {
         },
       },
       maxPostCount: { type: "number" },
+      postStyle: { type: "string" },
       shortcuts: {
         type: "object",
         properties: {

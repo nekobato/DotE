@@ -4,6 +4,7 @@ import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import { Settings } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
+import HazySelect from "../common/HazySelect.vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
@@ -18,6 +19,21 @@ const onChangeOpacity = async (e: Event) => {
 
 const onChangeMaxPostCount = async (e: Event) => {
   await settingsStore.setMaxPostCount(Number((e.target as HTMLInputElement)?.value));
+};
+
+const postStyleOptions = [
+  {
+    label: "通常",
+    value: "normal",
+  },
+  {
+    label: "コンパクト",
+    value: "compact",
+  },
+];
+
+const onChangePostStyle = async (e: InputEvent) => {
+  await settingsStore.setPostStyle((e.target as HTMLInputElement)?.value as Settings["postStyle"]);
 };
 
 const onKeyDownOn = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEvent) => {
@@ -72,7 +88,7 @@ const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
 
     <div class="hazy-post indent-1">
       <div class="content">
-        <span class="title">タイムラインに保持する投稿の最大数</span>
+        <span class="title">タイムラインの最大表示数</span>
       </div>
       <div class="form-actions">
         <input
@@ -85,6 +101,21 @@ const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
         />
       </div>
     </div>
+
+    <div class="hazy-post indent-1">
+      <div class="content">
+        <span class="title">ノートの表示スタイル</span>
+      </div>
+      <div class="form-actions">
+        <HazySelect
+          name="postStyle"
+          :options="postStyleOptions"
+          :value="store.settings.postStyle"
+          @change="onChangePostStyle"
+        />
+      </div>
+    </div>
+
     <SectionTitle title="グローバルショートカットキー" />
     <div class="hazy-post indent-1">
       <div class="content">

@@ -221,17 +221,17 @@ onBeforeUnmount(() => {
     height: 24px;
     padding: 0 2px;
     background: transparent;
-    border: 1px solid var(--hazy-color-white-t1);
+    border: none;
     border-radius: 4px;
     &:not(.remote) {
+      background-color: var(--hazy-color-white-t1);
       cursor: pointer;
       &:hover {
-        border: 1px solid var(--hazy-color-white-t3);
+        background-color: var(--hazy-color-white-t2);
       }
     }
     &.reacted {
-      background-color: var(--hazy-color-white-t1);
-      border: 1px solid var(--hazy-color-white-t4);
+      background-color: var(--hazy-color-white-t2);
     }
     .emoji {
       height: 20px;

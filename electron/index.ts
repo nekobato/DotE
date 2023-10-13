@@ -109,9 +109,12 @@ const start = () => {
         electron.shell.openExternal(data.url);
         break;
       case "media-viewer:open":
-        let maxSize = electron.screen.getDisplayNearestPoint(electron.screen.getCursorScreenPoint()).workAreaSize;
+        const pointerDisplay = electron.screen.getDisplayNearestPoint(electron.screen.getCursorScreenPoint());
+        const workAreaSize = pointerDisplay.workAreaSize;
+        console.log(pointerDisplay);
+        mediaViewerWindow?.setPosition(pointerDisplay.bounds.x, pointerDisplay.bounds.y);
         mediaViewerWindow?.center();
-        mediaViewerWindow?.webContents.send(event, { ...data, maxSize });
+        mediaViewerWindow?.webContents.send(event, { ...data, workAreaSize });
         mediaViewerWindow?.show();
         break;
       case "media-viewer:close":

@@ -21,10 +21,15 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "maxPostCount", value: count.toString() });
   };
 
+  const setPostStyle = async (style: Settings["postStyle"]) => {
+    store.$state.settings.postStyle = style;
+    return await ipcInvoke("settings:set", { key: "postStyle", value: style });
+  };
+
   const setShortcutKey = async (key: keyof Settings["shortcuts"], value: string) => {
     store.$state.settings.shortcuts[key] = value;
     return await ipcInvoke("settings:set", { key: `shortcuts.${key}`, value });
   };
 
-  return { setOpacity, setHazyMode, setMaxPostCount, setShortcutKey };
+  return { setOpacity, setHazyMode, setMaxPostCount, setPostStyle, setShortcutKey };
 });

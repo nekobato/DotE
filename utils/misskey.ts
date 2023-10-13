@@ -1,7 +1,7 @@
 import { Post } from "@/types/post";
 import { useTimelineStore } from "~/store/timeline";
 import { MisskeyEntities, MisskeyNote } from "~/types/misskey";
-import { parse } from "mfm-js";
+import { parse, parseSimple } from "mfm-js";
 
 export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
   return files.map((file) => {
@@ -19,6 +19,8 @@ export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["atta
 };
 
 export const parseMisskeyNoteText = (text: string | null, emojis: MisskeyEntities.CustomEmoji[]): string => {
+  const parsed = parseSimple(text ?? "");
+  console.log(parsed);
   return (
     text
       // 文中のURLをaタグに変換

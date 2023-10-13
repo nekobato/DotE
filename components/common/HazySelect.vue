@@ -2,7 +2,6 @@
 const props = defineProps({
   placeholder: {
     type: String,
-    required: true,
   },
   options: {
     type: Array as PropType<{ label: string; value: string }[]>,

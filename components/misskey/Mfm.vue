@@ -1,6 +1,7 @@
 <script lang="tsx">
 import { defineProps, defineComponent } from "vue";
 import * as mfm from "mfm-js";
+import { Settings } from "~/types/store";
 
 type Props = {
   text: string;
@@ -42,6 +43,10 @@ export default defineComponent({
     emojiUrls: {
       type: Object,
       default: null,
+    },
+    postStyle: {
+      type: String,
+      default: "default" as Settings["postStyle"],
     },
   },
   render() {

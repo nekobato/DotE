@@ -41,6 +41,7 @@ export type Settings = {
     height: number;
   };
   maxPostCount: number;
+  postStyle: "default" | "simple" | "oneline";
   shortcuts: {
     toggleTimeline: string;
   };

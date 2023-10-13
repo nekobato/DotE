@@ -57,7 +57,7 @@ const selectCategory = (category: string) => {
 const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
   ipcSend("main:reaction", {
     postId: props.data.noteId,
-    reaction: `:${emoji.name}:@.`,
+    reaction: `:${emoji.name}@.:`,
   });
   ipcSend("post:close");
 };

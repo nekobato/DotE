@@ -101,7 +101,7 @@ export const useMisskeyStream = ({
       if (shouldConnect.value) {
         setTimeout(() => {
           connect({ host, token, channel });
-        }, 1000);
+        }, 500);
       }
     };
 

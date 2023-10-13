@@ -13,6 +13,7 @@ export const storeDefaults = {
       height: 600 as number,
     },
     maxPostCount: 1000 as number,
+    postStyle: "simple" as Settings["postStyle"],
     shortcuts: {} as Settings["shortcuts"],
   },
 };

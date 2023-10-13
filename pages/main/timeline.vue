@@ -16,6 +16,20 @@ const hazeOpacity = computed(() => {
 const state = reactive({
   isAdding: false,
 });
+
+timelineStore.$onAction((action) => {
+  if (action.name === "addPost") {
+    nextTick(() => {
+      if (store.$state.settings.hazyMode === "haze") {
+        console.log(timelineContainer.value);
+        timelineContainer.value?.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      }
+    });
+  }
+});
 </script>
 
 <template>

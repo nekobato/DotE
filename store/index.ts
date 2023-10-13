@@ -32,20 +32,20 @@ export type ErrorItem = {
 export const useStore = defineStore({
   id: "store",
   state: () => ({
-    hasInit: false,
     users: [] as User[],
     instances: [] as InstanceStore[],
     timelines: [] as TimelineStore[],
     settings: {
-      opacity: undefined as number | undefined,
-      hazyMode: "show" as "show" | "haze" | "hide" | "settings" | "tutorial",
+      opacity: 0,
+      hazyMode: "show",
       windowSize: {
         width: 0,
         height: 0,
       },
       maxPostCount: 1000,
+      postStyle: "simple",
       shortcuts: {} as Settings["shortcuts"],
-    },
+    } as Settings,
     errors: [] as ErrorItem[],
   }),
   actions: {
@@ -55,7 +55,6 @@ export const useStore = defineStore({
       await this.initMisskeyEmojis();
       await this.initTimelines();
       await this.initSettings();
-      this.$state.hasInit = true;
       console.info("store init", this.$state);
       gotoHazyRoute(this.$state.settings.hazyMode);
     },
