@@ -111,10 +111,9 @@ const start = () => {
       case "media-viewer:open":
         const pointerDisplay = electron.screen.getDisplayNearestPoint(electron.screen.getCursorScreenPoint());
         const workAreaSize = pointerDisplay.workAreaSize;
-        console.log(pointerDisplay);
         mediaViewerWindow?.setPosition(pointerDisplay.bounds.x, pointerDisplay.bounds.y);
         mediaViewerWindow?.center();
-        mediaViewerWindow?.webContents.send(event, { ...data, workAreaSize });
+        mediaViewerWindow?.webContents.send(event, { ...data, maxSize: workAreaSize });
         mediaViewerWindow?.show();
         break;
       case "media-viewer:close":

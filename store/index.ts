@@ -89,7 +89,7 @@ export const useStore = defineStore({
                 message: `${instance.name}のemojiがうまく取得できませんでした インターネット接続またはデータがおかしいです`,
               });
             });
-            console.info(result);
+            console.info("emoji", result);
             instance.misskey!.emojis = result?.emojis || [];
           }
           return instance;

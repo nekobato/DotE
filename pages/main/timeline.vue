@@ -47,7 +47,7 @@ timelineStore.$onAction((action) => {
       }"
     >
       <div class="hazy-post-list">
-        <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" />
+        <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" :key="post.id" />
       </div>
     </div>
     <HazyLoading v-else />

@@ -20,7 +20,7 @@ export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["atta
 
 export const parseMisskeyNoteText = (text: string | null, emojis: MisskeyEntities.CustomEmoji[]): string => {
   const parsed = parseSimple(text ?? "");
-  console.log(parsed);
+  console.log("parsed", parsed);
   return (
     text
       // 文中のURLをaタグに変換
@@ -37,23 +37,6 @@ export const parseMisskeyNoteText = (text: string | null, emojis: MisskeyEntitie
         }
       }) ?? ""
   );
-};
-
-export const structMisskeyNoteText = (text: string | null, emojis: MisskeyEntities.CustomEmoji[]): string => {
-  const parsed = parse(text ?? "");
-  return parsed
-    .map((node) => {
-      switch (node.type) {
-        case "text":
-          return node.props.text;
-        case "small":
-          return `<small>${node.props?.text}</small>`;
-
-        default:
-          break;
-      }
-    })
-    .join("");
 };
 
 export const isMyReaction = (reaction: string, myReaction?: string) => {

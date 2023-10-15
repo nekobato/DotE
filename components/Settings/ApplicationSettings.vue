@@ -27,8 +27,8 @@ const postStyleOptions = [
     value: "normal",
   },
   {
-    label: "コンパクト",
-    value: "compact",
+    label: "シンプル",
+    value: "simple",
   },
 ];
 
