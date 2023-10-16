@@ -31,7 +31,7 @@
     "@nuxt/devtools": "latest",
     "@pinia/nuxt": "^0.4.11",
     "@vitejs/plugin-vue": "^4.0.0",
-    "@vueuse/core": "^10.4.1",
+    "@vueuse/core": "^10.5.0",
     "electron": "26.3.0",
     "electron-builder": "^24.6.4",
     "electron-icon-builder": "^2.0.1",
