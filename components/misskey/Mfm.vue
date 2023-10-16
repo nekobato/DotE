@@ -1,17 +1,9 @@
 <script lang="tsx">
-import { defineProps, defineComponent } from "vue";
+import { defineComponent } from "vue";
 import * as mfm from "mfm-js";
 import { Settings } from "~/types/store";
-
-type Props = {
-  text: string;
-  plain?: boolean;
-  nowrap?: boolean;
-  author?: any;
-  i?: any;
-  isNote?: boolean;
-  emojiUrls?: any;
-};
+import { PropType } from "vue";
+import { MisskeyEntities } from "~/types/misskey";
 
 export default defineComponent({
   name: "Mfm",
@@ -40,8 +32,8 @@ export default defineComponent({
       type: Boolean,
       default: true,
     },
-    emojiUrls: {
-      type: Object,
+    emojis: {
+      type: Array as PropType<MisskeyEntities.CustomEmoji[]>,
       default: null,
     },
     postStyle: {
@@ -70,7 +62,7 @@ export default defineComponent({
             return (
               <img
                 class="emoji"
-                src={this.emojiUrls?.[node.props.name]}
+                src={this.emojis?.find((emoji) => emoji.name === node.props.name)?.url}
                 alt={node.props.name}
                 title={node.props.name}
               />
@@ -144,7 +136,7 @@ export default defineComponent({
         }
       });
 
-    return () => <p class="hazy-post-body">{structElement(ast)}</p>;
+    return <p class="hazy-post-body">{structElement(ast)}</p>;
   },
 });
 </script>

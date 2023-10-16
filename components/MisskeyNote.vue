@@ -120,7 +120,8 @@ onBeforeUnmount(() => {
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
           <p class="hazy-post-body" v-html="cwHtml" v-if="props.post.cw" />
-          <p class="hazy-post-body" v-html="textHtml" v-if="props.post.text" />
+          <Mfm :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+          <!-- <p class="hazy-post-body" v-html="textHtml" v-if="props.post.text" /> -->
         </div>
       </div>
       <div class="renote-data" v-if="props.post.renote">
