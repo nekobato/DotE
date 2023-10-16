@@ -18,13 +18,12 @@ export function createPostWindow() {
     },
     useContentSize: false,
     center: true,
-    frame: true,
+    frame: false,
     transparent: false,
     hasShadow: true,
     skipTaskbar: false,
     alwaysOnTop: false,
     fullscreenable: false,
-    roundedCorners: false,
   });
 
   if (process.env.NODE_ENV === "development") {

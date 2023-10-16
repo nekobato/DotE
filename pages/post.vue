@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { RouterView } from "vue-router";
-
 const router = useRouter();
 
 const pagedata = ref<any>({});
@@ -27,5 +25,9 @@ window.ipc.on("post:reaction", (_, payload) => {
 </script>
 
 <template>
-  <RouterView :data="pagedata" />
+  <NuxtLayout name="columns" class="post-page">
+    <PostWindowHeader />
+    <NuxtPage :data="pagedata" />
+  </NuxtLayout>
 </template>
+<style lang="scss" scoped></style>

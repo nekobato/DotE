@@ -111,7 +111,6 @@ const onInputSearchEmoji = () => {
 <style lang="scss" scoped>
 .page {
   display: flex;
-  background-color: var(--hazy-background-color);
 }
 
 .reaction-button {

@@ -6,6 +6,8 @@ button {
 }
 
 .nn-button {
+  --color-button-text: var(--color-text-body);
+
   position: relative;
   display: inline-flex;
   gap: 8px;
@@ -14,7 +16,7 @@ button {
   min-height: 32px;
   padding: 0 16px;
   overflow: hidden;
-  color: #fff;
+  color: var(--color-button-text);
   font-weight: bold;
   font-size: 16px;
   line-height: 1;
@@ -70,7 +72,7 @@ button {
   &.type-secondary {
     color: var(--color-button-primary);
     background: transparent;
-    background-color: #ffffff;
+    background-color: var(--color-button-text);
     border: 2px solid #2d9cdb;
 
     &:hover,
@@ -101,7 +103,7 @@ button {
   }
 
   &.type-attention {
-    color: #ffffff;
+    color: var(--color-button-text);
     background: #ff0211;
     &:hover,
     &:focus {
@@ -132,6 +134,23 @@ button {
 
   &[disabled] {
     background: rgba(255, 255, 255, 0.5);
+  }
+
+  &.type-ghost {
+    color: var(--color-button-text);
+    background: transparent;
+    border: 1px solid transparent;
+    fill: var(--color-button-text);
+    &:hover,
+    &:focus {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    &:active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.2);
+    }
   }
 }
 
