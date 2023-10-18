@@ -234,7 +234,4 @@ if (DEBUG) {
   }
 }
 
-app
-  .whenReady()
-  .then(start)
-  .catch((error: Error) => dialog.showErrorBox("Error", error.message));
+app.whenReady().then(start);

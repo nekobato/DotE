@@ -52,18 +52,7 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
   if (reflect) return;
 
   settingsStore.setHazyMode(mode);
-
-  switch (mode) {
-    case "settings":
-      router.push("/main/settings");
-      break;
-    case "show":
-    case "haze":
-      router.push("/main/timeline");
-      break;
-    default:
-      break;
-  }
+  gotoHazyRoute(mode);
 });
 
 window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) => {
@@ -113,10 +102,6 @@ timelineStore.$onAction((action) => {
 onBeforeMount(async () => {
   await store.init();
   console.info("store", store);
-  const bounds = window.localStorage.getItem("bounds");
-  if (bounds) {
-    window.ipc.send("resize", bounds);
-  }
 
   if (timelineStore.current && store.settings.hazyMode !== "settings") {
     await timelineStore.fetchInitialPosts().catch((error) => {

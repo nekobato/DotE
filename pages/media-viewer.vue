@@ -40,17 +40,12 @@ window.ipc.on("media-viewer:open", (event, data: Media & { maxSize: { width: num
   }
 });
 
-window.ipc.on("media-viewer:close", () => {
-  state.media = {} as Media;
-  state.size = { width: 0, height: 0 };
-  state.isLoading = true;
-});
-
 const closeWindow = () => {
   ipcSend("media-viewer:close");
   // reset state
   state.media = {} as Media;
   state.size = { width: 0, height: 0 };
+  state.isLoading = true;
 };
 </script>
 
@@ -73,6 +68,7 @@ const closeWindow = () => {
       :height="state.size?.height || undefined"
       @load="onLoad"
     />
+    <audio v-if="state.media.type === 'audio'" :src="state.media.url" @load="onLoad" />
     <Loading class="loading" v-if="state.isLoading" />
   </div>
 </template>
@@ -86,15 +82,18 @@ const closeWindow = () => {
   height: 100%;
 }
 img,
-video {
+video,
+audio {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 .loading {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto;
 }
 </style>

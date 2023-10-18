@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import PostWindowHeader from "~/components/PostWindowHeader.vue";
 const router = useRouter();
 
 const pagedata = ref<any>({});
