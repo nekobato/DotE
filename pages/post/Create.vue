@@ -4,10 +4,12 @@ import { Icon } from "@iconify/vue";
 import { computed, onMounted, reactive, ref } from "vue";
 import HazyButton from "@/components/common/HazyButton.vue";
 import hazyAlert from "@/components/common/HazyAlert.vue";
+import { Instance, Timeline, User } from "~/types/store";
 
 const state = reactive({
-  users: [] as any,
-  currentUserIndex: 0,
+  user: undefined as User | undefined,
+  timeline: undefined as Timeline | undefined,
+  instance: undefined as Instance | undefined,
   post: {
     isSending: false,
     error: "",
@@ -16,23 +18,14 @@ const state = reactive({
 const text = ref("");
 const textCw = ref("");
 
-const currentUser = computed(() => {
-  return state.users.length ? state.users[state.currentUserIndex] : undefined;
-});
-
-const getUsers = async () => {
-  const users = await ipcInvoke("db:get-users");
-  state.users = users;
-};
-
 const post = async () => {
   if (text) {
     state.post.isSending = true;
     const res = await ipcInvoke("api", {
       method: "misskey:createNote",
-      instanceUrl: currentUser.value?.instanceUrl,
-      token: currentUser.value?.token,
-      i: currentUser.value?.token,
+      instanceUrl: state.instance?.url,
+      token: state.user?.token,
+      i: state.user?.token,
       // visibility: "public",
       // visibleUserIds: [],
       text: text.value,
@@ -50,15 +43,21 @@ const post = async () => {
     });
     if (res.status === 200) {
       text.value = "";
-      ipcSend("post:sent", res.data);
+      textCw.value = "";
+      ipcSend("post:close");
     } else {
     }
     state.post.isSending = false;
   }
 };
 
-onMounted(() => {
-  getUsers();
+onMounted(async () => {
+  const users = await ipcInvoke("db:get-users");
+  const timelines = await ipcInvoke("db:get-timeline-all");
+  const instances = await ipcInvoke("db:get-instance-all");
+  state.timeline = timelines.find((timeline: any) => timeline.available);
+  state.user = users.find((user: any) => user.id === state.timeline?.userId);
+  state.instance = instances.find((instance: any) => instance.id === state.user?.instanceId);
 });
 </script>
 
@@ -66,8 +65,8 @@ onMounted(() => {
   <div class="post">
     <div class="post-form">
       <div class="tools">
-        <img :src="currentUser?.avatarUrl" class="hazy-avatar" />
-        <span class="username">{{ currentUser?.name }}@{{ currentUser?.instanceUrl.replace("https://", "") }}</span>
+        <img :src="state.user?.avatarUrl" class="hazy-avatar" />
+        <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>
         <HazyButton
           class="post-action"
           @click="post"
@@ -99,9 +98,9 @@ onMounted(() => {
   align-items: center;
   .post-action {
     margin: 0 0 0 auto;
-    color: rgba(0, 0, 0, 0.72);
-    background-color: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.72);
+    &:hover {
+      background-color: var(--hazy-color-white-t1);
+    }
   }
   .username {
     color: #fff;

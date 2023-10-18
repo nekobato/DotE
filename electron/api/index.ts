@@ -2,6 +2,7 @@ import {
   misskeyCheckMiAuth,
   misskeyCreateReaction,
   misskeyDeleteReaction,
+  misskeyCreateNote,
   misskeyGetEmojis,
   misskeyGetTimelineGlobal,
   misskeyGetTimelineHome,
@@ -22,4 +23,5 @@ export const apiRequest = {
   ["misskey:getNoteReactions"]: misskeyGetNoteReactions,
   ["misskey:getNote"]: misskeyGetNote,
   ["misskey:getMeta"]: misskeyGetMeta,
+  ["misskey:createNote"]: misskeyCreateNote,
 };

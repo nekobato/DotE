@@ -25,7 +25,7 @@ button {
   text-decoration: none;
   word-break: break-word;
   background: rgba(255, 255, 255, 0);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   cursor: pointer;
   transition-property: background-color, border-color, color, fill;
@@ -41,6 +41,7 @@ button {
 
   &:disabled {
     cursor: default;
+    pointer-events: none;
   }
 
   &.size-large {

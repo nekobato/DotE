@@ -125,9 +125,7 @@ const start = () => {
         mainWindow?.webContents.send(event, data);
         break;
       case "post:create":
-        if (!postWindow) {
-          postWindow = createPostWindow();
-        }
+        postWindow?.webContents.send(event, data);
         postWindow?.show();
         break;
       case "post:close":
