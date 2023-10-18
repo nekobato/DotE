@@ -56,7 +56,6 @@ export const useStore = defineStore({
       await this.initTimelines();
       await this.initSettings();
       console.info("store init", this.$state);
-      gotoHazyRoute(this.$state.settings.hazyMode);
     },
     async initUsers() {
       this.$state.users = await ipcInvoke("db:get-users");

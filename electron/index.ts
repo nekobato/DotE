@@ -137,9 +137,6 @@ const start = () => {
         postWindow?.webContents.send(event, data);
         postWindow?.show();
         break;
-      case "resize":
-        mainWindow?.setBounds(data);
-        break;
       case "stream:sub-note":
         // TODO: main processへ移植
         mainWindow?.webContents.send("stream:sub-note", data);
@@ -196,9 +193,7 @@ const start = () => {
 
   mainWindow.on("resize", () => {
     const [width, height] = mainWindow?.getSize() || [0, 0];
-    const [x, y] = mainWindow?.getPosition() || [0, 0];
     db.setSetting("windowSize", { width, height });
-    mainWindow?.webContents.send("resize", { width, height, x, y });
   });
 
   mainWindow.on("closed", () => {
