@@ -61,7 +61,6 @@ body,
   background-color: rgba(0, 0, 0);
   border-radius: 8px;
 
-
   &:hover {
     .hazy-post-actions {
       visibility: visible;
@@ -84,6 +83,15 @@ body,
 
   .hazy-post-contents {
     display: flex;
+  }
+
+  .username {
+
+    img.emoji {
+      width: var(--font-size-12);
+      height: var(--font-size-12);
+      margin-bottom: -2px;
+    }
   }
 
   .hazy-post-body {

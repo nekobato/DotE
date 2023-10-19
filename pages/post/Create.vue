@@ -41,7 +41,7 @@ const post = async () => {
       // renote: null,
       // fileIds: [],
     });
-    if (res.status === 200) {
+    if (res.createdNote) {
       text.value = "";
       textCw.value = "";
       ipcSend("post:close");

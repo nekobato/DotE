@@ -4,7 +4,13 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
-import { createReaction, deleteReaction, isMyReaction, parseMisskeyAttachments } from "~/utils/misskey";
+import {
+  createReaction,
+  deleteReaction,
+  isMyReaction,
+  parseMisskeyAttachments,
+  parseMisskeyText,
+} from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
 import Mfm from "./misskey/Mfm.vue";
 
@@ -17,12 +23,10 @@ const props = defineProps({
   },
 });
 
-const cwHtml = computed(() => {
-  return parseMisskeyNoteText(props.post.cw, timelineStore.currentInstance?.misskey?.emojis || []);
-});
-
-const textHtml = computed(() => {
-  return parseMisskeyNoteText(props.post.text, timelineStore.currentInstance?.misskey?.emojis || []);
+const username = computed(() => {
+  if (timelineStore.currentInstance?.misskey?.emojis) {
+    return parseMisskeyText(props.post.user.name, timelineStore.currentInstance.misskey.emojis);
+  }
 });
 
 const postType = computed(() => {
@@ -115,11 +119,11 @@ onBeforeUnmount(() => {
     <div class="post-data-group">
       <div class="post-data" :class="{ notext: !props.post.text }">
         <div class="hazy-post-info">
-          <span class="username" v-if="props.post.text || !props.post.renote" v-html="props.post.user.name" />
+          <span class="username" v-if="props.post.text || !props.post.renote" v-html="username" />
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
-          <p class="hazy-post-body" v-html="cwHtml" v-if="props.post.cw" />
+          <Mfm :text="props.post.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
           <Mfm :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
           <!-- <p class="hazy-post-body" v-html="textHtml" v-if="props.post.text" /> -->
         </div>
@@ -130,7 +134,8 @@ onBeforeUnmount(() => {
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
-          <p class="hazy-post-body" v-html="props.post.renote?.text" />
+          <Mfm :text="props.post.renote?.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+          <Mfm :text="props.post.renote?.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
         </div>
       </div>
     </div>
@@ -169,12 +174,6 @@ onBeforeUnmount(() => {
   font-style: normal;
   line-height: var(--font-size-10);
   white-space: nowrap;
-
-  img.emoji {
-    width: var(--font-size-12);
-    height: var(--font-size-12);
-    margin-bottom: -2px;
-  }
 }
 .post-data,
 .renote-data {
@@ -209,9 +208,11 @@ onBeforeUnmount(() => {
 .reactions {
   display: flex;
   gap: 4px;
+  align-items: center;
   width: 100%;
   margin-top: 4px;
   overflow-x: scroll;
+  overflow-y: hidden;
   &::-webkit-scrollbar {
     display: none;
   }

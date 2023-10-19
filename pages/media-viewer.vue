@@ -19,6 +19,7 @@ type Media = {
   url: string;
   thumbnailUrl: string;
   size: { width: number; height: number };
+  maxSize: { width: number; height: number };
 };
 
 const state = reactive({
@@ -31,7 +32,7 @@ const onLoad = () => {
   state.isLoading = false;
 };
 
-window.ipc.on("media-viewer:open", (event, data: Media & { maxSize: { width: number; height: number } }) => {
+window.ipc.on("media-viewer:open", (event, data: Media) => {
   state.media = data;
   state.size = getMediaWindowSize(data.maxSize.width, data.maxSize.height, data.size?.width, data.size?.height);
 
