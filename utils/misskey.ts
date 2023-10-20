@@ -19,8 +19,6 @@ export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["atta
 };
 
 export const parseMisskeyText = (text: string | null, emojis: MisskeyEntities.CustomEmoji[]): string => {
-  const parsed = parseSimple(text ?? "");
-  console.log("parsed", parsed);
   return (
     text
       // 文中のURLをaタグに変換

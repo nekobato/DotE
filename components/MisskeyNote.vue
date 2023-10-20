@@ -123,8 +123,8 @@ onBeforeUnmount(() => {
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
-          <Mfm :text="props.post.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
-          <Mfm :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+          <Mfm class="cw" :text="props.post.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+          <Mfm class="text" :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
           <!-- <p class="hazy-post-body" v-html="textHtml" v-if="props.post.text" /> -->
         </div>
       </div>
@@ -134,8 +134,16 @@ onBeforeUnmount(() => {
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
-          <Mfm :text="props.post.renote?.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
-          <Mfm :text="props.post.renote?.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+          <Mfm
+            class="cw"
+            :text="props.post.renote?.cw || ''"
+            :emojis="timelineStore.currentInstance?.misskey?.emojis"
+          />
+          <Mfm
+            class="text"
+            :text="props.post.renote?.text || ''"
+            :emojis="timelineStore.currentInstance?.misskey?.emojis"
+          />
         </div>
       </div>
     </div>

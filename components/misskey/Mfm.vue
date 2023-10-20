@@ -16,15 +16,19 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
+    clamp: {
+      type: Boolean,
+      default: false,
+    },
+    host: {
+      type: String,
+      default: null,
+    },
     nowrap: {
       type: Boolean,
       default: false,
     },
     author: {
-      type: Object,
-      default: null,
-    },
-    i: {
       type: Object,
       default: null,
     },
@@ -46,6 +50,8 @@ export default defineComponent({
 
     const ast = (this.plain ? mfm.parseSimple : mfm.parse)(this.text);
     const enableAnimation = true; // TODO: settings
+
+    console.log(this.text, ast);
 
     const structElement = (ast: mfm.MfmNode[]) =>
       ast.map((node) => {
@@ -136,7 +142,7 @@ export default defineComponent({
         }
       });
 
-    return <p class="hazy-post-body">{structElement(ast)}</p>;
+    return h("p", { class: ["hazy-post-body", { clamp: this.clamp }] }, structElement(ast));
   },
 });
 </script>
