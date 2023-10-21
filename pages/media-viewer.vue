@@ -28,7 +28,7 @@ const state = reactive({
   isLoading: true,
 });
 
-const onLoad = () => {
+const onReady = () => {
   state.isLoading = false;
 };
 
@@ -60,16 +60,16 @@ const closeWindow = () => {
       autoplay
       controls
       muted
-      @load="onLoad"
+      @canplay="onReady"
     />
     <img
       v-if="state.media.type === 'image'"
       :src="state.media.url"
       :width="state.size?.width || undefined"
       :height="state.size?.height || undefined"
-      @load="onLoad"
+      @load="onReady"
     />
-    <audio v-if="state.media.type === 'audio'" :src="state.media.url" @load="onLoad" />
+    <audio v-if="state.media.type === 'audio'" :src="state.media.url" @load="onReady" />
     <Loading class="loading" v-if="state.isLoading" />
   </div>
 </template>

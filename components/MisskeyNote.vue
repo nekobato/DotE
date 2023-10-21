@@ -123,9 +123,10 @@ onBeforeUnmount(() => {
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
-          <Mfm class="cw" :text="props.post.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
-          <Mfm class="text" :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
-          <!-- <p class="hazy-post-body" v-html="textHtml" v-if="props.post.text" /> -->
+          <div class="body-container">
+            <Mfm class="cw" :text="props.post.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+            <Mfm class="text" :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+          </div>
         </div>
       </div>
       <div class="renote-data" v-if="props.post.renote">
@@ -134,16 +135,18 @@ onBeforeUnmount(() => {
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
-          <Mfm
-            class="cw"
-            :text="props.post.renote?.cw || ''"
-            :emojis="timelineStore.currentInstance?.misskey?.emojis"
-          />
-          <Mfm
-            class="text"
-            :text="props.post.renote?.text || ''"
-            :emojis="timelineStore.currentInstance?.misskey?.emojis"
-          />
+          <div class="body-container">
+            <Mfm
+              class="cw"
+              :text="props.post.renote?.cw || ''"
+              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+            />
+            <Mfm
+              class="text"
+              :text="props.post.renote?.text || ''"
+              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -212,6 +215,10 @@ onBeforeUnmount(() => {
   gap: 4px;
   width: 100%;
   margin-top: 4px;
+}
+.hazy-text-container {
+  display: flex;
+  flex-direction: column;
 }
 .reactions {
   display: flex;

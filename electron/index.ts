@@ -143,6 +143,8 @@ const start = () => {
         // TODO: main processへ移植
         mainWindow?.webContents.send("stream:unsub-note", data);
         break;
+      case "quit":
+        app.quit();
       case "test":
         console.log("test");
         break;
