@@ -161,26 +161,22 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updatePost = async ({ postId }: { postId: string }) => {
-    if (!store.timelines[currentIndex.value]) return;
+    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
 
-    if (currentUser.value) {
-      const res = await ipcInvoke("api", {
-        method: "misskey:getNote",
-        instanceUrl: currentInstance.value?.url,
-        token: currentUser.value.token,
-        noteId: postId,
-      }).catch(() => {
-        store.$state.errors.push({
-          message: `${postId}の取得失敗`,
-        });
+    const res = await ipcInvoke("api", {
+      method: "misskey:getNote",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+      noteId: postId,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${postId}の取得失敗`,
       });
-      const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
-      if (current.value && postIndex !== undefined && postIndex !== -1 && currentInstance.value?.misskey?.emojis) {
-        store.timelines[currentIndex.value].posts[postIndex] = res;
-      }
-    } else {
-      throw new Error("user not found");
-    }
+    });
+    const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
+    if (!postIndex) return;
+
+    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
   const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
