@@ -71,20 +71,19 @@ button {
   }
 
   &.type-secondary {
-    color: var(--color-button-primary);
+    color: var(--color-button-text);
     background: transparent;
-    background-color: var(--color-button-text);
-    border: 2px solid #2d9cdb;
+    border: 2px solid var(--color-button-text);
 
     &:hover,
     &:focus {
-      color: var(--color-button-primary);
-      border: 2px solid var(--color-button-primary);
+      color: var(--color-button-text);
+      border: 2px solid var(--color-button-text);
     }
 
     &:active {
-      color: var(--color-button-primary);
-      border: 2px solid var(--color-button-primary);
+      color: var(--color-button-text);
+      border: 2px solid var(--color-button-text);
     }
   }
 

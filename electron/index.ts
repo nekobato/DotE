@@ -9,7 +9,7 @@ import menuTemplate from "./menu";
 import { setTrayIcon } from "./tray-icon";
 import * as db from "./db";
 import { apiRequest } from "./api";
-import { autoUpdater } from "electron-updater";
+import { checkUpdate } from "./autoupdate";
 import { Settings } from "@/types/store";
 
 process.on("uncaughtException", function (error) {
@@ -26,6 +26,16 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
   process.exit(0);
 }
+
+const autoUpdater = checkUpdate();
+
+autoUpdater.on("update-not-available", () => {
+  db.setSetting("shouldAppUpdate", false);
+});
+
+autoUpdater.on("update-downloaded", () => {
+  db.setSetting("shouldAppUpdate", true);
+});
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -64,8 +74,6 @@ const setMainWindowMode = async (mode: string) => {
 };
 
 const start = () => {
-  autoUpdater.checkForUpdatesAndNotify();
-
   tray = setTrayIcon();
 
   tray.on("click", () => {
@@ -142,6 +150,9 @@ const start = () => {
       case "stream:unsub-note":
         // TODO: main processへ移植
         mainWindow?.webContents.send("stream:unsub-note", data);
+        break;
+      case "update-app":
+        autoUpdater.quitAndInstall();
         break;
       case "quit":
         app.quit();

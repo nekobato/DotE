@@ -79,6 +79,7 @@ const schema: Store.Schema<StoreSchema> = {
           toggleTimeline: { type: "string" },
         },
       },
+      shouldAppUpdate: { type: "boolean" },
     },
   },
 };

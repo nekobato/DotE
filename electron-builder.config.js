@@ -2,7 +2,7 @@ const package = require("./package.json");
 
 module.exports = {
   appId: "net.nekobato.hazy",
-  asar: false,
+  asar: true,
   directories: {
     output: "release/${version}",
   },

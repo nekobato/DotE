@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
 import TutorialAvatar from "./TutorialAvatar.vue";
+import WindowHeader from "@/components/WindowHeader/index.vue";
 </script>
 <template>
   <div class="tutorial hazy-post-container">
+    <WindowHeader exitType="back" />
     <div class="hazy-post-list">
       <div class="hazy-post">
         <TutorialAvatar class="hazy-avatar" />
@@ -12,7 +14,7 @@ import TutorialAvatar from "./TutorialAvatar.vue";
       <div class="hazy-post">
         <TutorialAvatar class="hazy-avatar" />
         <p class="hazy-post-body no-clamp">
-          hazyはながら見に特化したTwitterクライアントだよ。タイムラインを表示しながら他の作業をすることができるよ。書く能力はまだあんまりないよ。
+          hazyはMisskeyのタイムラインをコンパクトにして、ながら見に特化したTwitterクライアントだよ。タイムラインを表示しながら他の作業をすることができるよ。書く能力はまだあんまりないよ。
         </p>
       </div>
       <div class="hazy-post">

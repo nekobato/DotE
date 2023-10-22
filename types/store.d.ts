@@ -45,4 +45,5 @@ export type Settings = {
   shortcuts: {
     toggleTimeline: string;
   };
+  shouldAppUpdate: boolean;
 };

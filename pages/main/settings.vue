@@ -3,12 +3,12 @@ import AccountSettings from "@/components/Settings/AccountSettings.vue";
 import ApplicationInformation from "@/components/Settings/ApplicationInformation.vue";
 import ApplicationSettings from "@/components/Settings/ApplicationSettings.vue";
 import TimelineSettings from "@/components/Settings/TimelineSettings.vue";
-import MainWindowHeader from "~/components/MainWindowHeader.vue";
+import WindowHeader from "~/components/WindowHeader.vue";
 </script>
 
 <template>
   <div class="settings">
-    <MainWindowHeader />
+    <WindowHeader exitType="quit" />
     <div class="hazy-scroller">
       <AccountSettings />
       <TimelineSettings />

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import PostWindowHeader from "~/components/PostWindowHeader.vue";
+import WindowHeader from "~/components/WindowHeader.vue";
 const router = useRouter();
 
 const pagedata = ref<any>({});
@@ -27,7 +27,7 @@ window.ipc.on("post:reaction", (_, payload) => {
 
 <template>
   <NuxtLayout name="columns" class="post-page">
-    <PostWindowHeader />
+    <WindowHeader exitType="close" />
     <NuxtPage :data="pagedata" />
   </NuxtLayout>
 </template>

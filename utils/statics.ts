@@ -6,14 +6,15 @@ export const storeDefaults = {
   instances: [] as InstanceStore[],
   timelines: [] as Timeline[],
   settings: {
-    opacity: 50 as number,
-    hazyMode: "show" as Settings["hazyMode"],
+    opacity: 50,
+    hazyMode: "show",
     windowSize: {
-      width: 475 as number,
-      height: 600 as number,
+      width: 475,
+      height: 600,
     },
-    maxPostCount: 1000 as number,
-    postStyle: "simple" as Settings["postStyle"],
-    shortcuts: {} as Settings["shortcuts"],
-  },
+    maxPostCount: 1000,
+    postStyle: "simple",
+    shortcuts: {},
+    shouldAppUpdate: true,
+  } as Settings,
 };
