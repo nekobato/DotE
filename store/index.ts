@@ -21,6 +21,7 @@ export type TimelineStore = Timeline & {
 export type InstanceStore = Instance & {
   misskey?: {
     emojis: MisskeyEntities.CustomEmoji[];
+    meta: MisskeyEntities.DetailedInstanceMetadata | null;
   };
 };
 
@@ -53,6 +54,7 @@ export const useStore = defineStore({
       await this.initUsers();
       await this.initInstances();
       await this.initMisskeyEmojis();
+      await this.initMisskeyMeta();
       await this.initTimelines();
       await this.initSettings();
       console.info("store init", this.$state);
@@ -68,6 +70,7 @@ export const useStore = defineStore({
           return {
             ...instance,
             misskey: {
+              meta: null as MisskeyEntities.DetailedInstanceMetadata | null,
               emojis: [],
             },
           };
@@ -90,6 +93,25 @@ export const useStore = defineStore({
             });
             console.info("emoji", result);
             instance.misskey!.emojis = result?.emojis || [];
+          }
+          return instance;
+        }),
+      );
+    },
+    async initMisskeyMeta() {
+      return Promise.all(
+        this.$state.instances.map(async (instance) => {
+          if (instance.type === "misskey") {
+            const result = await ipcInvoke("api", {
+              method: "misskey:getMeta",
+              instanceUrl: instance.url,
+            }).catch(() => {
+              this.$state.errors.push({
+                message: `${instance.name}の詳細データを取得できませんでした`,
+              });
+            });
+            console.info("meta", result);
+            instance.misskey!.meta = result;
           }
           return instance;
         }),
