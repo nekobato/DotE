@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
 import TutorialAvatar from "./TutorialAvatar.vue";
-import WindowHeader from "@/components/WindowHeader/index.vue";
+import WindowHeader from "@/components/WindowHeader.vue";
 </script>
 <template>
   <div class="tutorial hazy-post-container">

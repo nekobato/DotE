@@ -100,7 +100,7 @@ export default defineComponent({
             return <em>{structElement(node.children)}</em>;
           case "link":
             return (
-              <a href={node.props.url} target="_blank" rel="noopener noreferrer">
+              <a href={node.props.url} rel="noopener noreferrer">
                 {structElement(node.children)}
               </a>
             );
@@ -132,7 +132,7 @@ export default defineComponent({
             return <span class="emoji">{node.props.emoji}</span>;
           case "url":
             return (
-              <a href={node.props.url} target="_blank" rel="noopener noreferrer">
+              <a href={node.props.url} rel="noopener noreferrer">
                 {node.props.url}
               </a>
             );

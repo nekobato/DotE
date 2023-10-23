@@ -24,6 +24,7 @@ export function createMainWindow() {
     hasShadow: false,
     skipTaskbar: false,
     roundedCorners: false,
+    show: true,
     icon: join("build", `app_icon.png`),
   });
 
@@ -40,9 +41,8 @@ export function createMainWindow() {
   });
 
   win.webContents?.on("will-navigate", (e, url) => {
-    if (url !== win.webContents.getURL()) {
-      e.preventDefault();
-    }
+    e.preventDefault();
+    console.log("will-navigate", url);
     electron.shell.openExternal(url);
   });
 

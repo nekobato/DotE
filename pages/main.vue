@@ -103,19 +103,21 @@ onBeforeMount(async () => {
   await store.init();
   console.info("store", store);
 
-  if (timelineStore.current && store.settings.hazyMode !== "settings") {
-    await timelineStore.fetchInitialPosts().catch((error) => {
-      console.error(error);
-    });
-    misskeyStream.connect({
-      host: timelineStore.currentInstance!.url.replace(/https?:\/\//, ""),
-      channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
-      token: timelineStore.currentUser!.token,
-    });
-  } else {
-    router.replace("/main/settings");
-    ipcSend("set-hazy-mode", { mode: "settings", reflect: true });
+  if (!timelineStore.current) {
+    ipcSend("set-hazy-mode", { mode: "settings" });
+    return;
   }
+
+  await timelineStore.fetchInitialPosts().catch((error) => {
+    console.error(error);
+  });
+  misskeyStream.connect({
+    host: timelineStore.currentInstance!.url.replace(/https?:\/\//, ""),
+    channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
+    token: timelineStore.currentUser!.token,
+  });
+
+  gotoHazyRoute(store.settings.hazyMode);
 });
 
 onBeforeUnmount(() => {
