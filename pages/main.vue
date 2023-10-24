@@ -6,14 +6,16 @@ import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { useMisskeyStream } from "@/utils/websocket";
 import { onBeforeMount, onBeforeUnmount } from "vue";
-import { useRouter } from "vue-router";
 import { createReaction, deleteReaction, isMyReaction } from "~/utils/misskey";
-
-const router = useRouter();
 
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
+
+const streamTime = {
+  lastOpen: 0,
+  lastClose: 0,
+};
 
 const misskeyStream = useMisskeyStream({
   onChannel: (event, data) => {

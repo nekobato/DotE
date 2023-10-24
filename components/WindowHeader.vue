@@ -57,6 +57,8 @@ const updateApp = () => {
 .rest {
   flex: 1;
   -webkit-app-region: drag;
+  width: 100%;
+  height: 100%;
 }
 .update {
   margin: 0 0 0 auto;

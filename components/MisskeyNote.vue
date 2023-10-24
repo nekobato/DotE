@@ -80,7 +80,7 @@ const openReactionWindow = () => {
   ipcSend("post:reaction", {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
-    noteId: props.post.id,
+    noteId: props.post.renote?.id || props.post.id,
     emojis: timelineStore.currentInstance?.misskey?.emojis,
   });
 };
@@ -124,8 +124,18 @@ onBeforeUnmount(() => {
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
           <div class="body-container">
-            <Mfm class="cw" :text="props.post.cw || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
-            <Mfm class="text" :text="props.post.text || ''" :emojis="timelineStore.currentInstance?.misskey?.emojis" />
+            <Mfm
+              class="cw"
+              :text="props.post.cw || ''"
+              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :host="timelineStore.currentInstance?.url"
+            />
+            <Mfm
+              class="text"
+              :text="props.post.text || ''"
+              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :host="timelineStore.currentInstance?.url"
+            />
           </div>
         </div>
       </div>
@@ -140,11 +150,13 @@ onBeforeUnmount(() => {
               class="cw"
               :text="props.post.renote?.cw || ''"
               :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :host="timelineStore.currentInstance?.url"
             />
             <Mfm
               class="text"
               :text="props.post.renote?.text || ''"
               :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :host="timelineStore.currentInstance?.url"
             />
           </div>
         </div>
@@ -159,8 +171,9 @@ onBeforeUnmount(() => {
         v-for="reaction in reactions"
         :class="{ remote: reaction.isRemote, reacted: isMyReaction(reaction.name, props.post.myReaction) }"
         @click="onClickReaction(props.post.id, reaction.name)"
+        :title="reaction.name.replace(/:/g, '')"
       >
-        <img :src="reaction.url" class="emoji" v-if="reaction.url" />
+        <img :src="reaction.url" :alt="reaction.name" class="emoji" v-if="reaction.url" />
         <span class="emoji-default" v-else>{{ reaction.name }}</span>
         <span class="count">{{ reaction.count }}</span>
       </button>
@@ -228,6 +241,7 @@ onBeforeUnmount(() => {
   margin-top: 4px;
   overflow-x: scroll;
   overflow-y: hidden;
+  border-radius: 4px;
   &::-webkit-scrollbar {
     display: none;
   }

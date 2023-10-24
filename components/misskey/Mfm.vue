@@ -90,7 +90,10 @@ export default defineComponent({
             );
           case "hashtag":
             return (
-              <a href={`/search?q=${encodeURIComponent(node.props.tag)}`} class="hashtag">
+              <a
+                href={new URL(`/tags/${encodeURIComponent(node.props.hashtag)}`, this.host).toString()}
+                class="hashtag"
+              >
                 #{node.props.hashtag}
               </a>
             );
@@ -120,7 +123,10 @@ export default defineComponent({
             return <blockquote>{structElement(node.children)}</blockquote>;
           case "search":
             return (
-              <a href={`/search?q=${encodeURIComponent(node.props.query)}`} class="search">
+              <a
+                href={new URL(`/search?q=${encodeURIComponent(node.props.query)}`, this.host).toString()}
+                class="search"
+              >
                 {node.props.query}
               </a>
             );

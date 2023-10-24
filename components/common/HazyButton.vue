@@ -18,20 +18,24 @@ defineProps({
 <template>
   <button class="nn-button type-primary" :class="{ loading: loading }" :disabled="disabled">
     <slot class="slot"></slot>
-    <HazyLoading class="loading-icon" size="small" v-if="loading" />
+    <HazyLoading class="loading-icon" size="small" />
   </button>
 </template>
 
 <style lang="scss" scoped>
+.loading-icon {
+  position: absolute;
+  visibility: hidden;
+}
 .loading {
   .slot {
     visibility: hidden;
   }
+  .loading-icon {
+    visibility: visible;
+  }
 }
 .button-icon {
   margin-left: 4px;
-}
-.loading-icon {
-  position: absolute;
 }
 </style>
