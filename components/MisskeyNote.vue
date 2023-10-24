@@ -86,18 +86,9 @@ const openReactionWindow = () => {
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
-  if (isMyReaction(reaction, props.post.myReaction)) {
-    deleteReaction(postId, false);
-  } else {
-    // 既にreactionがある場合は削除してから追加
-    if (props.post.myReaction) {
-      deleteReaction(postId, false);
-    }
-    createReaction(postId, reaction);
-  }
-
-  timelineStore.updatePost({
+  ipcSend("main:reaction", {
     postId,
+    reaction,
   });
 };
 

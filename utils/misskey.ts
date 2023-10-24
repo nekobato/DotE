@@ -42,17 +42,17 @@ export const isMyReaction = (reaction: string, myReaction?: string) => {
   return reaction === myReaction;
 };
 
-export const createReaction = (postId: string, reaction: string) => {
+export const createReaction = async (postId: string, reaction: string) => {
   const timelineStore = useTimelineStore();
-  timelineStore.createReaction({
+  await timelineStore.createReaction({
     postId,
     reaction,
   });
 };
 
-export const deleteReaction = (postId: string, noUpdate: boolean) => {
+export const deleteReaction = async (postId: string, noUpdate: boolean) => {
   const timelineStore = useTimelineStore();
-  timelineStore.deleteReaction({
+  await timelineStore.deleteReaction({
     postId,
     noUpdate,
   });

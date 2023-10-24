@@ -57,21 +57,21 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
   gotoHazyRoute(mode);
 });
 
-window.ipc.on("main:reaction", (_, data: { postId: string; reaction: string }) => {
+window.ipc.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
   const post = timelineStore.current?.posts.find((post) => post.id === data.postId);
   if (!post) return;
 
   if (isMyReaction(data.reaction, post.myReaction)) {
-    deleteReaction(data.postId, false);
+    await deleteReaction(data.postId, false);
   } else {
     // 既にreactionがある場合は削除してから追加
     if (post.myReaction) {
-      deleteReaction(data.postId, false);
+      await deleteReaction(data.postId, true);
     }
-    createReaction(data.postId, data.reaction);
+    await createReaction(data.postId, data.reaction);
   }
 
-  timelineStore.updatePost({
+  await timelineStore.updatePost({
     postId: data.postId,
   });
 });
