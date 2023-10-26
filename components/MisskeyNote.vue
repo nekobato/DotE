@@ -4,16 +4,12 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
-import {
-  createReaction,
-  deleteReaction,
-  isMyReaction,
-  parseMisskeyAttachments,
-  parseMisskeyText,
-} from "~/utils/misskey";
+import { isMyReaction, parseMisskeyAttachments, parseMisskeyText } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
 import Mfm from "./misskey/Mfm.vue";
+import { useStore } from "~/store";
 
+const store = useStore();
 const timelineStore = useTimelineStore();
 
 const props = defineProps({
@@ -120,12 +116,14 @@ onBeforeUnmount(() => {
               :text="props.post.cw || ''"
               :emojis="timelineStore.currentInstance?.misskey?.emojis"
               :host="timelineStore.currentInstance?.url"
+              :post-style="store.settings.postStyle"
             />
             <Mfm
               class="text"
               :text="props.post.text || ''"
               :emojis="timelineStore.currentInstance?.misskey?.emojis"
               :host="timelineStore.currentInstance?.url"
+              :post-style="store.settings.postStyle"
             />
           </div>
         </div>
@@ -142,12 +140,14 @@ onBeforeUnmount(() => {
               :text="props.post.renote?.cw || ''"
               :emojis="timelineStore.currentInstance?.misskey?.emojis"
               :host="timelineStore.currentInstance?.url"
+              :post-style="store.settings.postStyle"
             />
             <Mfm
               class="text"
               :text="props.post.renote?.text || ''"
               :emojis="timelineStore.currentInstance?.misskey?.emojis"
               :host="timelineStore.currentInstance?.url"
+              :post-style="store.settings.postStyle"
             />
           </div>
         </div>

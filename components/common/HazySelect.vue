@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps({
+defineProps({
   placeholder: {
     type: String,
   },
@@ -7,18 +7,11 @@ const props = defineProps({
     type: Array as PropType<{ label: string; value: string }[]>,
     required: true,
   },
-  value: {
-    type: String,
-  },
-  name: {
-    type: String,
-    required: true,
-  },
 });
 </script>
 <template>
-  <select class="nn-select size-small" :name="props.name" @change="$emit('change')" :value="props.value">
-    <option value="" disabled>{{ placeholder }}</option>
+  <select class="nn-select size-small" v-bind="$attrs">
+    <option value="" disabled v-if="placeholder">{{ placeholder }}</option>
     <option v-for="option in options" :key="option.value" :value="option.value">
       {{ option.label }}
     </option>

@@ -32,8 +32,8 @@ const postStyleOptions = [
   },
 ];
 
-const onChangePostStyle = async (e: InputEvent) => {
-  await settingsStore.setPostStyle((e.target as HTMLInputElement)?.value as Settings["postStyle"]);
+const onChangePostStyle = (e: InputEvent) => {
+  settingsStore.setPostStyle((e.target as HTMLInputElement)?.value as Settings["postStyle"]);
 };
 
 const onKeyDownOn = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEvent) => {

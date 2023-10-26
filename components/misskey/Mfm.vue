@@ -24,10 +24,6 @@ export default defineComponent({
       type: String,
       default: null,
     },
-    nowrap: {
-      type: Boolean,
-      default: false,
-    },
     author: {
       type: Object,
       default: null,
@@ -148,7 +144,7 @@ export default defineComponent({
         }
       });
 
-    return h("p", { class: ["hazy-post-body", { clamp: this.clamp }] }, structElement(ast));
+    return h("p", { class: ["hazy-post-body", this.postStyle] }, structElement(ast));
   },
 });
 </script>

@@ -297,6 +297,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.maxPostCount", Number(value));
     case "shortcuts.toggleTimelines":
       return store.set("settings.maxPostCount", Number(value));
+    case "postStyle":
+      return store.set("settings.postStyle", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }
