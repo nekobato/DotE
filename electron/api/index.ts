@@ -10,6 +10,7 @@ import {
   misskeyGetNoteReactions,
   misskeyGetNote,
   misskeyGetMeta,
+  misskeyGetChannelsMyFavorites,
 } from "./misskey";
 
 export const apiRequest = {
@@ -24,4 +25,5 @@ export const apiRequest = {
   ["misskey:getNote"]: misskeyGetNote,
   ["misskey:getMeta"]: misskeyGetMeta,
   ["misskey:createNote"]: misskeyCreateNote,
+  ["misskey:getChannelsMyFavorites"]: misskeyGetChannelsMyFavorites,
 };

@@ -132,6 +132,17 @@ const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
         />
       </div>
     </div>
+    <SectionTitle title="Misskey" />
+    <div class="hazy-post indent-1">
+      <div class="content">
+        <span class="title">CWをデフォルトで表示する</span>
+      </div>
+      <div class="form-actions">
+        <label class="nn-checkbox">
+          <input type="checkbox" :value="store.settings.misskey.hideCw" @change="" />
+        </label>
+      </div>
+    </div>
   </div>
 </template>
 

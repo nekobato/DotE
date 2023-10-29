@@ -60,6 +60,10 @@ export const useMisskeyStream = ({
   const shouldConnect = ref(false);
   const wsNoteSubScriptionQueue: string[] = [];
   const webSocketId = ref<string | null>(null);
+  const eventTime = {
+    lastOpen: 0,
+    lastClose: 0,
+  };
 
   const onConnected = () => {
     console.log("ws:connected");
@@ -83,6 +87,7 @@ export const useMisskeyStream = ({
 
     ws.onopen = () => {
       console.info("ws:open");
+      eventTime.lastOpen = Date.now();
 
       ws?.send(
         JSON.stringify({
@@ -98,6 +103,7 @@ export const useMisskeyStream = ({
 
     ws.onclose = () => {
       console.info("ws:close");
+      eventTime.lastClose = Date.now();
       if (shouldConnect.value) {
         setTimeout(() => {
           connect({ host, token, channel });

@@ -51,7 +51,8 @@ const updateApp = () => {
 .window-header {
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--hazy-color-white-t1);
+  background-color: var(--hazy-background-color);
+  border: 1px solid var(--hazy-border-color);
   border-radius: 8px;
 }
 .rest {

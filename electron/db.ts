@@ -80,6 +80,12 @@ const schema: Store.Schema<StoreSchema> = {
         },
       },
       shouldAppUpdate: { type: "boolean" },
+      misskey: {
+        type: "object",
+        properties: {
+          hideCw: { type: "boolean" },
+        },
+      },
     },
   },
 };

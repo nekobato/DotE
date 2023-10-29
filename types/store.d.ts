@@ -46,4 +46,7 @@ export type Settings = {
     toggleTimeline: string;
   };
   shouldAppUpdate: boolean;
+  misskey: {
+    hideCw: boolean;
+  };
 };

@@ -12,11 +12,6 @@ const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
 
-const streamTime = {
-  lastOpen: 0,
-  lastClose: 0,
-};
-
 const misskeyStream = useMisskeyStream({
   onChannel: (event, data) => {
     console.info("onChannel", event, data);

@@ -224,3 +224,27 @@ export const misskeyGetMeta = async ({ instanceUrl, token }: { instanceUrl: stri
     return res.json();
   });
 };
+
+export const misskeyGetChannelsMyFavorites = async ({
+  instanceUrl,
+  token,
+  limit,
+  sinceId,
+}: {
+  instanceUrl: string;
+  token: string;
+  limit?: number;
+  sinceId?: string;
+}) => {
+  return fetch(new URL(`/api/notes/channels/my-favorites`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      sinceId,
+      limit: limit || 100,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};

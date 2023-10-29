@@ -16,5 +16,8 @@ export const storeDefaults = {
     postStyle: "simple",
     shortcuts: {},
     shouldAppUpdate: true,
+    misskey: {
+      hideCw: false,
+    },
   } as Settings,
 };

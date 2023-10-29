@@ -4,6 +4,7 @@ import { useTimelineStore } from "@/store/timeline";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
 import { ChannelName, Timeline } from "~/types/store";
+import { MisskeyChannel, MisskeyEntities } from "~/types/misskey";
 
 const channelList = [
   {
@@ -42,6 +43,9 @@ const timelineStore = useTimelineStore();
 const selectedUserId = ref(timelineStore.currentUser?.id || "");
 const selectedChannel = ref<ChannelName>(timelineStore.current?.channel || "misskey:homeTimeline");
 
+const myChannels = ref<MisskeyChannel[]>();
+const channels = computed(() => myChannels.value?.map((channel) => ({ name: channel.name, id: channel.id })) || []);
+
 const accountOptions = computed(() =>
   store.users.map((user) => ({
     label:
@@ -70,6 +74,9 @@ const onChangeUser = async (e: InputEvent, timelineId: string) => {
 const onChangeChannel = async (e: InputEvent, timelineId: string) => {
   if (!e) return;
   selectedChannel.value = (e.target as HTMLInputElement).value as ChannelName;
+  if (selectedChannel.value === "misskey:channelTimeline") {
+    myChannels.value = await timelineStore.getChannelsMyFavorites();
+  }
   const timeline = store.timelines.find((timeline) => timeline.id === timelineId);
   if (timeline) {
     await updateTimeline({ ...timeline, channel: selectedChannel.value });

@@ -191,6 +191,20 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
+  const getChannelsMyFavorites = () => {
+    if (!currentUser.value) return;
+    const myChannels = ipcInvoke("api", {
+      method: "misskey:getChannelsMyFavorites",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: "チャンネルの取得に失敗しました",
+      });
+    });
+    return myChannels;
+  };
+
   return {
     timelines,
     deleteTimelineByUserId,
@@ -206,5 +220,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     createReaction,
     deleteReaction,
     updatePost,
+    getChannelsMyFavorites,
   };
 });

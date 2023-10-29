@@ -22,10 +22,14 @@ import WindowHeader from "~/components/WindowHeader.vue";
 .settings {
   display: flex;
   flex-direction: column;
+  gap: 4px;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: rgba(0, 0, 0, 1);
   border-radius: 8px;
+}
+.hazy-scroller {
+  background: var(--hazy-background-color);
+  border: 1px solid var(--hazy-border-color);
 }
 </style>
