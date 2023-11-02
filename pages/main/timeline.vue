@@ -64,6 +64,7 @@ body::-webkit-scrollbar {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  border-radius: 8px;
 
   &.haze {
     pointer-events: none;
