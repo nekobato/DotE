@@ -79,6 +79,8 @@ window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
   misskeyStream.unsubNote(data.postId);
 });
 
+window.ipc.on("resume-timeline", () => {});
+
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {

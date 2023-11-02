@@ -1,4 +1,14 @@
-import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, protocol, Tray } from "electron";
+import electron, {
+  app,
+  BrowserWindow,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  powerMonitor,
+  protocol,
+  Tray,
+} from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createMenuWindow } from "./windows/menuWindow";
 import { createPostWindow } from "./windows/postWindow";
@@ -214,6 +224,10 @@ const start = () => {
 
   menuWindow.on("blur", () => {
     menuWindow?.hide();
+  });
+
+  powerMonitor.on("resume", () => {
+    mainWindow?.webContents.send("resume-timeline");
   });
 
   initialize();

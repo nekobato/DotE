@@ -214,5 +214,6 @@ const resetStatues = () => {
 }
 .hazy-post {
   display: flex;
+  border: none;
 }
 </style>

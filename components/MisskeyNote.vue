@@ -207,10 +207,17 @@ onBeforeUnmount(() => {
     }
   }
   .renote-data {
+    margin-top: 4px;
     padding-left: 12px;
     .username {
       margin-left: -12px;
     }
+  }
+}
+.hazy-post.quote {
+  .renote-data {
+    margin-top: 4px;
+    padding-left: 12px;
   }
 }
 .attachments {
