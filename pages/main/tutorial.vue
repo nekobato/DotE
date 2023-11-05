@@ -2,4 +2,4 @@
 import Tutorial from "@/components/Tutorial/index.vue";
 </script>
 
-<template><Tutorial /></template>
+<template><WindowHeader windowType="tutorial" /><Tutorial /></template>

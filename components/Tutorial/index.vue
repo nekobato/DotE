@@ -5,7 +5,7 @@ import WindowHeader from "@/components/WindowHeader.vue";
 </script>
 <template>
   <div class="tutorial hazy-post-container">
-    <WindowHeader exitType="back" />
+    <WindowHeader windowType="tutorial" />
     <div class="hazy-post-list">
       <div class="hazy-post">
         <TutorialAvatar class="hazy-avatar" />

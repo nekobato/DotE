@@ -1,22 +1,10 @@
-import electron, {
-  app,
-  BrowserWindow,
-  dialog,
-  globalShortcut,
-  ipcMain,
-  Menu,
-  powerMonitor,
-  protocol,
-  Tray,
-} from "electron";
+import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, protocol } from "electron";
 import { createMainWindow } from "./windows/mainWindow";
-import { createMenuWindow } from "./windows/menuWindow";
 import { createPostWindow } from "./windows/postWindow";
 import { createMediaViewerWindow } from "./windows/mediaViewerWindow";
 import { DEBUG, isMac } from "./env";
 import { release } from "os";
 import menuTemplate from "./menu";
-import { setTrayIcon } from "./tray-icon";
 import * as db from "./db";
 import { apiRequest } from "./api";
 import { checkUpdate } from "./autoupdate";
@@ -47,9 +35,7 @@ autoUpdater.on("update-downloaded", () => {
   db.setSetting("shouldAppUpdate", true);
 });
 
-let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
-let menuWindow: BrowserWindow | null = null;
 let mediaViewerWindow: BrowserWindow | null = null;
 let postWindow: BrowserWindow | null = null;
 
@@ -84,24 +70,6 @@ const setMainWindowMode = async (mode: string) => {
 };
 
 const start = () => {
-  tray = setTrayIcon();
-
-  tray.on("click", () => {
-    if (menuWindow?.isVisible()) {
-      menuWindow?.hide();
-    } else {
-      // show below the tray icon
-      const position = tray?.getBounds();
-      const size = menuWindow?.getSize();
-      const x = position?.x || 0;
-      const y = position?.y || 0;
-      const width = size?.[0] || 0;
-      const height = size?.[1] || 0;
-      menuWindow?.setBounds({ x: x - width / 2 + 16, y: y + 32, width, height });
-      menuWindow?.show();
-    }
-  });
-
   const menu = Menu.buildFromTemplate(
     menuTemplate({
       mainWindow,
@@ -110,7 +78,6 @@ const start = () => {
   Menu.setApplicationMenu(menu);
 
   mainWindow = createMainWindow();
-  menuWindow = createMenuWindow();
   mediaViewerWindow = createMediaViewerWindow();
   postWindow = createPostWindow();
 
@@ -137,6 +104,9 @@ const start = () => {
       case "media-viewer:close":
         mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.hide();
+        break;
+      case "main:reload":
+        mainWindow?.webContents.reload();
         break;
       case "main:reaction":
         console.log(data);
@@ -222,10 +192,6 @@ const start = () => {
     app.quit();
   });
 
-  menuWindow.on("blur", () => {
-    menuWindow?.hide();
-  });
-
   powerMonitor.on("resume", () => {
     mainWindow?.webContents.send("resume-timeline");
   });
@@ -236,6 +202,17 @@ const start = () => {
 
 app.on("will-quit", () => {
   globalShortcut.unregisterAll();
+});
+
+app.on("activate", async () => {
+  if (mainWindow === null) {
+    start();
+  }
+  const hazyMode = (await db.getSetting("hazyMode")) as Settings["hazyMode"];
+  if (hazyMode === "haze") {
+    setMainWindowMode("show");
+    mainWindow?.webContents.send("set-hazy-mode", { mode: "show" });
+  }
 });
 
 app.on("window-all-closed", () => {

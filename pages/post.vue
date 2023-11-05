@@ -27,7 +27,7 @@ window.ipc.on("post:reaction", (_, payload) => {
 
 <template>
   <NuxtLayout name="columns" class="post-page">
-    <WindowHeader exitType="close" />
+    <WindowHeader windowType="post" />
     <NuxtPage :data="pagedata" />
   </NuxtLayout>
 </template>

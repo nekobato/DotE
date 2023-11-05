@@ -4,46 +4,79 @@ import { Icon } from "@iconify/vue";
 import { useStore } from "~/store";
 
 const props = defineProps({
-  exitType: {
-    type: String as PropType<"close" | "quit" | "back">,
+  windowType: {
+    type: String as PropType<"main" | "post" | "tutorial" | "settings">,
     required: true,
   },
 });
 
+const router = useRouter();
+
 const store = useStore();
 
-const close = () => {
-  ipcSend("post:close");
-};
-
-const quit = () => {
-  ipcSend("quit");
-};
-
-const back = () => {
-  ipcSend("set-hazy-mode", { mode: "settings" });
+const exit = () => {
+  switch (props.windowType) {
+    case "post":
+      ipcSend("post:close");
+      break;
+    case "tutorial":
+      router.push("/main/settings");
+      break;
+    case "main":
+      ipcSend("set-hazy-mode", { mode: "hide" });
+      break;
+    case "settings":
+      router.push("/main/timeline");
+      break;
+  }
 };
 
 const updateApp = () => {
   ipcSend("update-app");
 };
+
+const haze = () => {
+  ipcSend("set-hazy-mode", { mode: "haze" });
+};
+
+const post = () => {
+  ipcSend("post:create");
+};
+
+const reload = () => {
+  ipcSend("main:reload");
+};
+
+const settings = () => {
+  router.push("/main/settings");
+};
 </script>
 
 <template>
   <div class="window-header">
-    <button class="nn-button type-ghost" v-if="props.exitType === 'close'" @click="close">
-      <Icon icon="mingcute:close-line" class="nn-icon size-small" />
+    <button class="nn-button type-ghost exit" @click="exit">
+      <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'post'" />
+      <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'main'" />
+      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'tutorial'" />
+      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'settings'" />
     </button>
-    <button class="nn-button type-ghost" v-if="props.exitType === 'quit'" @click="quit">
-      <Icon icon="mingcute:power-line" class="nn-icon size-small" />
-    </button>
-    <button class="nn-button type-ghost" v-if="props.exitType === 'back'" @click="back">
-      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-small" />
-    </button>
-    <button class="nn-button type-secondary size-small update" v-if="store.settings.shouldAppUpdate" @click="updateApp">
-      INSTALL UPDATE
+    <button class="nn-button type-ghost haze" @click="haze" v-if="props.windowType === 'main'">
+      <Icon icon="mingcute:ghost-line" class="nn-icon size-xsmall" />
     </button>
     <div class="rest"></div>
+    <button class="nn-button type-ghost post" @click="post" v-if="props.windowType === 'main'">
+      <Icon icon="mingcute:pencil-line" class="nn-icon size-xsmall" />
+    </button>
+    <div class="rest"></div>
+    <button class="nn-button type-ghost refresh" v-if="props.windowType === 'main'" @click="reload">
+      <Icon icon="mingcute:refresh-1-line" class="nn-icon size-xsmall" />
+    </button>
+    <button class="nn-button type-ghost settings" @click="settings" v-if="props.windowType === 'main'">
+      <Icon icon="mingcute:settings-3-line" class="nn-icon size-xsmall" />
+    </button>
+    <button class="nn-button type-ghost size-xsmall update" v-if="store.settings.shouldAppUpdate" @click="updateApp">
+      INSTALL UPDATE
+    </button>
   </div>
 </template>
 
@@ -51,9 +84,11 @@ const updateApp = () => {
 .window-header {
   display: flex;
   align-items: center;
+  height: 24px;
+  overflow: hidden;
   background-color: var(--hazy-background-color);
   border: 1px solid var(--hazy-border-color);
-  border-radius: 8px;
+  border-radius: 4px;
 }
 .rest {
   flex: 1;
@@ -61,7 +96,12 @@ const updateApp = () => {
   width: 100%;
   height: 100%;
 }
-.update {
-  margin: 0 0 0 auto;
+.nn-button {
+  &.settings {
+    margin: 0 0 0 auto;
+  }
+  &.post {
+    margin: 0 auto;
+  }
 }
 </style>
