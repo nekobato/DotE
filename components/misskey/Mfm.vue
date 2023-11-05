@@ -109,7 +109,7 @@ export default defineComponent({
             return <span class="math">{node.props.formula}</span>;
           case "mention":
             return (
-              <a href={`/${node.props.username}`} class="mention">
+              <a href={`https://${node.props.host}/@${node.props.username}`} class="mention">
                 @{node.props.username}
               </a>
             );

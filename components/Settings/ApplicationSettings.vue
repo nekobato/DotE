@@ -57,6 +57,10 @@ const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
     await settingsStore.setShortcutKey(key, shortcuts[key]);
   }
 };
+
+const onChangeHideCw = async (e: Event) => {
+  await settingsStore.setMisskeyHideCw(!(e.target as HTMLInputElement)?.checked);
+};
 </script>
 
 <template>
@@ -135,11 +139,11 @@ const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
     <SectionTitle title="Misskey" />
     <div class="hazy-post indent-1">
       <div class="content">
-        <span class="title">CWをデフォルトで表示する</span>
+        <span class="title">隠された文字をデフォルトで表示する</span>
       </div>
       <div class="form-actions">
         <label class="nn-checkbox">
-          <input type="checkbox" :value="store.settings.misskey.hideCw" @change="" />
+          <input type="checkbox" :value="!store.settings.misskey?.hideCw" @change="onChangeHideCw" />
         </label>
       </div>
     </div>
@@ -167,6 +171,7 @@ const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
 
 .hazy-post {
   display: flex;
+  border: none;
 }
 
 .max-post-count {

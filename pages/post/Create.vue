@@ -59,6 +59,18 @@ onMounted(async () => {
   state.user = users.find((user: any) => user.id === state.timeline?.userId);
   state.instance = instances.find((instance: any) => instance.id === state.user?.instanceId);
 });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.shiftKey) {
+    post();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    ipcSend("post:close");
+  }
+});
 </script>
 
 <template>

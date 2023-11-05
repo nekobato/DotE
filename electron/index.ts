@@ -192,6 +192,10 @@ const start = () => {
     app.quit();
   });
 
+  powerMonitor.on("resume", () => {
+    mainWindow?.webContents.send("resume-timeline");
+  });
+
   initialize();
   console.log("initialized");
 };

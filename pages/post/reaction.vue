@@ -67,6 +67,12 @@ const onInputSearchEmoji = () => {
   if (search.value === "") return;
   categoryFilter.value = [];
 };
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    ipcSend("post:close");
+  }
+});
 </script>
 
 <template>

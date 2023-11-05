@@ -176,4 +176,7 @@ const updateTimeline = async (timeline: Timeline) => {
     width: 100%;
   }
 }
+.hazy-post {
+  border: none;
+}
 </style>

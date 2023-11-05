@@ -55,5 +55,6 @@ const gotoTutorial = () => {
 }
 .hazy-post {
   display: flex;
+  border: none;
 }
 </style>

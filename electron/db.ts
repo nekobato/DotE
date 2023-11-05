@@ -290,7 +290,7 @@ export const getSetting = (key: "opacity" | "hazyMode") => {
 
 export const setSetting = (key: string, value: any) => {
   if (!key) throw new Error("key is required");
-  if (!value) throw new Error("value is required");
+  if (value === undefined) throw new Error("value is required");
 
   switch (key) {
     case "opacity":
@@ -305,6 +305,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.maxPostCount", Number(value));
     case "postStyle":
       return store.set("settings.postStyle", value);
+    case "misskey.hideCw":
+      return store.set("settings.misskey.hideCw", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }

@@ -24,7 +24,7 @@ type invokeEvents = {
   "db:upsert-instance": (Partial<Instance> & { id: number }) | Omit<Instance, "id">;
   "settings:set": {
     key: string;
-    value: string;
+    value: any;
   };
   "settings:all": void;
 };
