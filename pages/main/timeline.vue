@@ -38,6 +38,7 @@ timelineStore.$onAction((action) => {
     :class="{ haze: store.settings.hazyMode === 'haze' }"
     :style="{ opacity: hazeOpacity }"
   >
+    <WindowHeader windowType="main" v-show="store.settings.hazyMode !== 'haze'" />
     <div
       class="timeline-container"
       v-if="timelineStore.current?.posts.length"

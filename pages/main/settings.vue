@@ -8,7 +8,7 @@ import WindowHeader from "~/components/WindowHeader.vue";
 
 <template>
   <div class="settings">
-    <WindowHeader exitType="quit" />
+    <WindowHeader windowType="settings" />
     <div class="hazy-scroller">
       <AccountSettings />
       <TimelineSettings />

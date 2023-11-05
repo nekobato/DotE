@@ -10,10 +10,6 @@ process.env["ELECTRON_DISABLE_SECURITY_WARNINGS"] = "true";
 
 export const preload = path.join(process.env.DIST, "preload.js");
 
-export const trayIcon = nativeTheme.shouldUseDarkColors
-  ? path.join(process.env.VITE_PUBLIC, "images/tray_icon_light.png")
-  : path.join(process.env.VITE_PUBLIC, "images/tray_icon_light.png");
-
 export const pageRoot = {
   development: process.env.VITE_DEV_SERVER_URL as string,
   production: path.join(process.env.VITE_PUBLIC, "index.html"),

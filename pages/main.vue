@@ -133,4 +133,8 @@ onBeforeUnmount(() => {
 .haze {
   pointer-events: none;
 }
+
+.hazy-timeline-container {
+  margin-top: 8px;
+}
 </style>
