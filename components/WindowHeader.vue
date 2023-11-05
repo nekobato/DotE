@@ -83,6 +83,7 @@ const settings = () => {
 <style lang="scss" scoped>
 .window-header {
   display: flex;
+  flex: 1 0 auto;
   align-items: center;
   height: 24px;
   overflow: hidden;

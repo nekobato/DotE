@@ -80,13 +80,13 @@ document.addEventListener("keydown", (e) => {
         <img :src="state.user?.avatarUrl" class="hazy-avatar" />
         <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>
         <HazyButton
-          class="post-action"
+          class="post-action size-small"
           @click="post"
           :disabled="text.length === 0 || state.post.isSending"
           :loading="state.post.isSending"
         >
           <span>Note</span>
-          <Icon slot="icon" icon="ion:send" class="nn-icon size-xsmall" />
+          <Icon slot="icon" icon="mingcute:send-line" class="nn-icon size-xsmall" />
         </HazyButton>
       </div>
       <textarea class="nn-text-field post-field" v-model="text"></textarea>
@@ -122,6 +122,6 @@ document.addEventListener("keydown", (e) => {
 .post-field {
   width: 100%;
   min-height: 120px;
-  margin: 16px 0 0;
+  margin: 8px 0 0;
 }
 </style>

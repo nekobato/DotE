@@ -1,4 +1,4 @@
-import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, protocol } from "electron";
+import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, powerMonitor, protocol } from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createPostWindow } from "./windows/postWindow";
 import { createMediaViewerWindow } from "./windows/mediaViewerWindow";
@@ -209,7 +209,7 @@ app.on("activate", async () => {
     start();
   }
   const hazyMode = (await db.getSetting("hazyMode")) as Settings["hazyMode"];
-  if (hazyMode === "haze") {
+  if (hazyMode === "haze" || hazyMode === "hide") {
     setMainWindowMode("show");
     mainWindow?.webContents.send("set-hazy-mode", { mode: "show" });
   }

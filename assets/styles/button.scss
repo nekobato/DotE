@@ -133,7 +133,8 @@ button {
   }
 
   &[disabled] {
-    background: rgba(255, 255, 255, 0.5);
+    color: var(--hazy-color-white-t2);
+    background: var(--hazy-color-white-t1);
   }
 
   &.type-ghost {

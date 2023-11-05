@@ -139,10 +139,9 @@ document.addEventListener("keydown", (e) => {
   width: 40%;
   height: 100vh;
   margin: 0;
-  padding: 0;
+  padding: 8px;
   overflow-y: scroll;
   list-style: none;
-  border-right: 1px solid var(--hazy-color-white-t1);
 
   > li {
     display: inline-flex;
@@ -156,6 +155,12 @@ document.addEventListener("keydown", (e) => {
       &.selected {
         color: #343434;
         background-color: #fff;
+      }
+      > span {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        border-right: 1px solid var(--hazy-color-white-t1);
       }
       > img {
         width: auto;
