@@ -32,7 +32,7 @@
     "@pinia/nuxt": "^0.4.11",
     "@vitejs/plugin-vue": "^4.0.0",
     "@vueuse/core": "^10.4.1",
-    "electron": "27.0.2",
+    "electron": "27.0.3",
     "electron-builder": "^24.6.4",
     "electron-icon-builder": "^2.0.1",
     "mfm-js": "^0.23.3",
