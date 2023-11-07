@@ -23,12 +23,20 @@ const onChangeMaxPostCount = async (e: Event) => {
 
 const postStyleOptions = [
   {
-    label: "通常",
-    value: "normal",
+    label: "全て表示",
+    value: "all",
   },
   {
-    label: "シンプル",
-    value: "simple",
+    label: "3行",
+    value: "3",
+  },
+  {
+    label: "2行",
+    value: "2",
+  },
+  {
+    label: "1行",
+    value: "1",
   },
 ];
 

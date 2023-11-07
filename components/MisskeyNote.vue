@@ -94,6 +94,19 @@ const onClickReaction = (postId: string, reaction: string) => {
   });
 };
 
+const lineClass = computed(() => {
+  switch (store.settings.postStyle) {
+    case "all":
+      return "line-all";
+    case "1":
+      return "line-1";
+    case "2":
+      return "line-2";
+    case "3":
+      return "line-3";
+  }
+});
+
 onMounted(() => {
   ipcSend("stream:sub-note", {
     postId: props.post.id,
@@ -108,7 +121,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="hazy-post" :class="[postType]">
+  <div class="hazy-post" :class="[postType, lineClass]">
     <div class="post-data-group">
       <div class="post-data" :class="{ notext: !props.post.text }">
         <div class="hazy-post-info">

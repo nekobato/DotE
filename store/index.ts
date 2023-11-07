@@ -2,7 +2,6 @@ import { MisskeyEntities, MisskeyNote } from "@/types/misskey";
 import { ChannelName, Instance, Settings, Timeline, User } from "@/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
-import { gotoHazyRoute } from "~/composables/hazyRoute";
 
 export const methodOfChannel = {
   "misskey:homeTimeline": "misskey:getTimelineHome",
@@ -44,7 +43,7 @@ export const useStore = defineStore({
         height: 0,
       },
       maxPostCount: 1000,
-      postStyle: "simple",
+      postStyle: "all",
       shortcuts: {} as Settings["shortcuts"],
     } as Settings,
     errors: [] as ErrorItem[],

@@ -13,7 +13,7 @@ export const storeDefaults = {
       height: 600,
     },
     maxPostCount: 1000,
-    postStyle: "simple",
+    postStyle: "all",
     shortcuts: {},
     shouldAppUpdate: true,
     misskey: {

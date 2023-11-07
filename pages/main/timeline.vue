@@ -86,6 +86,9 @@ body::-webkit-scrollbar {
     }
   }
 }
+.hazy-post-list {
+  padding-top: 4px;
+}
 .loading {
   display: flex;
   align-items: center;
