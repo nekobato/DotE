@@ -25,6 +25,12 @@ const username = computed(() => {
   }
 });
 
+const reposetUsername = computed(() => {
+  if (props.post.renote && timelineStore.currentInstance?.misskey?.emojis) {
+    return parseMisskeyText(props.post.renote.user.name, timelineStore.currentInstance.misskey.emojis);
+  }
+});
+
 const postType = computed(() => {
   if (props.post.renote) {
     if (props.post.text) {
@@ -130,7 +136,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="renote-data" v-if="props.post.renote">
         <div class="hazy-post-info">
-          <span class="username" v-html="props.post.renote?.user.name" />
+          <span class="username" v-html="reposetUsername" />
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
