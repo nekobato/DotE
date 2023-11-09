@@ -33,7 +33,7 @@ export default defineComponent({
       default: true,
     },
     emojis: {
-      type: Array as PropType<MisskeyEntities.CustomEmoji[]>,
+      type: Array as PropType<{ name: string; url: string }[]>,
       default: null,
     },
     postStyle: {

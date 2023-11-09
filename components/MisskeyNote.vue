@@ -19,15 +19,37 @@ const props = defineProps({
   },
 });
 
+const noteEmojis = computed(() => {
+  const note = props.post as MisskeyNote;
+  return note.user.host
+    ? Object.keys(note.emojis).length
+      ? note.emojis
+      : []
+    : timelineStore.currentInstance?.misskey?.emojis;
+});
+
+const renoteEmojis = computed(() => {
+  const note = props.post.renote as MisskeyNote;
+  return note.user.host
+    ? Object.keys(note.emojis).length
+      ? note.emojis
+      : []
+    : timelineStore.currentInstance?.misskey?.emojis;
+});
+
 const username = computed(() => {
-  if (timelineStore.currentInstance?.misskey?.emojis) {
-    return parseMisskeyText(props.post.user.name, timelineStore.currentInstance.misskey.emojis);
+  const note = props.post as MisskeyNote;
+  if (!note.user.name) return note.user.username;
+  if (noteEmojis.value) {
+    return parseMisskeyText(note.user.name, noteEmojis.value);
   }
 });
 
-const reposetUsername = computed(() => {
-  if (props.post.renote && timelineStore.currentInstance?.misskey?.emojis) {
-    return parseMisskeyText(props.post.renote.user.name, timelineStore.currentInstance.misskey.emojis);
+const renoteUsername = computed(() => {
+  const note = props.post.renote as MisskeyNote;
+  if (!note?.user.name) return note?.user.username;
+  if (note && renoteEmojis.value) {
+    return parseMisskeyText(note.user.name, renoteEmojis.value);
   }
 });
 
@@ -133,14 +155,14 @@ onBeforeUnmount(() => {
             <Mfm
               class="cw"
               :text="props.post.cw || ''"
-              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :emojis="noteEmojis"
               :host="timelineStore.currentInstance?.url"
               :post-style="store.settings.postStyle"
             />
             <Mfm
               class="text"
               :text="props.post.text || ''"
-              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :emojis="noteEmojis"
               :host="timelineStore.currentInstance?.url"
               :post-style="store.settings.postStyle"
             />
@@ -149,7 +171,7 @@ onBeforeUnmount(() => {
       </div>
       <div class="renote-data" v-if="props.post.renote">
         <div class="hazy-post-info">
-          <span class="username" v-html="reposetUsername" />
+          <span class="username" v-html="renoteUsername" />
         </div>
         <div class="hazy-post-contents">
           <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
@@ -157,14 +179,14 @@ onBeforeUnmount(() => {
             <Mfm
               class="cw"
               :text="props.post.renote?.cw || ''"
-              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :emojis="renoteEmojis"
               :host="timelineStore.currentInstance?.url"
               :post-style="store.settings.postStyle"
             />
             <Mfm
               class="text"
               :text="props.post.renote?.text || ''"
-              :emojis="timelineStore.currentInstance?.misskey?.emojis"
+              :emojis="renoteEmojis"
               :host="timelineStore.currentInstance?.url"
               :post-style="store.settings.postStyle"
             />

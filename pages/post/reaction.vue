@@ -13,6 +13,7 @@ type PageProps = {
 const histories = useStorage<MisskeyEntities.CustomEmoji[]>("reaction-histories", []);
 
 const search = ref("");
+const searchInput = ref<HTMLInputElement | null>(null);
 
 const props = defineProps({
   data: {
@@ -73,6 +74,10 @@ document.addEventListener("keydown", (e) => {
     ipcSend("post:close");
   }
 });
+
+onMounted(() => {
+  searchInput.value?.focus();
+});
 </script>
 
 <template>
@@ -90,7 +95,14 @@ document.addEventListener("keydown", (e) => {
     </ul>
     <div class="emojis-container">
       <div class="search-container">
-        <input class="nn-text-field" type="search" placeholder="検索" v-model="search" @input="onInputSearchEmoji" />
+        <input
+          class="nn-text-field"
+          type="search"
+          placeholder="検索"
+          v-model="search"
+          @input="onInputSearchEmoji"
+          ref="searchInput"
+        />
       </div>
       <div class="emoji-list-group">
         <div class="history-list-container">

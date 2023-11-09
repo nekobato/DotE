@@ -61,13 +61,15 @@ onMounted(async () => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && e.shiftKey) {
+  if ((e.key === "Enter" && e.shiftKey) || (e.key === "Enter" && e.metaKey)) {
+    e.preventDefault();
     post();
   }
 });
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    e.preventDefault();
     ipcSend("post:close");
   }
 });

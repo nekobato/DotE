@@ -106,6 +106,7 @@ const start = () => {
         mediaViewerWindow?.hide();
         break;
       case "main:reload":
+        db.setSetting("hazyMode", "show");
         mainWindow?.webContents.reload();
         break;
       case "main:reaction":

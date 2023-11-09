@@ -18,7 +18,7 @@ export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["atta
   });
 };
 
-export const parseMisskeyText = (text: string | null, emojis: MisskeyEntities.CustomEmoji[]): string => {
+export const parseMisskeyText = (text: string | null, emojis: { name: string; url: string }[]): string => {
   return (
     text
       // 文中のURLをaタグに変換
