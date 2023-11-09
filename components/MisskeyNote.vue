@@ -4,7 +4,7 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType, computed } from "vue";
 import { MisskeyNote } from "~/types/misskey";
-import { isMyReaction, parseMisskeyAttachments, parseMisskeyText } from "~/utils/misskey";
+import { emojisObject2Array, isMyReaction, parseMisskeyAttachments, parseMisskeyText } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
 import Mfm from "./misskey/Mfm.vue";
 import { useStore } from "~/store";
@@ -23,7 +23,7 @@ const noteEmojis = computed(() => {
   const note = props.post as MisskeyNote;
   return note.user.host
     ? Object.keys(note.emojis).length
-      ? note.emojis
+      ? emojisObject2Array(note.emojis)
       : []
     : timelineStore.currentInstance?.misskey?.emojis;
 });
@@ -32,7 +32,7 @@ const renoteEmojis = computed(() => {
   const note = props.post.renote as MisskeyNote;
   return note.user.host
     ? Object.keys(note.emojis).length
-      ? note.emojis
+      ? emojisObject2Array(note.emojis)
       : []
     : timelineStore.currentInstance?.misskey?.emojis;
 });

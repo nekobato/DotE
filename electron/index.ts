@@ -62,6 +62,7 @@ const setMainWindowMode = async (mode: string) => {
       mainWindow?.setAlwaysOnTop(true, "floating");
       mainWindow?.setIgnoreMouseEvents(true);
       mainWindow?.setVisibleOnAllWorkspaces(true);
+      mainWindow?.blur();
       break;
     case "hide":
       mainWindow?.hide();

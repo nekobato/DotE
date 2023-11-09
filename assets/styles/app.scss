@@ -73,7 +73,6 @@ body,
     -webkit-box-orient: unset;
     .cw,
     .text {
-      display: inline;
     }
   }
   &.line-1 .body-container {
@@ -81,7 +80,6 @@ body,
     -webkit-box-orient: vertical;
     .cw,
     .text {
-      display: inline;
       white-space: nowrap;
     }
   }

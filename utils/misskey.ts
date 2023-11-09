@@ -57,3 +57,12 @@ export const deleteReaction = async (postId: string, noUpdate: boolean) => {
     noUpdate,
   });
 };
+
+export const emojisObject2Array = (emojis: { [name: string]: string }): { name: string; url: string }[] => {
+  return Object.entries(emojis).map(([name, url]) => {
+    return {
+      name,
+      url,
+    };
+  });
+};

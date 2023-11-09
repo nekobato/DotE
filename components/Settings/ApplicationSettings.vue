@@ -76,7 +76,7 @@ const onChangeHideCw = async (e: Event) => {
     <SectionTitle title="設定" />
     <div class="hazy-post indent-1">
       <div class="content">
-        <span class="title"><Icon icon="ion:eye-outline" class="nn-icon size-small" /><span>の透明度</span></span>
+        <span class="title"><Icon icon="mingcute:ghost-line" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
       <div class="form-actions">
         <input

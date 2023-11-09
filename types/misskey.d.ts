@@ -5,6 +5,9 @@ export type MisskeyNote = entities.Note & {
   reactionEmojis: {
     [key: string]: string;
   };
+  emojis: {
+    [key: string]: string;
+  };
 };
 
 export type MisskeyChannel = {
