@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useStorage } from "@vueuse/core";
 import { MisskeyEntities } from "~/types/misskey";
-import { Instance, Timeline } from "~/types/store";
 
 type PageProps = {
   instanceUrl: string;
@@ -75,8 +74,13 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+window.ipc.on("post:reaction", () => {
+  search.value === "";
+});
+
 onMounted(() => {
   searchInput.value?.focus();
+  search.value === "";
 });
 </script>
 

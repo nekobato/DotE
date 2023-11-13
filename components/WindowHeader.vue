@@ -102,6 +102,7 @@ const settings = () => {
     margin: 0 0 0 auto;
   }
   &.post {
+    width: 64px;
     margin: 0 auto;
   }
 }
