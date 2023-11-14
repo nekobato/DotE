@@ -44,7 +44,7 @@
     "sass": "^1.69.5",
     "stylelint": "^15.10.3",
     "stylelint-config-rational-order": "^0.1.2",
-    "stylelint-config-recommended-scss": "^13.0.0",
+    "stylelint-config-recommended-scss": "^13.1.0",
     "stylelint-config-recommended-vue": "^1.4.0",
     "stylelint-order": "^6.0.3",
     "typescript": "^5.2.2",
