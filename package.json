@@ -50,6 +50,6 @@
     "typescript": "^5.2.2",
     "vite-plugin-electron": "^0.14.1",
     "vite-plugin-electron-renderer": "^0.14.5",
-    "vite-plugin-resolve": "^2.4.1"
+    "vite-plugin-resolve": "^2.5.1"
   }
 }
