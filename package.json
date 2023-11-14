@@ -41,7 +41,7 @@
     "nuxt-electron": "^0.6.0",
     "postcss-html": "^1.5.0",
     "prettier": "^3.0.3",
-    "sass": "^1.69.0",
+    "sass": "^1.69.5",
     "stylelint": "^15.10.3",
     "stylelint-config-rational-order": "^0.1.2",
     "stylelint-config-recommended-scss": "^13.0.0",
