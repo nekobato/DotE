@@ -59,7 +59,6 @@ const closeWindow = () => {
       :height="state.size?.height || undefined"
       autoplay
       controls
-      muted
       @canplay="onReady"
     />
     <img

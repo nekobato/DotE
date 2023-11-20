@@ -96,6 +96,10 @@ const reactions = computed(() => {
     .sort((a, b) => b.count - a.count);
 });
 
+const refreshPost = () => {
+  timelineStore.updatePost({ postId: props.post.id });
+};
+
 const openPost = () => {
   ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
 };
@@ -211,6 +215,9 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <div class="hazy-post-actions">
+      <button class="hazy-post-action" @click="refreshPost">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
+      </button>
       <button class="hazy-post-action" @click="openReactionWindow">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
       </button>
