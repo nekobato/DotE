@@ -42,6 +42,10 @@ const misskeyStream = useMisskeyStream({
     console.info("onEmojiAdded", data);
     timelineStore.addEmoji(data.body.emoji);
   },
+  onReconnect: () => {
+    console.info("onReconnect");
+    timelineStore.fetchDiffPosts();
+  },
 });
 
 window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {

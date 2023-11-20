@@ -51,10 +51,12 @@ export const useMisskeyStream = ({
   onChannel,
   onNoteUpdated,
   onEmojiAdded,
+  onReconnect,
 }: {
   onChannel: (event: string, data: any) => void;
   onNoteUpdated: (event: string, data: any) => void;
   onEmojiAdded: (event: string, data: any) => void;
+  onReconnect: () => void;
 }) => {
   let ws: WebSocket;
   const shouldConnect = ref(false);
@@ -95,6 +97,9 @@ export const useMisskeyStream = ({
           body: { channel, id: webSocketId.value, params: {} },
         }),
       );
+      if (eventTime.lastClose) {
+        onReconnect();
+      }
     };
 
     ws.onerror = () => {

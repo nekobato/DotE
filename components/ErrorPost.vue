@@ -13,7 +13,7 @@ const props = defineProps({
 });
 
 const deleteError = (index: number) => {
-  delete store.$state.errors[index];
+  store.$state.errors.splice(index, 1);
 };
 </script>
 
@@ -36,7 +36,7 @@ const deleteError = (index: number) => {
     </div>
     <div class="hazy-post-actions">
       <button class="hazy-post-action" @click="deleteError(props.error.index)">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:close" />
+        <Icon class="nn-icon size-xsmall" icon="mingcute:close-line" />
       </button>
     </div>
   </div>

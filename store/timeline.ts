@@ -46,6 +46,26 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
+  const fetchDiffPosts = async () => {
+    if (current.value && currentUser.value && currentInstance.value) {
+      const data = await ipcInvoke("api", {
+        method: methodOfChannel[current.value.channel],
+        instanceUrl: currentInstance.value?.url,
+        token: currentUser.value.token,
+        sinceId: store.timelines[currentIndex.value].posts[0].id,
+        limit: 40,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
+        });
+      });
+      console.info("Notes", data);
+      setPosts([...data, ...store.timelines[currentIndex.value].posts]);
+    } else {
+      throw new Error("user not found");
+    }
+  };
+
   const updateTimeline = async (timeline: Timeline) => {
     await ipcInvoke("db:set-timeline", {
       id: timeline.id,
@@ -212,6 +232,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     currentUser,
     currentInstance,
     fetchInitialPosts,
+    fetchDiffPosts,
     updateTimeline,
     createTimeline,
     addPost,
