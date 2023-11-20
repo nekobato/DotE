@@ -1,9 +1,9 @@
-import { MisskeyNote } from "@/types/misskey";
+import type { MisskeyNote } from "@/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { computed } from "vue";
 import { methodOfChannel, useStore } from ".";
-import { Timeline } from "~/types/store";
+import type { Timeline } from "~/types/store";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();

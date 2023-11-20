@@ -2,8 +2,8 @@
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { PropType, computed } from "vue";
-import { MisskeyNote } from "~/types/misskey";
+import { type PropType, computed } from "vue";
+import type { MisskeyNote } from "~/types/misskey";
 import { emojisObject2Array, isMyReaction, parseMisskeyAttachments, parseMisskeyText } from "~/utils/misskey";
 import PostAttachment from "./PostAttachment.vue";
 import Mfm from "./misskey/Mfm.vue";

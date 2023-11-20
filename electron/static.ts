@@ -1,4 +1,3 @@
-import { nativeTheme } from "electron";
 import * as path from "path";
 
 process.env.ROOT = path.join(__dirname, "..");

@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import hazyAlert from "@/components/common/HazyAlert.vue";
+import HazyButton from "@/components/common/HazyButton.vue";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { computed, onMounted, reactive, ref } from "vue";
-import HazyButton from "@/components/common/HazyButton.vue";
-import hazyAlert from "@/components/common/HazyAlert.vue";
-import { Instance, Timeline, User } from "~/types/store";
+import { onMounted, reactive, ref } from "vue";
+import type { Instance, Timeline, User } from "~/types/store";
 
 const state = reactive({
   user: undefined as User | undefined,

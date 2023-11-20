@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 
 // --------- Expose some API to the Renderer process. ---------
 contextBridge.exposeInMainWorld("ipc", {

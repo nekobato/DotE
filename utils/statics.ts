@@ -1,5 +1,5 @@
-import { InstanceStore } from "~/store";
-import { User, Settings, Timeline } from "~/types/store";
+import type { InstanceStore } from "~/store";
+import type { User, Settings, Timeline } from "~/types/store";
 
 export const storeDefaults = {
   users: [] as User[],

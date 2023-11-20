@@ -1,4 +1,4 @@
-import { Settings } from "~/types/store";
+import type { Settings } from "~/types/store";
 
 export const gotoHazyRoute = (hazyMode: Settings["hazyMode"]) => {
   const router = useRouter();

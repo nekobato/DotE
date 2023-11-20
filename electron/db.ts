@@ -1,7 +1,7 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
 import { nanoid } from "nanoid/non-secure";
-import { Instance, Timeline, User, Settings } from "@/types/store";
+import type { Instance, Timeline, User, Settings } from "@/types/store";
 import { storeDefaults } from "../utils/statics";
 
 export type StoreSchema = {

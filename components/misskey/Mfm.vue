@@ -1,8 +1,8 @@
 <script lang="tsx">
 import { defineComponent } from "vue";
 import * as mfm from "mfm-js";
-import { Settings } from "~/types/store";
-import { PropType } from "vue";
+import type { Settings } from "~/types/store";
+import { type PropType } from "vue";
 import { MisskeyEntities } from "~/types/misskey";
 
 export default defineComponent({

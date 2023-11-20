@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useStorage } from "@vueuse/core";
-import { MisskeyEntities } from "~/types/misskey";
+import type { MisskeyEntities } from "~/types/misskey";
 
 type PageProps = {
   instanceUrl: string;

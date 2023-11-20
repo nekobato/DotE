@@ -4,7 +4,7 @@ import { useStore } from ".";
 import { MisskeyEntities } from "@/types/misskey";
 import { useInstanceStore } from "./instance";
 import { useTimelineStore } from "./timeline";
-import { User } from "@/types/store";
+import type { User } from "@/types/store";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;

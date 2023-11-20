@@ -8,7 +8,7 @@ import menuTemplate from "./menu";
 import * as db from "./db";
 import { apiRequest } from "./api";
 import { checkUpdate } from "./autoupdate";
-import { Settings } from "@/types/store";
+import type { Settings } from "@/types/store";
 
 process.on("uncaughtException", function (error) {
   dialog.showErrorBox("Error", error.message);

@@ -1,4 +1,4 @@
-import { MisskeyNote } from "@/types/misskey";
+import type { MisskeyNote } from "@/types/misskey";
 import { nanoid } from "nanoid/non-secure";
 
 export const webSocketState = {

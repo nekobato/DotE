@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { TimelineStore, useStore } from "@/store";
+import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
+import { computed, ref } from "nuxt/dist/app/compat/capi";
+import type { MisskeyChannel } from "~/types/misskey";
+import type { ChannelName, Timeline } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
-import { ChannelName, Timeline } from "~/types/store";
-import { MisskeyChannel, MisskeyEntities } from "~/types/misskey";
 
 const channelList = [
   {

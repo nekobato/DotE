@@ -2,7 +2,7 @@
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
-import { Settings } from "~/types/store";
+import type { Settings } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
 

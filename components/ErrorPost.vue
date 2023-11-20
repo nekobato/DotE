@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import { useTimelineStore } from "@/store/timeline";
-import { ErrorItem, useStore } from "@/store";
-import { ipcSend } from "@/utils/ipc";
+import { useStore, type ErrorItem } from "@/store";
 import { Icon } from "@iconify/vue";
-import { PropType } from "vue";
-import PostAttachment from "./PostAttachment.vue";
+import { type PropType } from "vue";
 
 const store = useStore();
 

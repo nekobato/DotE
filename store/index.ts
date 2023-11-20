@@ -1,5 +1,5 @@
-import { MisskeyEntities, MisskeyNote } from "@/types/misskey";
-import { ChannelName, Instance, Settings, Timeline, User } from "@/types/store";
+import type { MisskeyEntities, MisskeyNote } from "@/types/misskey";
+import type { ChannelName, Instance, Settings, Timeline, User } from "@/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 

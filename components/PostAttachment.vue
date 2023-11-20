@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Attachment } from "@/types/post";
+import type { Attachment } from "@/types/post";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { PropType } from "vue";
+import { type PropType } from "vue";
 
 defineProps({
   attachment: {

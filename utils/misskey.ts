@@ -1,7 +1,6 @@
-import { Post } from "@/types/post";
+import type { Post } from "@/types/post";
 import { useTimelineStore } from "~/store/timeline";
-import { MisskeyEntities, MisskeyNote } from "~/types/misskey";
-import { parse, parseSimple } from "mfm-js";
+import type { MisskeyNote } from "~/types/misskey";
 
 export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
   return files.map((file) => {

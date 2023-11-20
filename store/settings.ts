@@ -1,7 +1,7 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { useStore } from ".";
-import { Settings } from "~/types/store";
+import type { Settings } from "~/types/store";
 
 export const useSettingsStore = defineStore("settings", () => {
   const store = useStore();
