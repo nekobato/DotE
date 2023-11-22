@@ -74,7 +74,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-window.ipc.on("post:reaction", () => {
+window.ipc?.on("post:reaction", () => {
   search.value === "";
 });
 

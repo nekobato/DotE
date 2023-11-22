@@ -128,7 +128,7 @@ const onChangeHideCw = async (e: Event) => {
       </div>
     </div>
 
-    <SectionTitle title="グローバルショートカットキー" />
+    <!-- <SectionTitle title="グローバルショートカットキー" />
     <div class="hazy-post indent-1">
       <div class="content">
         <span class="title">タイムライン表示/非表示切り替え</span>
@@ -143,7 +143,7 @@ const onChangeHideCw = async (e: Event) => {
           @input="onChangeShortcut('toggleTimeline')"
         />
       </div>
-    </div>
+    </div> -->
     <SectionTitle title="Misskey" />
     <div class="hazy-post indent-1">
       <div class="content">
