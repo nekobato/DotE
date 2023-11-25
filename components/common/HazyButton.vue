@@ -17,7 +17,9 @@ defineProps({
 
 <template>
   <button class="nn-button type-primary" :class="{ loading: loading }" :disabled="disabled">
-    <slot class="slot"></slot>
+    <div class="button-content">
+      <slot />
+    </div>
     <HazyLoading class="loading-icon" size="small" />
   </button>
 </template>
@@ -27,8 +29,11 @@ defineProps({
   position: absolute;
   visibility: hidden;
 }
+.button-content {
+  display: contents;
+}
 .loading {
-  .slot {
+  .button-content {
     visibility: hidden;
   }
   .loading-icon {

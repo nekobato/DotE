@@ -40,12 +40,11 @@ export function createMainWindow() {
     win.show();
   });
 
-  // win.webContents?.on("will-navigate", (e, url) => {
-  //   if (url.startsWith("http://localhost")) return;
-  //   e.preventDefault();
-  //   console.log("will-navigate", url);
-  //   electron.shell.openExternal(url);
-  // });
+  win.webContents?.on("will-navigate", (e, url) => {
+    e.preventDefault();
+    console.log("will-navigate", url);
+    electron.shell.openExternal(url);
+  });
 
   return win;
 }
