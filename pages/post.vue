@@ -4,21 +4,21 @@ const router = useRouter();
 
 const pagedata = ref<any>({});
 
-window.ipc.on("post:create", () => {
+window.ipc?.on("post:create", () => {
   router.push("/post/create");
 });
 
-window.ipc.on("post:close", () => {
+window.ipc?.on("post:close", () => {
   router.push("/post");
 });
 
-window.ipc.on("post:detail", (_, payload) => {
+window.ipc?.on("post:detail", (_, payload) => {
   pagedata.value = payload;
   console.info(pagedata);
   router.push("/post/detail");
 });
 
-window.ipc.on("post:reaction", (_, payload) => {
+window.ipc?.on("post:reaction", (_, payload) => {
   pagedata.value = payload;
   console.log(payload);
   router.push("/post/reaction");

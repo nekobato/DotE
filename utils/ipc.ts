@@ -2,7 +2,7 @@ import type { Instance, Timeline, User, Settings } from "@/types/store";
 
 export const ipcSend = (event: string, payload?: object) => {
   if (typeof window === "undefined") return;
-  window.ipc.send(event, JSON.stringify(payload));
+  window.ipc?.send(event, JSON.stringify(payload));
 };
 
 interface IpcEventMaps {
@@ -63,5 +63,5 @@ export const ipcInvoke = <T extends keyof IpcEventMaps>(
   event: T,
   payload?: IpcEventMaps[T]["args"],
 ): Promise<IpcEventMaps[T]["result"]> => {
-  return window.ipc.invoke(event, JSON.stringify(payload));
+  return window.ipc?.invoke(event, JSON.stringify(payload));
 };

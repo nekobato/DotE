@@ -32,7 +32,7 @@ const onReady = () => {
   state.isLoading = false;
 };
 
-window.ipc.on("media-viewer:open", (event, data: Media) => {
+window.ipc?.on("media-viewer:open", (event, data: Media) => {
   state.media = data;
   state.size = getMediaWindowSize(data.maxSize.width, data.maxSize.height, data.size?.width, data.size?.height);
 

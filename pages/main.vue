@@ -8,6 +8,8 @@ import { useMisskeyStream } from "@/utils/websocket";
 import { onBeforeMount, onBeforeUnmount } from "vue";
 import { createReaction, deleteReaction, isMyReaction } from "~/utils/misskey";
 
+const router = useRouter();
+
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
@@ -48,7 +50,7 @@ const misskeyStream = useMisskeyStream({
   },
 });
 
-window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
+window.ipc?.on("set-hazy-mode", (_, { mode, reflect }) => {
   console.info(mode);
   if (reflect) return;
 
@@ -56,7 +58,7 @@ window.ipc.on("set-hazy-mode", (_, { mode, reflect }) => {
   gotoHazyRoute(mode);
 });
 
-window.ipc.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
+window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
   const post = timelineStore.current?.posts.find((post) => post.id === data.postId);
   if (!post) return;
 
@@ -75,15 +77,15 @@ window.ipc.on("main:reaction", async (_, data: { postId: string; reaction: strin
   });
 });
 
-window.ipc.on("stream:sub-note", (data: { postId: string }) => {
+window.ipc?.on("stream:sub-note", (data: { postId: string }) => {
   misskeyStream.subNote(data.postId);
 });
 
-window.ipc.on("stream:unsub-note", (data: { postId: string }) => {
+window.ipc?.on("stream:unsub-note", (data: { postId: string }) => {
   misskeyStream.unsubNote(data.postId);
 });
 
-window.ipc.on("resume-timeline", () => {});
+window.ipc?.on("resume-timeline", () => {});
 
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
@@ -121,6 +123,7 @@ onBeforeMount(async () => {
   });
 
   gotoHazyRoute(store.settings.hazyMode);
+  router.push("/main/timeline");
 });
 
 onBeforeUnmount(() => {

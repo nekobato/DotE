@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
-import { computed, ref } from "nuxt/dist/app/compat/capi";
+import { computed, ref } from "vue";
 import type { MisskeyChannel } from "~/types/misskey";
 import type { ChannelName, Timeline } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
@@ -129,7 +129,15 @@ const updateTimeline = async (timeline: Timeline) => {
           />
         </div>
       </div>
-      <div class="hazy-post account indent-1" v-if="false">
+      <div class="hazy-post account indent-2" v-if="false">
+        <div class="content">
+          <span class="label">検索</span>
+        </div>
+        <div class="attachments form-actions">
+          <input class="nn-text-field" type="search" />
+        </div>
+      </div>
+      <div class="hazy-post account indent-2" v-if="selectedChannel === 'misskey:channelTimeline'">
         <div class="content">
           <span class="label">検索</span>
         </div>
