@@ -4,8 +4,9 @@ export type ChannelName =
   | "misskey:socialTimeline"
   | "misskey:globalTimeline"
   | "misskey:listTimeline"
-  | "misskey:antennaTimeline"
-  | "misskey:channelTimeline";
+  // | "misskey:antennaTimeline"
+  | "misskey:channelTimeline"
+  | "misskey:searchTimeline";
 
 export type Timeline = {
   id: string; // uuid
@@ -13,6 +14,7 @@ export type Timeline = {
   channel: ChannelName;
   options: {
     query?: string;
+    channelId?: string;
   };
   available: boolean;
 };

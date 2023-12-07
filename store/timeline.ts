@@ -211,10 +211,10 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const getChannelsMyFavorites = () => {
+  const getFollowedChannels = () => {
     if (!currentUser.value) return;
     const myChannels = ipcInvoke("api", {
-      method: "misskey:getChannelsMyFavorites",
+      method: "misskey:getFollowedChannels",
       instanceUrl: currentInstance.value?.url,
       token: currentUser.value.token,
     }).catch(() => {
@@ -241,6 +241,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     createReaction,
     deleteReaction,
     updatePost,
-    getChannelsMyFavorites,
+    getFollowedChannels,
   };
 });
