@@ -79,6 +79,10 @@ window.ipc?.on("post:reaction", () => {
 });
 
 onMounted(() => {
+  if (!props.data.noteId) {
+    ipcSend("post:close");
+  }
+
   searchInput.value?.focus();
   search.value === "";
 });
@@ -133,8 +137,11 @@ onMounted(() => {
 <style lang="scss" scoped>
 .page {
   display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
-
 .reaction-button {
   height: 32px;
   padding: 0;
@@ -153,7 +160,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 4px;
   width: 40%;
-  height: 100vh;
+  height: 100%;
   margin: 0;
   padding: 8px;
   overflow-y: scroll;
@@ -189,7 +196,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   width: 60%;
-  height: 100vh;
+  height: 100%;
+  overflow-y: scroll;
 }
 .search-container {
   padding: 8px;

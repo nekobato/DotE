@@ -44,7 +44,7 @@ const streamList = [
     label: "検索...",
     value: "misskey:searchTimeline",
   },
-] as const;
+] as { label: string; value: ChannelName }[];
 
 const streamOptions = streamList.map((stream) => ({
   label: stream.label,

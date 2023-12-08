@@ -213,13 +213,11 @@ export const misskeyGetNote = async ({
   });
 };
 
-export const misskeyGetMeta = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
+export const misskeyGetMeta = async ({ instanceUrl }: { instanceUrl: string }) => {
   return fetch(new URL(`/api/meta`, instanceUrl).toString(), {
     method: "POST",
     headers: baseHeader,
-    body: JSON.stringify({
-      i: token,
-    }),
+    body: JSON.stringify({}),
   }).then((res: Response) => {
     return res.json();
   });

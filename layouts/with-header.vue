@@ -1,12 +1,13 @@
 <template>
-  <div class="columns">
+  <div class="layout">
     <slot />
   </div>
 </template>
 <style lang="scss" scoped>
-.columns {
-  display: flex;
-  flex-direction: column;
+.layout {
+  display: grid;
+  grid-template-rows: 24px 1fr;
+  width: 100%;
   height: 100%;
   background-color: var(--hazy-background-color);
 }

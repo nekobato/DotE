@@ -26,7 +26,7 @@ window.ipc?.on("post:reaction", (_, payload) => {
 </script>
 
 <template>
-  <NuxtLayout name="columns" class="post-page">
+  <NuxtLayout name="with-header">
     <WindowHeader windowType="post" />
     <NuxtPage :data="pagedata" />
   </NuxtLayout>

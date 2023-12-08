@@ -104,6 +104,13 @@ const openPost = () => {
   ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
 };
 
+const openUserPage = (user: MisskeyNote["user"]) => {
+  const instanceUrl = user.host || timelineStore.currentInstance?.url;
+  ipcSend("open-url", {
+    url: new URL(`/@${user.username}`, instanceUrl).toString(),
+  });
+};
+
 const openReactionWindow = () => {
   ipcSend("post:reaction", {
     instanceUrl: timelineStore.currentInstance?.url,
@@ -151,10 +158,15 @@ onBeforeUnmount(() => {
     <div class="post-data-group">
       <div class="post-data" :class="{ notext: !props.post.text }">
         <div class="hazy-post-info">
-          <span class="username" v-if="props.post.text || !props.post.renote" v-html="username" />
+          <span
+            class="username"
+            v-if="props.post.text || !props.post.renote"
+            v-html="username"
+            @click="openUserPage(props.post.user)"
+          />
         </div>
         <div class="hazy-post-contents">
-          <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" />
+          <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" @click="openUserPage(props.post.user)" />
           <div class="body-container">
             <Mfm
               class="cw"
@@ -175,10 +187,15 @@ onBeforeUnmount(() => {
       </div>
       <div class="renote-data" v-if="props.post.renote">
         <div class="hazy-post-info">
-          <span class="username" v-html="renoteUsername" />
+          <span class="username" v-html="renoteUsername" @click="openUserPage(props.post.renote.user)" />
         </div>
         <div class="hazy-post-contents">
-          <img class="hazy-avatar" :src="props.post.renote?.user.avatarUrl" alt="" />
+          <img
+            class="hazy-avatar"
+            :src="props.post.renote?.user.avatarUrl"
+            alt=""
+            @click="openUserPage(props.post.renote.user)"
+          />
           <div class="body-container">
             <Mfm
               class="cw"
@@ -237,6 +254,10 @@ onBeforeUnmount(() => {
   font-style: normal;
   line-height: var(--font-size-10);
   white-space: nowrap;
+  cursor: pointer;
+}
+.hazy-avatar {
+  cursor: pointer;
 }
 .post-data,
 .renote-data {

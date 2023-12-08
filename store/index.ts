@@ -9,8 +9,9 @@ export const methodOfChannel = {
   "misskey:socialTimeline": "misskey:getTimelineSocial",
   "misskey:globalTimeline": "misskey:getTimelineGlobal",
   "misskey:listTimeline": "misskey:getTimelineList",
-  "misskey:antennaTimeline": "misskey:getTimelineAntenna",
+  // "misskey:antennaTimeline": "misskey:getTimelineAntenna",
   "misskey:channelTimeline": "misskey:getTimelineChannel",
+  "misskey:searchTimeline": "misskey:getTimelineSearch",
 };
 
 export type TimelineStore = Timeline & {
@@ -97,10 +98,11 @@ export const useStore = defineStore({
         }),
       );
     },
-    async initMisskeyMeta() {
+    async initMisskeyMeta(instanceUrl?: string) {
       return Promise.all(
         this.$state.instances.map(async (instance) => {
           if (instance.type === "misskey") {
+            if (instanceUrl && instance.url !== instanceUrl) return instance;
             const result = await ipcInvoke("api", {
               method: "misskey:getMeta",
               instanceUrl: instance.url,
