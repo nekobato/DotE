@@ -2,15 +2,13 @@ import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { useStore } from ".";
 import { hazyMisskeyPermissionString } from "@/utils/hazy";
+import type { MisskeyEntities } from "~/types/misskey";
 
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
 
   const createInstance = async (instanceUrl: string) => {
-    const instances = await store.initMisskeyMeta(instanceUrl);
-    const meta = instances.find((instance) => {
-      return instance.url === instanceUrl;
-    })?.misskey?.meta;
+    const meta = await getMisskeyMeta(instanceUrl);
     if (!meta) return;
     const result = await ipcInvoke("db:upsert-instance", {
       type: "misskey",
@@ -35,6 +33,18 @@ export const useInstanceStore = defineStore("instance", () => {
       permission: hazyMisskeyPermissionString(),
     }).toString();
     return url.toString();
+  };
+
+  const getMisskeyMeta = async (instanceUrl: string) => {
+    const result: MisskeyEntities.InstanceMetadata | null = await ipcInvoke("api", {
+      method: "misskey:getMeta",
+      instanceUrl,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${instanceUrl}の詳細データを取得できませんでした`,
+      });
+    });
+    return result;
   };
 
   return { createInstance, findInstance, getMisskeyAuthUrl };

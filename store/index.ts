@@ -1,4 +1,4 @@
-import type { MisskeyEntities, MisskeyNote } from "@/types/misskey";
+import type { MisskeyChannel, MisskeyEntities, MisskeyNote } from "@/types/misskey";
 import type { ChannelName, Instance, Settings, Timeline, User } from "@/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
@@ -8,14 +8,15 @@ export const methodOfChannel = {
   "misskey:localTimeline": "misskey:getTimelineLocal",
   "misskey:socialTimeline": "misskey:getTimelineSocial",
   "misskey:globalTimeline": "misskey:getTimelineGlobal",
-  "misskey:listTimeline": "misskey:getTimelineList",
-  // "misskey:antennaTimeline": "misskey:getTimelineAntenna",
-  "misskey:channelTimeline": "misskey:getTimelineChannel",
-  "misskey:searchTimeline": "misskey:getTimelineSearch",
+  "misskey:list": "misskey:getTimelineList",
+  // "misskey:antenna": "misskey:getTimelineAntenna",
+  "misskey:channel": "misskey:getTimelineChannel",
+  "misskey:search": "misskey:getTimelineSearch",
 };
 
 export type TimelineStore = Timeline & {
   posts: MisskeyNote[];
+  channels: MisskeyChannel[];
 };
 
 export type InstanceStore = Instance & {
@@ -126,6 +127,7 @@ export const useStore = defineStore({
           channel: timeline.channel as ChannelName,
           options: timeline.options,
           posts: [],
+          channels: [],
         };
       });
       console.info("timelines initted", this.$state.timelines);

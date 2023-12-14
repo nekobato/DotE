@@ -28,15 +28,15 @@ const postStyleOptions = [
   },
   {
     label: "3行",
-    value: "3",
+    value: "line-3",
   },
   {
     label: "2行",
-    value: "2",
+    value: "line-2",
   },
   {
     label: "1行",
-    value: "1",
+    value: "line-1",
   },
 ];
 

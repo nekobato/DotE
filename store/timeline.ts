@@ -28,9 +28,15 @@ export const useTimelineStore = defineStore("timeline", () => {
   const fetchInitialPosts = async () => {
     if (current.value && currentUser.value && currentInstance.value) {
       setPosts([]);
+
+      console.log("################", current.value);
+
+      if (current?.value.channel === "misskey:channel" && !current?.value.options?.channelId) return;
+
       const data = await ipcInvoke("api", {
         method: methodOfChannel[current.value.channel],
         instanceUrl: currentInstance.value?.url,
+        channelId: current?.value.options?.channelId, // option
         token: currentUser.value.token,
         limit: 40,
       }).catch(() => {
@@ -47,12 +53,13 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const fetchDiffPosts = async () => {
+    if (store.timelines[currentIndex.value].posts.length === 0) return;
     if (current.value && currentUser.value && currentInstance.value) {
       const data = await ipcInvoke("api", {
         method: methodOfChannel[current.value.channel],
         instanceUrl: currentInstance.value?.url,
         token: currentUser.value.token,
-        sinceId: store.timelines[currentIndex.value].posts[0].id,
+        sinceId: store.timelines[currentIndex.value]?.posts[0]?.id,
         limit: 40,
       }).catch(() => {
         store.$state.errors.push({
@@ -60,7 +67,7 @@ export const useTimelineStore = defineStore("timeline", () => {
         });
       });
       console.info("Notes", data);
-      setPosts([...data, ...store.timelines[currentIndex.value].posts]);
+      setPosts([...data, ...store.timelines[currentIndex.value]?.posts]);
     } else {
       throw new Error("user not found");
     }
@@ -89,11 +96,11 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const deleteTimelineByUserId = async (userId: string) => {
     store.$state.timelines.forEach(async (timeline) => {
-      console.log(timeline.userId, userId);
       if (timeline.userId === userId) {
         await ipcInvoke("db:delete-timeline", {
           id: timeline.id,
         });
+        console.log("deleted timeline", timeline.userId, userId);
       }
     });
     // 更新してみる
@@ -102,6 +109,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     if (store.$state.users.length === 0) {
       return;
     }
+    // UserはいるけどTimelineが無いならTimelineを作る
     if (store.$state.timelines.length === 0) {
       await createTimeline({
         userId: store.users[0].id,

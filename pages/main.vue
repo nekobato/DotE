@@ -87,20 +87,29 @@ window.ipc?.on("stream:unsub-note", (data: { postId: string }) => {
 
 window.ipc?.on("resume-timeline", () => {});
 
+const initStream = () => {
+  if (timelineStore.current?.channel === "misskey:channel" && !timelineStore.current?.options?.channelId) return;
+
+  if (timelineStore.currentInstance && timelineStore.current && timelineStore.currentUser) {
+    misskeyStream.connect({
+      host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+      channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
+      token: timelineStore.currentUser.token,
+      channelId: timelineStore.current.options?.channelId,
+    });
+  }
+
+  nextTick(() => {
+    timelineStore.fetchInitialPosts();
+  });
+};
+
 // Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
 timelineStore.$onAction((action) => {
   if (action.name === "updateTimeline") {
     console.log("updateTimeline");
-    if (timelineStore.currentInstance && timelineStore.current && timelineStore.currentUser) {
-      misskeyStream.connect({
-        host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-        channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
-        token: timelineStore.currentUser.token,
-      });
-    }
-    nextTick(() => {
-      timelineStore.fetchInitialPosts();
-    });
+
+    initStream();
   }
 });
 
@@ -113,14 +122,7 @@ onBeforeMount(async () => {
     return;
   }
 
-  await timelineStore.fetchInitialPosts().catch((error) => {
-    console.error(error);
-  });
-  misskeyStream.connect({
-    host: timelineStore.currentInstance!.url.replace(/https?:\/\//, ""),
-    channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
-    token: timelineStore.currentUser!.token,
-  });
+  initStream();
 
   gotoHazyRoute(store.settings.hazyMode);
   router.push("/main/timeline");
@@ -131,19 +133,5 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <div class="hazy-timeline-container" v-if="store.errors.length">
-    <div class="hazy-post-list">
-      <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
-    </div>
-  </div>
   <NuxtPage />
 </template>
-<style lang="scss" scoped>
-.haze {
-  pointer-events: none;
-}
-
-.hazy-timeline-container {
-  margin-top: 8px;
-}
-</style>

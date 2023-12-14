@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  devtools: { enabled: true },
+  devtools: { enabled: false }, // 見れない
   experimental: {
     // https://github.com/caoxiemeihao/nuxt-electron/issues/53
     appManifest: false,

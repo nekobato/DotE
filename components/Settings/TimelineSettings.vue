@@ -2,8 +2,7 @@
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { Icon } from "@iconify/vue";
-import { computed, ref } from "vue";
-import type { MisskeyChannel } from "~/types/misskey";
+import { computed } from "vue";
 import type { ChannelName, Timeline } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
@@ -30,19 +29,19 @@ const streamList = [
   },
   {
     label: "リスト...",
-    value: "misskey:listTimeline",
+    value: "misskey:list",
   },
   // {
   //   label: "アンテナ...",
-  //   value: "misskey:antennaTimeline",
+  //   value: "misskey:antenna",
   // },
   {
     label: "チャンネル...",
-    value: "misskey:channelTimeline",
+    value: "misskey:channel",
   },
   {
     label: "検索...",
-    value: "misskey:searchTimeline",
+    value: "misskey:search",
   },
 ] as { label: string; value: ChannelName }[];
 
@@ -51,20 +50,8 @@ const streamOptions = streamList.map((stream) => ({
   value: stream.value,
 }));
 
-const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
-const misskeyChannelOptions = computed(() =>
-  followedMisskeyChannels.value.map((channel) => ({
-    label: channel.name,
-    value: channel.id,
-  })),
-);
-
-const selectedUserId = ref(timelineStore.currentUser?.id || "");
-const selectedStream = ref<ChannelName>(timelineStore.current?.channel || "misskey:homeTimeline");
-const selectedChannelId = ref<string>(timelineStore.current?.options?.channelId || "");
-
 const accountOptions = computed(() =>
-  store.users.map((user) => ({
+  store.$state.users.map((user) => ({
     label:
       user.name +
       "@" +
@@ -73,35 +60,10 @@ const accountOptions = computed(() =>
   })),
 );
 
-const onChangeUser = async (e: InputEvent, timelineId: string) => {
-  if (!e) return;
-  selectedUserId.value = (e.target as HTMLInputElement).value;
-
-  const timeline = store.timelines.find((timeline) => timeline.id === timelineId);
+const onChangeTimelineInput = async (newTimeline: Timeline, timelineId: string) => {
+  const timeline = getTimelineById(timelineId);
   if (timeline) {
-    await updateTimeline({ ...timeline, userId: selectedUserId.value });
-  }
-};
-
-const onChangeTimeline = async (e: InputEvent, timelineId: string) => {
-  if (!e) return;
-  selectedStream.value = (e.target as HTMLInputElement).value as ChannelName;
-  const timeline = store.timelines.find((timeline) => timeline.id === timelineId);
-  if (timeline) {
-    await updateTimeline({ ...timeline, channel: selectedStream.value });
-  }
-};
-
-const onChangeChannel = async ({ target }: InputEvent, timelineId: string) => {
-  const channelId = (target as HTMLInputElement).value;
-  const timeline = store.timelines.find((timeline) => timeline.id === timelineId);
-  if (timeline) {
-    await updateTimeline({
-      ...timeline,
-      options: {
-        channelId,
-      },
-    });
+    await updateTimeline(newTimeline);
   }
 };
 
@@ -115,8 +77,25 @@ const updateTimeline = async (timeline: Timeline) => {
   });
 };
 
-onMounted(async () => {
-  followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
+const getTimelineById = (id: string) => {
+  return store.timelines.find((timeline) => timeline.id === id);
+};
+
+watch(
+  () => store.timelines,
+  async () => {
+    store.timelines.forEach(async (timeline) => {
+      timeline.channels = await timelineStore.getFollowedChannels();
+      console.log(timeline.channels);
+    });
+  },
+);
+
+onMounted(() => {
+  store.timelines.forEach(async (timeline) => {
+    timeline.channels = await timelineStore.getFollowedChannels();
+    console.log(timeline.channels);
+  });
 });
 </script>
 
@@ -134,7 +113,7 @@ onMounted(async () => {
             name="user"
             :options="accountOptions"
             :value="timeline.userId"
-            @change="onChangeUser($event, timeline.id)"
+            @change="onChangeTimelineInput({ ...timeline, userId: $event.target.value }, timeline.id)"
             placeholder="--"
             class="select"
           />
@@ -150,13 +129,13 @@ onMounted(async () => {
             name="channel"
             :options="streamOptions"
             :value="timeline.channel"
-            @change="onChangeTimeline($event, timeline.id)"
+            @change="onChangeTimelineInput({ ...timeline, channel: $event.target.value }, timeline.id)"
             placeholder="--"
             class="select"
           />
         </div>
       </div>
-      <div class="hazy-post account indent-2" v-if="timeline.channel === 'misskey:channelTimeline'">
+      <div class="hazy-post account indent-2" v-if="timeline.channel === 'misskey:channel'">
         <div class="content">
           <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
           <span class="label">チャンネル</span>
@@ -164,15 +143,16 @@ onMounted(async () => {
         <div class="attachments form-actions">
           <HazySelect
             name="channel"
-            :options="misskeyChannelOptions"
+            v-if="timeline.channels.length"
+            :options="timeline.channels.map((channel) => ({ label: channel.name, value: channel.id }))"
             :value="timeline.options?.channelId"
-            @change="onChangeChannel($event, timeline.id)"
+            @change="onChangeTimelineInput({ ...timeline, options: { channelId: $event.target.value } }, timeline.id)"
             placeholder="--"
             class="select"
           />
         </div>
       </div>
-      <div class="hazy-post account indent-2" v-if="selectedStream === 'misskey:searchTimeline'">
+      <div class="hazy-post account indent-2" v-if="timeline.channel === 'misskey:search'">
         <div class="content">
           <span class="label">検索</span>
         </div>

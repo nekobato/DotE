@@ -1,5 +1,5 @@
-// chat以外はできる
-// ref: https://misskey-hub.net/docs/api/permission.html
+// chat以外は権利をいただく
+// ref: https://github.com/misskey-dev/misskey/blob/develop/packages/misskey-js/src/consts.ts
 export const hazyMisskeyPermissions: string[] = [
   "read:account",
   "write:account",
@@ -19,15 +19,25 @@ export const hazyMisskeyPermissions: string[] = [
   "write:notes",
   "read:notifications",
   "write:notifications",
+  "read:reactions",
   "write:reactions",
   "write:votes",
   "read:pages",
   "write:pages",
-  //  これいる？
   "write:page-likes",
   "read:page-likes",
-  "write:gallery-likes",
+  "read:user-groups",
+  "write:user-groups",
+  "read:channels",
+  "write:channels",
+  "read:gallery",
+  "write:gallery",
   "read:gallery-likes",
+  "write:gallery-likes",
+  "read:flash",
+  "write:flash",
+  "read:flash-likes",
+  "write:flash-likes",
 ];
 
 export const hazyMisskeyPermissionString = () => {

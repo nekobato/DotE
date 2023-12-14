@@ -33,25 +33,25 @@ timelineStore.$onAction((action) => {
 </script>
 
 <template>
-  <div
-    class="page-container hazy-timeline-container"
-    :class="{ haze: store.settings.hazyMode === 'haze' }"
-    :style="{ opacity: hazeOpacity }"
-  >
+  <div class="page-container" :class="{ haze: store.settings.hazyMode === 'haze' }" :style="{ opacity: hazeOpacity }">
     <WindowHeader windowType="main" v-show="store.settings.hazyMode !== 'haze'" />
+    <div class="hazy-timeline-container" v-if="store.errors.length">
+      <div class="hazy-post-list">
+        <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
+      </div>
+    </div>
     <div
       class="timeline-container"
-      v-if="timelineStore.current?.posts.length"
       ref="timelineContainer"
       :class="{
         'is-adding': state.isAdding,
       }"
     >
-      <div class="hazy-post-list">
+      <div class="hazy-post-list" v-if="timelineStore.current?.posts.length">
         <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" :key="post.id" />
       </div>
+      <HazyLoading v-else />
     </div>
-    <HazyLoading v-else />
   </div>
 </template>
 

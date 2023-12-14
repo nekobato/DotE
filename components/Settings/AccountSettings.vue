@@ -74,16 +74,13 @@ const confirmDeleteAccount = async () => {
 };
 
 const openMisskeyAuthLink = () => {
-  state.value.actions.newAccount.misskey.sessionId = nanoid();
-  /^https?:\/\//.test(state.value.actions.newAccount.misskey.instanceUrl.value) ||
-    (state.value.actions.newAccount.misskey.instanceUrl.value =
-      "https://" + state.value.actions.newAccount.misskey.instanceUrl.value);
-  const url = instanceStore.getMisskeyAuthUrl(
-    state.value.actions.newAccount.misskey.instanceUrl.value,
-    state.value.actions.newAccount.misskey.sessionId,
-  );
+  const misskey = state.value.actions.newAccount.misskey;
+  misskey.sessionId = nanoid();
+  /^https?:\/\//.test(misskey.instanceUrl.value) ||
+    (misskey.instanceUrl.value = "https://" + misskey.instanceUrl.value);
+  const url = instanceStore.getMisskeyAuthUrl(misskey.instanceUrl.value, misskey.sessionId);
   ipcSend("open-url", { url });
-  state.value.actions.newAccount.misskey.progress = "step2:confirm";
+  misskey.progress = "step2:confirm";
 };
 
 const resetStatues = () => {

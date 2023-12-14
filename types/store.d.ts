@@ -3,10 +3,10 @@ export type ChannelName =
   | "misskey:localTimeline"
   | "misskey:socialTimeline"
   | "misskey:globalTimeline"
-  | "misskey:listTimeline"
+  | "misskey:list"
   // | "misskey:antennaTimeline"
-  | "misskey:channelTimeline"
-  | "misskey:searchTimeline";
+  | "misskey:channel"
+  | "misskey:search";
 
 export type Timeline = {
   id: string; // uuid
@@ -43,7 +43,7 @@ export type Settings = {
     height: number;
   };
   maxPostCount: number;
-  postStyle: "all" | "1" | "2" | "3";
+  postStyle: "all" | "line-1" | "line-2" | "line-3";
   shortcuts: {
     toggleTimeline: string;
   };

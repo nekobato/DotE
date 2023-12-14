@@ -9,7 +9,13 @@ export const webSocketState = {
 };
 
 // https://misskey-hub.net/docs/api/streaming/channel/
-export type MisskeyStreamChannel = "globalTimeline" | "homeTimeline" | "hybridTimeline" | "localTimeline" | "main";
+export type MisskeyStreamChannel =
+  | "globalTimeline"
+  | "homeTimeline"
+  | "hybridTimeline"
+  | "localTimeline"
+  | "main"
+  | "channel";
 
 export type MisskeyStreamMessage = {
   id: string;
@@ -82,7 +88,21 @@ export const useMisskeyStream = ({
     }
   };
 
-  const connect = ({ host, token, channel }: { host: string; token: string; channel: MisskeyStreamChannel }) => {
+  const connect = ({
+    host,
+    token,
+    channel,
+    channelId,
+    query,
+  }: {
+    host: string;
+    token: string;
+    channel: MisskeyStreamChannel;
+    channelId?: string;
+    query?: string;
+  }) => {
+    if (channel === "channel" && !channelId) return;
+
     shouldConnect.value = true;
     webSocketId.value = nanoid();
     ws = connectToMisskeyStream(host, token);
@@ -94,7 +114,14 @@ export const useMisskeyStream = ({
       ws?.send(
         JSON.stringify({
           type: "connect",
-          body: { channel, id: webSocketId.value, params: {} },
+          body: {
+            channel,
+            id: webSocketId.value,
+            params: {
+              ...(channel === "channel" ? { channelId } : {}),
+              ...(query ? { query } : {}),
+            },
+          },
         }),
       );
       if (eventTime.lastClose) {

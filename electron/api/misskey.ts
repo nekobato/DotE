@@ -87,6 +87,30 @@ export const misskeyGetTimelineGlobal = async ({
   });
 };
 
+export const misskeyGetTimelineChannel = async ({
+  instanceUrl,
+  token,
+  channelId,
+  sinceId,
+}: {
+  instanceUrl: string;
+  token: string;
+  channelId: string;
+  sinceId?: string;
+}) => {
+  return fetch(new URL(`/api/channels/timeline`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      channelId,
+      sinceId,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
 export const misskeyCreateReaction = async ({
   instanceUrl,
   token,

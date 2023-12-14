@@ -21,23 +21,19 @@ export const useUsersStore = defineStore("users", () => {
   const deleteUser = async (id: string) => {
     await ipcInvoke("db:delete-user", { id });
     await store.initUsers();
+    await timelineStore.deleteTimelineByUserId(id);
   };
 
   const createUser = async (user: NewUser) => {
-    let instanceId: string | undefined;
-
     // Instanceが無ければ作成
-    const instance = instanceStore.findInstance(user.instanceUrl);
+    const instance =
+      instanceStore.findInstance(user.instanceUrl) || (await instanceStore.createInstance(user.instanceUrl));
 
-    if (instance) {
-      instanceId = instance.id;
-    } else {
-      const newInstance = await instanceStore.createInstance(user.instanceUrl, user.token);
-      instanceId = newInstance.id;
-    }
-
-    if (!instanceId) {
-      throw new Error("instanceId has not created.");
+    if (!instance) {
+      store.$state.errors.push({
+        message: `${user.instanceUrl}のデータを作るのに失敗しちゃった`,
+      });
+      return;
     }
 
     // User作成
@@ -45,7 +41,7 @@ export const useUsersStore = defineStore("users", () => {
       name: user.name,
       avatarUrl: user.avatarUrl || "",
       token: user.token,
-      instanceId,
+      instanceId: instance.id,
     });
 
     await store.initUsers();
