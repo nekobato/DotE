@@ -88,9 +88,15 @@ window.ipc?.on("stream:unsub-note", (data: { postId: string }) => {
 window.ipc?.on("resume-timeline", () => {});
 
 const initStream = () => {
-  if (timelineStore.current?.channel === "misskey:channel" && !timelineStore.current?.options?.channelId) return;
+  if (timelineStore.current?.channel === "misskey:channel" && !timelineStore.current?.options?.channelId) {
+    store.$state.errors.push({
+      message: `チャンネルの指定がありません。設定でやっていってください`,
+    });
+    return;
+  }
 
   if (timelineStore.currentInstance && timelineStore.current && timelineStore.currentUser) {
+    misskeyStream.disconnect();
     misskeyStream.connect({
       host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
       channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,

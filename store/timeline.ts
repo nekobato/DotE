@@ -20,18 +20,14 @@ export const useTimelineStore = defineStore("timeline", () => {
   });
 
   const setPosts = (posts: MisskeyNote[]) => {
-    if (store.timelines[currentIndex.value]) {
-      store.timelines[currentIndex.value].posts = posts;
+    if (store.$state.timelines[currentIndex.value]) {
+      store.$state.timelines[currentIndex.value].posts = posts;
     }
   };
 
   const fetchInitialPosts = async () => {
     if (current.value && currentUser.value && currentInstance.value) {
       setPosts([]);
-
-      console.log("################", current.value);
-
-      if (current?.value.channel === "misskey:channel" && !current?.value.options?.channelId) return;
 
       const data = await ipcInvoke("api", {
         method: methodOfChannel[current.value.channel],

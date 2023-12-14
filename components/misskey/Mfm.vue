@@ -1,9 +1,7 @@
 <script lang="tsx">
-import { defineComponent } from "vue";
 import * as mfm from "mfm-js";
+import { defineComponent, type PropType } from "vue";
 import type { Settings } from "~/types/store";
-import { type PropType } from "vue";
-import { MisskeyEntities } from "~/types/misskey";
 
 export default defineComponent({
   name: "Mfm",
@@ -148,3 +146,12 @@ export default defineComponent({
   },
 });
 </script>
+<style scoped lang="scss">
+.line-1,
+.line-2,
+.line-3 {
+  pre {
+    white-space: nowrap;
+  }
+}
+</style>

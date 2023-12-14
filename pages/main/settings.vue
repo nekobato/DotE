@@ -29,7 +29,7 @@ import WindowHeader from "~/components/WindowHeader.vue";
   border-radius: 8px;
 }
 .hazy-scroller {
-  background: var(--hazy-background-color);
+  background: var(--hazy-color-black-t3);
   border: 1px solid var(--hazy-border-color);
 }
 </style>
