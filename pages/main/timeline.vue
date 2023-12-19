@@ -62,12 +62,11 @@ body::-webkit-scrollbar {
 </style>
 <style lang="scss" scoped>
 .page-container {
-  display: grid;
-  grid-template-rows: 24px 1fr;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 8px;
 
   &.haze {
     pointer-events: none;

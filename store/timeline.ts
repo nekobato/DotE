@@ -229,10 +229,18 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myChannels;
   };
 
+  const isTimelineAvailable = computed(() => {
+    if (!current.value) return false;
+    if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
+    if (current.value?.channel === "misskey:channelTimeline" && !current.value?.options?.channelId) return false;
+    return true;
+  });
+
   return {
     timelines,
     deleteTimelineByUserId,
     current,
+    isTimelineAvailable,
     currentUser,
     currentInstance,
     fetchInitialPosts,

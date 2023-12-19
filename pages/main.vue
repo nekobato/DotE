@@ -8,8 +8,6 @@ import { useMisskeyStream } from "@/utils/websocket";
 import { onBeforeMount, onBeforeUnmount } from "vue";
 import { createReaction, deleteReaction, isMyReaction } from "~/utils/misskey";
 
-const router = useRouter();
-
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
@@ -123,15 +121,15 @@ onBeforeMount(async () => {
   await store.init();
   console.info("store", store);
 
-  if (!timelineStore.current) {
+  if (timelineStore.isTimelineAvailable) {
+    initStream();
+    nextTick(() => {
+      timelineStore.fetchInitialPosts();
+    });
+    gotoHazyRoute(store.settings.hazyMode);
+  } else {
     ipcSend("set-hazy-mode", { mode: "settings" });
-    return;
   }
-
-  initStream();
-
-  gotoHazyRoute(store.settings.hazyMode);
-  router.push("/main/timeline");
 });
 
 onBeforeUnmount(() => {
