@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
-import { Icon } from "@iconify/vue";
-import { computed } from "vue";
-import type { ChannelName, Timeline } from "~/types/store";
+import type { Timeline } from "~/types/store";
 import SectionTitle from "../Post/SectionTitle.vue";
 import TimelineForm from "./TimelineForm.vue";
 

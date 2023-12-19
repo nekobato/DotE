@@ -124,8 +124,6 @@ export const useStore = defineStore({
       this.$state.timelines = timelines.map((timeline) => {
         return {
           ...timeline,
-          channel: timeline.channel as ChannelName,
-          options: timeline.options,
           posts: [],
           channels: [],
         };

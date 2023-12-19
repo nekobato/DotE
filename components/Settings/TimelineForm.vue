@@ -18,7 +18,10 @@ const emit = defineEmits<{
 const store = useStore();
 const timelineStore = useTimelineStore();
 
-const streamList = [
+const streamOptions: {
+  label: string;
+  value: ChannelName;
+}[] = [
   {
     label: "ホーム",
     value: "misskey:homeTimeline",
@@ -37,33 +40,30 @@ const streamList = [
   },
   {
     label: "リスト...",
-    value: "misskey:listTimeline",
+    value: "misskey:list",
   },
   // {
   //   label: "アンテナ...",
-  //   value: "misskey:antennaTimeline",
+  //   value: "misskey:antenna",
   // },
   {
     label: "チャンネル...",
-    value: "misskey:channelTimeline",
+    value: "misskey:channel",
   },
   {
     label: "検索...",
-    value: "misskey:searchTimeline",
+    value: "misskey:search",
   },
-] as { label: string; value: ChannelName }[];
-
-const streamOptions = streamList.map((stream) => ({
-  label: stream.label,
-  value: stream.value,
-}));
+];
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const misskeyChannelOptions = computed(() =>
-  followedMisskeyChannels.value.map((channel) => ({
-    label: channel.name,
-    value: channel.id,
-  })),
+  followedMisskeyChannels.value?.length > 0
+    ? followedMisskeyChannels.value.map((channel) => ({
+        label: channel.name,
+        value: channel.id,
+      }))
+    : [],
 );
 
 const accountOptions = computed(() =>
@@ -109,14 +109,14 @@ const onChangeChannel = async ({ target }: InputEvent) => {
 watch(
   () => props.timeline.channel,
   async (channel) => {
-    if (channel === "misskey:channelTimeline") {
+    if (channel === "misskey:channel") {
       followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
     }
   },
 );
 
 onMounted(async () => {
-  if (props.timeline.channel === "misskey:channelTimeline") {
+  if (props.timeline.channel === "misskey:channel") {
     followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
   }
 });
@@ -156,13 +156,14 @@ onMounted(async () => {
         />
       </div>
     </div>
-    <div class="hazy-post account indent-2" v-if="props.timeline.channel === 'misskey:channelTimeline'">
+    <div class="hazy-post account indent-2" v-if="props.timeline.channel === 'misskey:channel'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">チャンネル</span>
       </div>
       <div class="attachments form-actions">
         <HazySelect
+          v-if="misskeyChannelOptions.length"
           name="channel"
           :options="misskeyChannelOptions"
           :value="props.timeline.options?.channelId"
@@ -172,7 +173,7 @@ onMounted(async () => {
         />
       </div>
     </div>
-    <div class="hazy-post account indent-2" v-if="props.timeline.channel === 'misskey:searchTimeline'">
+    <div class="hazy-post account indent-2" v-if="props.timeline.channel === 'misskey:search'">
       <div class="content">
         <span class="label">検索</span>
       </div>

@@ -225,6 +225,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       store.$state.errors.push({
         message: "チャンネルの取得に失敗しました",
       });
+      console.error("チャンネルの取得に失敗しました");
     });
     return myChannels;
   };
@@ -232,7 +233,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
-    if (current.value?.channel === "misskey:channelTimeline" && !current.value?.options?.channelId) return false;
+    if (current.value?.channel === "misskey:channel" && !current.value?.options?.channelId) return false;
     return true;
   });
 
