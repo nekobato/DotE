@@ -1,4 +1,4 @@
-import electron from "electron";
+import electron, { app, dialog } from "electron";
 
 type MenuTemplate = (electron.MenuItemConstructorOptions | electron.MenuItem)[];
 
@@ -8,9 +8,19 @@ const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | nul
     label: "hazy",
     submenu: [
       {
-        id: "quit",
-        label: "Quit hazy",
-        role: "quit",
+        label: "About Hazy",
+        click: () => {
+          dialog.showMessageBox({
+            type: "info",
+            icon: `${__dirname}/../public/icons/png/128x128.png`,
+            title: "Hazy",
+            message: `Hazy`,
+            detail: `Version: ${app.getVersion()}\n\nhttps://github.com/nekobato/hazy/`,
+          });
+        },
+      },
+      {
+        type: "separator",
       },
       {
         id: "reload",
@@ -19,19 +29,19 @@ const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | nul
           mainWindow?.webContents.reload();
         },
       },
+      {
+        type: "separator",
+      },
+      {
+        id: "quit",
+        label: "Quit Hazy",
+        role: "quit",
+      },
     ],
   },
   {
     label: "Edit",
-    submenu: [
-      { label: "Undo", role: "undo" },
-      { label: "Redo", role: "redo" },
-      { type: "separator" },
-      { label: "Cut", role: "cut" },
-      { label: "Copy", role: "copy" },
-      { label: "Paste", role: "paste" },
-      { label: "Select All", role: "selectAll" },
-    ],
+    role: "editMenu",
   },
   // @ts-ignore: viewMenu is not defined in d.ts
   {

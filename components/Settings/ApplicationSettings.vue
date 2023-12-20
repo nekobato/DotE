@@ -85,7 +85,7 @@ const onChangeHideCw = async (e: Event) => {
           max="100"
           class="nn-range"
           :value="store.settings.opacity"
-          @change="onChangeOpacity"
+          @input="onChangeOpacity"
         />
         <input
           type="number"
