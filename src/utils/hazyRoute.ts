@@ -19,3 +19,18 @@ export const gotoHazyRoute = (hazyMode: Settings["hazyMode"]) => {
       break;
   }
 };
+
+export const getHazyRoute = (hazyMode: Settings["hazyMode"]) => {
+  switch (hazyMode) {
+    case "show":
+    case "haze":
+    case "hide":
+      return "/main/timeline";
+    case "settings":
+      return "/main/settings";
+    case "tutorial":
+      return "/main/tutorial";
+    default:
+      return null;
+  }
+};

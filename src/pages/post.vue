@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import WindowHeader from "@/components/WindowHeader.vue";
+import Layout from "@/components/layouts/WithHeader.vue";
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, RouterView } from "vue-router";
 
 const router = useRouter();
 
@@ -29,8 +30,8 @@ window.ipc?.on("post:reaction", (_, payload) => {
 </script>
 
 <template>
-  <NuxtLayout name="with-header">
+  <Layout>
     <WindowHeader windowType="post" />
-    <NuxtPage :data="pagedata" />
-  </NuxtLayout>
+    <RouterView :data="pagedata" />
+  </Layout>
 </template>

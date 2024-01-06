@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import HazyLoading from "@/components/common/HazyLoading.vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
+import WindowHeader from "@/components/WindowHeader.vue";
+import ErrorPost from "@/components/ErrorPost.vue";
 import { useTimelineStore } from "@/store/timeline";
 import { computed, nextTick, reactive, ref } from "vue";
 import { useStore } from "@/store";

@@ -9,7 +9,7 @@
   files: ["dist", "dist-electron"],
   mac: {
     category: "public.app-category.social-networking",
-    icon: ".output/public/icons/mac/icon.icns",
+    icon: "dist/icons/mac/icon.icns",
     artifactName: "${productName}_${version}.${ext}",
     target: ["dmg"],
     publish: [

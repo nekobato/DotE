@@ -6,8 +6,10 @@ import { ipcSend } from "@/utils/ipc";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/websocket";
 import { nextTick, onBeforeMount, onBeforeUnmount } from "vue";
 import { createReaction, deleteReaction, isMyReaction } from "@/utils/misskey";
-import { gotoHazyRoute } from "@/composables/hazyRoute";
+import { getHazyRoute } from "@/utils/hazyRoute";
+import { RouterView, useRouter } from "vue-router";
 
+const router = useRouter();
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
@@ -53,7 +55,10 @@ window.ipc?.on("set-hazy-mode", (_, { mode, reflect }) => {
   if (reflect) return;
 
   settingsStore.setHazyMode(mode);
-  gotoHazyRoute(mode);
+  const hazyRoute = getHazyRoute(mode);
+  if (hazyRoute) {
+    router.push(hazyRoute);
+  }
 });
 
 window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
@@ -126,7 +131,10 @@ onBeforeMount(async () => {
     nextTick(() => {
       timelineStore.fetchInitialPosts();
     });
-    gotoHazyRoute(store.settings.hazyMode);
+    const hazyRoute = getHazyRoute(store.settings.hazyMode);
+    if (hazyRoute) {
+      router.push(hazyRoute);
+    }
   } else {
     ipcSend("set-hazy-mode", { mode: "settings" });
   }
@@ -137,5 +145,5 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <NuxtPage />
+  <RouterView />
 </template>

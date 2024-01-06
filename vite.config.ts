@@ -22,4 +22,8 @@ export default defineConfig({
       { find: "@shared/", replacement: `${__dirname}/shared/` },
     ],
   },
+  esbuild: {
+    jsxFactory: "h",
+    jsxFragment: "Fragment",
+  },
 });
