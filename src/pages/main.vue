@@ -30,9 +30,10 @@ const misskeyStream = useMisskeyStream({
     console.info("onNoteUpdated", data);
     switch (event) {
       case "reacted":
+        console.info("reacted", data);
         timelineStore.addReaction({
           postId: data.body.id,
-          reaction: data.body.body.reaction,
+          reaction: data.body.reaction,
         });
         break;
       default:

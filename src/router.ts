@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 
 const routes = [
   {
@@ -35,10 +35,15 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/media-viewer",
+    name: "MediaViewer",
+    component: () => import("./pages/media-viewer.vue"),
+  },
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 });
 

@@ -31,5 +31,6 @@ const onUpdateTimeline = async (timeline: Timeline) => {
 <style lang="scss" scoped>
 .account-settings {
   width: 100%;
+  margin-top: 16px;
 }
 </style>

@@ -23,7 +23,7 @@ export function createMediaViewerWindow() {
   });
 
   if (process.env.NODE_ENV === "development") {
-    win.loadURL(join(pageRoot.development, pageName));
+    win.loadURL(pageRoot.development + "#" + pageName);
     // win.webContents.openDevTools();
   } else {
     win.loadFile(join(pageRoot.production), { hash: pageName });

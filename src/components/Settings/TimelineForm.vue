@@ -185,7 +185,10 @@ onMounted(async () => {
 </template>
 
 <style lang="scss" scoped>
-.account-settings {
+.accounts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   width: 100%;
 }
 .account {

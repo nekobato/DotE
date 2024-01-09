@@ -34,6 +34,7 @@ const gotoTutorial = () => {
 <style lang="scss" scoped>
 .information {
   width: 100%;
+  margin-top: 16px;
 }
 
 .content {
