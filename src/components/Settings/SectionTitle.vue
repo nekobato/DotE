@@ -17,8 +17,9 @@ const props = defineProps({
 .section-title {
   margin: 0;
   padding: 0;
-  color: var(--color-text-title);
+  color: var(--hazy-color-black-t4);
   font-weight: bold;
-  font-size: 0.8rem;
+  font-size: var(--font-size-16);
+  background-color: var(--hazy-color-black);
 }
 </style>

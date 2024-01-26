@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
+import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import { type PropType, computed, onMounted, onBeforeUnmount } from "vue";
 import type { MisskeyNote } from "@shared/types/misskey";
-import { emojisObject2Array, isMyReaction, parseMisskeyAttachments, parseMisskeyText } from "@/utils/misskey";
+import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
 import PostAttachment from "./PostAttachment.vue";
-import Mfm from "./misskey/Mfm.vue";
-import { useStore } from "@/store";
 
-const store = useStore();
 const timelineStore = useTimelineStore();
 
 const props = defineProps({
@@ -17,40 +14,6 @@ const props = defineProps({
     type: Object as PropType<MisskeyNote>,
     required: true,
   },
-});
-
-const noteEmojis = computed(() => {
-  const note = props.post as MisskeyNote;
-  return note.user.host
-    ? Object.keys(note.emojis).length
-      ? emojisObject2Array(note.emojis)
-      : []
-    : timelineStore.currentInstance?.misskey?.emojis;
-});
-
-const renoteEmojis = computed(() => {
-  const note = props.post.renote as MisskeyNote;
-  return note.user.host
-    ? Object.keys(note.emojis).length
-      ? emojisObject2Array(note.emojis)
-      : []
-    : timelineStore.currentInstance?.misskey?.emojis;
-});
-
-const username = computed(() => {
-  const note = props.post as MisskeyNote;
-  if (!note.user.name) return note.user.username;
-  if (noteEmojis.value) {
-    return parseMisskeyText(note.user.name, noteEmojis.value);
-  }
-});
-
-const renoteUsername = computed(() => {
-  const note = props.post.renote as MisskeyNote;
-  if (!note?.user.name) return note?.user.username;
-  if (note && renoteEmojis.value) {
-    return parseMisskeyText(note.user.name, renoteEmojis.value);
-  }
 });
 
 const postType = computed(() => {
@@ -104,13 +67,6 @@ const openPost = () => {
   ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
 };
 
-const openUserPage = (user: MisskeyNote["user"]) => {
-  const instanceUrl = user.host || timelineStore.currentInstance?.url;
-  ipcSend("open-url", {
-    url: new URL(`/@${user.username}`, instanceUrl).toString(),
-  });
-};
-
 const openReactionWindow = () => {
   ipcSend("post:reaction", {
     instanceUrl: timelineStore.currentInstance?.url,
@@ -127,19 +83,6 @@ const onClickReaction = (postId: string, reaction: string) => {
   });
 };
 
-const lineClass = computed(() => {
-  switch (store.settings.postStyle) {
-    case "all":
-      return "line-all";
-    case "line-1":
-      return "line-1";
-    case "line-2":
-      return "line-2";
-    case "line-3":
-      return "line-3";
-  }
-});
-
 onMounted(() => {
   ipcSend("stream:sub-note", {
     postId: props.post.id,
@@ -154,65 +97,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="hazy-post" :class="[postType, lineClass]">
+  <div class="hazy-post" :class="[postType]">
     <div class="post-data-group">
       <div class="post-data" :class="{ notext: !props.post.text }">
-        <div class="hazy-post-info">
-          <span
-            class="username"
-            v-if="props.post.text || !props.post.renote"
-            v-html="username"
-            @click="openUserPage(props.post.user)"
-          />
-        </div>
-        <div class="hazy-post-contents">
-          <img class="hazy-avatar" :src="props.post.user.avatarUrl" alt="" @click="openUserPage(props.post.user)" />
-          <div class="body-container">
-            <Mfm
-              class="cw"
-              :text="props.post.cw || ''"
-              :emojis="noteEmojis"
-              :host="timelineStore.currentInstance?.url"
-              :post-style="store.settings.postStyle"
-            />
-            <Mfm
-              class="text"
-              :text="props.post.text || ''"
-              :emojis="noteEmojis"
-              :host="timelineStore.currentInstance?.url"
-              :post-style="store.settings.postStyle"
-            />
-          </div>
-        </div>
+        <MisskeyNoteContent :note="props.post" />
       </div>
       <div class="renote-data" v-if="props.post.renote">
-        <div class="hazy-post-info">
-          <span class="username" v-html="renoteUsername" @click="openUserPage(props.post.renote.user)" />
-        </div>
-        <div class="hazy-post-contents">
-          <img
-            class="hazy-avatar"
-            :src="props.post.renote?.user.avatarUrl"
-            alt=""
-            @click="openUserPage(props.post.renote.user)"
-          />
-          <div class="body-container">
-            <Mfm
-              class="cw"
-              :text="props.post.renote?.cw || ''"
-              :emojis="renoteEmojis"
-              :host="timelineStore.currentInstance?.url"
-              :post-style="store.settings.postStyle"
-            />
-            <Mfm
-              class="text"
-              :text="props.post.renote?.text || ''"
-              :emojis="renoteEmojis"
-              :host="timelineStore.currentInstance?.url"
-              :post-style="store.settings.postStyle"
-            />
-          </div>
-        </div>
+        <MisskeyNoteContent :note="props.post.renote" />
       </div>
     </div>
     <div class="attachments" v-if="postAtttachments">
@@ -246,19 +137,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-.username {
-  display: block;
-  color: rgba(255, 255, 255, 0.72);
-  font-weight: 600;
-  font-size: var(--font-size-10);
-  font-style: normal;
-  line-height: var(--font-size-10);
-  white-space: nowrap;
-  cursor: pointer;
-}
-.hazy-avatar {
-  cursor: pointer;
-}
 .post-data,
 .renote-data {
   position: relative;

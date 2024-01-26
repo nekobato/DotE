@@ -2,7 +2,7 @@
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import type { Timeline } from "@shared/types/store";
-import SectionTitle from "../Post/SectionTitle.vue";
+import SectionTitle from "./SectionTitle.vue";
 import TimelineForm from "./TimelineForm.vue";
 
 const store = useStore();

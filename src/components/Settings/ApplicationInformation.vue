@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import SectionTitle from "../Post/SectionTitle.vue";
+import SectionTitle from "./SectionTitle.vue";
 import HazyButton from "@/components/common/HazyButton.vue";
 import { information } from "@/store/information";
 import { ipcSend } from "@/utils/ipc";

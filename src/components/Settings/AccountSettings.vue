@@ -7,7 +7,7 @@ import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
-import SectionTitle from "../Post/SectionTitle.vue";
+import SectionTitle from "./SectionTitle.vue";
 
 const store = useStore();
 const usersStore = useUsersStore();

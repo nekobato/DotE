@@ -70,14 +70,9 @@ export default defineComponent({
           case "fn":
             return (
               <span class="fn">
-                {node.props.name}
                 {node.children.length > 0 && (
-                  <span class="fn-args">
-                    (
-                    {node.children.map((child) => (
-                      <span class="fn-arg">{structElement([child])}</span>
-                    ))}
-                    )
+                  <span class={`fn-args fn-${node.props.name}`}>
+                    ({node.children.map((child) => structElement([child]))})
                   </span>
                 )}
               </span>

@@ -3,7 +3,7 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
-import SectionTitle from "../Post/SectionTitle.vue";
+import SectionTitle from "./SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
 
 const store = useStore();
