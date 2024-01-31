@@ -19,7 +19,7 @@
   "main": "./dist-electron/index.js",
   "dependencies": {
     "electron-fetch": "^1.9.1",
-    "electron-log": "^5.0.3",
+    "electron-log": "^5.1.0",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7"
   },
