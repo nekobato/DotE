@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStorage } from "@vueuse/core";
 import type { MisskeyEntities } from "@shared/types/misskey";
-import { PropType, computed, onMounted, ref } from "vue";
+import { PropType, computed, onMounted, ref, watch } from "vue";
 import { ipcSend } from "@/utils/ipc";
 
 type PageProps = {
@@ -59,7 +59,7 @@ const selectCategory = (category: string) => {
 const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
   ipcSend("main:reaction", {
     postId: props.data.noteId,
-    reaction: `:${emoji.name}:`,
+    reaction: `:${emoji.name}@.:`,
   });
   ipcSend("post:close");
 };
@@ -80,14 +80,17 @@ window.ipc?.on("post:reaction", () => {
   search.value === "";
 });
 
-onMounted(() => {
-  if (!props.data.noteId) {
-    ipcSend("post:close");
-  }
+watch(
+  () => props.data.noteId,
+  () => {
+    if (!props.data.noteId) {
+      ipcSend("post:close");
+    }
 
-  searchInput.value?.focus();
-  search.value === "";
-});
+    searchInput.value?.focus();
+    search.value === "";
+  },
+);
 </script>
 
 <template>

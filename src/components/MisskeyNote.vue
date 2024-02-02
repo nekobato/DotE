@@ -5,6 +5,7 @@ import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
 import type { MisskeyNote } from "@shared/types/misskey";
 import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
+import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachment from "./PostAttachment.vue";
 
 const timelineStore = useTimelineStore();
@@ -26,7 +27,7 @@ const postType = computed(() => {
   } else if (props.post.replyId) {
     return "reply";
   } else {
-    return "post";
+    return "note";
   }
 });
 
@@ -40,7 +41,7 @@ const postAtttachments = computed(() => {
 });
 
 const reactions = computed(() => {
-  const reactions = (props.post.renote ? props.post.renote?.reactions : props.post.reactions) || {};
+  const reactions = props.post.renote && !props.post.text ? props.post.renote.reactions : props.post.reactions;
   return Object.keys(reactions)
     .map((key) => {
       const reactionName = key.replace(/:|@\./g, "");
@@ -71,7 +72,7 @@ const openReactionWindow = () => {
   ipcSend("post:reaction", {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
-    noteId: props.post.renote?.id || props.post.id,
+    noteId: props.post.renote?.id,
     emojis: timelineStore.currentInstance?.misskey?.emojis,
   });
 };
@@ -99,11 +100,11 @@ onBeforeUnmount(() => {
 <template>
   <div class="hazy-post" :class="[postType]">
     <div class="post-data-group">
-      <div class="post-data" :class="{ notext: !props.post.text }">
-        <MisskeyNoteContent :note="props.post" />
+      <div class="post-data">
+        <MisskeyNoteContent :note="props.post" :type="postType" />
       </div>
       <div class="renote-data" v-if="props.post.renote">
-        <MisskeyNoteContent :note="props.post.renote" />
+        <MisskeyNoteContent :note="props.post.renote" type="renoted" />
       </div>
     </div>
     <div class="attachments" v-if="postAtttachments">

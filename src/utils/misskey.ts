@@ -47,14 +47,25 @@ export const createReaction = async (postId: string, reaction: string) => {
     postId,
     reaction,
   });
+  // Update reaction on Local
+  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId);
+  if (targetPost) {
+    targetPost.myReaction = reaction;
+    targetPost.reactions[reaction] += 1;
+  }
 };
 
-export const deleteReaction = async (postId: string, noUpdate: boolean) => {
+export const deleteReaction = async (postId: string) => {
   const timelineStore = useTimelineStore();
   await timelineStore.deleteReaction({
     postId,
-    noUpdate,
   });
+  // Delete reaction on Local
+  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId);
+  if (targetPost && targetPost.myReaction) {
+    targetPost.reactions[targetPost.myReaction] -= 1;
+    targetPost.myReaction = undefined;
+  }
 };
 
 export const emojisObject2Array = (emojis: { [name: string]: string }): { name: string; url: string }[] => {

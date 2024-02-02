@@ -136,14 +136,13 @@ body::-webkit-scrollbar {
   display: inline-flex;
   width: 80px;
   margin: 0 auto;
-  color: var(--hazy-color-white-t5);
-  background-color: var(--hazy-color-black-t4);
+  background-color: var(--hazy-color-white-t4);
+  border-radius: 4px;
   transform: translateY(-56px);
   opacity: 0.2;
   transition:
     transform 0.1s ease-in-out,
     opacity 0.1s ease-in-out;
-  fill: var(--hazy-color-white-t5);
 
   &.visible {
     transform: translateY(0);
@@ -152,6 +151,10 @@ body::-webkit-scrollbar {
 
   .nn-button {
     width: 100%;
+
+    .nn-icon {
+      color: var(--hazy-color-black-t5);
+    }
   }
 }
 </style>

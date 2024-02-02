@@ -66,19 +66,11 @@ window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: stri
   const post = timelineStore.current?.posts.find((post) => post.id === data.postId);
   if (!post) return;
 
-  if (isMyReaction(data.reaction, post.myReaction)) {
-    await deleteReaction(data.postId, false);
-  } else {
-    // 既にreactionがある場合は削除してから追加
-    if (post.myReaction) {
-      await deleteReaction(data.postId, true);
-    }
-    await createReaction(data.postId, data.reaction);
+  // 既にreactionがある場合は削除してから追加
+  if (post.myReaction) {
+    await deleteReaction(data.postId);
   }
-
-  await timelineStore.updatePost({
-    postId: data.postId,
-  });
+  await createReaction(data.postId, data.reaction);
 });
 
 window.ipc?.on("stream:sub-note", (_, data: { postId: string }) => {

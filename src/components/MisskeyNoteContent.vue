@@ -1,13 +1,11 @@
 <script setup lang="ts">
+import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
-import { Icon } from "@iconify/vue";
-import { type PropType, computed, onMounted, onBeforeUnmount } from "vue";
+import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
 import type { MisskeyNote } from "@shared/types/misskey";
-import { emojisObject2Array, isMyReaction, parseMisskeyAttachments, parseMisskeyText } from "@/utils/misskey";
-import PostAttachment from "./PostAttachment.vue";
+import { computed, ref, type PropType } from "vue";
 import Mfm from "./misskey/Mfm.vue";
-import { useStore } from "@/store";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -17,22 +15,23 @@ const props = defineProps({
     type: Object as PropType<MisskeyNote>,
     required: true,
   },
+  type: {
+    type: String as PropType<"note" | "reply" | "renote" | "renoted" | "quote">,
+    required: true,
+  },
 });
 
-const renoteEmojis = computed(() => {
-  const note = props.note as MisskeyNote;
-  return note.user.host
-    ? Object.keys(note.emojis).length
-      ? emojisObject2Array(note.emojis)
-      : []
-    : timelineStore.currentInstance?.misskey?.emojis;
+const noteEmojis = computed(() => {
+  const remoteEmojis = emojisObject2Array(props.note.reactionEmojis);
+  const localEmojis = timelineStore.currentInstance?.misskey?.emojis || [];
+  return [...remoteEmojis, ...localEmojis];
 });
 
 const renoteUsername = computed(() => {
   const note = props.note as MisskeyNote;
   if (!note?.user.name) return note?.user.username;
-  if (note && renoteEmojis.value) {
-    return parseMisskeyText(note.user.name, renoteEmojis.value);
+  if (note && noteEmojis.value) {
+    return parseMisskeyText(note.user.name, noteEmojis.value);
   }
 });
 
@@ -55,29 +54,49 @@ const lineClass = computed(() => {
       return "line-3";
   }
 });
+
+const canReadAll = ref(false);
+
+const isTextVisible = () => {
+  return !props.note?.cw || !store.settings.misskey.hideCw || canReadAll.value;
+};
 </script>
 
 <template>
-  <div class="hazy-post-content">
+  <div :class="[props.type]">
     <div class="hazy-post-info">
-      <span class="username" v-html="renoteUsername" @click="openUserPage(props.note.user)" />
+      <span
+        class="username"
+        v-html="renoteUsername"
+        @click="openUserPage(props.note.user)"
+        v-if="props.type !== 'renote'"
+      />
     </div>
-    <div class="hazy-post-body">
-      <img class="hazy-avatar" :src="props.note.user.avatarUrl" alt="" @click="openUserPage(props.note.user)" />
-      <div class="body-container" :class="[lineClass]">
+    <div class="hazy-post-content">
+      <img
+        class="hazy-avatar"
+        :class="{ mini: props.type === 'renote' }"
+        :src="props.note.user.avatarUrl"
+        alt=""
+        @click="openUserPage(props.note.user)"
+      />
+      <div class="text-container" :class="[lineClass]">
         <Mfm
           class="cw"
           :text="props.note?.cw || ''"
-          :emojis="renoteEmojis"
+          :emojis="noteEmojis"
           :host="timelineStore.currentInstance?.url"
           :post-style="store.settings.postStyle"
+          v-if="props.note?.cw"
         />
+        <button class="nn-button size-xsmall read-all" v-if="props.note?.cw">続きを見る</button>
         <Mfm
           class="text"
           :text="props.note?.text || ''"
-          :emojis="renoteEmojis"
+          :emojis="noteEmojis"
           :host="timelineStore.currentInstance?.url"
           :post-style="store.settings.postStyle"
+          v-show="isTextVisible"
         />
       </div>
     </div>
@@ -97,5 +116,60 @@ const lineClass = computed(() => {
 .username,
 .hazy-avatar {
   cursor: pointer;
+}
+
+.hazy-avatar {
+  &.mini {
+    width: 20px;
+    height: 20px;
+  }
+
+  & + * {
+    margin-left: 8px;
+  }
+}
+
+.hazy-post-content {
+  display: flex;
+  width: 100%;
+
+  > .hazy-avatar {
+    flex-shrink: 0;
+  }
+}
+
+.renote > .hazy-post-body > .hazy-avatar {
+  width: 20px;
+  height: 20px;
+}
+
+.text-container {
+  display: -webkit-box;
+  min-height: calc(var(--post-body--line-height) * 2);
+  overflow: hidden;
+  color: var(--post-body-color);
+  font-size: var(--post-body--font-size);
+  line-height: var(--post-body--line-height);
+}
+
+.line-all {
+  -webkit-line-clamp: unset;
+  -webkit-box-orient: unset;
+}
+.line-1 {
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  .cw,
+  .text {
+    white-space: nowrap;
+  }
+}
+.line-2 {
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.line-3 {
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 </style>

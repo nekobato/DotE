@@ -14,21 +14,9 @@ export default defineComponent({
       type: Boolean,
       default: false,
     },
-    clamp: {
-      type: Boolean,
-      default: false,
-    },
     host: {
       type: String,
       default: null,
-    },
-    author: {
-      type: Object,
-      default: null,
-    },
-    isNote: {
-      type: Boolean,
-      default: true,
     },
     emojis: {
       type: Array as PropType<{ name: string; url: string }[]>,
@@ -46,6 +34,7 @@ export default defineComponent({
     // const enableAnimation = true; // TODO: settings
 
     console.log(this.text, ast);
+    console.log("emojis", this.emojis);
 
     const structElement = (ast: mfm.MfmNode[]) =>
       ast.map((node) => {
@@ -71,7 +60,7 @@ export default defineComponent({
             return (
               <span class="fn">
                 {node.children.length > 0 && (
-                  <span class={`fn-args fn-${node.props.name}`}>
+                  <span class={["mfm-fn", node.props.name]}>
                     ({node.children.map((child) => structElement([child]))})
                   </span>
                 )}
@@ -147,6 +136,20 @@ export default defineComponent({
 .line-3 {
   pre {
     white-space: nowrap;
+  }
+}
+
+.hazy-post-body {
+  a {
+    color: var(--color-text-link);
+    text-decoration: underline;
+  }
+
+  img.emoji {
+    width: auto;
+    height: var(--post-body--line-height);
+    margin-bottom: -4px;
+    line-height: var(--post-body--line-height);
   }
 }
 </style>

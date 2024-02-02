@@ -155,15 +155,12 @@ export const useTimelineStore = defineStore("timeline", () => {
           message: `${postId}へのリアクション失敗`,
         });
       });
-      await updatePost({
-        postId,
-      });
     } else {
       throw new Error("user not found");
     }
   };
 
-  const deleteReaction = async ({ postId, noUpdate }: { postId: string; noUpdate?: boolean }) => {
+  const deleteReaction = async ({ postId }: { postId: string }) => {
     if (currentUser.value) {
       await ipcInvoke("api", {
         method: "misskey:deleteReaction",
@@ -174,10 +171,6 @@ export const useTimelineStore = defineStore("timeline", () => {
         store.$state.errors.push({
           message: `${postId}のリアクション削除失敗`,
         });
-      });
-      if (noUpdate) return;
-      await updatePost({
-        postId,
       });
     } else {
       throw new Error("user not found");
