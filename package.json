@@ -32,7 +32,7 @@
     "electron-icon-builder": "^2.0.1",
     "mfm-js": "^0.24.0",
     "misskey-js": "^0.0.16",
-    "nanoid": "^5.0.4",
+    "nanoid": "^5.0.5",
     "pinia": "^2.1.7",
     "postcss-html": "^1.6.0",
     "prettier": "^3.2.4",
