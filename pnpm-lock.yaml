@@ -29,8 +29,8 @@ devDependencies:
     specifier: ^10.7.2
     version: 10.7.2(vue@3.4.15)
   electron:
-    specifier: 28.2.0
-    version: 28.2.0
+    specifier: 28.2.1
+    version: 28.2.1
   electron-builder:
     specifier: ^24.9.1
     version: 24.9.1
@@ -2983,8 +2983,8 @@ packages:
       - supports-color
     dev: false
 
-  /electron@28.2.0:
-    resolution: {integrity: sha512-22SylXQQ9IHtwLw4D+Z4Si7OUpeDtpHfJVTjy3yv53iLg5zJKKPOCWT4ZwgYGHQZ0eldyBrYBHF/P9FPd2CcVQ==}
+  /electron@28.2.1:
+    resolution: {integrity: sha512-wlzXf+OvOiVlBf9dcSeMMf7Q+N6DG+wtgFbMK0sA/JpIJcdosRbLMQwLg/LTwNVKIbmayqFLDp4FmmFkEMhbYA==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
     requiresBuild: true
