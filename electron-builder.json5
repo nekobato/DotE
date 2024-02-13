@@ -11,14 +11,13 @@
     category: "public.app-category.social-networking",
     icon: "dist/icons/mac/icon.icns",
     artifactName: "${productName}_${version}.${ext}",
-    target: ["dmg"],
-    publish: [
-      {
-        provider: "github",
-        owner: "nekobato",
-        repo: "hazy",
-      },
-    ],
+    entitlements: "build/entitlements.mac.plist",
+    entitlementsInherit: "build/entitlements.mac.plist",
+    target: ["default"],
+    notarize: {
+      teamId: "${APPLE_TEAM_ID}",
+    },
+    publish: ["github"],
   },
   // win: {
   //   target: [

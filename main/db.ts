@@ -24,7 +24,6 @@ export const storeDefaults = {
     maxPostCount: 1000,
     postStyle: "all",
     shortcuts: {},
-    shouldAppUpdate: true,
     misskey: {
       hideCw: false,
     },
@@ -99,7 +98,6 @@ const schema: Store.Schema<StoreSchema> = {
           toggleTimeline: { type: "string" },
         },
       },
-      shouldAppUpdate: { type: "boolean" },
       misskey: {
         type: "object",
         properties: {

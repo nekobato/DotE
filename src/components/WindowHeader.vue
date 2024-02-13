@@ -33,10 +33,6 @@ const exit = () => {
   }
 };
 
-const updateApp = () => {
-  ipcSend("update-app");
-};
-
 const haze = () => {
   ipcSend("set-hazy-mode", { mode: "haze" });
 };
@@ -75,9 +71,6 @@ const settings = () => {
     </button>
     <button class="nn-button type-ghost settings" @click="settings" v-if="props.windowType === 'main'">
       <Icon icon="mingcute:settings-3-line" class="nn-icon size-xsmall" />
-    </button>
-    <button class="nn-button type-ghost size-xsmall update" v-if="store.settings.shouldAppUpdate" @click="updateApp">
-      INSTALL UPDATE
     </button>
   </div>
 </template>
