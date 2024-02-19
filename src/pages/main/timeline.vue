@@ -78,10 +78,10 @@ timelineStore.$onAction((action) => {
         'is-adding': state.isAdding,
       }"
     >
-      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0" :items="ads" />
       <div class="hazy-post-list" v-if="timelineStore.current?.posts.length">
         <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" :key="post.id" />
       </div>
+      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0" :items="ads" />
       <ReadMore v-if="!isHazeMode" />
       <HazyLoading v-else />
     </div>

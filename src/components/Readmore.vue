@@ -10,10 +10,6 @@ const timelineStore = useTimelineStore();
 
 const loading = ref(false);
 
-const channel = computed(() => {
-  return timelineStore.current?.channel;
-});
-
 const posts = computed(() => {
   return timelineStore.current?.posts;
 });
@@ -23,13 +19,14 @@ const canReadmore = computed(() => {
 });
 
 const readmore = async () => {
-  if (!posts.value || !channel.value || posts.value.length === 0 || loading.value) {
+  if (!posts.value || !timelineStore.current?.channel || posts.value.length === 0 || loading.value) {
     return;
   }
 
   loading.value = true;
   const additionalNotes = await ipcInvoke("api", {
-    method: methodOfChannel[channel.value],
+    method: methodOfChannel[timelineStore.current?.channel],
+    channelId: timelineStore.current?.options.channelId,
     instanceUrl: timelineStore.currentInstance?.url,
     i: timelineStore.currentInstance?.id,
     limit: 20,
@@ -55,16 +52,17 @@ const readmore = async () => {
 .readmore-container {
   display: flex;
   justify-content: center;
-  margin: 16px 0;
+  margin: 4px 0 16px;
 }
 
 .readmore-button {
   display: inline-flex;
   align-items: center;
+  width: 240px;
   padding: 8px 16px;
+  color: var(--hazy-text-color);
   background-color: var(--hazy-background-color);
   border-radius: 8px;
-  box-shadow: var(--shadow);
   transition: background-color 0.2s;
 }
 </style>
