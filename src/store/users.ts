@@ -60,6 +60,46 @@ export const useUsersStore = defineStore("users", () => {
     store.initTimelines();
   };
 
+  const checkAndUpdateUser = async (user: User) => {
+    const instance = instanceStore.findInstance(user.instanceId);
+    if (!instance) {
+      store.$state.errors.push({
+        message: `${user.name}のインスタンスが見つかりませんでした`,
+      });
+      return;
+    }
+
+    if (instance.type === "misskey") {
+      const result: MisskeyEntities.User = await ipcInvoke("api", {
+        method: "misskey:getI",
+        instanceUrl: instance.url,
+        token: user.token,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${user.name}の認証失敗`,
+        });
+      });
+
+      if (result) {
+        await ipcInvoke("db:upsert-user", {
+          id: user.id,
+          name: result.username,
+          avatarUrl: result.avatarUrl,
+          token: user.token,
+          instanceId: instance.id,
+        });
+        await store.initUsers();
+      }
+    }
+  };
+
+  const checkAndUpdateUsers = async () => {
+    const users = store.$state.users;
+    for (const user of users) {
+      await checkAndUpdateUser(user);
+    }
+  };
+
   const postMisskeyAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: String }) => {
     const result: MisskeyEntities.User = await ipcInvoke("api", {
       method: "misskey:checkMiAuth",
@@ -80,5 +120,5 @@ export const useUsersStore = defineStore("users", () => {
     return instance;
   };
 
-  return { users, isEmpty, deleteUser, createUser, postMisskeyAuth, findInstance };
+  return { users, isEmpty, deleteUser, createUser, checkAndUpdateUsers, postMisskeyAuth, findInstance };
 });

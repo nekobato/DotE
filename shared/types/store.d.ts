@@ -1,3 +1,5 @@
+import { MisskeyEntities } from "misskey-js";
+
 export type InstanceStore = Instance & {
   misskey?: {
     emojis: MisskeyEntities.CustomEmoji[];
@@ -28,7 +30,7 @@ export type Timeline = {
 
 export type Instance = {
   id: string; // uuid
-  type: "misskey" | "mastodon";
+  type: "mastodon" | "misskey";
   name: string;
   url: string;
   iconUrl: string;

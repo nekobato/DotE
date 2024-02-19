@@ -13,6 +13,16 @@ export const misskeyCheckMiAuth = async ({ instanceUrl, sessionId }: { instanceU
   });
 };
 
+export const missekyGetI = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
+  return fetch(new URL(`/api/i`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({ i: token }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
 export const misskeyGetEmojis = async ({ instanceUrl }: { instanceUrl: string }) => {
   return fetch(new URL("/api/emojis", instanceUrl).toString(), {
     headers: baseHeader,
@@ -26,11 +36,13 @@ export const misskeyGetTimelineHome = async ({
   token,
   limit,
   sinceId,
+  untilId,
 }: {
   instanceUrl: string;
   token: string;
   limit: number;
   sinceId?: string;
+  untilId?: string;
 }) => {
   return fetch(new URL(`/api/notes/timeline`, instanceUrl).toString(), {
     method: "POST",
@@ -38,6 +50,7 @@ export const misskeyGetTimelineHome = async ({
     body: JSON.stringify({
       i: token,
       sinceId,
+      untilId,
       limit,
     }),
   }).then((res: Response) => {
@@ -49,10 +62,14 @@ export const misskeyGetTimelineLocal = async ({
   instanceUrl,
   token,
   sinceId,
+  untilId,
+  limit,
 }: {
   instanceUrl: string;
   token: string;
   sinceId?: string;
+  untilId?: string;
+  limit: number;
 }) => {
   return fetch(new URL(`/api/notes/local-timeline`, instanceUrl).toString(), {
     method: "POST",
@@ -60,6 +77,8 @@ export const misskeyGetTimelineLocal = async ({
     body: JSON.stringify({
       i: token,
       sinceId,
+      untilId,
+      limit,
     }),
   }).then((res: Response) => {
     return res.json();
@@ -70,10 +89,14 @@ export const misskeyGetTimelineGlobal = async ({
   instanceUrl,
   token,
   sinceId,
+  untilId,
+  limit,
 }: {
   instanceUrl: string;
   token: string;
   sinceId?: string;
+  untilId?: string;
+  limit: number;
 }) => {
   return fetch(new URL(`/api/notes/global-timeline`, instanceUrl).toString(), {
     method: "POST",
@@ -81,6 +104,8 @@ export const misskeyGetTimelineGlobal = async ({
     body: JSON.stringify({
       i: token,
       sinceId,
+      untilId,
+      limit,
     }),
   }).then((res: Response) => {
     return res.json();
@@ -92,11 +117,15 @@ export const misskeyGetTimelineChannel = async ({
   token,
   channelId,
   sinceId,
+  untilId,
+  limit,
 }: {
   instanceUrl: string;
   token: string;
   channelId: string;
+  limit: number;
   sinceId?: string;
+  untilId?: string;
 }) => {
   return fetch(new URL(`/api/channels/timeline`, instanceUrl).toString(), {
     method: "POST",
@@ -105,6 +134,8 @@ export const misskeyGetTimelineChannel = async ({
       i: token,
       channelId,
       sinceId,
+      untilId,
+      limit,
     }),
   }).then((res: Response) => {
     return res.json();

@@ -3,6 +3,8 @@ import HazyLoading from "@/components/common/HazyLoading.vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
 import WindowHeader from "@/components/WindowHeader.vue";
 import ErrorPost from "@/components/ErrorPost.vue";
+import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
+import ReadMore from "@/components/Readmore.vue";
 import { Icon } from "@iconify/vue";
 import { useTimelineStore } from "@/store/timeline";
 import { computed, nextTick, reactive, ref } from "vue";
@@ -17,8 +19,13 @@ const hazeOpacity = computed(() => {
   return (store.settings.hazyMode === "haze" ? store.settings.opacity || 0 : 100) / 100;
 });
 
+const isHazeMode = computed(() => {
+  return store.settings.hazyMode === "haze";
+});
+
 const state = reactive({
   isAdding: false,
+  isEmpty: false,
 });
 
 const onScroll = () => {
@@ -29,6 +36,10 @@ const canScrollToTop = computed(() => {
   return store.settings.hazyMode === "show" && scrollPosition.value > 0;
 });
 
+const ads = computed(() => {
+  return timelineStore.currentInstance?.misskey?.meta.ads || [];
+});
+
 const scrollToTop = () => {
   timelineContainer.value?.scrollTo({
     top: 0,
@@ -37,7 +48,7 @@ const scrollToTop = () => {
 };
 
 timelineStore.$onAction((action) => {
-  if (action.name === "addPost") {
+  if (action.name === "addNewPost") {
     nextTick(() => {
       if (store.$state.settings.hazyMode === "haze") {
         console.log(timelineContainer.value);
@@ -52,8 +63,8 @@ timelineStore.$onAction((action) => {
 </script>
 
 <template>
-  <div class="page-container" :class="{ haze: store.settings.hazyMode === 'haze' }" :style="{ opacity: hazeOpacity }">
-    <WindowHeader windowType="main" v-show="store.settings.hazyMode !== 'haze'" class="header" />
+  <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
+    <WindowHeader windowType="main" v-show="!isHazeMode" class="header" />
     <div class="hazy-timeline-container" v-if="store.errors.length">
       <div class="hazy-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
@@ -67,9 +78,11 @@ timelineStore.$onAction((action) => {
         'is-adding': state.isAdding,
       }"
     >
+      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0" :items="ads" />
       <div class="hazy-post-list" v-if="timelineStore.current?.posts.length">
         <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" :key="post.id" />
       </div>
+      <ReadMore v-if="!isHazeMode" />
       <HazyLoading v-else />
     </div>
     <div class="scroll-to-top" :class="{ visible: canScrollToTop }">

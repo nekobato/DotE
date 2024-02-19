@@ -30,4 +30,29 @@ export type MisskeyChannel = {
   usersCount: number;
 };
 
+export type MisskeyInstance = {
+  id: string;
+  type: "misskey";
+  name: string;
+  url: string;
+  iconUrl: string;
+  ads?: {
+    dayOfWeek: 0;
+    id: string;
+    imageUrl: string;
+    place: string;
+    ratio: number;
+    url: string;
+  };
+};
+
+export type MisskeyAd = {
+  dayOfWeek: 0;
+  id: string;
+  imageUrl: string;
+  place: string;
+  ratio: number;
+  url: string;
+};
+
 export { api as MisskeyApi, entities as MisskeyEntities };

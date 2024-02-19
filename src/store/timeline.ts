@@ -126,9 +126,14 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
-  const addPost = (post: MisskeyNote) => {
+  const addNewPost = (post: MisskeyNote) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
+  };
+
+  const addMorePosts = (posts: MisskeyNote[]) => {
+    if (!store.timelines[currentIndex.value]?.posts) return;
+    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts];
   };
 
   const addEmoji = async ({ postId, name }: { postId: string; name: string }) => {
@@ -241,7 +246,8 @@ export const useTimelineStore = defineStore("timeline", () => {
     fetchDiffPosts,
     updateTimeline,
     createTimeline,
-    addPost,
+    addNewPost,
+    addMorePosts,
     addEmoji,
     addReaction,
     createReaction,

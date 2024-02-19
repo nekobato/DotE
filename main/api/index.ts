@@ -1,5 +1,6 @@
 import {
   misskeyCheckMiAuth,
+  missekyGetI,
   misskeyCreateReaction,
   misskeyDeleteReaction,
   misskeyCreateNote,
@@ -16,6 +17,7 @@ import {
 
 export const apiRequest = {
   ["misskey:checkMiAuth"]: misskeyCheckMiAuth,
+  ["misskey:getI"]: missekyGetI,
   ["misskey:getEmojis"]: misskeyGetEmojis,
   ["misskey:getTimelineHome"]: misskeyGetTimelineHome,
   ["misskey:getTimelineLocal"]: misskeyGetTimelineLocal,

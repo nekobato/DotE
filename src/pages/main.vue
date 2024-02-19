@@ -19,7 +19,7 @@ const misskeyStream = useMisskeyStream({
     console.info("onChannel", event, data);
     switch (event) {
       case "note":
-        timelineStore.addPost(data.body);
+        timelineStore.addNewPost(data.body);
         break;
       default:
         console.info("unhandled note", data);

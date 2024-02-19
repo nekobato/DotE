@@ -114,7 +114,10 @@ onBeforeUnmount(() => {
       <button
         class="reaction"
         v-for="reaction in reactions"
-        :class="{ remote: reaction.isRemote, reacted: isMyReaction(reaction.name, props.post.myReaction) }"
+        :class="{
+          remote: reaction.isRemote,
+          reacted: isMyReaction(reaction.name, props.post.myReaction || props.post.renote?.myReaction),
+        }"
         @click="onClickReaction(props.post.id, reaction.name)"
         :title="reaction.name.replace(/:/g, '')"
       >
