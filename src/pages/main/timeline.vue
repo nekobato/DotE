@@ -9,6 +9,9 @@ import { Icon } from "@iconify/vue";
 import { useTimelineStore } from "@/store/timeline";
 import { computed, nextTick, reactive, ref } from "vue";
 import { useStore } from "@/store";
+import { ipcSend } from "@/utils/ipc";
+import type { MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
+import PostList from "@/components/PostList.vue";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -47,6 +50,37 @@ const scrollToTop = () => {
   });
 };
 
+const onReaction = (noteId: string, reaction: string) => {
+  ipcSend("main:reaction", {
+    postId: noteId,
+    reaction,
+  });
+};
+
+const openNewReaction = (noteId: string) => {
+  ipcSend("post:reaction", {
+    instanceUrl: timelineStore.currentInstance?.url,
+    token: timelineStore.currentUser?.token,
+    noteId: noteId,
+    emojis: timelineStore.currentInstance?.misskey?.emojis,
+  });
+};
+
+const refreshPost = (noteId: string) => {
+  timelineStore.updatePost({ postId: noteId });
+};
+
+const openPost = (noteId: string) => {
+  ipcSend("open-url", { url: new URL(`/notes/${noteId}`, timelineStore.currentInstance?.url).toString() });
+};
+
+const openUserPage = (user: MisskeyNoteType["user"]) => {
+  const instanceUrl = user.host || timelineStore.currentInstance?.url;
+  ipcSend("open-url", {
+    url: new URL(`/@${user.username}`, instanceUrl).toString(),
+  });
+};
+
 timelineStore.$onAction((action) => {
   if (action.name === "addNewPost") {
     nextTick(() => {
@@ -78,12 +112,27 @@ timelineStore.$onAction((action) => {
         'is-adding': state.isAdding,
       }"
     >
-      <div class="hazy-post-list" v-if="timelineStore.current?.posts.length">
-        <MisskeyNote class="post-item" v-for="post in timelineStore.current.posts" :post="post" :key="post.id" />
-      </div>
+      <PostList v-if="timelineStore.current?.posts.length">
+        <MisskeyNote
+          class="post-item"
+          v-for="post in timelineStore.current.posts"
+          :post="post"
+          :postStyle="store.settings.postStyle"
+          :emojis="timelineStore.currentInstance?.misskey?.emojis"
+          :currentInstanceUrl="timelineStore.currentInstance?.url"
+          :hideCw="store.settings.misskey.hideCw"
+          :lineStyle="store.settings.postStyle"
+          theme="default"
+          :key="post.id"
+          @reaction="onReaction"
+          @newReaction="openNewReaction"
+          @openPost="openPost"
+          @openUserPage="openUserPage"
+          @refreshPost="refreshPost"
+        />
+      </PostList>
       <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0" :items="ads" />
       <ReadMore v-if="!isHazeMode" />
-      <HazyLoading v-else />
     </div>
     <div class="scroll-to-top" :class="{ visible: canScrollToTop }">
       <button @click="scrollToTop" class="nn-button size-small">

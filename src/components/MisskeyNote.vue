@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
@@ -8,14 +7,35 @@ import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachment from "./PostAttachment.vue";
 
-const timelineStore = useTimelineStore();
-
 const props = defineProps({
   post: {
     type: Object as PropType<MisskeyNote>,
     required: true,
   },
+  emojis: {
+    type: Array as PropType<{ name: string; url: string }[]>,
+    default: null,
+  },
+  lineStyle: {
+    type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
+    required: true,
+  },
+  currentInstanceUrl: {
+    type: String as PropType<string>,
+    required: false,
+  },
+  hideCw: {
+    type: Boolean as PropType<boolean>,
+    default: false,
+    required: true,
+  },
+  theme: {
+    type: String as PropType<"default">,
+    required: true,
+  },
 });
+
+const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction"]);
 
 const postType = computed(() => {
   if (props.post.renote) {
@@ -28,6 +48,16 @@ const postType = computed(() => {
     return "reply";
   } else {
     return "note";
+  }
+});
+
+const renoteType = computed(() => {
+  if (props.post.renote) {
+    if (props.post.text) {
+      return "quoted";
+    } else {
+      return "renoted";
+    }
   }
 });
 
@@ -44,8 +74,9 @@ const reactions = computed(() => {
   const reactions = props.post.renote && !props.post.text ? props.post.renote.reactions : props.post.reactions;
   return Object.keys(reactions)
     .map((key) => {
+      if (!/^:/.test(key)) return { name: key, count: reactions[key] };
       const reactionName = key.replace(/:|@\./g, "");
-      const localEmoji = timelineStore.currentInstance?.misskey?.emojis.find((emoji) => emoji.name === reactionName);
+      const localEmoji = props.emojis.find((emoji) => emoji.name === reactionName);
       return {
         name: key,
         url:
@@ -61,27 +92,23 @@ const reactions = computed(() => {
 });
 
 const refreshPost = () => {
-  timelineStore.updatePost({ postId: props.post.id });
+  emit("refreshPost", props.post.id);
 };
 
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, timelineStore.currentInstance?.url).toString() });
+  emit("openPost", props.post.id);
+};
+
+const onOpenUserPage = (user: MisskeyNote["user"]) => {
+  emit("openUserPage", user);
 };
 
 const openReactionWindow = () => {
-  ipcSend("post:reaction", {
-    instanceUrl: timelineStore.currentInstance?.url,
-    token: timelineStore.currentUser?.token,
-    noteId: props.post.renote?.id,
-    emojis: timelineStore.currentInstance?.misskey?.emojis,
-  });
+  emit("newReaction", props.post.id);
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
-  ipcSend("main:reaction", {
-    postId,
-    reaction,
-  });
+  emit("reaction", { postId, reaction });
 };
 
 onMounted(() => {
@@ -98,14 +125,27 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="hazy-post" :class="[postType]">
+  <div class="hazy-post">
     <div class="post-data-group">
-      <div class="post-data">
-        <MisskeyNoteContent :note="props.post" :type="postType" />
-      </div>
-      <div class="renote-data" v-if="props.post.renote">
-        <MisskeyNoteContent :note="props.post.renote" type="renoted" />
-      </div>
+      <MisskeyNoteContent
+        :note="props.post"
+        :type="postType"
+        :lineStyle="props.lineStyle"
+        :currentInstanceUrl="props.currentInstanceUrl"
+        :hideCw="props.hideCw"
+        :emojis="props.emojis"
+        @openUserPage="onOpenUserPage"
+      />
+      <MisskeyNoteContent
+        v-if="props.post.renote"
+        :note="props.post.renote"
+        :type="renoteType"
+        :lineStyle="props.lineStyle"
+        :currentInstanceUrl="props.currentInstanceUrl"
+        :hideCw="props.hideCw"
+        :emojis="props.emojis"
+        @openUserPage="onOpenUserPage"
+      />
     </div>
     <div class="attachments" v-if="postAtttachments">
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
@@ -141,46 +181,24 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-.post-data,
-.renote-data {
+.hazy-post {
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: 100%;
+  margin: 0;
+  padding: 4px 8px;
+  background-color: transparent;
+
+  &.indent-1 {
+    padding-left: 24px;
+  }
 }
 
-.hazy-post.renote {
-  .post-data {
-    position: absolute;
-    .hazy-avatar {
-      width: 20px;
-      height: 20px;
-    }
-  }
-  .renote-data {
-    margin-top: 4px;
-    padding-left: 12px;
-    .username {
-      margin-left: -12px;
-    }
-  }
-}
-.hazy-post.quote {
-  .renote-data {
-    margin-top: 4px;
-    padding-left: 12px;
-  }
-}
 .attachments {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
   width: 100%;
   margin-top: 4px;
-}
-.hazy-text-container {
-  display: flex;
-  flex-direction: column;
 }
 .reactions {
   display: flex;
@@ -227,6 +245,53 @@ onBeforeUnmount(() => {
       font-size: 12px;
       line-height: 20px;
     }
+  }
+}
+
+.hazy-post-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0 auto;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  visibility: hidden;
+}
+
+.hazy-post:hover .hazy-post-actions {
+  visibility: visible;
+}
+
+.hazy-post-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 20px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  color: var(---hazy-color-white-t4);
+  font-size: var(--post-action--font-size);
+  line-height: var(--post-action--line-height);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  &:hover {
+    background: var(--hazy-color-white-t1);
+    filter: brightness(0.9);
+  }
+  &.active {
+    color: var(--post-action--active-color);
+  }
+  > .nn-icon {
+    width: 16px;
+    height: 16px;
+    color: var(--hazy-color-white);
   }
 }
 </style>

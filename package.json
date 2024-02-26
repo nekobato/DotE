@@ -14,7 +14,8 @@
     "prepublish": "pnpm build",
     "publish": "electron-builder --publish always -c",
     "build:icon": "electron-icon-builder --input=./assets/icons/app_icon.png --output=./public",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "storybook": "storybook dev"
   },
   "main": "./dist-electron/index.js",
   "dependencies": {
@@ -25,6 +26,8 @@
   },
   "devDependencies": {
     "@iconify/vue": "^4.1.1",
+    "@storybook/addon-essentials": "^7.6.16",
+    "@storybook/vue3-vite": "^7.6.16",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vueuse/core": "^10.7.2",
     "electron": "28.2.3",
@@ -38,6 +41,7 @@
     "postcss-html": "^1.6.0",
     "prettier": "^3.2.5",
     "sass": "^1.71.0",
+    "storybook": "^7.6.16",
     "stylelint": "^16.2.1",
     "stylelint-config-rational-order": "^0.1.2",
     "stylelint-config-recommended-scss": "^14.0.0",

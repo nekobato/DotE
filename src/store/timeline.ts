@@ -132,6 +132,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const addMorePosts = (posts: MisskeyNote[]) => {
+    console.log("addMorePosts", posts.length);
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts];
   };

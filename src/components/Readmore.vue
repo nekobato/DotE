@@ -28,7 +28,7 @@ const readmore = async () => {
     method: methodOfChannel[timelineStore.current?.channel],
     channelId: timelineStore.current?.options.channelId,
     instanceUrl: timelineStore.currentInstance?.url,
-    i: timelineStore.currentInstance?.id,
+    token: timelineStore.currentUser?.token,
     limit: 20,
     untilId: posts.value[posts.value.length - 1].id,
   });

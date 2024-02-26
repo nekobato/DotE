@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { useStore } from "@/store";
-import { useTimelineStore } from "@/store/timeline";
-import { ipcSend } from "@/utils/ipc";
 import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
+import { Icon } from "@iconify/vue";
 import type { MisskeyNote } from "@shared/types/misskey";
 import { computed, ref, type PropType } from "vue";
 import Mfm from "./misskey/Mfm.vue";
-
-const store = useStore();
-const timelineStore = useTimelineStore();
 
 const props = defineProps({
   note: {
@@ -16,14 +11,39 @@ const props = defineProps({
     required: true,
   },
   type: {
-    type: String as PropType<"note" | "reply" | "renote" | "renoted" | "quote">,
+    type: String as PropType<"note" | "reply" | "renote" | "renoted" | "quote" | "quoted" | undefined>,
     required: true,
+  },
+  lineStyle: {
+    type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
+    required: true,
+  },
+  currentInstanceUrl: {
+    type: String as PropType<string>,
+    required: false,
+  },
+  emojis: {
+    type: Array as PropType<{ name: string; url: string }[]>,
+    default: {},
+    required: true,
+  },
+  hideCw: {
+    type: Boolean as PropType<boolean>,
+    default: false,
+    required: true,
+  },
+  noParent: {
+    type: Boolean as PropType<boolean>,
+    default: false,
+    required: false,
   },
 });
 
+const emit = defineEmits(["openUserPage"]);
+
 const noteEmojis = computed(() => {
   const remoteEmojis = emojisObject2Array(props.note.reactionEmojis);
-  const localEmojis = timelineStore.currentInstance?.misskey?.emojis || [];
+  const localEmojis = props.emojis || [];
   return [...remoteEmojis, ...localEmojis];
 });
 
@@ -35,15 +55,20 @@ const renoteUsername = computed(() => {
   }
 });
 
+const host = computed(() => {
+  return props.note.user.host ? "https://" + props.note.user.host : props.currentInstanceUrl;
+});
+
+const isContentVisible = computed(() => {
+  return props.type !== "renote";
+});
+
 const openUserPage = (user: MisskeyNote["user"]) => {
-  const instanceUrl = user.host || timelineStore.currentInstance?.url;
-  ipcSend("open-url", {
-    url: new URL(`/@${user.username}`, instanceUrl).toString(),
-  });
+  emit("openUserPage", user);
 };
 
 const lineClass = computed(() => {
-  switch (store.settings.postStyle) {
+  switch (props.lineStyle) {
     case "all":
       return "line-all";
     case "line-1":
@@ -58,35 +83,31 @@ const lineClass = computed(() => {
 const canReadAll = ref(false);
 
 const isTextVisible = () => {
-  return !props.note?.cw || !store.settings.misskey.hideCw || canReadAll.value;
+  return !props.note?.cw || !props.hideCw || canReadAll.value;
 };
 </script>
 
 <template>
-  <div :class="[props.type]">
-    <div class="hazy-post-info">
-      <span
-        class="username"
-        v-html="renoteUsername"
-        @click="openUserPage(props.note.user)"
-        v-if="props.type !== 'renote'"
-      />
+  <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
+    <div class="hazy-post-info" v-if="isContentVisible">
+      <span class="username" v-html="renoteUsername" @click="openUserPage(props.note.user)" />
     </div>
     <div class="hazy-post-content">
+      <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
       <img
         class="hazy-avatar"
         :class="{ mini: props.type === 'renote' }"
-        :src="props.note.user.avatarUrl"
+        :src="props.note.user.avatarUrl || ''"
         alt=""
         @click="openUserPage(props.note.user)"
       />
-      <div class="text-container" :class="[lineClass]">
+      <div class="text-container" :class="[lineClass]" v-if="isContentVisible">
         <Mfm
           class="cw"
           :text="props.note?.cw || ''"
           :emojis="noteEmojis"
-          :host="timelineStore.currentInstance?.url"
-          :post-style="store.settings.postStyle"
+          :host="host"
+          :post-style="props.lineStyle"
           v-if="props.note?.cw"
         />
         <button class="nn-button size-xsmall read-all" v-if="props.note?.cw">続きを見る</button>
@@ -94,8 +115,8 @@ const isTextVisible = () => {
           class="text"
           :text="props.note?.text || ''"
           :emojis="noteEmojis"
-          :host="timelineStore.currentInstance?.url"
-          :post-style="store.settings.postStyle"
+          :host="host"
+          :post-style="props.lineStyle"
           v-show="isTextVisible"
         />
       </div>
@@ -103,7 +124,41 @@ const isTextVisible = () => {
   </div>
 </template>
 
+<style lang="scss">
+.username {
+  img.emoji {
+    width: var(--font-size-12);
+    height: var(--font-size-12);
+    margin-bottom: -2px;
+  }
+}
+</style>
+
 <style lang="scss" scoped>
+.note-content {
+  &.renote {
+    height: 0;
+  }
+  &.quoted:not(.no-parent) {
+    margin-top: 4px;
+    padding-top: 4px;
+    /* dashed boarder */
+    background-image: linear-gradient(
+      to right,
+      var(--hazy-color-white-t2),
+      var(--hazy-color-white-t2) 4px,
+      transparent 4px,
+      transparent 6px
+    );
+    background-repeat: repeat-x;
+    background-size: 8px 1px;
+  }
+}
+.post-type-mark {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+}
 .username {
   display: block;
   color: var(--hazy-color-white-t5);
@@ -119,7 +174,17 @@ const isTextVisible = () => {
 }
 
 .hazy-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  margin: 0 0 auto 0;
+  object-fit: cover;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
   &.mini {
+    position: relative;
+    top: 24px;
     width: 20px;
     height: 20px;
   }
@@ -137,7 +202,9 @@ const isTextVisible = () => {
     flex-shrink: 0;
   }
 }
-
+.hazy-post-info + .hazy-post-content {
+  margin-top: 2px;
+}
 .renote > .hazy-post-body > .hazy-avatar {
   width: 20px;
   height: 20px;
@@ -145,11 +212,11 @@ const isTextVisible = () => {
 
 .text-container {
   display: -webkit-box;
-  min-height: calc(var(--post-body--line-height) * 2);
+  min-height: calc(0.8rem * 2);
   overflow: hidden;
-  color: var(--post-body-color);
-  font-size: var(--post-body--font-size);
-  line-height: var(--post-body--line-height);
+  color: #efefef;
+  font-size: 0.6rem;
+  line-height: 0.8rem;
 }
 
 .line-all {

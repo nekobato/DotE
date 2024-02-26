@@ -2,6 +2,7 @@
 import * as mfm from "mfm-js";
 import { defineComponent, h, type PropType } from "vue";
 import type { Settings } from "@shared/types/store";
+import { Icon } from "@iconify/vue";
 
 export default defineComponent({
   name: "Mfm",
@@ -27,6 +28,32 @@ export default defineComponent({
       default: "default" as Settings["postStyle"],
     },
   },
+  methods: {
+    fnStyle(_: { name: string; args: any }) {
+      // switch (nodeProps.name) {
+      //   case "fg": {
+      //     return { color: "#" + nodeProps.args.color };
+      //   }
+      //   case "bg": {
+      //     return { backgroundColor: "#" + nodeProps.args.color };
+      //   }
+      //   case "font": {
+      //     const fonts = ["serif", "monospace", "cursive", "fantasy"];
+      //     return {
+      //       fontFamily: fonts.find((font) => {
+      //         return !!nodeProps.args[font];
+      //       }),
+      //     };
+      //   }
+      //   default:
+      //     break;
+      // }
+      return {};
+    },
+  },
+  components: {
+    Icon,
+  },
   render() {
     if (this.text == null || this.text === "") return null;
 
@@ -43,13 +70,13 @@ export default defineComponent({
           case "bold":
             return <strong>{structElement(node.children)}</strong>;
           case "blockCode":
-            return <pre class={`language-${node.props.lang}`}>{node.props.code}</pre>;
+            return <pre className={`language-${node.props.lang}`}>{node.props.code}</pre>;
           case "center":
-            return <div class="center">{structElement(node.children)}</div>;
+            return <div className="center">{structElement(node.children)}</div>;
           case "emojiCode":
             return (
               <img
-                class="emoji"
+                className="emoji"
                 src={this.emojis?.find((emoji) => emoji.name === node.props.name)?.url}
                 alt={node.props.name}
                 title={node.props.name}
@@ -57,10 +84,10 @@ export default defineComponent({
             );
           case "fn":
             return (
-              <span class="fn">
+              <span className="fn">
                 {node.children.length > 0 && (
-                  <span class={["mfm-fn", node.props.name]}>
-                    ({node.children.map((child) => structElement([child]))})
+                  <span className={`mfm-fn ${node.props.name}`} style={this.fnStyle(node.props)}>
+                    {node.children.map((child) => structElement([child]))}
                   </span>
                 )}
               </span>
@@ -68,8 +95,8 @@ export default defineComponent({
           case "hashtag":
             return (
               <a
-                href={new URL(`/tags/${encodeURIComponent(node.props.hashtag)}`, this.host).toString()}
-                class="hashtag"
+                href={this.host ? new URL(`/tags/${encodeURIComponent(node.props.hashtag)}`, this.host).toString() : ""}
+                className="hashtag"
               >
                 #{node.props.hashtag}
               </a>
@@ -85,12 +112,12 @@ export default defineComponent({
               </a>
             );
           case "mathBlock":
-            return <div class="math">{node.props.formula}</div>;
+            return <div className="math">{node.props.formula}</div>;
           case "mathInline":
-            return <span class="math">{node.props.formula}</span>;
+            return <span className="math">{node.props.formula}</span>;
           case "mention":
             return (
-              <a href={`https://${node.props.host}/@${node.props.username}`} class="mention">
+              <a href={`https://${node.props.host}/@${node.props.username}`} className="mention">
                 @{node.props.username}
               </a>
             );
@@ -102,9 +129,10 @@ export default defineComponent({
             return (
               <a
                 href={new URL(`/search?q=${encodeURIComponent(node.props.query)}`, this.host).toString()}
-                class="search"
+                className="search"
               >
                 {node.props.query}
+                <Icon className="icon" icon="mingcute:search-line" />
               </a>
             );
           case "small":
@@ -112,7 +140,7 @@ export default defineComponent({
           case "strike":
             return <del>{structElement(node.children)}</del>;
           case "unicodeEmoji":
-            return <span class="emoji">{node.props.emoji}</span>;
+            return <span className="emoji">{node.props.emoji}</span>;
           case "url":
             return (
               <a href={node.props.url} rel="noopener noreferrer">
@@ -125,7 +153,7 @@ export default defineComponent({
         }
       });
 
-    return h("p", { class: ["hazy-post-body", this.postStyle] }, structElement(ast));
+    return h("p", { class: ["hazy-post-body", this.postStyle, { plain: this.plain }] }, structElement(ast));
   },
 });
 </script>
@@ -149,6 +177,38 @@ export default defineComponent({
     height: var(--post-body--line-height);
     margin-bottom: -4px;
     line-height: var(--post-body--line-height);
+  }
+
+  .center {
+    text-align: center;
+  }
+
+  .search {
+    display: inline-flex;
+    align-items: center;
+    .icon {
+      width: 1em;
+      height: 1em;
+      margin-left: 2px;
+    }
+  }
+
+  .blur {
+    filter: blur(6px);
+  }
+}
+
+.mfm-fn:not(.plain) {
+  &.x2 {
+    font-size: 2em;
+  }
+
+  &.x3 {
+    font-size: 3em;
+  }
+
+  &.x4 {
+    font-size: 4em;
   }
 }
 </style>

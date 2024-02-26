@@ -29,7 +29,15 @@ import WindowHeader from "@/components/WindowHeader.vue";
   border-radius: 8px;
 }
 .hazy-scroller {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
   background: var(--hazy-color-black-t3);
   border: 1px solid var(--hazy-border-color);
+  border-radius: 8px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 </style>
