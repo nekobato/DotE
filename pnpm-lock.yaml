@@ -47,8 +47,8 @@ devDependencies:
     specifier: ^2024.2.0
     version: 2024.2.0
   nanoid:
-    specifier: ^5.0.5
-    version: 5.0.5
+    specifier: ^5.0.6
+    version: 5.0.6
   pinia:
     specifier: ^2.1.7
     version: 2.1.7(typescript@5.3.3)(vue@3.4.15)
@@ -84,7 +84,7 @@ devDependencies:
     version: 5.0.12(sass@1.71.0)
   vite-plugin-electron:
     specifier: ^0.28.2
-    version: 0.28.2(electron@28.2.2)(vite-plugin-electron-renderer@0.14.5)
+    version: 0.28.2(electron@28.2.3)(vite-plugin-electron-renderer@0.14.5)
   vite-plugin-electron-renderer:
     specifier: ^0.14.5
     version: 0.14.5
@@ -5083,8 +5083,8 @@ packages:
     hasBin: true
     dev: true
 
-  /nanoid@5.0.5:
-    resolution: {integrity: sha512-/Veqm+QKsyMY3kqi4faWplnY1u+VuKO3dD2binyPIybP31DRO29bPF+1mszgLnrR2KqSLceFLBNw0zmvDzN1QQ==}
+  /nanoid@5.0.6:
+    resolution: {integrity: sha512-rRq0eMHoGZxlvaFOUdK1Ev83Bd1IgzzR+WJ3IbDJ7QOSdAxYjlurSPqFs9s4lJg29RT6nPwizFtJhQS6V5xgiA==}
     engines: {node: ^18 || >=20}
     hasBin: true
     dev: true
@@ -7315,7 +7315,7 @@ packages:
     resolution: {integrity: sha512-EQ7ORuPp8vFPCqfuGnVo7d36fXS0IFH4/RUlKb1drseix3TQEPcgwEuFADdXBxRgqMp70njz/1m0kdf5lEsm8w==}
     dev: true
 
-  /vite-plugin-electron@0.28.2(electron@28.2.2)(vite-plugin-electron-renderer@0.14.5):
+  /vite-plugin-electron@0.28.2(electron@28.2.3)(vite-plugin-electron-renderer@0.14.5):
     resolution: {integrity: sha512-RSYvChUSIMN7L4yxW5hqtF8VutJWLRPukxrSWtefEATCZ/PGAf+9l8VQ84UTIk/gbYJghRMOd5139Byhx5pfIw==}
     peerDependencies:
       electron: ^28.0.0
@@ -7329,7 +7329,7 @@ packages:
       vite-plugin-electron-renderer:
         optional: true
     dependencies:
-      electron: 28.2.2
+      electron: 28.2.3
       vite-plugin-electron-renderer: 0.14.5
     dev: true
 
