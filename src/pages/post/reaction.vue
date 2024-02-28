@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { useStorage } from "@vueuse/core";
 import type { MisskeyEntities } from "@shared/types/misskey";
-import { PropType, computed, onMounted, ref, watch } from "vue";
+import { PropType, computed, ref, watch } from "vue";
 import { ipcSend } from "@/utils/ipc";
 
 type PageProps = {
   instanceUrl: string;
   token: string;
   noteId: string;
-  emojis: MisskeyEntities.CustomEmoji[];
+  emojis: MisskeyEntities.EmojiSimple[];
 };
 
-const histories = useStorage<MisskeyEntities.CustomEmoji[]>("reaction-histories", []);
+const histories = useStorage<MisskeyEntities.EmojiSimple[]>("reaction-histories", []);
 
 const search = ref("");
 const searchInput = ref<HTMLInputElement | null>(null);
@@ -28,7 +28,7 @@ const categoryFilter = ref<string[]>([]);
 const categories = computed(() => {
   const categories = new Set<string>();
   for (const emoji of props.data.emojis || []) {
-    categories.add(emoji.category);
+    categories.add(emoji.category || "");
   }
   return Array.from(categories);
 });
@@ -38,7 +38,7 @@ const filteredEmojis = computed(() => {
     props.data.emojis
       ?.filter((emoji) => {
         if (categoryFilter.value.length === 0) return true;
-        return categoryFilter.value.includes(emoji.category);
+        return categoryFilter.value.includes(emoji.category || "");
       })
       // from search
       .filter((emoji) => {
@@ -56,7 +56,7 @@ const selectCategory = (category: string) => {
   }
 };
 
-const selectEmoji = async (emoji: MisskeyEntities.CustomEmoji) => {
+const selectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
   ipcSend("main:reaction", {
     postId: props.data.noteId,
     reaction: `:${emoji.name}@.:`,

@@ -191,6 +191,10 @@ onBeforeUnmount(() => {
   &.indent-1 {
     padding-left: 24px;
   }
+
+  & + .hazy-post {
+    border-top: 1px solid var(--hazy-color-white-t1);
+  }
 }
 
 .attachments {

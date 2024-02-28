@@ -50,9 +50,9 @@ const scrollToTop = () => {
   });
 };
 
-const onReaction = (noteId: string, reaction: string) => {
+const onReaction = ({ postId, reaction }: { postId: string; reaction: string }) => {
   ipcSend("main:reaction", {
-    postId: noteId,
+    postId: postId,
     reaction,
   });
 };

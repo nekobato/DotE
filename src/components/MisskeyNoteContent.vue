@@ -110,7 +110,7 @@ const isTextVisible = () => {
           :post-style="props.lineStyle"
           v-if="props.note?.cw"
         />
-        <button class="nn-button size-xsmall read-all" v-if="props.note?.cw">続きを見る</button>
+        <button class="nn-button size-xsmall read-all" v-if="props.note?.cw && props.hideCw">続きを見る</button>
         <Mfm
           class="text"
           :text="props.note?.text || ''"
@@ -211,7 +211,6 @@ const isTextVisible = () => {
 }
 
 .text-container {
-  display: -webkit-box;
   min-height: calc(0.8rem * 2);
   overflow: hidden;
   color: #efefef;
@@ -220,23 +219,37 @@ const isTextVisible = () => {
 }
 
 .line-all {
-  -webkit-line-clamp: unset;
-  -webkit-box-orient: unset;
+  display: block;
+  .cw,
+  .text {
+    display: block;
+  }
 }
 .line-1 {
+  display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   .cw,
   .text {
-    white-space: nowrap;
+    display: inline;
   }
 }
 .line-2 {
+  display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  .cw,
+  .text {
+    display: inline;
+  }
 }
 .line-3 {
+  display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
+  .cw,
+  .text {
+    display: inline;
+  }
 }
 </style>
