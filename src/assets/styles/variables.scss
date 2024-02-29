@@ -14,7 +14,7 @@
   --font-size-32: 1.6rem;
 
   --color-forground: #252931;
-  --color-background: #282C34;
+  --color-background: #252525;
   --color-gutter: #1D2025;
   --color-guide: #CCCCCC;
   --color-accent: #528BFF;
@@ -58,6 +58,6 @@
   --hazy-color-black-t5: rgba(0, 0, 0, 0.8);
 
   /* Tokens */
-  --hazy-background-color: var(--hazy-color-black-t5);
+  --hazy-background-color: var(--color-background);
   --hazy-border-color: var(--hazy-color-white-t1);
 }

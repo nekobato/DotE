@@ -2,7 +2,6 @@
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import type { Timeline } from "@shared/types/store";
-import SectionTitle from "./SectionTitle.vue";
 import TimelineForm from "./TimelineForm.vue";
 
 const store = useStore();
@@ -21,7 +20,7 @@ const onUpdateTimeline = async (timeline: Timeline) => {
 
 <template>
   <div class="account-settings hazy-post-list" v-if="store.$state.users.length">
-    <SectionTitle title="タイムライン" />
+    <h2 class="hazy-field-group-title">タイムライン</h2>
     <div v-for="timeline in store.timelines" :key="timeline.id">
       <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
     </div>
@@ -31,6 +30,5 @@ const onUpdateTimeline = async (timeline: Timeline) => {
 <style lang="scss" scoped>
 .account-settings {
   width: 100%;
-  margin-top: 16px;
 }
 </style>

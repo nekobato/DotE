@@ -3,8 +3,9 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
-import SectionTitle from "./SectionTitle.vue";
 import HazySelect from "../common/HazySelect.vue";
+import { ElSlider, ElSwitch } from "element-plus";
+import { watch } from "vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
@@ -13,9 +14,12 @@ const settingsStore = useSettingsStore();
 //   toggleTimeline: store.settings?.shortcuts.toggleTimeline || "",
 // });
 
-const onChangeOpacity = async (e: Event) => {
-  await settingsStore.setOpacity(Number((e.target as HTMLInputElement)?.value));
-};
+watch(
+  () => store.settings?.opacity,
+  async () => {
+    await settingsStore.setOpacity(store.settings?.opacity);
+  },
+);
 
 const onChangeMaxPostCount = async (e: Event) => {
   await settingsStore.setMaxPostCount(Number((e.target as HTMLInputElement)?.value));
@@ -66,39 +70,24 @@ const onChangePostStyle = (e: InputEvent) => {
 //   }
 // };
 
-const onChangeHideCw = async (e: Event) => {
-  await settingsStore.setMisskeyHideCw(!(e.target as HTMLInputElement)?.checked);
+const onChangeHideCw = async (value: string | number | boolean) => {
+  await settingsStore.setMisskeyHideCw(!value);
 };
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list" v-if="store.settings">
-    <SectionTitle title="設定" />
-    <div class="hazy-post indent-1">
+  <div class="account-settings" v-if="store.settings">
+    <h2 class="hazy-field-group-title">設定</h2>
+    <div class="hazy-field-row indent-1 wrap">
       <div class="content">
         <span class="title"><Icon icon="mingcute:ghost-line" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
-      <div class="form-actions">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          class="nn-range"
-          :value="store.settings.opacity"
-          @input="onChangeOpacity"
-        />
-        <input
-          type="number"
-          min="0"
-          max="100"
-          class="nn-text-field"
-          :value="store.settings.opacity"
-          @change="onChangeOpacity"
-        />
+      <div class="actions">
+        <ElSlider v-model="store.settings.opacity" :min="0" :max="100" show-input size="small" />
       </div>
     </div>
 
-    <div class="hazy-post indent-1">
+    <div class="hazy-field-row indent-1">
       <div class="content">
         <span class="title">タイムラインの最大表示数</span>
       </div>
@@ -114,7 +103,7 @@ const onChangeHideCw = async (e: Event) => {
       </div>
     </div>
 
-    <div class="hazy-post indent-1">
+    <div class="hazy-field-row indent-1">
       <div class="content">
         <span class="title">ノートの表示スタイル</span>
       </div>
@@ -129,7 +118,7 @@ const onChangeHideCw = async (e: Event) => {
     </div>
 
     <!-- <SectionTitle title="グローバルショートカットキー" />
-    <div class="hazy-post indent-1">
+    <div class="hazy-field-row indent-1">
       <div class="content">
         <span class="title">タイムライン表示/非表示切り替え</span>
       </div>
@@ -144,14 +133,14 @@ const onChangeHideCw = async (e: Event) => {
         />
       </div>
     </div> -->
-    <SectionTitle title="Misskey" />
-    <div class="hazy-post indent-1">
+    <h2 class="hazy-field-group-title">Misskey</h2>
+    <div class="hazy-field-row indent-1">
       <div class="content">
         <span class="title">隠された文字をデフォルトで表示する</span>
       </div>
       <div class="form-actions">
         <label class="nn-checkbox">
-          <input type="checkbox" :value="!store.settings.misskey?.hideCw" @change="onChangeHideCw" />
+          <ElSwitch :value="!store.settings.misskey?.hideCw" @change="onChangeHideCw" />
         </label>
       </div>
     </div>
@@ -161,7 +150,6 @@ const onChangeHideCw = async (e: Event) => {
 <style lang="scss" scoped>
 .account-settings {
   width: 100%;
-  margin-top: 16px;
 }
 
 .content {
@@ -178,7 +166,7 @@ const onChangeHideCw = async (e: Event) => {
   }
 }
 
-.hazy-post {
+.hazy-field-row {
   display: flex;
   border: none;
 }

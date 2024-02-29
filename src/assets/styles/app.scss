@@ -26,3 +26,51 @@ input {
 .hazy-unvisible {
   visibility: hidden;
 }
+
+.hazy-field-group-title {
+  display: block;
+  margin-top: 8px;
+  padding: 8px 16px 4px;
+  color: #bababa;
+  font-weight: bold;
+  font-size: 0.8rem;
+  border-top: 1px solid var(--hazy-border-color);
+
+  &.no-border {
+    margin-top: 0;
+    border-top: none;
+  }
+}
+
+.hazy-field-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 4px 16px;
+
+  &.indent-1 {
+    padding-left: 32px;
+  }
+
+  &.indent-2 {
+    padding-left: 48px;
+  }
+
+  &.wrap {
+    flex-wrap: wrap;
+
+    .actions {
+      width: 100%;
+    }
+  }
+
+  .actions {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: flex-end;
+    margin: auto 0 auto auto;
+  }
+}

@@ -1,31 +1,15 @@
 <script setup lang="ts">
-import SectionTitle from "./SectionTitle.vue";
-import HazyButton from "@/components/common/HazyButton.vue";
 import { information } from "@/store/information";
-import { ipcSend } from "@/utils/ipc";
-import { useRouter } from "vue-router";
-
-const router = useRouter();
-
-const gotoTutorial = () => {
-  router.push("/main/tutorial");
-  ipcSend("set-hazy-mode", { mode: "tutorial" });
-};
 </script>
 
 <template>
   <div class="information hazy-post-list">
-    <SectionTitle title="その他" />
-    <div class="hazy-post indent-1">
+    <h2 class="hazy-field-group-title">その他</h2>
+
+    <div class="hazy-field-row indent-1">
       <div class="content">バージョン</div>
       <div class="form-actions">
         <span>{{ information.version }}</span>
-      </div>
-    </div>
-    <div class="hazy-post indent-1">
-      <div class="content">チュートリアル</div>
-      <div class="form-actions">
-        <HazyButton class="size-small" @click="gotoTutorial">チュートリアルを表示</HazyButton>
       </div>
     </div>
   </div>
@@ -34,7 +18,6 @@ const gotoTutorial = () => {
 <style lang="scss" scoped>
 .information {
   width: 100%;
-  margin-top: 16px;
 }
 
 .content {

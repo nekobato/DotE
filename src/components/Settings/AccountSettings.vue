@@ -7,7 +7,7 @@ import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
-import SectionTitle from "./SectionTitle.vue";
+import { ElAvatar } from "element-plus";
 
 const store = useStore();
 const usersStore = useUsersStore();
@@ -93,21 +93,16 @@ const resetStatues = () => {
 
 <template>
   <div class="account-settings hazy-post-list">
-    <SectionTitle title="アカウント" />
-    <div class="hazy-post account indent-1">
-      <img src="/images/logo/misskey.png" class="hazy-avatar" />
-      <div class="content">
-        <span class="nickname">Misskey</span>
-      </div>
-    </div>
+    <h2 class="hazy-field-group-title no-border">アカウント</h2>
     <div class="accounts-container" v-for="user in store.users" :key="user.id">
-      <div class="hazy-post account indent-1">
-        <img :src="user.avatarUrl || ''" class="hazy-avatar" />
+      <div class="hazy-field-row">
+        <ElAvatar shape="square" :size="40" src="/images/logo/misskey.png" class="avatar" />
+        <ElAvatar :src="user.avatarUrl || ''" class="avatar" />
         <div class="content">
           <span class="nickname">{{ user.name }}</span>
           <span class="instance">@{{ usersStore.findInstance(user.instanceId)?.url.replace("https://", "") }}</span>
         </div>
-        <div class="form-actions">
+        <div class="actions">
           <button
             class="nn-button size-small action"
             @click="startDeleteAccount(user.id)"
@@ -120,11 +115,11 @@ const resetStatues = () => {
           </button>
         </div>
       </div>
-      <div class="hazy-post account as-thread indent-1" v-if="state.actions.delete.id === user.id">
+      <div class="hazy-field-row as-thread indent-1" v-if="state.actions.delete.id === user.id">
         <div class="content">
           <span class="nickname">確認：削除しますか？</span>
         </div>
-        <div class="form-actions">
+        <div class="actions">
           <button class="nn-button size-small type-warning action" @click="confirmDeleteAccount()">
             <Icon icon="ion:checkmark-done" class="nn-icon" />
           </button>
@@ -132,17 +127,15 @@ const resetStatues = () => {
       </div>
     </div>
     <!-- new accounts -->
-    <div class="hazy-post account indent-1">
-      <div class="content">
-        <span>アカウント追加</span>
-      </div>
-      <div class="form-actions">
+    <div class="hazy-field-row">
+      <div class="actions">
         <button
           class="nn-button size-small action"
           v-if="state.actions.newAccount.misskey.progress === 'default'"
           @click="startAuth('misskey')"
         >
           <Icon icon="ion:plus" class="nn-icon" />
+          アカウント追加
         </button>
         <button
           class="nn-button size-small action"
@@ -153,7 +146,10 @@ const resetStatues = () => {
         </button>
       </div>
     </div>
-    <div class="hazy-post as-thread indent-1" v-if="state.actions.newAccount.misskey.progress === 'step1:instance'">
+    <div
+      class="hazy-field-row as-thread indent-1"
+      v-if="state.actions.newAccount.misskey.progress === 'step1:instance'"
+    >
       <div class="content">
         <div class="nn-form-item">
           <label class="nn-label">インスタンスURL</label>
@@ -165,18 +161,15 @@ const resetStatues = () => {
           />
         </div>
       </div>
-      <div class="form-actions">
+      <div class="actions">
         <button class="nn-button size-small action" @click="openMisskeyAuthLink">
           <Icon icon="ion:open" class="nn-icon size-small" />
         </button>
       </div>
     </div>
-    <div
-      class="hazy-post account as-thread indent-1"
-      v-if="state.actions.newAccount.misskey.progress === 'step2:confirm'"
-    >
+    <div class="hazy-field-row as-thread indent-1" v-if="state.actions.newAccount.misskey.progress === 'step2:confirm'">
       <div class="content">
-        <span>認証した？</span>
+        <span>認証できた？</span>
       </div>
       <div class="form-actions">
         <button class="nn-button size-small action" @click="startAuth('misskey')">戻る</button>
@@ -189,6 +182,9 @@ const resetStatues = () => {
 <style lang="scss" scoped>
 .account-settings {
   width: 100%;
+}
+.avatar {
+  background-color: #fff;
 }
 .account {
   display: flex;
@@ -208,9 +204,5 @@ const resetStatues = () => {
   &:hover {
     background: rgba(255, 255, 255, 0.4);
   }
-}
-.hazy-post {
-  display: flex;
-  border: none;
 }
 </style>

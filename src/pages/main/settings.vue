@@ -34,7 +34,7 @@ import WindowHeader from "@/components/WindowHeader.vue";
   width: 100%;
   height: 100%;
   overflow: auto;
-  background: var(--hazy-color-black-t3);
+  background: var(--color-background);
   border: 1px solid var(--hazy-border-color);
   border-radius: 8px;
   overscroll-behavior: contain;

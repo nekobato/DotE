@@ -57,6 +57,7 @@ const streamOptions: {
 ];
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
+const searchQuery = ref(props.timeline.options?.query ?? "");
 const misskeyChannelOptions = computed(() =>
   followedMisskeyChannels.value?.length > 0
     ? followedMisskeyChannels.value.map((channel) => ({
@@ -106,6 +107,17 @@ const onChangeChannel = async ({ target }: InputEvent) => {
   });
 };
 
+const onChangeSearchQuery = async (e: Event) => {
+  const query = (e.target as HTMLInputElement).value;
+
+  emit("updateTimeline", {
+    ...props.timeline,
+    options: {
+      query,
+    },
+  });
+};
+
 watch(
   () => props.timeline.channel,
   async (channel) => {
@@ -124,61 +136,59 @@ onMounted(async () => {
 
 <template>
   <div class="accounts-container">
-    <div class="hazy-post account indent-1">
+    <div class="hazy-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:user-1-line" class="nn-icon size-small" />
         <span class="label">アカウント</span>
       </div>
-      <div class="attachments form-actions">
+      <div class="actions">
         <HazySelect
           name="user"
           :options="accountOptions"
           :value="props.timeline.userId"
           @change="onChangeUser"
-          placeholder="--"
           class="select"
         />
       </div>
     </div>
-    <div class="hazy-post account indent-1">
+    <div class="hazy-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:list-check-3-line" class="nn-icon size-small" />
         <span class="label">タイムライン</span>
       </div>
-      <div class="attachments form-actions">
+      <div class="actions">
         <HazySelect
           name="channel"
           :options="streamOptions"
           :value="props.timeline.channel"
           @change="onChangeStream"
-          placeholder="--"
           class="select"
         />
       </div>
     </div>
-    <div class="hazy-post account indent-2" v-if="props.timeline.channel === 'misskey:channel'">
+    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">チャンネル</span>
       </div>
-      <div class="attachments form-actions">
+      <div class="actions">
         <HazySelect
           v-if="misskeyChannelOptions.length"
           name="channel"
           :options="misskeyChannelOptions"
           :value="props.timeline.options?.channelId"
           @change="onChangeChannel"
-          placeholder="--"
           class="select"
         />
       </div>
     </div>
-    <div class="hazy-post account indent-2" v-if="props.timeline.channel === 'misskey:search'">
+    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
       <div class="content">
+        <Icon icon="mingcute:search-line" class="nn-icon size-small" />
         <span class="label">検索</span>
       </div>
-      <div class="attachments form-actions">
-        <input class="nn-text-field" type="search" />
+      <div class="actions">
+        <input class="nn-text-field" type="search" :value="searchQuery" @change="onChangeSearchQuery" />
       </div>
     </div>
   </div>
@@ -191,13 +201,8 @@ onMounted(async () => {
   gap: 4px;
   width: 100%;
 }
-.account {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
 .content {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   color: #fff;
   font-size: var(--font-size-14);
@@ -209,31 +214,5 @@ onMounted(async () => {
   .nn-icon + .label {
     margin-left: 4px;
   }
-}
-.action {
-  > svg {
-    width: 16px;
-    height: 16px;
-  }
-  &:hover {
-    background: rgba(255, 255, 255, 0.4);
-  }
-}
-.button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  > button {
-    flex: 0 0 auto;
-  }
-}
-.form-actions {
-  width: 200px;
-  .select {
-    width: 100%;
-  }
-}
-.hazy-post {
-  border: none;
 }
 </style>
