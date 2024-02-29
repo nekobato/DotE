@@ -11,8 +11,7 @@
     "dev": "vite",
     "build": "vue-tsc && vite build && electron-builder",
     "preview": "vite preview",
-    "prepublish": "pnpm build",
-    "publish": "electron-builder --publish always -c",
+    "publish": "pnpm build && electron-builder --publish always -c",
     "build:icon": "electron-icon-builder --input=./assets/icons/app_icon.png --output=./public",
     "typecheck": "tsc",
     "storybook": "storybook dev"
