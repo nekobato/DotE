@@ -60,8 +60,6 @@ export default defineComponent({
     const ast = (this.plain ? mfm.parseSimple : mfm.parse)(this.text);
     // const enableAnimation = true; // TODO: settings
 
-    console.log(this.text, ast);
-
     const structElement = (ast: mfm.MfmNode[]) =>
       ast.map((node) => {
         switch (node.type) {

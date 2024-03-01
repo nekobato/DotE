@@ -26,6 +26,7 @@ export const storeDefaults = {
     shortcuts: {},
     misskey: {
       hideCw: false,
+      showReactions: true,
     },
   } as Settings,
 };
@@ -102,6 +103,7 @@ const schema: Store.Schema<StoreSchema> = {
         type: "object",
         properties: {
           hideCw: { type: "boolean" },
+          showReactions: { type: "boolean" },
         },
       },
     },
@@ -325,6 +327,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.postStyle", value);
     case "misskey.hideCw":
       return store.set("settings.misskey.hideCw", value);
+    case "misskey.showReactions":
+      return store.set("settings.misskey.showReactions", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }

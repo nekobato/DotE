@@ -121,6 +121,7 @@ timelineStore.$onAction((action) => {
           :emojis="timelineStore.currentInstance?.misskey?.emojis"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           :hideCw="store.settings.misskey.hideCw"
+          :showReactions="store.settings.misskey.showReactions"
           :lineStyle="store.settings.postStyle"
           theme="default"
           :key="post.id"

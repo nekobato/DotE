@@ -36,5 +36,18 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "misskey.hideCw", value: value });
   };
 
-  return { setOpacity, setHazyMode, setMaxPostCount, setPostStyle, setShortcutKey, setMisskeyHideCw };
+  const setMisskeyShowReactions = async (value: boolean) => {
+    store.$state.settings.misskey.showReactions = value;
+    return await ipcInvoke("settings:set", { key: "misskey.showReactions", value: value });
+  };
+
+  return {
+    setOpacity,
+    setHazyMode,
+    setMaxPostCount,
+    setPostStyle,
+    setShortcutKey,
+    setMisskeyHideCw,
+    setMisskeyShowReactions,
+  };
 });

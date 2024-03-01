@@ -73,6 +73,10 @@ const onChangePostStyle = (e: InputEvent) => {
 const onChangeHideCw = async (value: string | number | boolean) => {
   await settingsStore.setMisskeyHideCw(!value);
 };
+
+const onChangeShowReaction = async (value: string | number | boolean) => {
+  await settingsStore.setMisskeyShowReactions(!!value);
+};
 </script>
 
 <template>
@@ -140,7 +144,17 @@ const onChangeHideCw = async (value: string | number | boolean) => {
       </div>
       <div class="form-actions">
         <label class="nn-checkbox">
-          <ElSwitch :value="!store.settings.misskey?.hideCw" @change="onChangeHideCw" />
+          <ElSwitch :model-value="!store.settings.misskey?.hideCw" @change="onChangeHideCw" />
+        </label>
+      </div>
+    </div>
+    <div class="hazy-field-row indent-1">
+      <div class="content">
+        <span class="title">リアクションを表示する</span>
+      </div>
+      <div class="form-actions">
+        <label class="nn-checkbox">
+          <ElSwitch :model-value="store.settings.misskey?.showReactions" @change="onChangeShowReaction" />
         </label>
       </div>
     </div>

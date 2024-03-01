@@ -14,8 +14,3 @@ contextBridge.exposeInMainWorld("ipc", {
     ipcRenderer.on(event, callback);
   },
 });
-
-contextBridge.exposeInMainWorld("openUrl", (e: Event, url: string) => {
-  e.preventDefault();
-  ipcRenderer.send("open-url", { data: url });
-});

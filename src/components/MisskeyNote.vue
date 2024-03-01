@@ -29,6 +29,10 @@ const props = defineProps({
     default: false,
     required: true,
   },
+  showReactions: {
+    type: Boolean as PropType<boolean>,
+    default: true,
+  },
   theme: {
     type: String as PropType<"default">,
     required: true,
@@ -150,7 +154,7 @@ onBeforeUnmount(() => {
     <div class="attachments" v-if="postAtttachments">
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
     </div>
-    <div class="reactions">
+    <div class="reactions" v-if="props.showReactions">
       <button
         class="reaction"
         v-for="reaction in reactions"

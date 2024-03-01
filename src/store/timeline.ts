@@ -26,26 +26,23 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const fetchInitialPosts = async () => {
-    if (current.value && currentUser.value && currentInstance.value) {
-      setPosts([]);
-
-      const data = await ipcInvoke("api", {
-        method: methodOfChannel[current.value.channel],
-        instanceUrl: currentInstance.value?.url,
-        channelId: current?.value.options?.channelId, // option
-        token: currentUser.value.token,
-        limit: 40,
-      }).catch(() => {
-        store.$state.errors.push({
-          message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
-        });
-      });
-      console.info("Notes", data);
-      // misskeyなら という条件分岐が必要
-      setPosts(data);
-    } else {
+    if (!current.value || !currentUser.value || !currentInstance.value) {
       throw new Error("user not found");
     }
+
+    const data = await ipcInvoke("api", {
+      method: methodOfChannel[current.value.channel],
+      instanceUrl: currentInstance.value?.url,
+      channelId: current?.value.options?.channelId, // option
+      token: currentUser.value.token,
+      limit: 40,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
+      });
+    });
+    // misskeyなら という条件分岐が必要
+    setPosts(data);
   };
 
   const fetchDiffPosts = async () => {
@@ -62,7 +59,6 @@ export const useTimelineStore = defineStore("timeline", () => {
           message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
         });
       });
-      console.info("Notes", data);
       setPosts([...data, ...store.timelines[currentIndex.value]?.posts]);
     } else {
       throw new Error("user not found");

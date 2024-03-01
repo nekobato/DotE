@@ -58,5 +58,6 @@ export type Settings = {
   };
   misskey: {
     hideCw: boolean;
+    showReactions: boolean;
   };
 };

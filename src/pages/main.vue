@@ -4,10 +4,11 @@ import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/websocket";
-import { nextTick, onBeforeMount, onBeforeUnmount } from "vue";
+import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
 import { createReaction, deleteReaction } from "@/utils/misskey";
 import { getHazyRoute } from "@/utils/hazyRoute";
 import { RouterView, useRouter } from "vue-router";
+import { watchDeep } from "@vueuse/core";
 
 const router = useRouter();
 const store = useStore();
@@ -84,35 +85,38 @@ window.ipc?.on("stream:unsub-note", (_, data: { postId: string }) => {
 window.ipc?.on("resume-timeline", () => {});
 
 const initStream = () => {
-  if (timelineStore.current?.channel === "misskey:channel" && !timelineStore.current?.options?.channelId) {
+  if (!timelineStore.currentInstance || !timelineStore.current || !timelineStore.currentUser) return;
+
+  if (timelineStore.current.channel === "misskey:channel" && !timelineStore.current.options?.channelId) {
     store.$state.errors.push({
       message: `チャンネルの指定がありません。設定でやっていってください`,
     });
     return;
   }
 
-  if (timelineStore.currentInstance && timelineStore.current && timelineStore.currentUser) {
-    misskeyStream.disconnect();
-    misskeyStream.connect({
-      host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-      channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
-      token: timelineStore.currentUser.token,
-      channelId: timelineStore.current.options?.channelId,
-    });
-  }
+  misskeyStream.disconnect();
+  misskeyStream.connect({
+    host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+    channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
+    token: timelineStore.currentUser.token,
+    channelId: timelineStore.current.options?.channelId,
+  });
 
   nextTick(() => {
     timelineStore.fetchInitialPosts();
   });
 };
 
-// Timelineの設定が更新されたらPostsを再取得し、WebSocketの接続を更新する
-timelineStore.$onAction((action) => {
-  if (action.name === "updateTimeline") {
-    console.log("updateTimeline");
+const currentTimelineSetting = computed(() => {
+  return {
+    userId: timelineStore.current?.userId,
+    channel: timelineStore.current?.channel,
+    options: timelineStore.current?.options,
+  };
+});
 
-    initStream();
-  }
+watchDeep(currentTimelineSetting, () => {
+  initStream();
 });
 
 onBeforeMount(async () => {
@@ -120,14 +124,8 @@ onBeforeMount(async () => {
   console.info("store", store);
 
   if (timelineStore.isTimelineAvailable) {
+    router.push("/main/timeline");
     initStream();
-    nextTick(() => {
-      timelineStore.fetchInitialPosts();
-    });
-    const hazyRoute = getHazyRoute(store.settings.hazyMode);
-    if (hazyRoute) {
-      router.push(hazyRoute);
-    }
   } else {
     ipcSend("set-hazy-mode", { mode: "settings" });
   }
