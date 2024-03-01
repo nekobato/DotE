@@ -9,10 +9,12 @@ import {
   misskeyGetTimelineHome,
   misskeyGetTimelineLocal,
   misskeyGetTimelineChannel,
+  misskeyGetTimelineAntenna,
   misskeyGetNoteReactions,
   misskeyGetNote,
   misskeyGetMeta,
   misskeyGetFollowedChannels,
+  misskeyGetMyAntennas,
 } from "./misskey";
 
 export const apiRequest = {
@@ -23,6 +25,7 @@ export const apiRequest = {
   ["misskey:getTimelineLocal"]: misskeyGetTimelineLocal,
   ["misskey:getTimelineGlobal"]: misskeyGetTimelineGlobal,
   ["misskey:getTimelineChannel"]: misskeyGetTimelineChannel,
+  ["misskey:getTimelineAntenna"]: misskeyGetTimelineAntenna,
   ["misskey:createReaction"]: misskeyCreateReaction,
   ["misskey:deleteReaction"]: misskeyDeleteReaction,
   ["misskey:getNoteReactions"]: misskeyGetNoteReactions,
@@ -30,4 +33,5 @@ export const apiRequest = {
   ["misskey:getMeta"]: misskeyGetMeta,
   ["misskey:createNote"]: misskeyCreateNote,
   ["misskey:getFollowedChannels"]: misskeyGetFollowedChannels,
+  ["misskey:getMyAntennas"]: misskeyGetMyAntennas,
 };

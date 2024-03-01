@@ -34,6 +34,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       method: methodOfChannel[current.value.channel],
       instanceUrl: currentInstance.value?.url,
       channelId: current?.value.options?.channelId, // option
+      antennaId: current?.value.options?.antennaId, // option
       token: currentUser.value.token,
       limit: 40,
     }).catch(() => {
@@ -52,6 +53,8 @@ export const useTimelineStore = defineStore("timeline", () => {
         method: methodOfChannel[current.value.channel],
         instanceUrl: currentInstance.value?.url,
         token: currentUser.value.token,
+        channelId: current?.value.options?.channelId, // option
+        antennaId: current?.value.options?.antennaId, // option
         sinceId: store.timelines[currentIndex.value]?.posts[0]?.id,
         limit: 40,
       }).catch(() => {
@@ -224,6 +227,21 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myChannels;
   };
 
+  const getMyAntennas = () => {
+    if (!currentUser.value) return;
+    const myAntennas = ipcInvoke("api", {
+      method: "misskey:getMyAntennas",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: "アンテナの取得に失敗しました",
+      });
+      console.error("アンテナの取得に失敗しました");
+    });
+    return myAntennas;
+  };
+
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
@@ -250,5 +268,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     deleteReaction,
     updatePost,
     getFollowedChannels,
+    getMyAntennas,
   };
 });

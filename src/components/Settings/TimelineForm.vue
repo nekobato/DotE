@@ -3,7 +3,7 @@ import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { Icon } from "@iconify/vue";
 import { computed, onMounted, ref, watch } from "vue";
-import type { MisskeyChannel } from "@shared/types/misskey";
+import type { MisskeyChannel, MisskeyEntities } from "@shared/types/misskey";
 import type { ChannelName, Timeline } from "@shared/types/store";
 import HazySelect from "../common/HazySelect.vue";
 
@@ -42,10 +42,10 @@ const streamOptions: {
     label: "リスト...",
     value: "misskey:list",
   },
-  // {
-  //   label: "アンテナ...",
-  //   value: "misskey:antenna",
-  // },
+  {
+    label: "アンテナ...",
+    value: "misskey:antenna",
+  },
   {
     label: "チャンネル...",
     value: "misskey:channel",
@@ -57,6 +57,7 @@ const streamOptions: {
 ];
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
+const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
 const searchQuery = ref(props.timeline.options?.query ?? "");
 const misskeyChannelOptions = computed(() =>
   followedMisskeyChannels.value?.length > 0
@@ -65,6 +66,13 @@ const misskeyChannelOptions = computed(() =>
         value: channel.id,
       }))
     : [],
+);
+const misskeyAntennaOptions = computed(
+  () =>
+    myMisskeyAntennas.value?.map((antenna) => ({
+      label: antenna.name,
+      value: antenna.id,
+    })) || [],
 );
 
 const accountOptions = computed(() =>
@@ -107,6 +115,16 @@ const onChangeChannel = async ({ target }: InputEvent) => {
   });
 };
 
+const onChangeAntenna = async ({ target }: InputEvent) => {
+  const antennaId = (target as HTMLInputElement).value;
+  emit("updateTimeline", {
+    ...props.timeline,
+    options: {
+      antennaId,
+    },
+  });
+};
+
 const onChangeSearchQuery = async (e: Event) => {
   const query = (e.target as HTMLInputElement).value;
 
@@ -124,12 +142,18 @@ watch(
     if (channel === "misskey:channel") {
       followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
     }
+    if (channel === "misskey:antenna") {
+      myMisskeyAntennas.value = await timelineStore.getMyAntennas();
+    }
   },
 );
 
 onMounted(async () => {
   if (props.timeline.channel === "misskey:channel") {
     followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
+  }
+  if (props.timeline.channel === "misskey:antenna") {
+    myMisskeyAntennas.value = await timelineStore.getMyAntennas();
   }
 });
 </script>
@@ -178,6 +202,22 @@ onMounted(async () => {
           :options="misskeyChannelOptions"
           :value="props.timeline.options?.channelId"
           @change="onChangeChannel"
+          class="select"
+        />
+      </div>
+    </div>
+    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
+      <div class="content">
+        <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
+        <span class="label">アンテナ</span>
+      </div>
+      <div class="actions">
+        <HazySelect
+          v-if="misskeyAntennaOptions.length"
+          name="antenna"
+          :options="misskeyAntennaOptions"
+          :value="props.timeline.options?.antennaId"
+          @change="onChangeAntenna"
           class="select"
         />
       </div>

@@ -13,7 +13,7 @@ export type ChannelName =
   | "misskey:socialTimeline"
   | "misskey:globalTimeline"
   | "misskey:list"
-  // | "misskey:antennaTimeline"
+  | "misskey:antenna"
   | "misskey:channel"
   | "misskey:search";
 
@@ -24,6 +24,7 @@ export type Timeline = {
   options: {
     query?: string;
     channelId?: string;
+    antennaId?: string;
   };
   available: boolean;
 };

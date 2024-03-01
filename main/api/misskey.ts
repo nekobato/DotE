@@ -142,6 +142,36 @@ export const misskeyGetTimelineChannel = async ({
   });
 };
 
+export const misskeyGetTimelineAntenna = async ({
+  instanceUrl,
+  token,
+  antennaId,
+  sinceId,
+  untilId,
+  limit,
+}: {
+  instanceUrl: string;
+  token: string;
+  antennaId: string;
+  limit: number;
+  sinceId?: string;
+  untilId?: string;
+}) => {
+  return fetch(new URL(`/api/antennas/notes`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      antennaId,
+      sinceId,
+      untilId,
+      limit,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
 export const misskeyCreateReaction = async ({
   instanceUrl,
   token,
@@ -296,6 +326,18 @@ export const misskeyGetFollowedChannels = async ({
       i: token,
       sinceId,
       limit: limit || 100,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
+export const misskeyGetMyAntennas = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
+  return fetch(new URL(`/api/antennas/list`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
     }),
   }).then((res: Response) => {
     return res.json();
