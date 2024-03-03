@@ -8,6 +8,7 @@ import { Icon } from "@iconify/vue";
 import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
 import { ElAvatar } from "element-plus";
+import type { User } from "@shared/types/store";
 
 const store = useStore();
 const usersStore = useUsersStore();
@@ -89,6 +90,11 @@ const resetStatues = () => {
   state.value.actions.newAccount.misskey.instanceUrl.value = "";
   state.value.actions.newAccount.misskey.instanceUrl.error = "";
 };
+
+const getInstanceIconFromUser = (user: User) => {
+  const instance = store.instances?.find((i) => i.id === user.instanceId);
+  return instance?.iconUrl || "";
+};
 </script>
 
 <template>
@@ -96,7 +102,7 @@ const resetStatues = () => {
     <h2 class="hazy-field-group-title no-border">アカウント</h2>
     <div class="accounts-container" v-for="user in store.users" :key="user.id">
       <div class="hazy-field-row">
-        <ElAvatar shape="square" :size="40" src="/images/logo/misskey.png" class="avatar" />
+        <ElAvatar shape="square" :size="40" :src="getInstanceIconFromUser(user)" class="avatar" />
         <ElAvatar :src="user.avatarUrl || ''" class="avatar" />
         <div class="content">
           <span class="nickname">{{ user.name }}</span>

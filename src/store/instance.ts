@@ -36,7 +36,7 @@ export const useInstanceStore = defineStore("instance", () => {
   };
 
   const getMisskeyMeta = async (instanceUrl: string) => {
-    const result: MisskeyEntities.InstanceMetadata | null = await ipcInvoke("api", {
+    const result: MisskeyEntities.MetaResponse | null = await ipcInvoke("api", {
       method: "misskey:getMeta",
       instanceUrl,
     }).catch(() => {

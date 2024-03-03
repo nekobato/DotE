@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import HazyLoading from "@/components/common/HazyLoading.vue";
-import MisskeyNote from "@/components/MisskeyNote.vue";
-import WindowHeader from "@/components/WindowHeader.vue";
 import ErrorPost from "@/components/ErrorPost.vue";
-import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
-import ReadMore from "@/components/Readmore.vue";
-import { Icon } from "@iconify/vue";
-import { useTimelineStore } from "@/store/timeline";
-import { computed, nextTick, reactive, ref } from "vue";
-import { useStore } from "@/store";
-import { ipcSend } from "@/utils/ipc";
-import type { MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
+import MisskeyNote from "@/components/MisskeyNote.vue";
 import PostList from "@/components/PostList.vue";
+import ReadMore from "@/components/Readmore.vue";
+import WindowHeader from "@/components/WindowHeader.vue";
+import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
+import { useStore } from "@/store";
+import { useTimelineStore } from "@/store/timeline";
+import { ipcSend } from "@/utils/ipc";
+import { Icon } from "@iconify/vue";
+import type { MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
+import { computed, nextTick, reactive, ref } from "vue";
 
 const store = useStore();
 const timelineStore = useTimelineStore();

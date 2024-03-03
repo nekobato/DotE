@@ -84,7 +84,7 @@ export const useUsersStore = defineStore("users", () => {
         await ipcInvoke("db:upsert-user", {
           id: user.id,
           name: result.username,
-          avatarUrl: result.avatarUrl,
+          avatarUrl: result.avatarUrl ?? undefined,
           token: user.token,
           instanceId: instance.id,
         });

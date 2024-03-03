@@ -3,18 +3,20 @@ import { useTimelineStore } from "@/store/timeline";
 import type { MisskeyNote } from "@shared/types/misskey";
 
 export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
-  return files.map((file) => {
-    return {
-      type: file.type.split("/")[0] as "image" | "video",
-      url: file.url,
-      thumbnailUrl: file.thumbnailUrl,
-      size: {
-        width: file.properties.width,
-        height: file.properties.height,
-      },
-      isSensitive: file.isSensitive,
-    };
-  });
+  return (
+    files?.map((file) => {
+      return {
+        type: file.type.split("/")[0] as "image" | "video",
+        url: file.url,
+        thumbnailUrl: file.thumbnailUrl || "",
+        size: {
+          width: file.properties.width,
+          height: file.properties.height,
+        },
+        isSensitive: file.isSensitive,
+      };
+    }) || []
+  );
 };
 
 export const parseMisskeyText = (text: string | null, emojis: { name: string; url: string }[]): string => {

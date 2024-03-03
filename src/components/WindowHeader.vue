@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { useStore } from "@/store";
 import { useRouter } from "vue-router";
 import { PropType } from "vue";
 
@@ -13,8 +12,6 @@ const props = defineProps({
 });
 
 const router = useRouter();
-
-const store = useStore();
 
 const exit = () => {
   switch (props.windowType) {

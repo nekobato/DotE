@@ -2,7 +2,6 @@
 import * as mfm from "mfm-js";
 import { defineComponent, h, type PropType } from "vue";
 import type { Settings } from "@shared/types/store";
-import { Icon } from "@iconify/vue";
 
 export default defineComponent({
   name: "Mfm",
@@ -50,9 +49,6 @@ export default defineComponent({
       // }
       return {};
     },
-  },
-  components: {
-    Icon,
   },
   render() {
     if (this.text == null || this.text === "") return null;
@@ -130,7 +126,6 @@ export default defineComponent({
                 className="search"
               >
                 {node.props.query}
-                <Icon className="icon" icon="mingcute:search-line" />
               </a>
             );
           case "small":

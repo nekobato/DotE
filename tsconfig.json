@@ -28,5 +28,6 @@
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "shared/**/*.ts"],
+  "exclude": [".storybook/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

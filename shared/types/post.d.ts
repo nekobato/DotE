@@ -16,7 +16,7 @@ export type Attachment = {
   type: AttachmentType;
   url?: string;
   thumbnailUrl?: string;
-  size?: { width: number; height: number };
+  size: { width?: number; height?: number };
   poll?: {
     choices: string[];
     expire: number;
