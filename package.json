@@ -29,7 +29,7 @@
     "@storybook/addon-essentials": "^7.6.16",
     "@storybook/vue3-vite": "^7.6.16",
     "@vitejs/plugin-vue": "^5.0.4",
-    "@vueuse/core": "^10.7.2",
+    "@vueuse/core": "^10.9.0",
     "electron": "28.2.3",
     "electron-builder": "^24.13.3",
     "electron-icon-builder": "^2.0.1",
