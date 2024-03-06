@@ -35,7 +35,7 @@
     "electron-icon-builder": "^2.0.1",
     "element-plus": "^2.6.0",
     "mfm-js": "^0.24.0",
-    "misskey-js": "^2024.2.0",
+    "misskey-js": "^2024.3.1",
     "nanoid": "^5.0.6",
     "pinia": "^2.1.7",
     "postcss-html": "^1.6.0",

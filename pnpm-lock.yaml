@@ -53,8 +53,8 @@ devDependencies:
     specifier: ^0.24.0
     version: 0.24.0
   misskey-js:
-    specifier: ^2024.2.0
-    version: 2024.2.0
+    specifier: ^2024.3.1
+    version: 2024.3.1
   nanoid:
     specifier: ^5.0.6
     version: 5.0.6
@@ -9187,8 +9187,8 @@ packages:
       yallist: 4.0.0
     dev: true
 
-  /misskey-js@2024.2.0:
-    resolution: {integrity: sha512-bcbSSozh3Oz//2geXQSU4LdBylB3rQwaJ/QKXBBlFy1zvlGMo/ajHPlu6QpnMMNeaBzbZK1RLYJZqDV3ugJStw==}
+  /misskey-js@2024.3.1:
+    resolution: {integrity: sha512-ksoCUCTbNMex/ZHxRm+WxsXsIS1/hphJnuoJasFnISkwTDylOoHvZ9qJg0e0WhAdKtuXXCUemvOI6CFOMfJDWQ==}
     dependencies:
       '@swc/cli': 0.1.63(@swc/core@1.3.105)
       '@swc/core': 1.3.105
