@@ -66,12 +66,8 @@ const renoteType = computed(() => {
 });
 
 const postAtttachments = computed(() => {
-  if (props.post.files?.length) {
-    return parseMisskeyAttachments(props.post.files);
-  } else if (props.post.renote?.files?.length) {
-    return parseMisskeyAttachments(props.post.renote.files);
-  }
-  return undefined;
+  const files = props.post.files || (props.post.renote as MisskeyNote)?.files;
+  return files?.length ? parseMisskeyAttachments(files) : [];
 });
 
 const reactions = computed(() => {
@@ -152,6 +148,9 @@ onBeforeUnmount(() => {
       />
     </div>
     <div class="attachments" v-if="postAtttachments">
+      <button class="attachment" v-for="attachment in postAtttachments" :attachment="attachment" @click="openPost">
+        Poll
+      </button>
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
     </div>
     <div class="reactions" v-if="props.showReactions">

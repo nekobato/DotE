@@ -33,7 +33,7 @@ export function createMainWindow() {
     win.webContents.openDevTools();
   } else {
     win.loadFile(join(pageRoot.production), { hash: pageName });
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
   }
 
   win.on("ready-to-show", () => {

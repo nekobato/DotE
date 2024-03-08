@@ -16,6 +16,9 @@ const attachmentAction = (attachment: Attachment) => {
     case "url":
       ipcSend("open-url", { url: attachment.url });
       break;
+    case "poll":
+      ipcSend("open-url", { url: attachment.url });
+      break;
     default:
       ipcSend("media-viewer:open", attachment);
       break;
@@ -25,8 +28,8 @@ const attachmentAction = (attachment: Attachment) => {
 
 <template>
   <button class="attachment" :class="[attachment.type]" @click="attachmentAction(attachment)">
-    <Icon icon="ion:musical-notes" class="nn-icon size-small audio" v-if="attachment.type === 'audio'" />
-    <Icon icon="ion:film" class="nn-icon size-small video" v-if="attachment.type === 'video'" />
+    <Icon icon="mingcute:music-2-line" class="nn-icon size-small audio" v-if="attachment.type === 'audio'" />
+    <Icon icon="mingcute:film-line" class="nn-icon size-small video" v-if="attachment.type === 'video'" />
     <img
       class="image"
       :src="attachment.thumbnailUrl"
