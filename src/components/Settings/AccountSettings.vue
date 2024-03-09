@@ -7,7 +7,7 @@ import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
-import { ElAvatar } from "element-plus";
+import { ElAvatar, ElInput } from "element-plus";
 import type { User } from "@shared/types/store";
 
 const store = useStore();
@@ -159,11 +159,10 @@ const getInstanceIconFromUser = (user: User) => {
       <div class="content">
         <div class="nn-form-item">
           <label class="nn-label">インスタンスURL</label>
-          <input
-            type="text"
-            class="nn-text-field"
+          <ElInput
             v-model="state.actions.newAccount.misskey.instanceUrl.value"
             placeholder="https://..."
+            size="small"
           />
         </div>
       </div>

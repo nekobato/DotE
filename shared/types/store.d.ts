@@ -24,6 +24,7 @@ export type Timeline = {
   options: {
     query?: string;
     channelId?: string;
+    listId?: string;
     antennaId?: string;
   };
   available: boolean;

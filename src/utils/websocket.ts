@@ -15,7 +15,8 @@ export type MisskeyStreamChannel =
   | "homeTimeline"
   | "hybridTimeline"
   | "localTimeline"
-  | "main"
+  | "list"
+  | "antenna"
   | "channel";
 
 export type MisskeyStreamMessage = {
@@ -94,12 +95,16 @@ export const useMisskeyStream = ({
     token,
     channel,
     channelId,
+    antennaId,
+    listId,
     query,
   }: {
     host: string;
     token: string;
     channel: MisskeyStreamChannel;
     channelId?: string;
+    antennaId?: string;
+    listId?: string;
     query?: string;
   }) => {
     if (channel === "channel" && !channelId) return;
@@ -120,6 +125,8 @@ export const useMisskeyStream = ({
             id: webSocketId.value,
             params: {
               ...(channel === "channel" ? { channelId } : {}),
+              ...(channel === "antenna" ? { antennaId } : {}),
+              ...(channel === "list" ? { listId } : {}),
               ...(query ? { query } : {}),
             },
           },

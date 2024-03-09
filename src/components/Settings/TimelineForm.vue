@@ -5,7 +5,7 @@ import { Icon } from "@iconify/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import type { MisskeyChannel, MisskeyEntities } from "@shared/types/misskey";
 import type { ChannelName, Timeline } from "@shared/types/store";
-import HazySelect from "../common/HazySelect.vue";
+import { ElInput, ElSelect, ElOption } from "element-plus";
 
 const props = defineProps<{
   timeline: Timeline;
@@ -58,7 +58,11 @@ const streamOptions: {
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
+const channelId = ref(props.timeline.options?.channelId ?? "");
+const antennaId = ref(props.timeline.options?.antennaId ?? "");
+const listUrl = ref(props.timeline.options?.listId ?? "");
 const searchQuery = ref(props.timeline.options?.query ?? "");
+
 const misskeyChannelOptions = computed(() =>
   followedMisskeyChannels.value?.length > 0
     ? followedMisskeyChannels.value.map((channel) => ({
@@ -85,9 +89,7 @@ const accountOptions = computed(() =>
   })),
 );
 
-const onChangeUser = async (e: InputEvent) => {
-  const userId = (e.target as HTMLInputElement).value;
-
+const onChangeUser = async (userId: string) => {
   emit("updateTimeline", {
     ...props.timeline,
     userId,
@@ -95,9 +97,7 @@ const onChangeUser = async (e: InputEvent) => {
   });
 };
 
-const onChangeStream = async (e: InputEvent) => {
-  const stream = (e.target as HTMLInputElement).value as ChannelName;
-
+const onChangeStream = async (stream: ChannelName) => {
   emit("updateTimeline", {
     ...props.timeline,
     channel: stream,
@@ -105,8 +105,7 @@ const onChangeStream = async (e: InputEvent) => {
   });
 };
 
-const onChangeChannel = async ({ target }: InputEvent) => {
-  const channelId = (target as HTMLInputElement).value;
+const onChangeChannel = async (channelId: string) => {
   emit("updateTimeline", {
     ...props.timeline,
     options: {
@@ -115,8 +114,7 @@ const onChangeChannel = async ({ target }: InputEvent) => {
   });
 };
 
-const onChangeAntenna = async ({ target }: InputEvent) => {
-  const antennaId = (target as HTMLInputElement).value;
+const onChangeAntenna = async (antennaId: string) => {
   emit("updateTimeline", {
     ...props.timeline,
     options: {
@@ -125,9 +123,18 @@ const onChangeAntenna = async ({ target }: InputEvent) => {
   });
 };
 
-const onChangeSearchQuery = async (e: Event) => {
-  const query = (e.target as HTMLInputElement).value;
+const onChangeListUrl = async (value: string) => {
+  const listId = value.match(/\/lists\/(.+)$/)?.[1] ?? "";
+  if (!listId) return;
+  emit("updateTimeline", {
+    ...props.timeline,
+    options: {
+      listId,
+    },
+  });
+};
 
+const onChangeSearchQuery = async (query: string) => {
   emit("updateTimeline", {
     ...props.timeline,
     options: {
@@ -165,14 +172,15 @@ onMounted(async () => {
         <Icon icon="mingcute:user-1-line" class="nn-icon size-small" />
         <span class="label">アカウント</span>
       </div>
-      <div class="actions">
-        <HazySelect
-          name="user"
-          :options="accountOptions"
-          :value="props.timeline.userId"
-          @change="onChangeUser"
-          class="select"
-        />
+      <div class="actions for-select">
+        <ElSelect v-model="props.timeline.userId" size="small" @change="onChangeUser">
+          <ElOption
+            v-for="account in accountOptions"
+            :key="account.value"
+            :label="account.label"
+            :value="account.value"
+          />
+        </ElSelect>
       </div>
     </div>
     <div class="hazy-field-row indent-1">
@@ -180,14 +188,10 @@ onMounted(async () => {
         <Icon icon="mingcute:list-check-3-line" class="nn-icon size-small" />
         <span class="label">タイムライン</span>
       </div>
-      <div class="actions">
-        <HazySelect
-          name="channel"
-          :options="streamOptions"
-          :value="props.timeline.channel"
-          @change="onChangeStream"
-          class="select"
-        />
+      <div class="actions for-select">
+        <ElSelect v-model="props.timeline.channel" size="small" @change="onChangeStream">
+          <ElOption v-for="option in streamOptions" :key="option.value" :label="option.label" :value="option.value" />
+        </ElSelect>
       </div>
     </div>
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
@@ -195,15 +199,15 @@ onMounted(async () => {
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">チャンネル</span>
       </div>
-      <div class="actions">
-        <HazySelect
-          v-if="misskeyChannelOptions.length"
-          name="channel"
-          :options="misskeyChannelOptions"
-          :value="props.timeline.options?.channelId"
-          @change="onChangeChannel"
-          class="select"
-        />
+      <div class="actions for-select">
+        <ElSelect v-if="misskeyChannelOptions.length" v-model="channelId" size="small" @change="onChangeChannel">
+          <ElOption
+            v-for="option in misskeyChannelOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </ElSelect>
       </div>
     </div>
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
@@ -211,15 +215,24 @@ onMounted(async () => {
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">アンテナ</span>
       </div>
-      <div class="actions">
-        <HazySelect
-          v-if="misskeyAntennaOptions.length"
-          name="antenna"
-          :options="misskeyAntennaOptions"
-          :value="props.timeline.options?.antennaId"
-          @change="onChangeAntenna"
-          class="select"
-        />
+      <div class="actions for-select">
+        <ElSelect v-if="misskeyAntennaOptions.length" v-model="antennaId" @change="onChangeAntenna" size="small">
+          <ElOption
+            v-for="option in misskeyAntennaOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </ElSelect>
+      </div>
+    </div>
+    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:list'">
+      <div class="content">
+        <Icon icon="mingcute:list-line" class="nn-icon size-small" />
+        <span class="label">リストURL</span>
+      </div>
+      <div class="actions for-list-field">
+        <ElInput size="small" placeholder="https://..." v-model="listUrl" @change="onChangeListUrl" />
       </div>
     </div>
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
@@ -228,7 +241,7 @@ onMounted(async () => {
         <span class="label">検索</span>
       </div>
       <div class="actions">
-        <input class="nn-text-field" type="search" :value="searchQuery" @change="onChangeSearchQuery" />
+        <ElInput size="small" v-model="searchQuery" @change="onChangeSearchQuery" />
       </div>
     </div>
   </div>
@@ -254,5 +267,10 @@ onMounted(async () => {
   .nn-icon + .label {
     margin-left: 4px;
   }
+}
+
+.actions.for-select,
+.actions.for-list-field {
+  width: 200px;
 }
 </style>

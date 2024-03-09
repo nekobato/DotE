@@ -4,7 +4,7 @@ import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
 import HazySelect from "../common/HazySelect.vue";
-import { ElSlider, ElSwitch } from "element-plus";
+import { ElSlider, ElSwitch, ElInputNumber } from "element-plus";
 import { watch } from "vue";
 
 const store = useStore();
@@ -21,8 +21,8 @@ watch(
   },
 );
 
-const onChangeMaxPostCount = async (e: Event) => {
-  await settingsStore.setMaxPostCount(Number((e.target as HTMLInputElement)?.value));
+const onChangeMaxPostCount = async (value: number) => {
+  await settingsStore.setMaxPostCount(value);
 };
 
 const postStyleOptions = [
@@ -96,13 +96,12 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         <span class="title">タイムラインの最大表示数</span>
       </div>
       <div class="form-actions">
-        <input
-          type="number"
-          min="10"
-          max="2000"
-          class="nn-text-field max-post-count"
-          :value="store.settings.maxPostCount"
-          @change="onChangeMaxPostCount"
+        <ElInputNumber
+          :min="10"
+          :max="2000"
+          v-model="store.settings.maxPostCount"
+          @change="(value) => onChangeMaxPostCount(Number(value))"
+          size="small"
         />
       </div>
     </div>

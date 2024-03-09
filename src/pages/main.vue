@@ -100,6 +100,8 @@ const initStream = () => {
     channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
     token: timelineStore.currentUser.token,
     channelId: timelineStore.current.options?.channelId,
+    antennaId: timelineStore.current.options?.antennaId,
+    listId: timelineStore.current.options?.listId,
   });
 
   nextTick(() => {
