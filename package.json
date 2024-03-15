@@ -52,7 +52,7 @@
     "vite-plugin-electron": "^0.28.2",
     "vite-plugin-electron-renderer": "^0.14.5",
     "vite-plugin-resolve": "^2.5.1",
-    "vue": "^3.4.15",
+    "vue": "^3.4.21",
     "vue-router": "^4.3.0",
     "vue-tsc": "^1.8.27"
   }
