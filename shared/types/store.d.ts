@@ -12,7 +12,8 @@ export type ChannelName =
   | "misskey:localTimeline"
   | "misskey:socialTimeline"
   | "misskey:globalTimeline"
-  | "misskey:list"
+  | "misskey:userList"
+  | "misskey:hashtag"
   | "misskey:antenna"
   | "misskey:channel"
   | "misskey:search";
@@ -26,13 +27,14 @@ export type Timeline = {
     channelId?: string;
     listId?: string;
     antennaId?: string;
+    tag?: string;
   };
   available: boolean;
 };
 
 export type Instance = {
   id: string; // uuid
-  type: "mastodon" | "misskey";
+  type: "mastodon" | "misskey" | "bluesky" | "threads";
   name: string;
   url: string;
   iconUrl: string;

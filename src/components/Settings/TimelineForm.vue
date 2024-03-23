@@ -40,7 +40,7 @@ const streamOptions: {
   },
   {
     label: "リスト...",
-    value: "misskey:list",
+    value: "misskey:userList",
   },
   {
     label: "アンテナ...",
@@ -49,6 +49,10 @@ const streamOptions: {
   {
     label: "チャンネル...",
     value: "misskey:channel",
+  },
+  {
+    label: "ハッシュタグ...",
+    value: "misskey:hashtag",
   },
   {
     label: "検索...",
@@ -61,6 +65,7 @@ const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
 const channelId = ref(props.timeline.options?.channelId ?? "");
 const antennaId = ref(props.timeline.options?.antennaId ?? "");
 const listUrl = ref(props.timeline.options?.listId ?? "");
+const tag = ref(props.timeline.options?.tag ?? "");
 const searchQuery = ref(props.timeline.options?.query ?? "");
 
 const misskeyChannelOptions = computed(() =>
@@ -130,6 +135,15 @@ const onChangeListUrl = async (value: string) => {
     ...props.timeline,
     options: {
       listId,
+    },
+  });
+};
+
+const onChangeHashtag = async (tag: string) => {
+  emit("updateTimeline", {
+    ...props.timeline,
+    options: {
+      tag,
     },
   });
 };
@@ -226,22 +240,34 @@ onMounted(async () => {
         </ElSelect>
       </div>
     </div>
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:list'">
+    <!-- misskey:userList -->
+    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:userList'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
         <span class="label">リストURL</span>
       </div>
-      <div class="actions for-list-field">
+      <div class="actions for-text-field">
         <ElInput size="small" placeholder="https://..." v-model="listUrl" @change="onChangeListUrl" />
       </div>
     </div>
+    <!-- misskey:search -->
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
       <div class="content">
         <Icon icon="mingcute:search-line" class="nn-icon size-small" />
         <span class="label">検索</span>
       </div>
-      <div class="actions">
+      <div class="actions for-text-field">
         <ElInput size="small" v-model="searchQuery" @change="onChangeSearchQuery" />
+      </div>
+    </div>
+    <!-- misskey:hashtag -->
+    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:hashtag'">
+      <div class="content">
+        <Icon icon="mingcute:list-line" class="nn-icon size-small" />
+        <span class="label">ハッシュタグ</span>
+      </div>
+      <div class="actions for-text-field">
+        <ElInput size="small" placeholder="#" v-model="tag" @change="onChangeHashtag" />
       </div>
     </div>
   </div>
@@ -270,7 +296,7 @@ onMounted(async () => {
 }
 
 .actions.for-select,
-.actions.for-list-field {
+.actions.for-text-field {
   width: 200px;
 }
 </style>

@@ -43,6 +43,10 @@ const schema: Store.Schema<StoreSchema> = {
         options: {
           type: "object",
           properties: {
+            channelId: { type: "string" },
+            listId: { type: "string" },
+            antennaId: { type: "string" },
+            tag: { type: "string" },
             query: { type: "string" },
           },
         },

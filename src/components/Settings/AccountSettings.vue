@@ -176,7 +176,7 @@ const getInstanceIconFromUser = (user: User) => {
       <div class="content">
         <span>認証できた？</span>
       </div>
-      <div class="form-actions">
+      <div class="actions">
         <button class="nn-button size-small action" @click="startAuth('misskey')">戻る</button>
         <button class="nn-button size-small action" @click="checkMiAuth()">認証した</button>
       </div>

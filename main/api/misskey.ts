@@ -142,6 +142,66 @@ export const misskeyGetTimelineChannel = async ({
   });
 };
 
+export const misskeyGetTimelineUserList = async ({
+  instanceUrl,
+  token,
+  listId,
+  sinceId,
+  untilId,
+  limit,
+}: {
+  instanceUrl: string;
+  token: string;
+  listId: string;
+  limit: number;
+  sinceId?: string;
+  untilId?: string;
+}) => {
+  return fetch(new URL(`/api/lists/notes`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      listId,
+      sinceId,
+      untilId,
+      limit,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
+export const misskeyGetTimelineHashtag = async ({
+  instanceUrl,
+  token,
+  query,
+  sinceId,
+  untilId,
+  limit,
+}: {
+  instanceUrl: string;
+  token: string;
+  query: string;
+  limit: number;
+  sinceId?: string;
+  untilId?: string;
+}) => {
+  return fetch(new URL(`/api/notes/search-by-tag`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      query,
+      sinceId,
+      untilId,
+      limit,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
 export const misskeyGetTimelineAntenna = async ({
   instanceUrl,
   token,
@@ -163,6 +223,36 @@ export const misskeyGetTimelineAntenna = async ({
     body: JSON.stringify({
       i: token,
       antennaId,
+      sinceId,
+      untilId,
+      limit,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
+export const misskeyGetTimelineSearch = async ({
+  instanceUrl,
+  token,
+  query,
+  sinceId,
+  untilId,
+  limit,
+}: {
+  instanceUrl: string;
+  token: string;
+  query: string;
+  limit: number;
+  sinceId?: string;
+  untilId?: string;
+}) => {
+  return fetch(new URL(`/api/notes/search`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      query,
       sinceId,
       untilId,
       limit,

@@ -148,9 +148,6 @@ onBeforeUnmount(() => {
       />
     </div>
     <div class="attachments" v-if="postAtttachments">
-      <button class="attachment" v-for="attachment in postAtttachments" :attachment="attachment" @click="openPost">
-        Poll
-      </button>
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
     </div>
     <div class="reactions" v-if="props.showReactions">

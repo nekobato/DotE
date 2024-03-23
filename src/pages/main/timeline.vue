@@ -111,7 +111,7 @@ timelineStore.$onAction((action) => {
         'is-adding': state.isAdding,
       }"
     >
-      <PostList v-if="timelineStore.current?.posts.length">
+      <PostList v-if="timelineStore.current?.posts?.length">
         <MisskeyNote
           class="post-item"
           v-for="post in timelineStore.current.posts"
@@ -164,6 +164,7 @@ body::-webkit-scrollbar {
   }
 }
 .timeline-container {
+  padding-top: 8px;
   width: 100%;
   height: 100%;
   overflow-x: hidden;

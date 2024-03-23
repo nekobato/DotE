@@ -9,13 +9,14 @@ export const webSocketState = {
   CLOSED: 3,
 };
 
-// https://misskey-hub.net/docs/api/streaming/channel/
+// https://github.com/misskey-dev/misskey/blob/master/packages/backend/src/server/api/stream/ChannelsService.ts
 export type MisskeyStreamChannel =
   | "globalTimeline"
   | "homeTimeline"
   | "hybridTimeline"
   | "localTimeline"
-  | "list"
+  | "userList"
+  | "hashtag"
   | "antenna"
   | "channel";
 
@@ -96,6 +97,7 @@ export const useMisskeyStream = ({
     channel,
     channelId,
     antennaId,
+    tag,
     listId,
     query,
   }: {
@@ -104,10 +106,14 @@ export const useMisskeyStream = ({
     channel: MisskeyStreamChannel;
     channelId?: string;
     antennaId?: string;
+    tag?: string;
     listId?: string;
     query?: string;
   }) => {
     if (channel === "channel" && !channelId) return;
+    if (channel === "antenna" && !antennaId) return;
+    if (channel === "userList" && !listId) return;
+    if (channel === "hashtag" && !tag) return;
 
     shouldConnect.value = true;
     webSocketId.value = nanoid();
@@ -126,7 +132,8 @@ export const useMisskeyStream = ({
             params: {
               ...(channel === "channel" ? { channelId } : {}),
               ...(channel === "antenna" ? { antennaId } : {}),
-              ...(channel === "list" ? { listId } : {}),
+              ...(channel === "userList" ? { listId } : {}),
+              ...(channel === "hashtag" ? { tag } : {}),
               ...(query ? { query } : {}),
             },
           },

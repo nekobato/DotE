@@ -3,8 +3,7 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
-import HazySelect from "../common/HazySelect.vue";
-import { ElSlider, ElSwitch, ElInputNumber } from "element-plus";
+import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption } from "element-plus";
 import { watch } from "vue";
 
 const store = useStore();
@@ -97,6 +96,7 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
       </div>
       <div class="form-actions">
         <ElInputNumber
+          class="action-field"
           :min="10"
           :max="2000"
           v-model="store.settings.maxPostCount"
@@ -111,12 +111,19 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         <span class="title">ノートの表示スタイル</span>
       </div>
       <div class="form-actions">
-        <HazySelect
-          name="postStyle"
-          :options="postStyleOptions"
-          :value="store.settings.postStyle"
+        <ElSelect
+          class="action-field"
+          :model-value="store.$state.settings.postStyle"
+          size="small"
           @change="onChangePostStyle"
-        />
+        >
+          <ElOption
+            v-for="option in postStyleOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </ElSelect>
       </div>
     </div>
 
@@ -190,5 +197,8 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
 .shortcut-key {
   width: 120px;
   font-size: var(--font-size-12);
+}
+.action-field {
+  width: 130px;
 }
 </style>

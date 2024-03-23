@@ -51,6 +51,7 @@ const readmore = async () => {
 <style lang="scss">
 .readmore-container {
   display: flex;
+  width: 100%;
   justify-content: center;
   margin: 4px 0 16px;
 }
@@ -58,8 +59,9 @@ const readmore = async () => {
 .readmore-button {
   display: inline-flex;
   align-items: center;
-  width: 240px;
-  padding: 8px 16px;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
   color: var(--hazy-text-color);
   background-color: var(--hazy-background-color);
   border-radius: 8px;

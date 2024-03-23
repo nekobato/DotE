@@ -47,7 +47,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const fetchDiffPosts = async () => {
-    if (store.timelines[currentIndex.value].posts.length === 0) return;
+    if (store.timelines[currentIndex.value]?.posts?.length === 0) return;
     if (current.value && currentUser.value && currentInstance.value) {
       const data = await ipcInvoke("api", {
         method: methodOfChannel[current.value.channel],
