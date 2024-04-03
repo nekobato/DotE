@@ -157,7 +157,7 @@ export const misskeyGetTimelineUserList = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/lists/notes`, instanceUrl).toString(), {
+  return fetch(new URL(`/api/notes/user-list-timeline`, instanceUrl).toString(), {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -434,8 +434,15 @@ export const misskeyGetMyAntennas = async ({ instanceUrl, token }: { instanceUrl
   });
 };
 
-export const misskeyGetMyLists = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
-  return fetch(new URL(`/api/lists/list`, instanceUrl).toString(), {
+export const misskeyGetUserLists = async ({
+  instanceUrl,
+  token,
+}: {
+  instanceUrl: string;
+  token: string;
+  userId: string;
+}) => {
+  return fetch(new URL(`/api/users/lists/list`, instanceUrl).toString(), {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({

@@ -18,7 +18,7 @@ import {
   misskeyGetMeta,
   misskeyGetFollowedChannels,
   misskeyGetMyAntennas,
-  misskeyGetMyLists,
+  misskeyGetUserLists,
 } from "./misskey";
 
 export const apiRequest = {
@@ -41,5 +41,5 @@ export const apiRequest = {
   ["misskey:createNote"]: misskeyCreateNote,
   ["misskey:getFollowedChannels"]: misskeyGetFollowedChannels,
   ["misskey:getMyAntennas"]: misskeyGetMyAntennas,
-  ["misskey:getMyLists"]: misskeyGetMyLists,
+  ["misskey:getUserLists"]: misskeyGetUserLists,
 };

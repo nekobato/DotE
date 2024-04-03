@@ -35,6 +35,8 @@ export const useTimelineStore = defineStore("timeline", () => {
       instanceUrl: currentInstance.value?.url,
       channelId: current?.value.options?.channelId, // option
       antennaId: current?.value.options?.antennaId, // option
+      listId: current?.value.options?.listId, // option
+      query: current?.value.options?.query, // option
       token: currentUser.value.token,
       limit: 40,
     }).catch(() => {
@@ -242,19 +244,20 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myAntennas;
   };
 
-  const getMyUserLists = () => {
+  const getUserLists = () => {
     if (!currentUser.value) return;
-    const myUserLists = ipcInvoke("api", {
-      method: "misskey:getMyLists",
+    const userLists = ipcInvoke("api", {
+      method: "misskey:getUserLists",
       instanceUrl: currentInstance.value?.url,
       token: currentUser.value.token,
+      userId: currentUser.value.id,
     }).catch(() => {
       store.$state.errors.push({
         message: "リストの取得に失敗しました",
       });
       console.error("リストの取得に失敗しました");
     });
-    return myUserLists;
+    return userLists;
   };
 
   const isTimelineAvailable = computed(() => {
@@ -284,6 +287,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     updatePost,
     getFollowedChannels,
     getMyAntennas,
-    getMyUserLists,
+    getUserLists,
   };
 });

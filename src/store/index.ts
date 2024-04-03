@@ -9,7 +9,7 @@ export const methodOfChannel = {
   "misskey:localTimeline": "misskey:getTimelineLocal",
   "misskey:socialTimeline": "misskey:getTimelineSocial",
   "misskey:globalTimeline": "misskey:getTimelineGlobal",
-  "misskey:list": "misskey:getTimelineList",
+  "misskey:userList": "misskey:getTimelineList",
   "misskey:antenna": "misskey:getTimelineAntenna",
   "misskey:channel": "misskey:getTimelineChannel",
   "misskey:search": "misskey:getTimelineSearch",

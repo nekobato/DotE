@@ -66,7 +66,11 @@ const renoteType = computed(() => {
 });
 
 const postAtttachments = computed(() => {
-  const files = props.post.files || (props.post.renote as MisskeyNote)?.files;
+  const files = props.post.files?.length
+    ? props.post.files
+    : props.post.renote?.files?.length
+      ? props.post.renote.files
+      : [];
   return files?.length ? parseMisskeyAttachments(files) : [];
 });
 

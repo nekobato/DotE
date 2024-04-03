@@ -94,6 +94,20 @@ const initStream = () => {
     return;
   }
 
+  if (timelineStore.current.channel === "misskey:antenna" && !timelineStore.current.options?.antennaId) {
+    store.$state.errors.push({
+      message: `アンテナの指定がありません。設定でやっていってください`,
+    });
+    return;
+  }
+
+  if (timelineStore.current.channel === "misskey:userList" && !timelineStore.current.options?.listId) {
+    store.$state.errors.push({
+      message: `リストの指定がありません。設定でやっていってください`,
+    });
+    return;
+  }
+
   misskeyStream.disconnect();
   misskeyStream.connect({
     host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),

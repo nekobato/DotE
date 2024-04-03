@@ -148,7 +148,7 @@ const fetchSelectionsFromChannel = async (channel: ChannelName) => {
     myMisskeyAntennas.value = await timelineStore.getMyAntennas();
   }
   if (channel === "misskey:userList") {
-    myMisskeyUserLists.value = await timelineStore.getMyUserLists();
+    myMisskeyUserLists.value = await timelineStore.getUserLists();
   }
 };
 
