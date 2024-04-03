@@ -35,17 +35,13 @@ export const useInstanceStore = defineStore("instance", () => {
     return url.toString();
   };
 
-  const getMisskeyMeta = async (instanceUrl: string) => {
+  const getMisskeyInstanceMeta = async (instanceUrl: string) => {
     const result: MisskeyEntities.MetaResponse | null = await ipcInvoke("api", {
       method: "misskey:getMeta",
       instanceUrl,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${instanceUrl}の詳細データを取得できませんでした`,
-      });
     });
     return result;
   };
 
-  return { createInstance, findInstance, getMisskeyAuthUrl };
+  return { createInstance, findInstance, getMisskeyAuthUrl, getMisskeyInstanceMeta };
 });

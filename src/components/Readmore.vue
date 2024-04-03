@@ -51,8 +51,8 @@ const readmore = async () => {
 <style lang="scss">
 .readmore-container {
   display: flex;
-  width: 100%;
   justify-content: center;
+  width: 100%;
   margin: 4px 0 16px;
 }
 

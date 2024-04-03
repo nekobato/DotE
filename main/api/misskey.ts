@@ -433,3 +433,15 @@ export const misskeyGetMyAntennas = async ({ instanceUrl, token }: { instanceUrl
     return res.json();
   });
 };
+
+export const misskeyGetMyLists = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
+  return fetch(new URL(`/api/lists/list`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};

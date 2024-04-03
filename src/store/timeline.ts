@@ -39,7 +39,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       limit: 40,
     }).catch(() => {
       store.$state.errors.push({
-        message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
+        message: `${currentInstance.value?.name}の追加ノートを取得できませんでした`,
       });
     });
     // misskeyなら という条件分岐が必要
@@ -59,7 +59,7 @@ export const useTimelineStore = defineStore("timeline", () => {
         limit: 40,
       }).catch(() => {
         store.$state.errors.push({
-          message: `${currentInstance.value?.name}の詳細データを取得できませんでした`,
+          message: `${currentInstance.value?.name}の追加タイムラインを取得できませんでした`,
         });
       });
       setPosts([...data, ...store.timelines[currentIndex.value]?.posts]);
@@ -242,6 +242,21 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myAntennas;
   };
 
+  const getMyUserLists = () => {
+    if (!currentUser.value) return;
+    const myUserLists = ipcInvoke("api", {
+      method: "misskey:getMyLists",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: "リストの取得に失敗しました",
+      });
+      console.error("リストの取得に失敗しました");
+    });
+    return myUserLists;
+  };
+
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
@@ -269,5 +284,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     updatePost,
     getFollowedChannels,
     getMyAntennas,
+    getMyUserLists,
   };
 });

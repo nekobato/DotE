@@ -2,6 +2,7 @@ import type { MisskeyChannel, MisskeyEntities, MisskeyNote } from "@shared/types
 import type { InstanceStore, Settings, Timeline, User } from "@shared/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
+import { useInstanceStore } from "./instance";
 
 export const methodOfChannel = {
   "misskey:homeTimeline": "misskey:getTimelineHome",
@@ -92,21 +93,19 @@ export const useStore = defineStore({
         }),
       );
     },
-    async initMisskeyMeta(instanceUrl?: string) {
+    async initMisskeyMeta() {
+      const instanceStore = useInstanceStore();
       return Promise.all(
         this.$state.instances.map(async (instance) => {
           if (instance.type === "misskey") {
-            if (instanceUrl && instance.url !== instanceUrl) return instance;
-            const result = await ipcInvoke("api", {
-              method: "misskey:getMeta",
-              instanceUrl: instance.url,
-            }).catch(() => {
+            const result = await instanceStore.getMisskeyInstanceMeta(instance.url);
+            if (result) {
+              instance.misskey!.meta = result;
+            } else {
               this.$state.errors.push({
                 message: `${instance.name}の詳細データを取得できませんでした`,
               });
-            });
-            console.info("meta", result);
-            instance.misskey!.meta = result;
+            }
           }
           return instance;
         }),

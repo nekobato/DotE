@@ -118,6 +118,7 @@ const currentTimelineSetting = computed(() => {
 });
 
 watchDeep(currentTimelineSetting, () => {
+  // 設定更新 & 起動時
   initStream();
 });
 
@@ -127,7 +128,6 @@ onBeforeMount(async () => {
 
   if (timelineStore.isTimelineAvailable) {
     router.push("/main/timeline");
-    initStream();
   } else {
     ipcSend("set-hazy-mode", { mode: "settings" });
   }

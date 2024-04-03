@@ -62,27 +62,12 @@ const streamOptions: {
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
+const myMisskeyUserLists = ref<MisskeyEntities.UserList[]>([]);
 const channelId = ref(props.timeline.options?.channelId ?? "");
 const antennaId = ref(props.timeline.options?.antennaId ?? "");
-const listUrl = ref(props.timeline.options?.listId ?? "");
+const listId = ref(props.timeline.options?.listId ?? "");
 const tag = ref(props.timeline.options?.tag ?? "");
 const searchQuery = ref(props.timeline.options?.query ?? "");
-
-const misskeyChannelOptions = computed(() =>
-  followedMisskeyChannels.value?.length > 0
-    ? followedMisskeyChannels.value.map((channel) => ({
-        label: channel.name,
-        value: channel.id,
-      }))
-    : [],
-);
-const misskeyAntennaOptions = computed(
-  () =>
-    myMisskeyAntennas.value?.map((antenna) => ({
-      label: antenna.name,
-      value: antenna.id,
-    })) || [],
-);
 
 const accountOptions = computed(() =>
   store.users.map((user) => ({
@@ -128,9 +113,7 @@ const onChangeAntenna = async (antennaId: string) => {
   });
 };
 
-const onChangeListUrl = async (value: string) => {
-  const listId = value.match(/\/lists\/(.+)$/)?.[1] ?? "";
-  if (!listId) return;
+const onChangeList = async (listId: string) => {
   emit("updateTimeline", {
     ...props.timeline,
     options: {
@@ -157,25 +140,27 @@ const onChangeSearchQuery = async (query: string) => {
   });
 };
 
+const fetchSelectionsFromChannel = async (channel: ChannelName) => {
+  if (channel === "misskey:channel") {
+    followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
+  }
+  if (channel === "misskey:antenna") {
+    myMisskeyAntennas.value = await timelineStore.getMyAntennas();
+  }
+  if (channel === "misskey:userList") {
+    myMisskeyUserLists.value = await timelineStore.getMyUserLists();
+  }
+};
+
 watch(
   () => props.timeline.channel,
-  async (channel) => {
-    if (channel === "misskey:channel") {
-      followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
-    }
-    if (channel === "misskey:antenna") {
-      myMisskeyAntennas.value = await timelineStore.getMyAntennas();
-    }
+  (channel) => {
+    fetchSelectionsFromChannel(channel);
   },
 );
 
-onMounted(async () => {
-  if (props.timeline.channel === "misskey:channel") {
-    followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
-  }
-  if (props.timeline.channel === "misskey:antenna") {
-    myMisskeyAntennas.value = await timelineStore.getMyAntennas();
-  }
+onMounted(() => {
+  fetchSelectionsFromChannel(props.timeline.channel);
 });
 </script>
 
@@ -208,35 +193,32 @@ onMounted(async () => {
         </ElSelect>
       </div>
     </div>
+    <!-- misskey:channel -->
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">チャンネル</span>
       </div>
       <div class="actions for-select">
-        <ElSelect v-if="misskeyChannelOptions.length" v-model="channelId" size="small" @change="onChangeChannel">
+        <ElSelect v-if="followedMisskeyChannels.length" v-model="channelId" size="small" @change="onChangeChannel">
           <ElOption
-            v-for="option in misskeyChannelOptions"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
+            v-for="channel in followedMisskeyChannels"
+            :key="channel.id"
+            :label="channel.name"
+            :value="channel.id"
           />
         </ElSelect>
       </div>
     </div>
+    <!-- misskey:antenna -->
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">アンテナ</span>
       </div>
       <div class="actions for-select">
-        <ElSelect v-if="misskeyAntennaOptions.length" v-model="antennaId" @change="onChangeAntenna" size="small">
-          <ElOption
-            v-for="option in misskeyAntennaOptions"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
-          />
+        <ElSelect v-if="myMisskeyAntennas.length" v-model="antennaId" @change="onChangeAntenna" size="small">
+          <ElOption v-for="antenna in myMisskeyAntennas" :key="antenna.id" :label="antenna.name" :value="antenna.id" />
         </ElSelect>
       </div>
     </div>
@@ -244,10 +226,12 @@ onMounted(async () => {
     <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:userList'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
-        <span class="label">リストURL</span>
+        <span class="label">リスト</span>
       </div>
-      <div class="actions for-text-field">
-        <ElInput size="small" placeholder="https://..." v-model="listUrl" @change="onChangeListUrl" />
+      <div class="actions for-select">
+        <ElSelect v-if="myMisskeyUserLists.length" v-model="listId" @change="onChangeList" size="small">
+          <ElOption v-for="list in myMisskeyUserLists" :key="list.id" :label="list.name" :value="list.id" />
+        </ElSelect>
       </div>
     </div>
     <!-- misskey:search -->

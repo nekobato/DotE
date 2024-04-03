@@ -19,16 +19,14 @@ const deleteError = (index: number) => {
 
 <template>
   <div class="hazy-error-post">
-    <div class="hazy-avatar">
+    <div class="icon">
       <Icon icon="mingcute:alert-fill" class="nn-icon size-small" />
     </div>
-    <div class="post-data-group">
-      <p class="error-body">
-        {{ props.error.message }}
-      </p>
-    </div>
+    <p class="error-body">
+      {{ props.error.message }}
+    </p>
     <div class="actions">
-      <button class="hazy-post-action" @click="deleteError(props.error.index)">
+      <button class="action" @click="deleteError(props.error.index)">
         <Icon class="nn-icon size-xsmall" icon="mingcute:close-line" />
       </button>
     </div>
@@ -39,10 +37,23 @@ const deleteError = (index: number) => {
 .hazy-error-post {
   display: flex;
   align-items: center;
-  padding: 8px;
-  border-radius: 8px;
-  background-color: var(--color-error);
-  color: var(--color-error-text);
   margin-bottom: 8px;
+  padding: 8px;
+  color: var(--hazy-text-color);
+  background-color: var(--hazy-background-color);
+  border-radius: 8px;
+}
+.icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+.error-body {
+  flex: 1;
+  margin: 0;
+  font-size: var(--font-size-14);
 }
 </style>
