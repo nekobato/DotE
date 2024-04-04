@@ -12,6 +12,7 @@ export const methodOfChannel = {
   "misskey:userList": "misskey:getTimelineList",
   "misskey:antenna": "misskey:getTimelineAntenna",
   "misskey:channel": "misskey:getTimelineChannel",
+  "misskey:hashtag": "misskey:getTimelineHashtag",
   "misskey:search": "misskey:getTimelineSearch",
 };
 

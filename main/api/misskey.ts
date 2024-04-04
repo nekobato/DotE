@@ -175,14 +175,14 @@ export const misskeyGetTimelineUserList = async ({
 export const misskeyGetTimelineHashtag = async ({
   instanceUrl,
   token,
-  query,
+  tag,
   sinceId,
   untilId,
   limit,
 }: {
   instanceUrl: string;
   token: string;
-  query: string;
+  tag: string;
   limit: number;
   sinceId?: string;
   untilId?: string;
@@ -192,7 +192,7 @@ export const misskeyGetTimelineHashtag = async ({
     headers: baseHeader,
     body: JSON.stringify({
       i: token,
-      query,
+      tag,
       sinceId,
       untilId,
       limit,
@@ -448,6 +448,14 @@ export const misskeyGetUserLists = async ({
     body: JSON.stringify({
       i: token,
     }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
+export const misskeyGetAnnouncements = async ({ instanceUrl }: { instanceUrl: string }) => {
+  return fetch(new URL(`/api/announcements`, instanceUrl).toString(), {
+    headers: baseHeader,
   }).then((res: Response) => {
     return res.json();
   });

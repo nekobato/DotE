@@ -37,11 +37,12 @@ export const useTimelineStore = defineStore("timeline", () => {
       antennaId: current?.value.options?.antennaId, // option
       listId: current?.value.options?.listId, // option
       query: current?.value.options?.query, // option
+      tag: current?.value.options?.tag, // option
       token: currentUser.value.token,
       limit: 40,
     }).catch(() => {
       store.$state.errors.push({
-        message: `${currentInstance.value?.name}の追加ノートを取得できませんでした`,
+        message: `${currentInstance.value?.name}のノートを取得できませんでした`,
       });
     });
     // misskeyなら という条件分岐が必要

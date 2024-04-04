@@ -26,7 +26,11 @@ const readmore = async () => {
   loading.value = true;
   const additionalNotes = await ipcInvoke("api", {
     method: methodOfChannel[timelineStore.current?.channel],
-    channelId: timelineStore.current?.options.channelId,
+    channelId: timelineStore.current?.options.channelId, // option
+    antennaId: timelineStore.current?.options?.antennaId, // option
+    listId: timelineStore.current?.options?.listId, // option
+    query: timelineStore.current?.options?.query, // option
+    tag: timelineStore.current?.options?.tag, // option
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
     limit: 20,
