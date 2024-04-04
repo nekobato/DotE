@@ -72,23 +72,12 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updateTimeline = async (timeline: Timeline) => {
-    await ipcInvoke("db:set-timeline", {
-      id: timeline.id,
-      userId: timeline.userId,
-      channel: timeline.channel,
-      options: timeline.options,
-      available: timeline.available,
-    });
+    await ipcInvoke("db:set-timeline", timeline);
     await store.initTimelines();
   };
 
   const createTimeline = async (timeline: Omit<Timeline, "id">) => {
-    await ipcInvoke("db:set-timeline", {
-      userId: timeline.userId,
-      channel: timeline.channel,
-      options: timeline.options,
-      available: timeline.available,
-    });
+    await ipcInvoke("db:set-timeline", timeline);
     await store.initTimelines();
   };
 
@@ -113,6 +102,7 @@ export const useTimelineStore = defineStore("timeline", () => {
         userId: store.users[0].id,
         channel: "misskey:homeTimeline",
         options: {},
+        updateInterval: 6000, // 60 sec
         available: true,
       });
       return;

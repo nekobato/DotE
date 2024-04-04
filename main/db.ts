@@ -50,6 +50,7 @@ const schema: Store.Schema<StoreSchema> = {
             query: { type: "string" },
           },
         },
+        updateInterval: { type: "number" },
         available: { type: "boolean" },
       },
       required: ["id", "userId", "channel", "available"],
