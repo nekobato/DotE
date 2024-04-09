@@ -79,6 +79,14 @@ const accountOptions = computed(() =>
   })),
 );
 
+const clearOptionValues = () => {
+  channelId.value = "";
+  antennaId.value = "";
+  listId.value = "";
+  tag.value = "";
+  searchQuery.value = "";
+};
+
 const onChangeUser = async (userId: string) => {
   emit("updateTimeline", {
     ...props.timeline,
@@ -88,6 +96,7 @@ const onChangeUser = async (userId: string) => {
 };
 
 const onChangeStream = async (stream: ChannelName) => {
+  clearOptionValues();
   emit("updateTimeline", {
     ...props.timeline,
     channel: stream,

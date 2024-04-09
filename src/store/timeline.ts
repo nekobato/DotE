@@ -58,6 +58,9 @@ export const useTimelineStore = defineStore("timeline", () => {
         token: currentUser.value.token,
         channelId: current?.value.options?.channelId, // option
         antennaId: current?.value.options?.antennaId, // option
+        listId: current?.value.options?.listId, // option
+        query: current?.value.options?.query, // option
+        tag: current?.value.options?.tag, // option
         sinceId: store.timelines[currentIndex.value]?.posts[0]?.id,
         limit: 40,
       }).catch(() => {
@@ -102,7 +105,7 @@ export const useTimelineStore = defineStore("timeline", () => {
         userId: store.users[0].id,
         channel: "misskey:homeTimeline",
         options: {},
-        updateInterval: 6000, // 60 sec
+        updateInterval: 60 * 1000, // 60 sec
         available: true,
       });
       return;

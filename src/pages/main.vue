@@ -9,6 +9,7 @@ import { createReaction, deleteReaction } from "@/utils/misskey";
 import { getHazyRoute } from "@/utils/hazyRoute";
 import { RouterView, useRouter } from "vue-router";
 import { watchDeep } from "@vueuse/core";
+import { useMisskeyPolling } from "@/utils/polling";
 
 const router = useRouter();
 const store = useStore();
@@ -51,6 +52,14 @@ const misskeyStream = useMisskeyStream({
     timelineStore.fetchDiffPosts();
   },
 });
+
+const misskeyPolling = useMisskeyPolling({
+  poll: () => {
+    timelineStore.fetchDiffPosts();
+  },
+});
+
+console.log("interval", timelineStore.current?.updateInterval);
 
 window.ipc?.on("set-hazy-mode", (_, { mode, reflect }) => {
   console.info(mode);
@@ -108,15 +117,35 @@ const initStream = () => {
     return;
   }
 
+  if (timelineStore.current.channel === "misskey:hashtag" && !timelineStore.current.options?.tag) {
+    store.$state.errors.push({
+      message: `検索タグがありません。設定でやっていってください`,
+    });
+    return;
+  }
+
+  if (timelineStore.current.channel === "misskey:search" && !timelineStore.current.options?.query) {
+    store.$state.errors.push({
+      message: `検索文字列がありません。設定でやっていってください`,
+    });
+    return;
+  }
+
   misskeyStream.disconnect();
-  misskeyStream.connect({
-    host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-    channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
-    token: timelineStore.currentUser.token,
-    channelId: timelineStore.current.options?.channelId,
-    antennaId: timelineStore.current.options?.antennaId,
-    listId: timelineStore.current.options?.listId,
-  });
+  misskeyPolling.stopPolling();
+
+  if (timelineStore.current.channel === "misskey:search") {
+    misskeyPolling.startPolling(timelineStore.current.updateInterval);
+  } else {
+    misskeyStream.connect({
+      host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+      channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
+      token: timelineStore.currentUser.token,
+      channelId: timelineStore.current.options?.channelId,
+      antennaId: timelineStore.current.options?.antennaId,
+      listId: timelineStore.current.options?.listId,
+    });
+  }
 
   nextTick(() => {
     timelineStore.fetchInitialPosts();
@@ -149,6 +178,7 @@ onBeforeMount(async () => {
 
 onBeforeUnmount(() => {
   misskeyStream.disconnect();
+  misskeyPolling.stopPolling();
 });
 </script>
 <template>

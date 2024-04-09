@@ -53,7 +53,7 @@ export const useUsersStore = defineStore("users", () => {
         userId: store.users[0].id,
         channel: "misskey:homeTimeline",
         options: {},
-        updateInterval: 6000, // 60 sec
+        updateInterval: 60 * 1000, // 60 sec
         available: true,
       });
     }
