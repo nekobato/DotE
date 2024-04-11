@@ -47,8 +47,8 @@ const readmore = async () => {
 <template>
   <div class="readmore-container" v-if="canReadmore">
     <button class="readmore-button nn-button" @click="readmore">
-      <HazyLoading v-if="loading" />
-      <Icon icon="mingcute:arrows-down-line" v-else />
+      <HazyLoading size="small" v-if="loading" />
+      <Icon icon="mingcute:arrows-down-line" :width="24" :height="24" color="#adadad" v-else />
     </button>
   </div>
 </template>
@@ -57,7 +57,7 @@ const readmore = async () => {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin: 4px 0 16px;
+  margin: 8px 0 16px;
 }
 
 .readmore-button {
@@ -65,7 +65,7 @@ const readmore = async () => {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 48px;
+  height: 56px;
   color: var(--hazy-text-color);
   background-color: var(--hazy-background-color);
   border-radius: 8px;

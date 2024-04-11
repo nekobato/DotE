@@ -25,11 +25,11 @@ defineProps({
 .ad-container {
   position: relative;
   width: 100%;
-  margin: 0;
+  margin: 8px 0 0;
+  overflow: hidden;
   background-color: transparent;
   background-color: var(--hazy-background-color);
   border: 1px solid var(--hazy-border-color);
-  overflow: hidden;
   border-radius: 8px;
 }
 .misskey-ad-carousel {
@@ -39,25 +39,25 @@ defineProps({
     height: 100%;
   }
   .el-carousel__indicators {
-    width: 100%;
-    display: flex;
-    justify-content: center;
     position: absolute;
     bottom: 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
     --el-carousel-indicator-width: 16px;
   }
 }
 </style>
 <style lang="scss" scoped>
 .carousel {
-  height: 120px;
   position: relative;
+  height: 120px;
 
   .carousel-item {
     display: flex;
-    height: 120px;
     align-items: center;
     justify-content: center;
+    height: 120px;
     img {
       width: 100%;
       height: 100%;
@@ -65,11 +65,11 @@ defineProps({
     }
   }
   .el-carousel__indicators {
-    width: 100%;
-    display: flex;
-    justify-content: center;
     position: absolute;
     bottom: 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 }
 </style>
