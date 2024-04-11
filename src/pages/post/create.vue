@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import hazyAlert from "@/components/common/HazyAlert.vue";
-import HazyButton from "@/components/common/HazyButton.vue";
+import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { onMounted, reactive, ref } from "vue";
 import type { Instance, Timeline, User } from "@shared/types/store";
-import { ElAvatar, ElButton, ElInput, ElOption, ElSelect, ElSwitch } from "element-plus";
-import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
+import { ElAvatar, ElInput } from "element-plus";
+import { onMounted, reactive, ref } from "vue";
+import HazyButton from "@/components/common/HazyButton.vue";
 
 const state = reactive({
   user: undefined as User | undefined,
@@ -106,51 +106,11 @@ document.addEventListener("keydown", (e) => {
       </HazyButton>
     </div>
     <div class="post-layout">
-      <div class="tools">
-        <ElButton class="tool-item">
-          <Icon icon="mingcute:pic-line" />
-        </ElButton>
-        <ElButton class="tool-item">
-          <Icon icon="mingcute:chart-horizontal-line" />
-        </ElButton>
-        <ElButton class="tool-item">
-          <Icon icon="mingcute:eye-2-line" />
-        </ElButton>
-        <ElButton class="tool-item">
-          <Icon icon="mingcute:at-line" />
-        </ElButton>
-        <ElButton class="tool-item">
-          <Icon icon="mingcute:hashtag-line" />
-        </ElButton>
-        <ElButton class="tool-item">
-          <Icon icon="mingcute:emoji-line" />
-        </ElButton>
-      </div>
       <div class="post-field-container">
         <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" @input="onInput" />
         <hazyAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
         </hazyAlert>
-        <div class="post-settings">
-          <div class="field-row">
-            <span>公開範囲</span>
-            <ElSelect class="input select" size="small" v-model="visibility">
-              <ElOption value="public" label="パブリック" />
-              <ElOption value="home" label="ホーム" />
-              <ElOption value="followers" label="フォロワー" />
-              <ElOption value="direct" label="ダイレクト" />
-            </ElSelect>
-          </div>
-          <div class="field-row">
-            <span>連合なし</span>
-            <ElSwitch class="input" v-model="universe" />
-          </div>
-          <div class="field-row"></div>
-          <div class="field-row">
-            <span>リアクション受け入れ</span>
-            <ElSwitch class="input" v-model="reactionable" />
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -172,8 +132,8 @@ document.addEventListener("keydown", (e) => {
 }
 .header {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   .hazy-avatar {
     border-radius: 50%;
   }
@@ -182,25 +142,28 @@ document.addEventListener("keydown", (e) => {
     font-size: 0.8rem;
   }
   .post-action {
-    margin: 0 0 0 auto;
     width: 120px;
-    &:hover {
-      background-color: var(--hazy-color-white-t1);
+    margin: 0 0 0 auto;
+    &:not(:disabled) {
+      background-image: linear-gradient(90deg, #86b300, #4ab300, #4ab300);
+      &:hover {
+        background-position-x: 100%;
+      }
     }
   }
 }
 .post-layout {
   display: grid;
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
   align-items: start;
 }
 .tools {
-  margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
   align-items: center;
+  margin-top: 8px;
   .tool-item {
     margin: 0;
   }
@@ -215,10 +178,10 @@ document.addEventListener("keydown", (e) => {
   margin: 8px 0 0;
 }
 .post-settings {
-  margin: auto 0 0 auto;
   display: flex;
   flex-direction: column;
   width: 50%;
+  margin: auto 0 0 auto;
   .field-row {
     display: flex;
     align-items: center;

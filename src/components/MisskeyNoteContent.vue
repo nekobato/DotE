@@ -158,6 +158,7 @@ const isTextVisible = () => {
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
+  color: #adadad;
 }
 .username {
   display: block;

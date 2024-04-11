@@ -131,7 +131,7 @@ timelineStore.$onAction((action) => {
           @refreshPost="refreshPost"
         />
       </PostList>
-      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0" :items="ads" />
+      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0 && timelineStore.current?.posts.length" :items="ads" />
       <ReadMore v-if="!isHazeMode" />
     </div>
     <div class="scroll-to-top" :class="{ visible: canScrollToTop }">
