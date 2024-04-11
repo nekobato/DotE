@@ -1,0 +1,17 @@
+{
+  "name": "storybook",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/react": "file:stub/types__react",
+    "@storybook/addon-essentials": "^8.0.6",
+    "@storybook/vue3-vite": "^8.0.5",
+    "storybook": "^8.0.6"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
