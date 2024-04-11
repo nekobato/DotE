@@ -1,6 +1,5 @@
 {
   "name": "hazy",
-  "private": true,
   "version": "0.0.7",
   "description": "Misskey client for desktop",
   "repository": {
