@@ -19,9 +19,6 @@ const state = reactive({
 });
 const text = ref("");
 const textCw = ref("");
-const visibility = ref("public");
-const universe = ref(false);
-const reactionable = ref(false);
 
 const post = async () => {
   if (text) {
@@ -60,10 +57,6 @@ const onInput = (value: string) => {
   console.log(value);
   if (value[value.length - 1] === ":") {
   }
-};
-
-const showEmojiPicker = () => {
-  ipcSend("emoji-picker:show");
 };
 
 onMounted(async () => {

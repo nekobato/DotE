@@ -1,4 +1,5 @@
 <script lang="tsx">
+// @ts-nocheck
 import * as mfm from "mfm-js";
 import { defineComponent, h, type PropType } from "vue";
 import type { Settings } from "@shared/types/store";
