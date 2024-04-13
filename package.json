@@ -30,7 +30,7 @@
     "@storybook/vue3-vite": "^8.0.5",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vueuse/core": "^10.9.0",
-    "electron": "28.2.3",
+    "electron": "29.3.0",
     "electron-builder": "^24.13.3",
     "electron-icon-builder": "^2.0.1",
     "element-plus": "^2.6.3",
