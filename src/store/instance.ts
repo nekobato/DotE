@@ -6,9 +6,10 @@ import type { MisskeyEntities } from "@shared/types/misskey";
 
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
+  const instanceStore = useInstanceStore();
 
   const createInstance = async (instanceUrl: string) => {
-    const meta = await getMisskeyMeta(instanceUrl);
+    const meta = await instanceStore.getMisskeyInstanceMeta(instanceUrl);
     if (!meta) return;
     const result = await ipcInvoke("db:upsert-instance", {
       type: "misskey",

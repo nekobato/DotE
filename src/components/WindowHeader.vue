@@ -15,7 +15,9 @@ const router = useRouter();
 
 const title = ref("");
 
-const showTitle = (type: string) => {
+type Title = "exit" | "haze" | "post" | "reload" | "settings";
+
+const showTitle = (type: Title) => {
   const titles = {
     exit: "ウィンドウを閉じる",
     haze: "ウィンドウ透過モード",

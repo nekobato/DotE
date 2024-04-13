@@ -97,7 +97,7 @@ export const WithEmoji: Story = {
 };
 
 export const NoteList: Story = {
-  render: (args) => ({
+  render: (args: any) => ({
     components: { PostList, MisskeyNote },
     setup() {
       return { args };
@@ -115,7 +115,7 @@ export const NoteList: Story = {
 };
 
 export const NoteListLoading: Story = {
-  render: (args) => ({
+  render: (args: any) => ({
     components: { PostList, MisskeyNote },
     setup() {
       return { args };
