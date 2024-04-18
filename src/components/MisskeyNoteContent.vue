@@ -10,6 +10,10 @@ const props = defineProps({
     type: Object as PropType<MisskeyNote>,
     required: true,
   },
+  originNote: {
+    type: Object as PropType<MisskeyNote>,
+    required: false,
+  },
   type: {
     type: String as PropType<"note" | "reply" | "renote" | "renoted" | "quote" | "quoted" | undefined>,
     required: true,
@@ -47,12 +51,12 @@ const noteEmojis = computed(() => {
   return [...remoteEmojis, ...localEmojis];
 });
 
-const renoteUsername = computed(() => {
-  const note = props.note as MisskeyNote;
-  if (!note?.user.name) return note?.user.username;
-  if (note && noteEmojis.value) {
-    return parseMisskeyText(note.user.name, noteEmojis.value);
-  }
+const username = computed(() => {
+  return getUsernameInNote(props.note);
+});
+
+const originUsername = computed(() => {
+  return props.originNote ? getUsernameInNote(props.originNote) : null;
 });
 
 const host = computed(() => {
@@ -62,6 +66,18 @@ const host = computed(() => {
 const isContentVisible = computed(() => {
   return props.type !== "renote";
 });
+
+const getUsernameInNote = (note: MisskeyNote) => {
+  if (note.user.name) {
+    if (noteEmojis.value) {
+      return parseMisskeyText(note.user.name, noteEmojis.value);
+    } else {
+      return note.user.name;
+    }
+  } else {
+    return note.user.username;
+  }
+};
 
 const openUserPage = (user: MisskeyNote["user"]) => {
   emit("openUserPage", user);
@@ -90,7 +106,16 @@ const isTextVisible = () => {
 <template>
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
     <div class="hazy-post-info" v-if="isContentVisible">
-      <span class="username" v-html="renoteUsername" @click="openUserPage(props.note.user)" />
+      <span class="username" v-html="username" @click="openUserPage(props.note.user)" />
+      <div class="renoted-by" v-if="props.originNote?.user.id && props.type === 'renoted'">
+        <Icon icon="mingcute:refresh-3-line" />
+        <span
+          class="username origin"
+          v-html="originUsername"
+          @click="openUserPage(props.originNote.user)"
+          v-if="props.originNote?.user.id"
+        />
+      </div>
     </div>
     <div class="hazy-post-content">
       <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
@@ -127,7 +152,6 @@ const isTextVisible = () => {
 <style lang="scss">
 .username {
   img.emoji {
-    width: var(--font-size-12);
     height: var(--font-size-12);
     margin-bottom: -2px;
   }
@@ -161,7 +185,9 @@ const isTextVisible = () => {
   color: #adadad;
 }
 .username {
-  display: block;
+  display: flex;
+  align-items: center;
+  height: 12px;
   color: var(--hazy-color-white-t5);
   font-weight: bold;
   font-size: var(--font-size-10);
@@ -203,10 +229,27 @@ const isTextVisible = () => {
     flex-shrink: 0;
   }
 }
-.hazy-post-info + .hazy-post-content {
-  margin-top: 2px;
+.hazy-post-info {
+  display: flex;
+  align-items: flex-start;
+  .renoted-by {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    opacity: 0.6;
+    > svg {
+      height: var(--font-size-12);
+    }
+    > .username {
+      margin-left: 4px;
+    }
+  }
+
+  & + .hazy-post-content {
+    margin-top: 4px;
+  }
 }
-.renote > .hazy-post-body > .hazy-avatar {
+.hazy-post-info .renote > .hazy-post-body > .hazy-avatar {
   width: 20px;
   height: 20px;
 }
