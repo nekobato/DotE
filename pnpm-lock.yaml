@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   electron-fetch:
     specifier: ^1.9.1
@@ -34,8 +38,8 @@ devDependencies:
     specifier: ^10.9.0
     version: 10.9.0(vue@3.4.21)
   electron:
-    specifier: 28.2.3
-    version: 28.2.3
+    specifier: 30.0.0
+    version: 30.0.0
   electron-builder:
     specifier: ^24.13.3
     version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -3456,7 +3460,7 @@ packages:
       ts-dedent: 2.2.0
       type-fest: 2.19.0
       vue: 3.4.21(typescript@5.4.4)
-      vue-component-type-helpers: 2.0.11
+      vue-component-type-helpers: 2.0.13
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -5984,14 +5988,14 @@ packages:
       - supports-color
     dev: false
 
-  /electron@28.2.3:
-    resolution: {integrity: sha512-he9nGphZo03ejDjYBXpmFVw0KBKogXvR2tYxE4dyYvnfw42uaFIBFrwGeenvqoEOfheJfcI0u4rFG6h3QxDwnA==}
+  /electron@30.0.0:
+    resolution: {integrity: sha512-GRwKphq/TUhSlb44OwSckXKl50f5OR/pm9MvF3rBLyqcxwfu7L11xejrZ0hDea1eKyCkzGd4B+cIqaQiDguPEA==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
     requiresBuild: true
     dependencies:
       '@electron/get': 2.0.3
-      '@types/node': 18.19.5
+      '@types/node': 20.10.7
       extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
@@ -11772,8 +11776,8 @@ packages:
       vue-component-type-helpers: 2.0.7
     dev: true
 
-  /vue-component-type-helpers@2.0.11:
-    resolution: {integrity: sha512-8aluKz5oVC8PvVQAYgyIefOlqzKVmAOTCx2imbrFBVLbF7mnJvyMsE2A7rqX/4f4uT6ee9o8u3GcoRpUWc0xsw==}
+  /vue-component-type-helpers@2.0.13:
+    resolution: {integrity: sha512-xNO5B7DstNWETnoYflLkVgh8dK8h2ZDgxY1M2O0zrqGeBNq5yAZ8a10yCS9+HnixouNGYNX+ggU9MQQq86HTpg==}
     dev: true
 
   /vue-component-type-helpers@2.0.7:
@@ -12159,7 +12163,3 @@ packages:
     resolution: {directory: stub/types__react, type: directory}
     name: '@types/react'
     dev: true
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
