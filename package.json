@@ -43,7 +43,7 @@
     "pinia": "^2.1.7",
     "postcss-html": "^1.6.0",
     "prettier": "^3.2.5",
-    "sass": "^1.74.1",
+    "sass": "^1.75.0",
     "stylelint": "^16.3.1",
     "stylelint-config-rational-order": "^0.1.2",
     "stylelint-config-recommended-scss": "^14.0.0",
