@@ -95,8 +95,8 @@ devDependencies:
     specifier: ^5.2.8
     version: 5.2.8(sass@1.74.1)
   vite-plugin-electron:
-    specifier: ^0.28.4
-    version: 0.28.4(vite-plugin-electron-renderer@0.14.5)
+    specifier: ^0.28.5
+    version: 0.28.5(vite-plugin-electron-renderer@0.14.5)
   vite-plugin-electron-renderer:
     specifier: ^0.14.5
     version: 0.14.5
@@ -3198,7 +3198,7 @@ packages:
       ts-dedent: 2.2.0
       type-fest: 2.19.0
       vue: 3.4.21(typescript@5.4.5)
-      vue-component-type-helpers: 2.0.12
+      vue-component-type-helpers: 2.0.13
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -11388,8 +11388,8 @@ packages:
     resolution: {integrity: sha512-EQ7ORuPp8vFPCqfuGnVo7d36fXS0IFH4/RUlKb1drseix3TQEPcgwEuFADdXBxRgqMp70njz/1m0kdf5lEsm8w==}
     dev: true
 
-  /vite-plugin-electron@0.28.4(vite-plugin-electron-renderer@0.14.5):
-    resolution: {integrity: sha512-OcWQQZk1ygkG4g/nj6cQ0zMu5q9yPcxEtDNcY8xagWqjQ3PxZbWuf1VyElZSo16GqPa71vBzoz+XAukia/TgNQ==}
+  /vite-plugin-electron@0.28.5(vite-plugin-electron-renderer@0.14.5):
+    resolution: {integrity: sha512-Z7v+pLSKQ0XJtCh0BrrRJI7t82lljJeWkMy/oejTDtpl19HxwGQ3G+d2P8WGZtZbgj50v8ZHv7hG51AEB1ZFqA==}
     peerDependencies:
       vite-plugin-electron-renderer: '*'
     peerDependenciesMeta:
@@ -11463,6 +11463,10 @@ packages:
 
   /vue-component-type-helpers@2.0.12:
     resolution: {integrity: sha512-iVJugClQdu3ZyF0N4CF3Egi+gWYfnxlIPPGtFXZG29rF3kQIuziP+k7rVGCCHiibIOQ1SlspKjrh+LRYzMpwTA==}
+    dev: true
+
+  /vue-component-type-helpers@2.0.13:
+    resolution: {integrity: sha512-xNO5B7DstNWETnoYflLkVgh8dK8h2ZDgxY1M2O0zrqGeBNq5yAZ8a10yCS9+HnixouNGYNX+ggU9MQQq86HTpg==}
     dev: true
 
   /vue-demi@0.14.7(vue@3.4.21):
