@@ -143,6 +143,7 @@ onBeforeUnmount(() => {
       <MisskeyNoteContent
         v-if="props.post.renote"
         :note="props.post.renote"
+        :originNote="props.post"
         :type="renoteType"
         :lineStyle="props.lineStyle"
         :currentInstanceUrl="props.currentInstanceUrl"
@@ -228,12 +229,13 @@ onBeforeUnmount(() => {
     padding: 0 2px;
     background: transparent;
     border: none;
+    border: 1px solid transparent;
     border-radius: 4px;
     &:not(.remote) {
       background-color: var(--hazy-color-white-t1);
       cursor: pointer;
       &:hover {
-        background-color: var(--hazy-color-white-t2);
+        border: 1px solid var(--hazy-color-white-t2);
       }
     }
     &.reacted {
