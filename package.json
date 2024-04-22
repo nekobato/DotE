@@ -56,6 +56,6 @@
     "vite-plugin-resolve": "^2.5.1",
     "vue": "^3.4.23",
     "vue-router": "^4.3.2",
-    "vue-tsc": "^2.0.13"
+    "vue-tsc": "^2.0.14"
   }
 }
