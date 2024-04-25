@@ -1,12 +1,12 @@
 import { dialog } from "electron";
-import { autoUpdater } from "electron-updater";
+import { autoUpdater, MacUpdater } from "electron-updater";
 import log from "electron-log";
 
 export const checkUpdate = () => {
   autoUpdater.checkForUpdatesAndNotify();
 
-  autoUpdater.on("update-available", (info) => {
-    log.debug("autoUpdater: update-available", info);
+  autoUpdater.on("update-available", () => {
+    autoUpdater.downloadUpdate();
   });
 
   autoUpdater.on("error", (info) => {
