@@ -2,14 +2,12 @@
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
-import { ipcSend } from "@/utils/ipc";
-import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/websocket";
-import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
 import { createReaction, deleteReaction } from "@/utils/misskey";
-import { getHazyRoute } from "@/utils/hazyRoute";
-import { RouterView, useRouter } from "vue-router";
-import { watchDeep } from "@vueuse/core";
 import { useMisskeyPolling } from "@/utils/polling";
+import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/websocket";
+import { watchDeep } from "@vueuse/core";
+import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
+import { RouterView, useRouter } from "vue-router";
 
 const router = useRouter();
 const store = useStore();
@@ -66,10 +64,6 @@ window.ipc?.on("set-hazy-mode", (_, { mode, reflect }) => {
   if (reflect) return;
 
   settingsStore.setHazyMode(mode);
-  const hazyRoute = getHazyRoute(mode);
-  if (hazyRoute) {
-    router.push(hazyRoute);
-  }
 });
 
 window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
@@ -172,7 +166,7 @@ onBeforeMount(async () => {
   if (timelineStore.isTimelineAvailable) {
     router.push("/main/timeline");
   } else {
-    ipcSend("set-hazy-mode", { mode: "settings" });
+    router.push("/main/settings");
   }
 });
 

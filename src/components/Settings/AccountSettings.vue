@@ -52,13 +52,18 @@ const checkMiAuth = async () => {
     });
   });
 
-  usersStore.createUser({
+  await usersStore.createUser({
     name: check.user.name,
     avatarUrl: check.user.avatarUrl,
     token: check.token,
     instanceUrl: misskey.instanceUrl.value,
   });
   state.value.actions.newAccount.misskey.progress = "default";
+
+  // 色々リセットするのが面倒なのでリロード
+  setTimeout(() => {
+    window.ipc.send("main:reload");
+  }, 100);
 };
 
 const startDeleteAccount = (id: string) => {
@@ -160,6 +165,7 @@ const getInstanceIconFromUser = (user: User) => {
         <div class="nn-form-item">
           <label class="nn-label">インスタンスURL</label>
           <ElInput
+            class="nn-input"
             v-model="state.actions.newAccount.misskey.instanceUrl.value"
             placeholder="https://..."
             size="small"
@@ -200,6 +206,10 @@ const getInstanceIconFromUser = (user: User) => {
   padding: 4px 0;
   color: #fff;
   font-size: var(--font-size-14);
+  .nn-label + .nn-input {
+    width: 240px;
+    margin-top: 2px;
+  }
 }
 .action {
   > svg {
