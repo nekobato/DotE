@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   electron-fetch:
     specifier: ^1.9.1
@@ -43,8 +47,8 @@ devDependencies:
     specifier: ^2.0.1
     version: 2.0.1
   element-plus:
-    specifier: ^2.6.3
-    version: 2.6.3(vue@3.4.23)
+    specifier: ^2.7.2
+    version: 2.7.2(vue@3.4.23)
   mfm-js:
     specifier: ^0.24.0
     version: 0.24.0
@@ -3194,7 +3198,7 @@ packages:
       ts-dedent: 2.2.0
       type-fest: 2.19.0
       vue: 3.4.23(typescript@5.4.5)
-      vue-component-type-helpers: 2.0.13
+      vue-component-type-helpers: 2.0.14
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -5728,8 +5732,8 @@ packages:
       - supports-color
     dev: true
 
-  /element-plus@2.6.3(vue@3.4.23):
-    resolution: {integrity: sha512-U4L/mr+1r+EmAUYUHrs0V/8hHMdBGP07rPymSC72LZCN4jK1UwygQYICegTQ5us4mxeqBvW6wfoEfo003fwCqw==}
+  /element-plus@2.7.2(vue@3.4.23):
+    resolution: {integrity: sha512-AdEzBU/A68iUleio0MkQ46JeU5SeQvFFd915GJFScJmUEo5AmYg3OQ4pVjcu+p3b3Nupg9MC5Wa4xjAiC51kUg==}
     peerDependencies:
       vue: ^3.2.0
     dependencies:
@@ -11497,8 +11501,8 @@ packages:
     resolution: {integrity: sha512-iVJugClQdu3ZyF0N4CF3Egi+gWYfnxlIPPGtFXZG29rF3kQIuziP+k7rVGCCHiibIOQ1SlspKjrh+LRYzMpwTA==}
     dev: true
 
-  /vue-component-type-helpers@2.0.13:
-    resolution: {integrity: sha512-xNO5B7DstNWETnoYflLkVgh8dK8h2ZDgxY1M2O0zrqGeBNq5yAZ8a10yCS9+HnixouNGYNX+ggU9MQQq86HTpg==}
+  /vue-component-type-helpers@2.0.14:
+    resolution: {integrity: sha512-DInfgOyXlMyliyqAAD9frK28tTfch0+tMi4qoWJcZlRxUf+NFAtraJBnAsKLep+FOyLMiajkhfyEb3xLK08i7w==}
     dev: true
 
   /vue-demi@0.14.7(vue@3.4.23):
@@ -11866,7 +11870,3 @@ packages:
     resolution: {directory: stub/types__react, type: directory}
     name: '@types/react'
     dev: true
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
