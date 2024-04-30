@@ -35,7 +35,7 @@ const props = defineProps({
   },
   theme: {
     type: String as PropType<"default">,
-    required: true,
+    default: "default",
   },
 });
 

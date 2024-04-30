@@ -12,7 +12,11 @@
     "preview": "vite preview",
     "release": "pnpm build && electron-builder --publish always -c --config electron-builder.config.cjs",
     "build:icon": "electron-icon-builder --input=./assets/icons/app_icon.png --output=./public",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "press": "vitepress dev docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "engines": {
     "node": ">=20",
@@ -28,6 +32,7 @@
   "devDependencies": {
     "@iconify/vue": "^4.1.1",
     "@vitejs/plugin-vue": "^5.0.4",
+    "@vitejs/plugin-vue-jsx": "^3.1.0",
     "@vueuse/core": "^10.9.0",
     "electron": "30.0.1",
     "electron-builder": "^24.13.3",
@@ -50,6 +55,7 @@
     "vite-plugin-electron": "^0.28.5",
     "vite-plugin-electron-renderer": "^0.14.5",
     "vite-plugin-resolve": "^2.5.1",
+    "vitepress": "^1.1.4",
     "vue": "^3.4.23",
     "vue-router": "^4.3.2",
     "vue-tsc": "^2.0.13"
