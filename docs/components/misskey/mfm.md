@@ -12,7 +12,7 @@ const link = 'https://example.com'
 const center = '<center>\nCenter\n</center>'
 
 const background = '$[fg.color=f00 赤字]\n$[bg.color=ff0 黄背景]'
-const spin = `$[spin 🍮] $[spin.left 🍮] $[spin.alternate 🍮]\n$[spin.x 🍮] $[spin.x,left 🍮] $[spin.x,alternate 🍮]\n$[spin.y 🍮] $[spin.y,left 🍮] $[spin.y,alternate 🍮]\n$[spin.speed=5s 🍮]`
+const spin = `$[spin 🍮]$[spin.left 🍮]$[spin.alternate 🍮]\n$[spin.x 🍮]$[spin.x,left 🍮]$[spin.x,alternate 🍮]\n$[spin.y 🍮]$[spin.y,left 🍮]$[spin.y,alternate 🍮]\n$[spin.speed=5s 🍮]`
 const plain = '<plain>$[x2 plain text]</plain>'
 </script>
 

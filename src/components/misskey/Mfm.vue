@@ -62,17 +62,11 @@ export default defineComponent({
         }
         case "spin": {
           return {
-            animation: `mfm-spin ${nodeProps.args.speed || "1s"} linear infinite both`,
-          };
-        }
-        case "spinX": {
-          return {
-            animation: `mfm-spinX ${nodeProps.args.speed || "1s"} linear infinite both`,
-          };
-        }
-        case "spinY": {
-          return {
-            animation: `mfm-spinY ${nodeProps.args.speed || "1s"} linear infinite both`,
+            animationName: nodeProps.args.x ? "mfm-spinX" : nodeProps.args.y ? "mfm-spinY" : "mfm-spin",
+            animationDuration: nodeProps.args.speed || "1.5s",
+            animationTimingFunction: "linear",
+            animationIterationCount: "infinite",
+            animationDirection: nodeProps.args.left ? "reverse" : nodeProps.args.alternate ? "alternate" : "normal",
           };
         }
         case "jump": {
@@ -110,8 +104,6 @@ export default defineComponent({
 
     const ast = (this.plain ? mfm.parseSimple : mfm.parse)(this.text);
     // const enableAnimation = true; // TODO: settings
-
-    console.log(this.text, ast);
 
     const fn = (node: mfm.MfmNode) => {
       switch (node.props.name) {
