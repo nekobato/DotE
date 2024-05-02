@@ -29,26 +29,35 @@ export default defineComponent({
     },
   },
   methods: {
-    fnStyle(_: { name: string; args: any }) {
-      // switch (nodeProps.name) {
-      //   case "fg": {
-      //     return { color: "#" + nodeProps.args.color };
-      //   }
-      //   case "bg": {
-      //     return { backgroundColor: "#" + nodeProps.args.color };
-      //   }
-      //   case "font": {
-      //     const fonts = ["serif", "monospace", "cursive", "fantasy"];
-      //     return {
-      //       fontFamily: fonts.find((font) => {
-      //         return !!nodeProps.args[font];
-      //       }),
-      //     };
-      //   }
-      //   default:
-      //     break;
-      // }
-      return {};
+    fnStyle(nodeProps: { name: string; args: any }) {
+      switch (nodeProps.name) {
+        case "fg": {
+          return { color: "#" + nodeProps.args.color };
+        }
+        case "bg": {
+          return { backgroundColor: "#" + nodeProps.args.color };
+        }
+        case "font": {
+          const fonts = ["serif", "monospace", "cursive", "fantasy"];
+          return {
+            fontFamily: fonts.find((font) => {
+              return !!nodeProps.args[font];
+            }),
+          };
+        }
+        case "position": {
+          return {
+            transform: `translate(${nodeProps.args.x}px, ${nodeProps.args.y}px)`,
+          };
+        }
+        case "scale": {
+          return {
+            transform: `scale(${nodeProps.args.x}, ${nodeProps.args.y})`,
+          };
+        }
+        default:
+          return {};
+      }
     },
   },
   render() {
@@ -56,6 +65,40 @@ export default defineComponent({
 
     const ast = (this.plain ? mfm.parseSimple : mfm.parse)(this.text);
     // const enableAnimation = true; // TODO: settings
+
+    console.log(this.text, ast);
+
+    const fn = (node: mfm.MfmNode) => {
+      switch (node.props.name) {
+        case "ruby": {
+          if (node.children.length === 1 && node.children[0].type === "text") {
+            // テキストだけの場合
+            const [text, rt] = node.children[0].props.text.split(" ");
+            return (
+              <ruby>
+                {text}
+                <rt>{rt}</rt>
+              </ruby>
+            );
+          } else {
+            // 更にネストされた場合
+            const lastChild = node.children?.pop();
+            return (
+              <ruby>
+                {node.children.map((child) => structElement([child]))}
+                <rt>{structElement([lastChild])}</rt>
+              </ruby>
+            );
+          }
+        }
+        default:
+          return node.children.length > 0 ? (
+            <span className={`mfm-fn ${node.props.name}`} style={this.fnStyle(node.props)}>
+              {node.children.map((child) => structElement([child]))}
+            </span>
+          ) : null;
+      }
+    };
 
     const structElement = (ast: mfm.MfmNode[]) =>
       ast.map((node) => {
@@ -78,15 +121,7 @@ export default defineComponent({
               />
             );
           case "fn":
-            return (
-              <span className="fn">
-                {node.children.length > 0 && (
-                  <span className={`mfm-fn ${node.props.name}`} style={this.fnStyle(node.props)}>
-                    {node.children.map((child) => structElement([child]))}
-                  </span>
-                )}
-              </span>
-            );
+            return <span className="fn">{fn(node)}</span>;
           case "hashtag":
             return (
               <a
@@ -161,6 +196,10 @@ export default defineComponent({
 }
 
 .hazy-post-body {
+  width: 100%;
+  font-size: 0.6rem;
+  line-height: 0.8rem;
+  white-space: pre-wrap;
   a {
     color: var(--color-text-link);
     text-decoration: underline;
@@ -189,6 +228,26 @@ export default defineComponent({
 
   .blur {
     filter: blur(6px);
+    transition: filter 0.3s;
+
+    &:hover {
+      filter: none;
+    }
+  }
+
+  code,
+  pre {
+    background-color: var(--hazy-color-black-t5);
+    color: var(--color-text-code);
+    padding: 0 4px;
+    margin: 0 2px;
+    border-radius: 2px;
+    border: 1px solid var(--hazy-color-white-t2);
+  }
+
+  code: {
+    display: block;
+    width: 100%;
   }
 }
 

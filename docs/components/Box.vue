@@ -32,11 +32,12 @@ const style = computed(() => ({
 
 <style scoped>
 .box {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-top: 40px;
-  padding: 20px;
+  padding: 12px;
   background-image: linear-gradient(
     45deg,
     transparent 25%,
