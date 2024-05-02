@@ -1,42 +1,48 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
+import { PropType } from "vue";
 import { useRouter } from "vue-router";
-import { PropType, ref } from "vue";
-import HazyPopOver from "./common/HazyPopOver.vue";
+
+type WindowType = "main" | "post" | "settings";
 
 const props = defineProps({
   windowType: {
-    type: String as PropType<"main" | "post" | "tutorial" | "settings">,
+    type: String as PropType<WindowType>,
     required: true,
+  },
+  canBack: {
+    type: Boolean,
+    default: true,
   },
 });
 
 const router = useRouter();
 
-const title = ref("");
-
 type Title = "exit" | "haze" | "post" | "reload" | "settings";
 
-const showTitle = (type: Title) => {
+const exitModeMap = {
+  post: "閉じる",
+  main: "終了",
+  settings: "戻る",
+};
+
+const buttonTitle = (type: Title) => {
   const titles = {
-    exit: "ウィンドウを閉じる",
+    exit: exitModeMap[props.windowType],
     haze: "ウィンドウ透過モード",
     post: "投稿",
     reload: "タイムライン更新",
     settings: "設定",
   };
 
-  title.value = titles[type];
+  return titles[type];
 };
 
 const exit = () => {
   switch (props.windowType) {
     case "post":
       ipcSend("post:close");
-      break;
-    case "tutorial":
-      router.push("/main/settings");
       break;
     case "main":
       ipcSend("set-hazy-mode", { mode: "hide" });
@@ -66,56 +72,45 @@ const settings = () => {
 
 <template>
   <div class="window-header">
-    <HazyPopOver content="終了">
-      <button class="nn-button type-ghost exit" @click="exit" @mouseenter="showTitle('exit')">
-        <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'post'" />
-        <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'main'" />
-        <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'tutorial'" />
-        <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'settings'" />
-      </button>
-    </HazyPopOver>
-    <HazyPopOver content="hazy mode">
-      <button
-        class="nn-button type-ghost haze"
-        @click="haze"
-        v-if="props.windowType === 'main'"
-        @mouseenter="showTitle('haze')"
-      >
-        <Icon icon="mingcute:ghost-line" class="nn-icon size-xsmall" />
-      </button>
-    </HazyPopOver>
+    <button class="nn-button type-ghost exit" @click="exit" :title="buttonTitle('exit')" :disabled="!props.canBack">
+      <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'post'" />
+      <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'main'" />
+      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'settings'" />
+    </button>
+    <button
+      class="nn-button type-ghost haze"
+      @click="haze"
+      v-if="props.windowType === 'main'"
+      :title="buttonTitle('haze')"
+    >
+      <Icon icon="mingcute:ghost-line" class="nn-icon size-xsmall" />
+    </button>
     <div class="rest"></div>
-    <HazyPopOver content="ノート">
-      <button
-        class="nn-button type-ghost post"
-        @click="post"
-        v-if="props.windowType === 'main'"
-        @mouseenter="showTitle('post')"
-      >
-        <Icon icon="mingcute:pencil-line" class="nn-icon size-xsmall" />
-      </button>
-    </HazyPopOver>
+    <button
+      class="nn-button type-ghost post"
+      @click="post"
+      v-if="props.windowType === 'main'"
+      :title="buttonTitle('post')"
+    >
+      <Icon icon="mingcute:pencil-line" class="nn-icon size-xsmall" />
+    </button>
     <div class="rest"></div>
-    <HazyPopOver content="リロード">
-      <button
-        class="nn-button type-ghost refresh"
-        v-if="props.windowType === 'main'"
-        @click="reload"
-        @mouseenter="showTitle('reload')"
-      >
-        <Icon icon="mingcute:refresh-1-line" class="nn-icon size-xsmall" />
-      </button>
-    </HazyPopOver>
-    <HazyPopOver content="設定">
-      <button
-        class="nn-button type-ghost settings"
-        @click="settings"
-        v-if="props.windowType === 'main'"
-        @mouseenter="showTitle('settings')"
-      >
-        <Icon icon="mingcute:settings-3-line" class="nn-icon size-xsmall" />
-      </button>
-    </HazyPopOver>
+    <button
+      class="nn-button type-ghost refresh"
+      v-if="props.windowType === 'main'"
+      @click="reload"
+      :title="buttonTitle('reload')"
+    >
+      <Icon icon="mingcute:refresh-1-line" class="nn-icon size-xsmall" />
+    </button>
+    <button
+      class="nn-button type-ghost settings"
+      @click="settings"
+      v-if="props.windowType === 'main'"
+      :title="buttonTitle('settings')"
+    >
+      <Icon icon="mingcute:settings-3-line" class="nn-icon size-xsmall" />
+    </button>
   </div>
 </template>
 

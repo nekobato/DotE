@@ -98,9 +98,13 @@ const lineClass = computed(() => {
 
 const canReadAll = ref(false);
 
-const isTextVisible = () => {
-  return !props.note?.cw || !props.hideCw || canReadAll.value;
+const readAll = () => {
+  canReadAll.value = true;
 };
+
+const isTextHide = computed(() => {
+  return props.note?.cw && props.hideCw && !canReadAll.value;
+});
 </script>
 
 <template>
@@ -135,14 +139,14 @@ const isTextVisible = () => {
           :post-style="props.lineStyle"
           v-if="props.note?.cw"
         />
-        <button class="nn-button size-xsmall read-all" v-if="props.note?.cw && props.hideCw">続きを見る</button>
+        <button class="nn-button size-xsmall read-all" v-if="isTextHide" @click="readAll">続きを見る</button>
         <Mfm
           class="text"
           :text="props.note?.text || ''"
           :emojis="noteEmojis"
           :host="host"
           :post-style="props.lineStyle"
-          v-show="isTextVisible"
+          v-show="!isTextHide"
         />
       </div>
     </div>

@@ -4,11 +4,14 @@ import ApplicationInformation from "@/components/Settings/ApplicationInformation
 import ApplicationSettings from "@/components/Settings/ApplicationSettings.vue";
 import TimelineSettings from "@/components/Settings/TimelineSettings.vue";
 import WindowHeader from "@/components/WindowHeader.vue";
+import { useTimelineStore } from "@/store/timeline";
+
+const timelineStore = useTimelineStore();
 </script>
 
 <template>
   <div class="settings">
-    <WindowHeader windowType="settings" />
+    <WindowHeader windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
     <div class="hazy-scroller">
       <AccountSettings />
       <TimelineSettings />

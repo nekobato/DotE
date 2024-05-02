@@ -68,7 +68,7 @@ const closeWindow = () => {
       :height="state.size?.height || undefined"
       @load="onReady"
     />
-    <audio v-if="state.media.type === 'audio'" :src="state.media.url" @load="onReady" />
+    <audio v-if="state.media.type === 'audio'" :src="state.media.url" @load="onReady" controls @click.stop />
     <Loading class="loading" v-if="state.isLoading" />
   </div>
 </template>
