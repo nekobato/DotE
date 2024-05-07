@@ -26,7 +26,7 @@
   "dependencies": {
     "electron-fetch": "^1.9.1",
     "electron-log": "^5.1.2",
-    "electron-store": "^8.2.0",
+    "electron-store": "^9.0.0",
     "electron-updater": "^6.1.8"
   },
   "devDependencies": {
