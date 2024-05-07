@@ -215,7 +215,7 @@ const isTextHide = computed(() => {
   border-radius: 50%;
   &.mini {
     position: relative;
-    top: 24px;
+    top: 28px;
     width: 20px;
     height: 20px;
   }
