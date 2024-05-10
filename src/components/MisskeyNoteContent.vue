@@ -273,31 +273,27 @@ const isTextHide = computed(() => {
     display: block;
   }
 }
-.line-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  .cw,
-  .text {
-    display: inline;
-  }
-}
-.line-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  .cw,
-  .text {
-    display: inline;
-  }
-}
+.line-1,
+.line-2,
 .line-3 {
   display: -webkit-box;
-  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   .cw,
   .text {
     display: inline;
   }
+
+  .cw + * {
+    margin-left: 8px;
+  }
+}
+.line-1 {
+  -webkit-line-clamp: 1;
+}
+.line-2 {
+  -webkit-line-clamp: 2;
+}
+.line-3 {
+  -webkit-line-clamp: 3;
 }
 </style>

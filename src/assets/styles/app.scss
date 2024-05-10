@@ -29,7 +29,6 @@ input {
 
 .hazy-field-group-title {
   display: block;
-  margin-top: 8px;
   padding: 8px 16px 4px;
   color: #bababa;
   font-weight: bold;
@@ -49,6 +48,7 @@ input {
   justify-content: flex-start;
   min-height: 40px;
   padding: 4px 16px;
+  line-height: 1;
 
   &.indent-1 {
     padding-left: 32px;
@@ -56,6 +56,10 @@ input {
 
   &.indent-2 {
     padding-left: 48px;
+  }
+
+  &.active {
+    background-color: var(--color-foreground);
   }
 
   &.wrap {
