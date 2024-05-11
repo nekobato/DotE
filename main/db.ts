@@ -1,7 +1,7 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
 import { nanoid } from "nanoid/non-secure";
-import type { Instance, Timeline, User, Settings, InstanceStore } from "../shared/types/store";
+import type { Instance, Timeline, User, Settings } from "../shared/types/store";
 
 export type StoreSchema = {
   timelines: Timeline[];
@@ -10,10 +10,10 @@ export type StoreSchema = {
   settings: Settings;
 };
 
-export const storeDefaults = {
-  users: [] as User[],
-  instances: [] as InstanceStore[],
-  timelines: [] as Timeline[],
+export const storeDefaults: StoreSchema = {
+  users: [],
+  instances: [],
+  timelines: [],
   settings: {
     opacity: 50,
     hazyMode: "show",
@@ -23,12 +23,14 @@ export const storeDefaults = {
     },
     maxPostCount: 1000,
     postStyle: "all",
-    shortcuts: {},
+    shortcuts: {
+      toggleTimeline: "Ctrl+Alt+x",
+    },
     misskey: {
       hideCw: false,
       showReactions: true,
     },
-  } as Settings,
+  },
 };
 
 const schema: Store.Schema<StoreSchema> = {

@@ -1,7 +1,6 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { useStore } from ".";
-import { hazyMisskeyPermissionString } from "@/utils/hazy";
 import type { MisskeyEntities } from "@shared/types/misskey";
 
 export const useInstanceStore = defineStore("instance", () => {
@@ -27,15 +26,6 @@ export const useInstanceStore = defineStore("instance", () => {
     return instance;
   };
 
-  const getMisskeyAuthUrl = (instanceUrl: string, sessionId: string) => {
-    const url = new URL(`/miauth/${sessionId}`, instanceUrl);
-    url.search = new URLSearchParams({
-      name: "hazy",
-      permission: hazyMisskeyPermissionString(),
-    }).toString();
-    return url.toString();
-  };
-
   const getMisskeyInstanceMeta = async (instanceUrl: string) => {
     const result: MisskeyEntities.MetaResponse | null = await ipcInvoke("api", {
       method: "misskey:getMeta",
@@ -44,5 +34,5 @@ export const useInstanceStore = defineStore("instance", () => {
     return result;
   };
 
-  return { createInstance, findInstance, getMisskeyAuthUrl, getMisskeyInstanceMeta };
+  return { createInstance, findInstance, getMisskeyInstanceMeta };
 });

@@ -8,6 +8,10 @@ import { useTimelineStore } from "./timeline";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
+  instanceType: string;
+  options?: {
+    [key: string]: any;
+  };
 };
 
 export const useUsersStore = defineStore("users", () => {

@@ -111,6 +111,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       return;
     }
 
+    // すべてのTimelineがavailableならば最初のTimelineをavailableにする
     if (!store.$state.timelines.some((timeline) => !timeline.available)) {
       await updateTimeline({
         ...store.$state.timelines[0],

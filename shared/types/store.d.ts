@@ -5,6 +5,9 @@ export type InstanceStore = Instance & {
     emojis: MisskeyEntities.CustomEmoji[];
     meta: MisskeyEntities.DetailedInstanceMetadata | null;
   };
+  mastodon?: {
+    meta: any; // TODO: Need Entity type
+  };
 };
 
 export type ChannelName =
@@ -16,7 +19,13 @@ export type ChannelName =
   | "misskey:hashtag"
   | "misskey:antenna"
   | "misskey:channel"
-  | "misskey:search";
+  | "misskey:search"
+  | "mastodon:homeTimeline"
+  | "mastodon:localTimeline"
+  | "mastodon:publicTimeline"
+  | "mastodon:hashtag"
+  | "mastodon:list"
+  | "mastodon:notifications";
 
 export type Timeline = {
   id: string; // uuid
@@ -39,7 +48,28 @@ export type Instance = {
   name: string;
   url: string;
   iconUrl: string;
+  mastodon?: {
+    clientName: string;
+  };
 };
+
+type InsranceBase = {
+  id: string; // uuid
+  name: string;
+  url: string;
+  iconUrl: string;
+};
+
+type InstanceMisskey = InsranceBase;
+
+type InstanceMastodon = InsranceBase & {
+  type: "mastodon";
+  mastodon: {
+    clientName: string;
+  };
+};
+
+type Instance = InstanceMisskey | InstanceMastodon;
 
 export type User = {
   id: string; // uuid
