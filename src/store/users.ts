@@ -1,6 +1,6 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { MisskeyEntities } from "@shared/types/misskey";
-import type { User } from "@shared/types/store";
+import type { Instance, User } from "@shared/types/store";
 import { defineStore } from "pinia";
 import { useStore } from ".";
 import { useInstanceStore } from "./instance";
@@ -28,23 +28,32 @@ export const useUsersStore = defineStore("users", () => {
     await timelineStore.deleteTimelineByUserId(id);
   };
 
-  const createUser = async (user: NewUser) => {
+  const createUser = async (newUser: NewUser) => {
+    const instance = instanceStore.findInstance(newUser.instanceUrl);
     // Instanceが無ければ作成
-    const instance =
-      instanceStore.findInstance(user.instanceUrl) || (await instanceStore.createInstance(user.instanceUrl));
+    if (!instance) {
+      switch (newUser.instanceType) {
+        case "misskey":
+          await instanceStore.createMisskeyInstance(newUser.instanceUrl);
+          break;
+        case "mastodon":
+          await instanceStore.createMastodonInstance(newUser.instanceUrl);
+          break;
+      }
+    }
 
     if (!instance) {
       store.$state.errors.push({
-        message: `${user.instanceUrl}のデータを作るのに失敗しちゃった`,
+        message: `${newUser.instanceUrl}のデータを作るのに失敗しちゃった`,
       });
       return;
     }
 
     // User作成
     await ipcInvoke("db:upsert-user", {
-      name: user.name,
-      avatarUrl: user.avatarUrl || "",
-      token: user.token,
+      name: newUser.name,
+      avatarUrl: newUser.avatarUrl || "",
+      token: newUser.token,
       instanceId: instance.id,
     });
 

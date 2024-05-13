@@ -27,6 +27,7 @@ export const apiRequest = {
   ["mastodon:registerApp"]: mastodonRequest.mastodonRegisterApp,
   ["mastodon:getAccessToken"]: mastodonRequest.mastodonGetAccessToken,
   ["mastodon:getAccount"]: mastodonRequest.mastodonGetAccount,
+  ["mastodon:getInstance"]: mastodonRequest.mastodonGetInstance,
   ["mastodon:getTimelineHome"]: mastodonRequest.mastodonGetTimelineHome,
   ["mastodon:getTimelineLocal"]: mastodonRequest.mastodonGetTimelineLocal,
   ["mastodon:getTimelinePublic"]: mastodonRequest.mastodonGetTimelinePublic,
