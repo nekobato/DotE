@@ -32,8 +32,8 @@ devDependencies:
     specifier: ^10.9.0
     version: 10.9.0(vue@3.4.23)
   electron:
-    specifier: 30.0.1
-    version: 30.0.1
+    specifier: 30.0.3
+    version: 30.0.3
   electron-builder:
     specifier: ^24.13.3
     version: 24.13.3(electron-builder-squirrel-windows@24.13.3)
@@ -3792,8 +3792,8 @@ packages:
       - supports-color
     dev: false
 
-  /electron@30.0.1:
-    resolution: {integrity: sha512-iwxkI/n2wBd29NH7TH0ZY8aWGzCoKpzJz+D10u7aGSJi1TV6d4MSM3rWyKvT/UkAHkTKOEgYfUyCa2vWQm8L0g==}
+  /electron@30.0.3:
+    resolution: {integrity: sha512-h+suwx6e0fnv/9wi0/cmCMtG+4LrPzJZa+3DEEpxcPcP+pcWnBI70t8QspxgMNIh2wzXLMD9XVqrLkEbiBAInw==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
     requiresBuild: true
