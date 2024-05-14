@@ -1,3 +1,35 @@
+export type MastodonEmoji = {
+  shortcode: string;
+  url: string;
+  static_url: string;
+  visible_in_picker: boolean;
+};
+
+export type MastodonAccount = {
+  id: string;
+  username: string;
+  acct: string;
+  display_name: string;
+  locked: boolean;
+  bot: boolean;
+  discoverable: boolean;
+  group: boolean;
+  created_at: string;
+  note: string;
+  url: string;
+  avatar: string;
+  avatar_static: string;
+  header: string;
+  header_static: string;
+  followers_count: number;
+  following_count: number;
+  statuses_count: number;
+  last_status_at: string;
+  noindex: boolean;
+  emojis: MastodonEmoji[];
+  fields: Array<any>;
+};
+
 export type MastodonInstanceApiResponse = {
   domain: string;
   title: string;
@@ -51,31 +83,132 @@ export type MastodonInstanceApiResponse = {
   };
   contact: {
     email: string;
-    account: {
-      id: string;
-      username: string;
-      acct: string;
-      display_name: string;
-      locked: boolean;
-      bot: boolean;
-      discoverable: boolean;
-      group: boolean;
-      created_at: string;
-      note: string;
-      url: string;
-      avatar: string;
-      avatar_static: string;
-      header: string;
-      header_static: string;
-      followers_count: number;
-      following_count: number;
-      statuses_count: number;
-      last_status_at: string;
-      noindex: boolean;
-      emojis: Array<any>;
-      roles: Array<any>;
-      fields: Array<any>;
-    };
+    account: MastodonAccount;
   };
   rules: Array<any>;
 };
+
+export type MastodonGetAccountApiResponse = {
+  id: string;
+  username: string;
+  acct: string;
+  display_name: string;
+  locked: boolean;
+  bot: boolean;
+  discoverable: boolean;
+  group: boolean;
+  created_at: string;
+  note: string;
+  url: string;
+  avatar: string;
+  avatar_static: string;
+  header: string;
+  header_static: string;
+  followers_count: number;
+  following_count: number;
+  statuses_count: number;
+  last_status_at: string;
+  noindex: boolean;
+  source: {
+    privacy: string;
+    sensitive: boolean;
+    language: any;
+    note: string;
+    fields: Array<any>;
+    follow_requests_count: number;
+  };
+  emojis: MastodonEmoji[];
+  roles: Array<any>;
+  fields: Array<any>;
+  role: {
+    id: string;
+    name: string;
+    permissions: string;
+    color: string;
+    highlighted: boolean;
+  };
+};
+
+export type MastodonToot = {
+  id: string;
+  created_at: string;
+  in_reply_to_id: any;
+  in_reply_to_account_id: any;
+  sensitive: boolean;
+  spoiler_text: string;
+  visibility: string;
+  language?: string;
+  uri: string;
+  url: string;
+  replies_count: number;
+  reblogs_count: number;
+  favourites_count: number;
+  edited_at: any;
+  favourited: boolean;
+  reblogged: boolean;
+  muted: boolean;
+  bookmarked: boolean;
+  content: string;
+  filtered: Array<any>;
+  reblog?: {
+    id: string;
+    created_at: string;
+    in_reply_to_id: any;
+    in_reply_to_account_id: any;
+    sensitive: boolean;
+    spoiler_text: string;
+    visibility: string;
+    language: string;
+    uri: string;
+    url: string;
+    replies_count: number;
+    reblogs_count: number;
+    favourites_count: number;
+    edited_at: any;
+    favourited: boolean;
+    reblogged: boolean;
+    muted: boolean;
+    bookmarked: boolean;
+    content: string;
+    filtered: Array<any>;
+    reblog: any;
+    account: MastodonAccount;
+    media_attachments: Array<any>;
+    mentions: Array<any>;
+    tags: Array<any>;
+    emojis: MastodonEmoji[];
+    card: {
+      url: string;
+      title: string;
+      description: string;
+      type: string;
+      author_name: string;
+      author_url: string;
+      provider_name: string;
+      provider_url: string;
+      html: string;
+      width: number;
+      height: number;
+      image: string;
+      embed_url: string;
+      blurhash: string;
+    };
+    poll: any;
+  };
+  application?: {
+    name: string;
+    website?: string;
+  };
+  account: MastodonAccount;
+  media_attachments: Array<any>;
+  mentions: Array<any>;
+  tags: Array<any>;
+  emojis: MastodonEmoji[];
+  card: any;
+  poll: any;
+  application?: {
+    name: string;
+    website?: string;
+  };
+  pinned?: boolean;
+}[];

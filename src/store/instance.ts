@@ -8,6 +8,15 @@ export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
   const instanceStore = useInstanceStore();
 
+  const createInstance = async (url: string, type: "misskey" | "mastodon") => {
+    switch (type) {
+      case "misskey":
+        return await createMisskeyInstance(url);
+      case "mastodon":
+        return await createMastodonInstance(url);
+    }
+  };
+
   const createMisskeyInstance = async (instanceUrl: string) => {
     const meta = await instanceStore.getMisskeyInstanceMeta(instanceUrl);
     if (!meta) return;
@@ -50,5 +59,5 @@ export const useInstanceStore = defineStore("instance", () => {
     return result;
   };
 
-  return { createMisskeyInstance, createMastodonInstance, findInstance, getMisskeyInstanceMeta };
+  return { createInstance, findInstance, getMisskeyInstanceMeta };
 });

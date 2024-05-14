@@ -8,7 +8,7 @@ import { useTimelineStore } from "./timeline";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
-  instanceType: string;
+  instanceType: "misskey" | "mastodon";
   options?: {
     [key: string]: any;
   };
@@ -29,17 +29,10 @@ export const useUsersStore = defineStore("users", () => {
   };
 
   const createUser = async (newUser: NewUser) => {
-    const instance = instanceStore.findInstance(newUser.instanceUrl);
+    let instance: Instance | undefined = instanceStore.findInstance(newUser.instanceUrl);
     // Instanceが無ければ作成
     if (!instance) {
-      switch (newUser.instanceType) {
-        case "misskey":
-          await instanceStore.createMisskeyInstance(newUser.instanceUrl);
-          break;
-        case "mastodon":
-          await instanceStore.createMastodonInstance(newUser.instanceUrl);
-          break;
-      }
+      instance = await instanceStore.createInstance(newUser.instanceUrl, newUser.instanceType);
     }
 
     if (!instance) {

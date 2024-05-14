@@ -285,7 +285,7 @@ const getInstanceIconFromUser = (user: User) => {
         </button>
       </div>
     </div>
-    <div class="hazy-field-row as-thread indent-1 active">
+    <div class="hazy-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step2:confirm'">
       <div class="content">
         <span v-if="newAccount.instanceType === 'misskey'">認証できた？</span>
         <ElInput
