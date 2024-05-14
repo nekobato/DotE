@@ -167,6 +167,11 @@ const isTextHide = computed(() => {
   &.renote {
     height: 0;
   }
+  &.quoted {
+    .username {
+      margin-left: 16px;
+    }
+  }
   &.quoted:not(.no-parent) {
     margin-top: 4px;
     padding-top: 4px;
