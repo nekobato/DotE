@@ -42,7 +42,7 @@
     "misskey-js": "^2024.3.1",
     "nanoid": "^5.0.7",
     "pinia": "^2.1.7",
-    "postcss-html": "^1.6.0",
+    "postcss-html": "^1.7.0",
     "prettier": "^3.2.5",
     "sass": "^1.77.1",
     "stylelint": "^16.5.0",
