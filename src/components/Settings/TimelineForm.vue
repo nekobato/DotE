@@ -6,6 +6,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import type { MisskeyChannel, MisskeyEntities } from "@shared/types/misskey";
 import type { ChannelName, Timeline } from "@shared/types/store";
 import { ElInput, ElSelect, ElOption } from "element-plus";
+import { useInstanceStore } from "@/store/instance";
 
 const props = defineProps<{
   timeline: Timeline;
@@ -17,8 +18,9 @@ const emit = defineEmits<{
 
 const store = useStore();
 const timelineStore = useTimelineStore();
+const instanceStore = useInstanceStore();
 
-const streamOptions: {
+const misskeyStreamOptions: {
   label: string;
   value: ChannelName;
 }[] = [
@@ -60,6 +62,32 @@ const streamOptions: {
   },
 ];
 
+const mastodonStreamOptions: {
+  label: string;
+  value: ChannelName;
+}[] = [
+  {
+    label: "ホーム",
+    value: "mastodon:homeTimeline",
+  },
+  {
+    label: "ローカル",
+    value: "mastodon:localTimeline",
+  },
+  {
+    label: "パブリック",
+    value: "mastodon:publicTimeline",
+  },
+  {
+    label: "リスト...",
+    value: "mastodon:list",
+  },
+  {
+    label: "ハッシュタグ...",
+    value: "mastodon:hashtag",
+  },
+];
+
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
 const myMisskeyUserLists = ref<MisskeyEntities.UserList[]>([]);
@@ -78,6 +106,23 @@ const accountOptions = computed(() =>
     value: user.id,
   })),
 );
+
+const streamOptions = (
+  timeline: Timeline,
+): {
+  label: string;
+  value: ChannelName;
+}[] => {
+  const instance = instanceStore.findInstanceByUserId(timeline.userId);
+  switch (instance?.type) {
+    case "misskey":
+      return misskeyStreamOptions;
+    case "mastodon":
+      return mastodonStreamOptions;
+    default:
+      return [];
+  }
+};
 
 const clearOptionValues = () => {
   channelId.value = "";
@@ -198,7 +243,12 @@ onMounted(() => {
       </div>
       <div class="actions for-select">
         <ElSelect v-model="props.timeline.channel" size="small" @change="onChangeStream">
-          <ElOption v-for="option in streamOptions" :key="option.value" :label="option.label" :value="option.value" />
+          <ElOption
+            v-for="option in streamOptions(timeline)"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
         </ElSelect>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import type { MisskeyChannel, MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
+import type { MisskeyNote } from "@shared/types/misskey";
 import type { InstanceStore, Settings, Timeline, User } from "@shared/types/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
@@ -14,11 +14,17 @@ export const methodOfChannel = {
   "misskey:channel": "misskey:getTimelineChannel",
   "misskey:hashtag": "misskey:getTimelineHashtag",
   "misskey:search": "misskey:getTimelineSearch",
+  "misskey:notifications": "misskey:getNotifications",
+  "mastodon:homeTimeline": "mastodon:getTimelineHome",
+  "mastodon:localTimeline": "mastodon:getTimelineLocal",
+  "mastodon:publicTimeline": "mastodon:getTimelinePublic",
+  "mastodon:hashtag": "mastodon:getTimelineHashtag",
+  "mastodon:list": "mastodon:getTimelineList",
+  "mastodon:notifications": "mastodon:getNotifications",
 };
 
 export type TimelineStore = Timeline & {
   posts: MisskeyNote[];
-  channels: MisskeyChannel[];
 };
 
 export type ErrorItem = {
@@ -50,7 +56,7 @@ export const useStore = defineStore({
       await this.initUsers();
       await this.initInstances();
       await this.initMisskeyEmojis();
-      await this.initMisskeyMeta();
+      await this.initInstanceMeta();
       await this.initTimelines();
       await this.initSettings();
       console.info("store init", this.$state);
@@ -66,12 +72,20 @@ export const useStore = defineStore({
           return {
             ...instance,
             misskey: {
-              meta: null as MisskeyEntities.MetaResponse | null,
               emojis: [],
+              meta: null,
+            },
+          };
+        } else {
+          // mastodon
+          return {
+            ...instance,
+            mastodon: {
+              clientName: "",
+              meta: null,
             },
           };
         }
-        return instance;
       });
       console.info("instances initted", this.$state.instances);
     },
@@ -94,20 +108,28 @@ export const useStore = defineStore({
         }),
       );
     },
-    async initMisskeyMeta() {
+    async initInstanceMeta() {
       const instanceStore = useInstanceStore();
       return Promise.all(
         this.$state.instances.map(async (instance) => {
-          if (instance.type === "misskey") {
-            const result = await instanceStore.getMisskeyInstanceMeta(instance.url);
-            if (result) {
-              instance.misskey!.meta = result;
-            } else {
-              this.$state.errors.push({
-                message: `${instance.name}の詳細データを取得できませんでした`,
-              });
-            }
+          let metaResult;
+          switch (instance.type) {
+            case "misskey":
+              metaResult = await instanceStore.getMisskeyInstanceMeta(instance.url);
+              instance.misskey!.meta = metaResult;
+              break;
+            case "mastodon":
+              metaResult = await instanceStore.getMastodonInstanceMeta(instance.url);
+              instance.mastodon.meta = metaResult;
+              break;
           }
+
+          if (!metaResult) {
+            this.$state.errors.push({
+              message: `${instance.name}の詳細データを取得できませんでした`,
+            });
+          }
+
           return instance;
         }),
       );
@@ -118,7 +140,6 @@ export const useStore = defineStore({
         return {
           ...timeline,
           posts: [],
-          channels: [],
         };
       });
       console.info("timelines initted", this.$state.timelines);

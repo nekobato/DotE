@@ -51,6 +51,13 @@ export const useInstanceStore = defineStore("instance", () => {
     return instance;
   };
 
+  const findInstanceByUserId = (userId: string) => {
+    const user = store.$state.users.find((user) => user.id === userId);
+    if (!user) return;
+    const instance = store.$state.instances.find((instance) => instance.id === user.instanceId);
+    return instance;
+  };
+
   const getMisskeyInstanceMeta = async (instanceUrl: string) => {
     const result: MisskeyEntities.MetaResponse | null = await ipcInvoke("api", {
       method: "misskey:getMeta",
@@ -59,5 +66,13 @@ export const useInstanceStore = defineStore("instance", () => {
     return result;
   };
 
-  return { createInstance, findInstance, getMisskeyInstanceMeta };
+  const getMastodonInstanceMeta = async (instanceUrl: string) => {
+    const result: MastodonInstanceApiResponse | null = await ipcInvoke("api", {
+      method: "mastodon:getInstance",
+      instanceUrl,
+    });
+    return result;
+  };
+
+  return { createInstance, findInstance, findInstanceByUserId, getMisskeyInstanceMeta, getMastodonInstanceMeta };
 });
