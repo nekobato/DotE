@@ -165,6 +165,7 @@ onBeforeUnmount(() => {
         }"
         @click="onClickReaction(props.post.id, reaction.name)"
         :title="reaction.name.replace(/:/g, '')"
+        :disabled="reaction.isRemote"
       >
         <img :src="reaction.url" :alt="reaction.name" class="emoji" v-if="reaction.url" />
         <span class="emoji-default" v-else>{{ reaction.name }}</span>

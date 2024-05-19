@@ -2,7 +2,7 @@ import type { MisskeyNote } from "@shared/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { computed } from "vue";
-import { methodOfChannel, useStore } from ".";
+import { TimelineStore, methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
 
 export const useTimelineStore = defineStore("timeline", () => {
@@ -22,6 +22,13 @@ export const useTimelineStore = defineStore("timeline", () => {
   const setPosts = (posts: MisskeyNote[]) => {
     if (store.$state.timelines[currentIndex.value]) {
       store.$state.timelines[currentIndex.value].posts = posts;
+
+      if (store.settings.maxPostCount < store.timelines[currentIndex.value].posts.length) {
+        store.timelines[currentIndex.value].posts = store.timelines[currentIndex.value].posts.slice(
+          0,
+          store.settings.maxPostCount,
+        );
+      }
     }
   };
 
@@ -74,7 +81,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updateTimeline = async (timeline: Timeline) => {
+  const updateTimeline = async ({ posts, channels, ...timeline }: TimelineStore) => {
     await ipcInvoke("db:set-timeline", timeline);
     await store.initTimelines();
   };
@@ -124,6 +131,10 @@ export const useTimelineStore = defineStore("timeline", () => {
   const addNewPost = (post: MisskeyNote) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
+
+    if (store.settings.maxPostCount < store.timelines[currentIndex.value].posts.length) {
+      store.timelines[currentIndex.value].posts.pop();
+    }
   };
 
   const addMorePosts = (posts: MisskeyNote[]) => {

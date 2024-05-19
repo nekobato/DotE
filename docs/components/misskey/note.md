@@ -80,6 +80,10 @@ const defaultProps = {
   <MisskeyNote v-bind="{ ...defaultProps, post: { ...note, cw: 'cw text' } }"  />
 </Box>
 
+<Box title="with cw">
+  <MisskeyNote v-bind="{ ...defaultProps, post: { ...note, cw: 'cw text' }}" line-style="line-3" />
+</Box>
+
 <Box title="reactions">
   <MisskeyNote v-bind="{ ...defaultProps, post: { ...note, reactions: reactions } }"  />
 </Box>
