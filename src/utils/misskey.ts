@@ -2,10 +2,14 @@ import type { Post } from "@shared/types/post";
 import { useTimelineStore } from "@/store/timeline";
 import type { MisskeyNote } from "@shared/types/misskey";
 
-export const parseMisskeyAttachments = (
-  files: MisskeyNote["files"],
-  poll?: MisskeyNote["poll"],
-): Post["attachments"] => {
+export const parseMisskeyAttachments = (post: MisskeyNote): Post["attachments"] => {
+  const files = post.files?.length
+    ? post.files
+    : (post.renote as MisskeyNote)?.files?.length
+      ? (post.renote as MisskeyNote).files
+      : [];
+  const poll = post.poll || (post.renote as MisskeyNote)?.poll;
+
   const fileAttachments =
     files?.map((file) => {
       return {
@@ -24,6 +28,7 @@ export const parseMisskeyAttachments = (
         {
           type: "poll" as const,
           voted: poll.choices.some((choice) => choice.isVoted),
+          url: post.url,
         },
       ]
     : [];

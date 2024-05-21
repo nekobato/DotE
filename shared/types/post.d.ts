@@ -23,4 +23,5 @@ export type Attachment =
   | {
       type: "poll";
       voted: boolean;
+      url: string;
     };
