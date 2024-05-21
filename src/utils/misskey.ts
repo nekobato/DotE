@@ -2,8 +2,11 @@ import type { Post } from "@shared/types/post";
 import { useTimelineStore } from "@/store/timeline";
 import type { MisskeyNote } from "@shared/types/misskey";
 
-export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
-  return (
+export const parseMisskeyAttachments = (
+  files: MisskeyNote["files"],
+  poll?: MisskeyNote["poll"],
+): Post["attachments"] => {
+  const fileAttachments =
     files?.map((file) => {
       return {
         type: file.type.split("/")[0] as "image" | "video",
@@ -15,8 +18,16 @@ export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["atta
         },
         isSensitive: file.isSensitive,
       };
-    }) || []
-  );
+    }) || [];
+  const pollAttachments = poll
+    ? [
+        {
+          type: "poll" as const,
+          voted: poll.choices.some((choice) => choice.isVoted),
+        },
+      ]
+    : [];
+  return [...fileAttachments, ...pollAttachments];
 };
 
 export const parseMisskeyText = (text: string | null, emojis: { name: string; url: string }[]): string => {

@@ -10,18 +10,17 @@ export type Post = {
   replyId: string | null;
 };
 
-export type AttachmentType = "image" | "video" | "audio" | "url" | "poll";
+export type AttachmentType = "image" | "video" | "audio" | "url";
 
-export type Attachment = {
-  type: AttachmentType;
-  url?: string;
-  thumbnailUrl?: string;
-  size: { width?: number; height?: number };
-  poll?: {
-    choices: string[];
-    expire: number;
-    multiple: boolean;
-    votes: { [key: string]: string[] };
-  };
-  isSensitive?: boolean;
-};
+export type Attachment =
+  | {
+      type: AttachmentType;
+      url?: string;
+      thumbnailUrl?: string;
+      size: { width?: number; height?: number };
+      isSensitive?: boolean;
+    }
+  | {
+      type: "poll";
+      voted: boolean;
+    };

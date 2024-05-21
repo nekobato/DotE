@@ -71,7 +71,9 @@ const postAtttachments = computed(() => {
     : props.post.renote?.files?.length
       ? props.post.renote.files
       : [];
-  return files?.length ? parseMisskeyAttachments(files) : [];
+  const poll = props.post.poll || (props.post.renote as MisskeyNote)?.poll;
+
+  return files?.length || !!poll ? parseMisskeyAttachments(files, poll) : [];
 });
 
 const reactions = computed(() => {

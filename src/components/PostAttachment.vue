@@ -30,6 +30,16 @@ const attachmentAction = (attachment: Attachment) => {
   <button class="attachment" :class="[attachment.type]" @click="attachmentAction(attachment)">
     <Icon icon="mingcute:music-2-line" class="nn-icon size-small audio" v-if="attachment.type === 'audio'" />
     <Icon icon="mingcute:film-line" class="nn-icon size-small video" v-if="attachment.type === 'video'" />
+    <Icon
+      icon="mingcute:check-circle-line"
+      class="nn-icon size-small video"
+      v-if="attachment.type === 'poll' && attachment.voted"
+    />
+    <Icon
+      icon="mingcute:check-circle-fill"
+      class="nn-icon size-small video"
+      v-if="attachment.type === 'poll' && !attachment.voted"
+    />
     <img
       class="image"
       :src="attachment.thumbnailUrl"
@@ -38,7 +48,7 @@ const attachmentAction = (attachment: Attachment) => {
       :tabindex="0"
       v-if="attachment.type === 'image'"
     />
-    <div class="sensitive-filter" v-if="attachment.isSensitive">
+    <div class="sensitive-filter" v-if="attachment.type === 'image' && attachment.isSensitive">
       <Icon icon="octicon:alert-16" class="nn-icon size-small attention" />
     </div>
   </button>

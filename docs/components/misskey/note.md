@@ -50,6 +50,46 @@ const defaultProps = {
   hideCw: true,
   note: note,
 };
+
+const files = [
+  {
+    id: "1",
+    type: "image",
+    url: "https://picsum.photos/128",
+    thumbnailUrl: "https://picsum.photos/128",
+    properties: {
+      width: 128,
+      height: 128,
+    },
+    size: 12800,
+    duration: null,
+  },
+  {
+    id: "2",
+    type: "video",
+    url: "https://www.youtube.com/watch?v=9bZkp7q19f0",
+    thumbnailUrl: "https://picsum.photos/128",
+    properties: {
+      width: 128,
+      height: 128,
+    },
+    size: 12800,
+  },
+];
+
+const poll = {
+  multiple: false,
+  choices: [{
+      isVoted: false,
+      text: 'choice 1',
+      votes: 1
+  },
+  {
+      isVoted: false,
+      text: 'choice 2',
+      votes: 0
+  }]
+}
 </script>
 
 <Box title="default">
@@ -86,6 +126,14 @@ const defaultProps = {
 
 <Box title="reactions">
   <MisskeyNote v-bind="{ ...defaultProps, post: { ...note, reactions: reactions } }"  />
+</Box>
+
+<Box title="images">
+  <MisskeyNote v-bind="{ ...defaultProps, post: { ...note, files: files } }"  />
+</Box>
+
+<Box title="poll">
+  <MisskeyNote v-bind="{ ...defaultProps, post: { ...note, poll: poll } }"  />
 </Box>
 
 <Box>
