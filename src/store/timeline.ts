@@ -27,7 +27,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const fetchInitialPosts = async () => {
     if (!current.value || !currentUser.value || !currentInstance.value) {
-      throw new Error("user not found");
+      throw new Error("ユーザーが見つかりませんでした");
     }
 
     const data = await ipcInvoke("api", {
@@ -42,7 +42,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       limit: 40,
     }).catch(() => {
       store.$state.errors.push({
-        message: `${currentInstance.value?.name}のノートを取得できませんでした`,
+        message: `${currentInstance.value?.name}のタイムラインを取得できませんでした`,
       });
     });
     // misskeyなら という条件分岐が必要

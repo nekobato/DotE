@@ -133,18 +133,21 @@ const clearOptionValues = () => {
 };
 
 const onChangeUser = async (userId: string) => {
+  const defaultChannel =
+    instanceStore.findInstanceByUserId(userId)?.type === "misskey" ? "misskey:homeTimeline" : "mastodon:homeTimeline";
   emit("updateTimeline", {
     ...props.timeline,
     userId,
+    channel: defaultChannel,
     options: {},
   });
 };
 
-const onChangeStream = async (stream: ChannelName) => {
+const onChangeStream = async (channel: ChannelName) => {
   clearOptionValues();
   emit("updateTimeline", {
     ...props.timeline,
-    channel: stream,
+    channel,
     options: {},
   });
 };

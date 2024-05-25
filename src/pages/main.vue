@@ -2,12 +2,15 @@
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
-import { createReaction, deleteReaction } from "@/utils/misskey";
+import { mastodonChannels } from "@/utils/mastodon";
+import { createReaction, deleteReaction, misskeyChannels } from "@/utils/misskey";
 import { useMisskeyPolling } from "@/utils/polling";
-import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/websocket";
+import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
+import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
 import { watchDeep } from "@vueuse/core";
 import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
 import { RouterView, useRouter } from "vue-router";
+import { useMastodonStream } from "@/utils/mastodonStream";
 
 const router = useRouter();
 const store = useStore();
@@ -57,7 +60,12 @@ const misskeyPolling = useMisskeyPolling({
   },
 });
 
-console.log("interval", timelineStore.current?.updateInterval);
+const mastodonStream = useMastodonStream({
+  onReconnect: () => {
+    console.info("onReconnect");
+    timelineStore.fetchDiffPosts();
+  },
+});
 
 window.ipc?.on("set-hazy-mode", (_, { mode, reflect }) => {
   console.info(mode);
@@ -89,56 +97,69 @@ window.ipc?.on("resume-timeline", () => {});
 
 const initStream = () => {
   if (!timelineStore.currentInstance || !timelineStore.current || !timelineStore.currentUser) return;
+  const current = timelineStore.current;
 
-  if (timelineStore.current.channel === "misskey:channel" && !timelineStore.current.options?.channelId) {
-    store.$state.errors.push({
-      message: `チャンネルの指定がありません。設定でやっていってください`,
-    });
-    return;
-  }
-
-  if (timelineStore.current.channel === "misskey:antenna" && !timelineStore.current.options?.antennaId) {
-    store.$state.errors.push({
-      message: `アンテナの指定がありません。設定でやっていってください`,
-    });
-    return;
-  }
-
-  if (timelineStore.current.channel === "misskey:userList" && !timelineStore.current.options?.listId) {
-    store.$state.errors.push({
-      message: `リストの指定がありません。設定でやっていってください`,
-    });
-    return;
-  }
-
-  if (timelineStore.current.channel === "misskey:hashtag" && !timelineStore.current.options?.tag) {
-    store.$state.errors.push({
-      message: `検索タグがありません。設定でやっていってください`,
-    });
-    return;
-  }
-
-  if (timelineStore.current.channel === "misskey:search" && !timelineStore.current.options?.query) {
-    store.$state.errors.push({
-      message: `検索文字列がありません。設定でやっていってください`,
-    });
-    return;
-  }
-
+  // reset stream
   misskeyStream.disconnect();
   misskeyPolling.stopPolling();
+  mastodonStream.disconnect();
 
-  if (timelineStore.current.channel === "misskey:search") {
-    misskeyPolling.startPolling(timelineStore.current.updateInterval);
-  } else {
-    misskeyStream.connect({
-      host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-      channel: timelineStore.current.channel.split(":")[1] as MisskeyStreamChannel,
-      token: timelineStore.currentUser.token,
-      channelId: timelineStore.current.options?.channelId,
-      antennaId: timelineStore.current.options?.antennaId,
-      listId: timelineStore.current.options?.listId,
-    });
+  if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
+    // mastodonStream.connect({
+    //   host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+    //   channel: current.channel as MastodonChannelName,
+    //   token: timelineStore.currentUser.token,
+    // });
+  }
+
+  if (misskeyChannels.includes(current.channel as MisskeyChannelName)) {
+    if (current.channel === "misskey:channel" && !current.options?.channelId) {
+      store.$state.errors.push({
+        message: `チャンネルの指定がありません。設定でやっていってください`,
+      });
+      return;
+    }
+
+    if (current.channel === "misskey:antenna" && !current.options?.antennaId) {
+      store.$state.errors.push({
+        message: `アンテナの指定がありません。設定でやっていってください`,
+      });
+      return;
+    }
+
+    if (current.channel === "misskey:userList" && !current.options?.listId) {
+      store.$state.errors.push({
+        message: `リストの指定がありません。設定でやっていってください`,
+      });
+      return;
+    }
+
+    if (current.channel === "misskey:hashtag" && !current.options?.tag) {
+      store.$state.errors.push({
+        message: `検索タグがありません。設定でやっていってください`,
+      });
+      return;
+    }
+
+    if (current.channel === "misskey:search" && !current.options?.query) {
+      store.$state.errors.push({
+        message: `検索文字列がありません。設定でやっていってください`,
+      });
+      return;
+    }
+
+    if (timelineStore.current.channel === "misskey:search") {
+      misskeyPolling.startPolling(timelineStore.current.updateInterval);
+    } else {
+      misskeyStream.connect({
+        host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+        channel: current.channel.split(":")[1] as MisskeyStreamChannel,
+        token: timelineStore.currentUser.token,
+        channelId: current.options?.channelId,
+        antennaId: current.options?.antennaId,
+        listId: current.options?.listId,
+      });
+    }
   }
 
   nextTick(() => {
@@ -173,6 +194,7 @@ onBeforeMount(async () => {
 onBeforeUnmount(() => {
   misskeyStream.disconnect();
   misskeyPolling.stopPolling();
+  mastodonStream.disconnect();
 });
 </script>
 <template>

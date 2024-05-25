@@ -1,6 +1,6 @@
 import { MisskeyEntities } from "misskey-js";
 
-export type ChannelName =
+export type MisskeyChannelName =
   | "misskey:homeTimeline"
   | "misskey:localTimeline"
   | "misskey:socialTimeline"
@@ -9,13 +9,17 @@ export type ChannelName =
   | "misskey:hashtag"
   | "misskey:antenna"
   | "misskey:channel"
-  | "misskey:search"
+  | "misskey:search";
+
+export type MastodonChannelName =
   | "mastodon:homeTimeline"
   | "mastodon:localTimeline"
   | "mastodon:publicTimeline"
   | "mastodon:hashtag"
   | "mastodon:list"
   | "mastodon:notifications";
+
+export type ChannelName = MisskeyChannelName | MastodonChannelName;
 
 export type Timeline = {
   id: string; // uuid
