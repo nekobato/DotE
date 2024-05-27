@@ -95,8 +95,8 @@ devDependencies:
     specifier: ^2.5.1
     version: 2.5.1
   vitepress:
-    specifier: ^1.2.0
-    version: 1.2.0(@algolia/client-search@4.23.3)(postcss@8.4.38)(sass@1.77.2)(search-insights@2.13.0)(typescript@5.4.5)
+    specifier: ^1.2.2
+    version: 1.2.2(@algolia/client-search@4.23.3)(postcss@8.4.38)(sass@1.77.2)(search-insights@2.13.0)(typescript@5.4.5)
   vue:
     specifier: ^3.4.23
     version: 3.4.23(typescript@5.4.5)
@@ -2036,7 +2036,7 @@ packages:
       '@babel/helper-module-imports': 7.22.15
       '@babel/helper-plugin-utils': 7.24.0
       '@babel/parser': 7.24.4
-      '@vue/compiler-sfc': 3.4.26
+      '@vue/compiler-sfc': 3.4.27
     dev: true
 
   /@vue/compiler-core@3.4.23:
@@ -2044,16 +2044,6 @@ packages:
     dependencies:
       '@babel/parser': 7.24.4
       '@vue/shared': 3.4.23
-      entities: 4.5.0
-      estree-walker: 2.0.2
-      source-map-js: 1.2.0
-    dev: true
-
-  /@vue/compiler-core@3.4.26:
-    resolution: {integrity: sha512-N9Vil6Hvw7NaiyFUFBPXrAyETIGlQ8KcFMkyk6hW1Cl6NvoqvP+Y8p1Eqvx+UdqsnrnI9+HMUEJegzia3mhXmQ==}
-    dependencies:
-      '@babel/parser': 7.24.4
-      '@vue/shared': 3.4.26
       entities: 4.5.0
       estree-walker: 2.0.2
       source-map-js: 1.2.0
@@ -2076,13 +2066,6 @@ packages:
       '@vue/shared': 3.4.23
     dev: true
 
-  /@vue/compiler-dom@3.4.26:
-    resolution: {integrity: sha512-4CWbR5vR9fMg23YqFOhr6t6WB1Fjt62d6xdFPyj8pxrYub7d+OgZaObMsoxaF9yBUHPMiPFK303v61PwAuGvZA==}
-    dependencies:
-      '@vue/compiler-core': 3.4.26
-      '@vue/shared': 3.4.26
-    dev: true
-
   /@vue/compiler-dom@3.4.27:
     resolution: {integrity: sha512-kUTvochG/oVgE1w5ViSr3KUBh9X7CWirebA3bezTbB5ZKBQZwR2Mwj9uoSKRMFcz4gSMzzLXBPD6KpCLb9nvWw==}
     dependencies:
@@ -2098,20 +2081,6 @@ packages:
       '@vue/compiler-dom': 3.4.23
       '@vue/compiler-ssr': 3.4.23
       '@vue/shared': 3.4.23
-      estree-walker: 2.0.2
-      magic-string: 0.30.10
-      postcss: 8.4.38
-      source-map-js: 1.2.0
-    dev: true
-
-  /@vue/compiler-sfc@3.4.26:
-    resolution: {integrity: sha512-It1dp+FAOCgluYSVYlDn5DtZBxk1NCiJJfu2mlQqa/b+k8GL6NG/3/zRbJnHdhV2VhxFghaDq5L4K+1dakW6cw==}
-    dependencies:
-      '@babel/parser': 7.24.4
-      '@vue/compiler-core': 3.4.26
-      '@vue/compiler-dom': 3.4.26
-      '@vue/compiler-ssr': 3.4.26
-      '@vue/shared': 3.4.26
       estree-walker: 2.0.2
       magic-string: 0.30.10
       postcss: 8.4.38
@@ -2137,13 +2106,6 @@ packages:
     dependencies:
       '@vue/compiler-dom': 3.4.23
       '@vue/shared': 3.4.23
-    dev: true
-
-  /@vue/compiler-ssr@3.4.26:
-    resolution: {integrity: sha512-FNwLfk7LlEPRY/g+nw2VqiDKcnDTVdCfBREekF8X74cPLiWHUX6oldktf/Vx28yh4STNy7t+/yuLoMBBF7YDiQ==}
-    dependencies:
-      '@vue/compiler-dom': 3.4.26
-      '@vue/shared': 3.4.26
     dev: true
 
   /@vue/compiler-ssr@3.4.27:
@@ -2193,8 +2155,8 @@ packages:
         optional: true
     dependencies:
       '@volar/language-core': 2.2.4
-      '@vue/compiler-dom': 3.4.26
-      '@vue/shared': 3.4.26
+      '@vue/compiler-dom': 3.4.27
+      '@vue/shared': 3.4.27
       computeds: 0.0.1
       minimatch: 9.0.4
       path-browserify: 1.0.1
@@ -2266,10 +2228,6 @@ packages:
 
   /@vue/shared@3.4.23:
     resolution: {integrity: sha512-wBQ0gvf+SMwsCQOyusNw/GoXPV47WGd1xB5A1Pgzy0sQ3Bi5r5xm3n+92y3gCnB3MWqnRDdvfkRGxhKtbBRNgg==}
-    dev: true
-
-  /@vue/shared@3.4.26:
-    resolution: {integrity: sha512-Fg4zwR0GNnjzodMt3KRy2AWGMKQXByl56+4HjN87soxLNU9P5xcJkstAlIeEF3cU6UYOzmJl1tV0dVPGIljCnQ==}
     dev: true
 
   /@vue/shared@3.4.27:
@@ -8222,8 +8180,8 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitepress@1.2.0(@algolia/client-search@4.23.3)(postcss@8.4.38)(sass@1.77.2)(search-insights@2.13.0)(typescript@5.4.5):
-    resolution: {integrity: sha512-m/4PAQVyPBvKHV7sFKwcmNmrsoSxdjnw/Eg40YyuBSaBHhrro9ubnfWk5GT0xGfE98LqjZkHCWKNJlR6G/7Ayg==}
+  /vitepress@1.2.2(@algolia/client-search@4.23.3)(postcss@8.4.38)(sass@1.77.2)(search-insights@2.13.0)(typescript@5.4.5):
+    resolution: {integrity: sha512-uZ3nXR5NY4nYj3RJWCo5jev9qlNZAQo5SUXu1U0QSUx84cUm/o7hCTDVjZ4njVSVui+PsV1oAbdQOg8ygbaf4w==}
     hasBin: true
     peerDependencies:
       markdown-it-mathjax3: ^4
