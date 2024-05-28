@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ErrorPost from "@/components/ErrorPost.vue";
+import MastodonToot from "@/components/MastodonToot.vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
@@ -10,6 +11,7 @@ import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import type { MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
+import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { computed, nextTick, reactive, ref } from "vue";
 
 const store = useStore();
@@ -38,8 +40,17 @@ const canScrollToTop = computed(() => {
   return store.settings.hazyMode === "show" && scrollPosition.value > 0;
 });
 
+const emojis = computed(() => {
+  return timelineStore.currentInstance?.type === "misskey" ? timelineStore.currentInstance?.misskey?.emojis : [];
+});
+
 const ads = computed(() => {
-  return timelineStore.currentInstance?.misskey?.meta.ads || [];
+  return timelineStore.currentInstance?.type === "misskey" &&
+    !isHazeMode &&
+    timelineStore.currentInstance?.misskey?.meta.ads.length > 0 &&
+    timelineStore.current?.posts.length
+    ? timelineStore.currentInstance?.misskey?.meta.ads
+    : [];
 });
 
 const scrollToTop = () => {
@@ -61,23 +72,12 @@ const openNewReaction = (noteId: string) => {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
     noteId: noteId,
-    emojis: timelineStore.currentInstance?.misskey?.emojis,
+    emojis: emojis.value,
   });
 };
 
 const refreshPost = (noteId: string) => {
-  timelineStore.updatePost({ postId: noteId });
-};
-
-const openPost = (noteId: string) => {
-  ipcSend("open-url", { url: new URL(`/notes/${noteId}`, timelineStore.currentInstance?.url).toString() });
-};
-
-const openUserPage = (user: MisskeyNoteType["user"]) => {
-  const instanceUrl = user.host || timelineStore.currentInstance?.url;
-  ipcSend("open-url", {
-    url: new URL(`/@${user.username}`, instanceUrl).toString(),
-  });
+  timelineStore.misskeyUpdatePost({ postId: noteId });
 };
 
 timelineStore.$onAction((action) => {
@@ -113,11 +113,12 @@ timelineStore.$onAction((action) => {
     >
       <PostList v-if="timelineStore.current?.posts?.length">
         <MisskeyNote
+          v-if="timelineStore.currentInstance?.type === 'misskey'"
           class="post-item"
           v-for="post in timelineStore.current.posts"
-          :post="post"
+          :post="post as MisskeyNoteType"
           :postStyle="store.settings.postStyle"
-          :emojis="timelineStore.currentInstance?.misskey?.emojis"
+          :emojis="emojis"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           :hideCw="store.settings.misskey.hideCw"
           :showReactions="store.settings.misskey.showReactions"
@@ -126,12 +127,20 @@ timelineStore.$onAction((action) => {
           :key="post.id"
           @reaction="onReaction"
           @newReaction="openNewReaction"
-          @openPost="openPost"
-          @openUserPage="openUserPage"
+          @refreshPost="refreshPost"
+        />
+        <MastodonToot
+          v-if="timelineStore.currentInstance?.type === 'mastodon'"
+          v-for="toot in timelineStore.current?.posts"
+          :key="toot.id"
+          :post="toot as MastodonTootType"
+          :instanceUrl="timelineStore.currentInstance?.url"
+          :lineStyle="store.settings.postStyle"
+          @reaction="onReaction"
           @refreshPost="refreshPost"
         />
       </PostList>
-      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0 && timelineStore.current?.posts.length" :items="ads" />
+      <MisskeyAdCarousel :items="ads" />
       <ReadMore v-if="!isHazeMode" />
     </div>
     <div class="scroll-to-top" :class="{ visible: canScrollToTop }">

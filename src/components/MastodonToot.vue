@@ -1,33 +1,23 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
-import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote } from "@shared/types/misskey";
-import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
-import MisskeyNoteContent from "./MisskeyNoteContent.vue";
+import { computed, type PropType } from "vue";
 import PostAttachment from "./PostAttachment.vue";
+import { MastodonToot } from "@/types/mastodon";
+import { parseMastodonText } from "@/utils/mastodon";
 
 const props = defineProps({
   post: {
-    type: Object as PropType<MisskeyNote>,
+    type: Object as PropType<MastodonToot>,
     required: true,
-  },
-  emojis: {
-    type: Array as PropType<{ name: string; url: string }[]>,
-    default: null,
   },
   lineStyle: {
     type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
     required: true,
   },
-  currentInstanceUrl: {
+  instanceUrl: {
     type: String as PropType<string>,
     required: false,
-  },
-  hideCw: {
-    type: Boolean as PropType<boolean>,
-    default: false,
-    required: true,
   },
   showReactions: {
     type: Boolean as PropType<boolean>,
@@ -39,118 +29,86 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction"]);
+const emit = defineEmits(["refreshPost", "reaction"]);
+
+const post = computed(() => {
+  return props.post.reblog || props.post;
+});
 
 const postType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quote";
-    } else {
-      return "renote";
-    }
-  } else if (props.post.replyId) {
+  if (props.post.reblog) {
+    return "reblog";
+  }
+  if (props.post.in_reply_to_id) {
     return "reply";
   } else {
     return "note";
   }
 });
 
-const renoteType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quoted";
-    } else {
-      return "renoted";
-    }
-  }
-});
-
 const postAtttachments = computed(() => {
-  const files = props.post.files?.length
-    ? props.post.files
-    : props.post.renote?.files?.length
-      ? props.post.renote.files
-      : [];
-  return files?.length ? parseMisskeyAttachments(files) : [];
+  const files = props.post.media_attachments;
+  return files.map((file) => ({
+    type: file.type as "image" | "video" | "audio",
+    url: file.url,
+    thumbnailUrl: file.preview_url || "",
+    size: {
+      width: file.meta.original.width,
+      height: file.meta.original.height,
+    },
+    isSensitive: props.post.sensitive,
+  }));
 });
 
-const reactions = computed(() => {
-  const reactions = props.post.renote && !props.post.text ? props.post.renote.reactions : props.post.reactions;
-  return Object.keys(reactions)
-    .map((key) => {
-      if (!/^:/.test(key)) return { name: key, count: reactions[key] };
-      const reactionName = key.replace(/:|@\./g, "");
-      const localEmoji = props.emojis.find((emoji) => emoji.name === reactionName);
-      return {
-        name: key,
-        url:
-          localEmoji?.url ||
-          props.post.reactionEmojis[reactionName] ||
-          (props.post.renote as MisskeyNote)?.reactionEmojis[reactionName] ||
-          "",
-        count: reactions[key],
-        isRemote: !localEmoji,
-      };
-    })
-    .sort((a, b) => b.count - a.count);
-});
+const favourite = () => {
+  ipcSend("favourite", { postId: props.post.id });
+};
 
 const refreshPost = () => {
   emit("refreshPost", props.post.id);
 };
 
 const openPost = () => {
-  emit("openPost", props.post.id);
+  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.instanceUrl).toString() });
 };
 
-const onOpenUserPage = (user: MisskeyNote["user"]) => {
-  emit("openUserPage", user);
+const openUserPage = (user: MastodonToot["account"]) => {
+  ipcSend("open-url", { url: user.url });
 };
 
-const openReactionWindow = () => {
-  emit("newReaction", props.post.id);
+const onClickReaction = (postId: string) => {
+  emit("reaction", { postId });
 };
-
-const onClickReaction = (postId: string, reaction: string) => {
-  emit("reaction", { postId, reaction });
-};
-
-onMounted(() => {
-  ipcSend("stream:sub-note", {
-    postId: props.post.id,
-  });
-});
-
-onBeforeUnmount(() => {
-  ipcSend("stream:unsub-note", {
-    postId: props.post.id,
-  });
-});
 </script>
 
 <template>
   <div class="hazy-post">
     <div class="post-data-group">
-      <MisskeyNoteContent
-        :note="props.post"
-        :type="postType"
-        :lineStyle="props.lineStyle"
-        :currentInstanceUrl="props.currentInstanceUrl"
-        :hideCw="props.hideCw"
-        :emojis="props.emojis"
-        @openUserPage="onOpenUserPage"
-      />
-      <MisskeyNoteContent
-        v-if="props.post.renote"
-        :note="props.post.renote"
-        :originNote="props.post"
-        :type="renoteType"
-        :lineStyle="props.lineStyle"
-        :currentInstanceUrl="props.currentInstanceUrl"
-        :hideCw="props.hideCw"
-        :emojis="props.emojis"
-        @openUserPage="onOpenUserPage"
-      />
+      <div class="toot-content" :class="[postType]">
+        <div class="hazy-post-info">
+          <span class="username" @click="openUserPage(post.account)">{{
+            post.account.display_name || post.account.username
+          }}</span>
+          <div class="renoted-by" v-if="postType === 'reblog'">
+            <Icon icon="mingcute:refresh-3-line" />
+            <span class="username origin" @click="openUserPage(props.post.account)">{{
+              props.post.account.display_name
+            }}</span>
+          </div>
+        </div>
+        <div class="hazy-post-content">
+          <img
+            class="hazy-avatar"
+            :class="{ mini: postType === 'reblog' }"
+            :src="props.post.account.avatar || ''"
+            alt=""
+            @click="openUserPage(post.account)"
+          />
+          <div class="text-container" :class="[lineStyle]">
+            <span class="text" v-html="parseMastodonText(post.content, post.emojis)" />
+          </div>
+        </div>
+      </div>
     </div>
     <div class="attachments" v-if="postAtttachments">
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
@@ -158,25 +116,19 @@ onBeforeUnmount(() => {
     <div class="reactions" v-if="props.showReactions">
       <button
         class="reaction"
-        v-for="reaction in reactions"
         :class="{
-          remote: reaction.isRemote,
-          reacted: isMyReaction(reaction.name, props.post.myReaction || props.post.renote?.myReaction),
+          reacted: props.post.favourited,
         }"
-        @click="onClickReaction(props.post.id, reaction.name)"
-        :title="reaction.name.replace(/:/g, '')"
+        @click="onClickReaction(props.post.id)"
+        :title="`Favourites: ${props.post.favourites_count}`"
       >
-        <img :src="reaction.url" :alt="reaction.name" class="emoji" v-if="reaction.url" />
-        <span class="emoji-default" v-else>{{ reaction.name }}</span>
-        <span class="count">{{ reaction.count }}</span>
+        <Icon class="star-icon" icon="mingcute:star-fill" />
+        <span class="count">{{ props.post.favourites_count }}</span>
       </button>
     </div>
     <div class="hazy-post-actions">
       <button class="hazy-post-action" @click="refreshPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
-      </button>
-      <button class="hazy-post-action" @click="openReactionWindow">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
       </button>
       <button class="hazy-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
@@ -255,6 +207,11 @@ onBeforeUnmount(() => {
       font-size: 12px;
       line-height: 20px;
     }
+    .star-icon {
+      width: 16px;
+      height: 16px;
+      color: var(--hazy-color-white);
+    }
   }
 }
 
@@ -302,6 +259,119 @@ onBeforeUnmount(() => {
     width: 16px;
     height: 16px;
     color: var(--hazy-color-white);
+  }
+}
+
+.toot-content {
+  .post-type-mark {
+    flex: 0 0 auto;
+    width: 16px;
+    height: 16px;
+    color: #adadad;
+  }
+  .username {
+    display: flex;
+    align-items: center;
+    height: 12px;
+    color: var(--hazy-color-white-t5);
+    font-weight: bold;
+    font-size: var(--font-size-10);
+    line-height: var(--font-size-10);
+    white-space: nowrap;
+  }
+
+  .username,
+  .hazy-avatar {
+    cursor: pointer;
+  }
+
+  .hazy-avatar {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    margin: 0 0 auto 0;
+    object-fit: cover;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 50%;
+    &.mini {
+      position: relative;
+      top: 28px;
+      width: 20px;
+      height: 20px;
+    }
+
+    & + * {
+      margin-left: 8px;
+    }
+  }
+
+  .hazy-post-content {
+    display: flex;
+    width: 100%;
+
+    > .hazy-avatar {
+      flex-shrink: 0;
+    }
+  }
+  .hazy-post-info {
+    display: flex;
+    align-items: flex-start;
+    .renoted-by {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 4px;
+      opacity: 0.6;
+      > svg {
+        height: var(--font-size-12);
+      }
+      > .username {
+        margin-left: 4px;
+      }
+    }
+
+    & + .hazy-post-content {
+      margin-top: 4px;
+    }
+  }
+
+  .text-container {
+    min-height: calc(0.8rem * 2);
+    overflow: hidden;
+    color: #efefef;
+    font-size: 0.6rem;
+    line-height: 0.8rem;
+  }
+
+  .line-all {
+    display: block;
+    .cw,
+    .text {
+      display: block;
+    }
+  }
+  .line-1,
+  .line-2,
+  .line-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    .cw,
+    .text {
+      display: inline;
+    }
+
+    .cw + * {
+      margin-left: 8px;
+    }
+  }
+  .line-1 {
+    -webkit-line-clamp: 1;
+  }
+  .line-2 {
+    -webkit-line-clamp: 2;
+  }
+  .line-3 {
+    -webkit-line-clamp: 3;
   }
 }
 </style>

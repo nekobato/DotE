@@ -132,7 +132,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts];
   };
 
-  const addEmoji = async ({ postId, name }: { postId: string; name: string }) => {
+  const misskeyAddEmoji = async ({ postId, name }: { postId: string; name: string }) => {
     const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId);
     const reactions = post?.renote ? post.renote.reactions : post?.reactions;
     if (!reactions) return;
@@ -143,7 +143,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const createReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+  const misskeyCreateReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     if (currentUser.value) {
       await ipcInvoke("api", {
         method: "misskey:createReaction",
@@ -161,7 +161,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const deleteReaction = async ({ postId }: { postId: string }) => {
+  const misskeyDeleteReaction = async ({ postId }: { postId: string }) => {
     if (currentUser.value) {
       await ipcInvoke("api", {
         method: "misskey:deleteReaction",
@@ -178,7 +178,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updatePost = async ({ postId }: { postId: string }) => {
+  const misskeyUpdatePost = async ({ postId }: { postId: string }) => {
     if (!store.timelines[currentIndex.value] || !currentUser.value) return;
 
     const res = await ipcInvoke("api", {
@@ -197,7 +197,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
-  const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+  const misskeyAddReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     // TODO: reactionがremote serverだった場合
     const post = store.timelines[currentIndex.value].posts.find((p) => p.id === postId);
     if (!post) return;
@@ -209,7 +209,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const getFollowedChannels = () => {
+  const misskeyGetFollowedChannels = () => {
     if (!currentUser.value) return;
     const myChannels = ipcInvoke("api", {
       method: "misskey:getFollowedChannels",
@@ -224,7 +224,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myChannels;
   };
 
-  const getMyAntennas = () => {
+  const misskeyGetMyAntennas = () => {
     if (!currentUser.value) return;
     const myAntennas = ipcInvoke("api", {
       method: "misskey:getMyAntennas",
@@ -239,7 +239,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myAntennas;
   };
 
-  const getUserLists = () => {
+  const misskeyGetUserLists = () => {
     if (!currentUser.value) return;
     const userLists = ipcInvoke("api", {
       method: "misskey:getUserLists",
@@ -275,13 +275,13 @@ export const useTimelineStore = defineStore("timeline", () => {
     createTimeline,
     addNewPost,
     addMorePosts,
-    addEmoji,
-    addReaction,
-    createReaction,
-    deleteReaction,
-    updatePost,
-    getFollowedChannels,
-    getMyAntennas,
-    getUserLists,
+    misskeyAddEmoji,
+    misskeyAddReaction,
+    misskeyCreateReaction,
+    misskeyDeleteReaction,
+    misskeyUpdatePost,
+    misskeyGetFollowedChannels,
+    misskeyGetMyAntennas,
+    misskeyGetUserLists,
   };
 });

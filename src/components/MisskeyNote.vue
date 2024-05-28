@@ -100,11 +100,14 @@ const refreshPost = () => {
 };
 
 const openPost = () => {
-  emit("openPost", props.post.id);
+  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.currentInstanceUrl).toString() });
 };
 
-const onOpenUserPage = (user: MisskeyNote["user"]) => {
-  emit("openUserPage", user);
+const openUserPage = (user: MisskeyNote["user"]) => {
+  const instanceUrl = user.host || props.currentInstanceUrl;
+  ipcSend("open-url", {
+    url: new URL(`/@${user.username}`, instanceUrl).toString(),
+  });
 };
 
 const openReactionWindow = () => {
@@ -138,7 +141,7 @@ onBeforeUnmount(() => {
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
-        @openUserPage="onOpenUserPage"
+        @openUserPage="openUserPage"
       />
       <MisskeyNoteContent
         v-if="props.post.renote"
@@ -149,7 +152,7 @@ onBeforeUnmount(() => {
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
-        @openUserPage="onOpenUserPage"
+        @openUserPage="openUserPage"
       />
     </div>
     <div class="attachments" v-if="postAtttachments">

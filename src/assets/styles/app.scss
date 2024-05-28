@@ -78,3 +78,13 @@ input {
     margin: auto 0 auto auto;
   }
 }
+
+.toot-content {
+  img.emoji {
+    height: var(--font-size-12);
+    margin-bottom: -2px;
+  }
+  a {
+    color: #efefef;
+  }
+}

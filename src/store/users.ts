@@ -92,12 +92,28 @@ export const useUsersStore = defineStore("users", () => {
           id: user.id,
           name: result.username,
           avatarUrl: result.avatarUrl ?? undefined,
-          token: user.token,
-          instanceId: instance.id,
         });
-        await store.initUsers();
+      }
+    } else if (instance.type === "mastodon") {
+      const result: any = await ipcInvoke("api", {
+        method: "mastodon:getAccount",
+        instanceUrl: instance.url,
+        token: user.token,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${user.name}の認証失敗`,
+        });
+      });
+
+      if (result) {
+        await ipcInvoke("db:upsert-user", {
+          id: user.id,
+          name: result.username,
+          avatarUrl: result.avatar,
+        });
       }
     }
+    await store.initUsers();
   };
 
   const checkAndUpdateUsers = async () => {

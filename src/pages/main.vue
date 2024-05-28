@@ -3,7 +3,7 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
-import { createReaction, deleteReaction, misskeyChannels } from "@/utils/misskey";
+import { misskeyCreateReaction, misskeyDeleteReaction, misskeyChannels } from "@/utils/misskey";
 import { useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
 import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
@@ -34,7 +34,7 @@ const misskeyStream = useMisskeyStream({
     switch (event) {
       case "reacted":
         console.info("reacted", data);
-        timelineStore.addReaction({
+        timelineStore.misskeyAddReaction({
           postId: data.id,
           reaction: data.body.reaction,
         });
@@ -46,7 +46,7 @@ const misskeyStream = useMisskeyStream({
   },
   onEmojiAdded: (_, data) => {
     console.info("onEmojiAdded", data);
-    timelineStore.addEmoji(data.body.emoji);
+    timelineStore.misskeyAddEmoji(data.body.emoji);
   },
   onReconnect: () => {
     console.info("onReconnect");
@@ -80,9 +80,9 @@ window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: stri
 
   // 既にreactionがある場合は削除してから追加
   if (post.myReaction) {
-    await deleteReaction(data.postId);
+    await misskeyDeleteReaction(data.postId);
   }
-  await createReaction(data.postId, data.reaction);
+  await misskeyCreateReaction(data.postId, data.reaction);
 });
 
 window.ipc?.on("stream:sub-note", (_, data: { postId: string }) => {

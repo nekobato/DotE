@@ -1,6 +1,7 @@
+import { MastodonToot } from "@/types/mastodon";
+import { ipcInvoke } from "@/utils/ipc";
 import type { MisskeyNote } from "@shared/types/misskey";
 import type { InstanceStore, Settings, Timeline, User } from "@shared/types/store";
-import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { useInstanceStore } from "./instance";
 
@@ -24,7 +25,7 @@ export const methodOfChannel = {
 };
 
 export type TimelineStore = Timeline & {
-  posts: MisskeyNote[];
+  posts: MisskeyNote[] | MastodonToot[];
 };
 
 export type ErrorItem = {

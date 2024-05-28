@@ -67,9 +67,9 @@ export const isMyReaction = (reaction: string, myReaction?: string) => {
   return reaction === myReaction;
 };
 
-export const createReaction = async (postId: string, reaction: string) => {
+export const misskeyCreateReaction = async (postId: string, reaction: string) => {
   const timelineStore = useTimelineStore();
-  await timelineStore.createReaction({
+  await timelineStore.misskeyCreateReaction({
     postId,
     reaction,
   });
@@ -85,9 +85,9 @@ export const createReaction = async (postId: string, reaction: string) => {
   }
 };
 
-export const deleteReaction = async (postId: string) => {
+export const misskeyDeleteReaction = async (postId: string) => {
   const timelineStore = useTimelineStore();
-  await timelineStore.deleteReaction({
+  await timelineStore.misskeyDeleteReaction({
     postId,
   });
   // Delete reaction on Local

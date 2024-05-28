@@ -11,7 +11,7 @@ defineProps({
 });
 </script>
 <template>
-  <div class="ad-container">
+  <div class="ad-container" v-if="items.length > 0">
     <ElCarousel class="carousel misskey-ad-carousel" :autoplay="true" :interval="5000" arrow="always">
       <ElCarouselItem class="carousel-item" v-for="(item, index) in items" :key="index">
         <a :href="item.url" target="_blank" rel="noopener noreferrer">

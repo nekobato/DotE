@@ -73,7 +73,15 @@ export const mastodonGetTimelinePublic = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/v1/timelines/public`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/timelines/public`, instanceUrl);
+  url.searchParams.append("limit", limit.toString());
+  if (sinceId) {
+    url.searchParams.append("since_id", sinceId);
+  }
+  if (untilId) {
+    url.searchParams.append("max_id", untilId);
+  }
+  return fetch(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
@@ -96,7 +104,15 @@ export const mastodonGetTimelineHome = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/v1/timelines/home`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/timelines/home`, instanceUrl);
+  url.searchParams.append("limit", limit.toString());
+  if (sinceId) {
+    url.searchParams.append("since_id", sinceId);
+  }
+  if (untilId) {
+    url.searchParams.append("max_id", untilId);
+  }
+  return fetch(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
@@ -119,7 +135,15 @@ export const mastodonGetTimelineLocal = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/v1/timelines/public`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/timelines/public`, instanceUrl);
+  url.searchParams.append("limit", limit.toString());
+  if (sinceId) {
+    url.searchParams.append("since_id", sinceId);
+  }
+  if (untilId) {
+    url.searchParams.append("max_id", untilId);
+  }
+  return fetch(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
@@ -144,7 +168,15 @@ export const mastodonGetTimelineHashtag = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/v1/timelines/tag/${hashtag}`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/timelines/tag/${hashtag}`, instanceUrl);
+  url.searchParams.append("limit", limit.toString());
+  if (sinceId) {
+    url.searchParams.append("since_id", sinceId);
+  }
+  if (untilId) {
+    url.searchParams.append("max_id", untilId);
+  }
+  return fetch(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
@@ -169,7 +201,15 @@ export const mastodonGetTimelineList = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/v1/timelines/list/${listId}`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/timelines/list/${listId}`, instanceUrl);
+  url.searchParams.append("limit", limit.toString());
+  if (sinceId) {
+    url.searchParams.append("since_id", sinceId);
+  }
+  if (untilId) {
+    url.searchParams.append("max_id", untilId);
+  }
+  return fetch(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
@@ -192,7 +232,15 @@ export const mastodonGetNotifications = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/v1/notifications`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/notifications`, instanceUrl);
+  url.searchParams.append("limit", limit.toString());
+  if (sinceId) {
+    url.searchParams.append("since_id", sinceId);
+  }
+  if (untilId) {
+    url.searchParams.append("max_id", untilId);
+  }
+  return fetch(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,

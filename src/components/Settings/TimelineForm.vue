@@ -199,13 +199,13 @@ const onChangeSearchQuery = async (query: string) => {
 
 const fetchSelectionsFromChannel = async (channel: ChannelName) => {
   if (channel === "misskey:channel") {
-    followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
+    followedMisskeyChannels.value = await timelineStore.misskeyGetFollowedChannels();
   }
   if (channel === "misskey:antenna") {
-    myMisskeyAntennas.value = await timelineStore.getMyAntennas();
+    myMisskeyAntennas.value = await timelineStore.misskeyGetMyAntennas();
   }
   if (channel === "misskey:userList") {
-    myMisskeyUserLists.value = await timelineStore.getUserLists();
+    myMisskeyUserLists.value = await timelineStore.misskeyGetUserLists();
   }
 };
 

@@ -5,6 +5,36 @@ export type MastodonEmoji = {
   visible_in_picker: boolean;
 };
 
+export type MediaAttachment = {
+  id: string;
+  type: string;
+  url: string;
+  preview_url: string;
+  remote_url: any;
+  preview_remote_url: any;
+  text_url: any;
+  meta: {
+    original: {
+      width: number;
+      height: number;
+      size: string;
+      aspect: number;
+    };
+    small: {
+      width: number;
+      height: number;
+      size: string;
+      aspect: number;
+    };
+    focus: {
+      x: number;
+      y: number;
+    };
+  };
+  description: string;
+  blurhash: string;
+};
+
 export type MastodonAccount = {
   id: string;
   username: string;
@@ -173,7 +203,7 @@ export type MastodonToot = {
     filtered: Array<any>;
     reblog: any;
     account: MastodonAccount;
-    media_attachments: Array<any>;
+    media_attachments: Array<MediaAttachment>;
     mentions: Array<any>;
     tags: Array<any>;
     emojis: MastodonEmoji[];
@@ -200,7 +230,7 @@ export type MastodonToot = {
     website?: string;
   };
   account: MastodonAccount;
-  media_attachments: Array<any>;
+  media_attachments: Array<MediaAttachment>;
   mentions: Array<any>;
   tags: Array<any>;
   emojis: MastodonEmoji[];
@@ -211,4 +241,4 @@ export type MastodonToot = {
     website?: string;
   };
   pinned?: boolean;
-}[];
+};
