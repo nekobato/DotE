@@ -1,7 +1,7 @@
 {
   "name": "hazy",
   "version": "0.0.10",
-  "description": "Misskey client for desktop",
+  "description": "Fediverse client for desktop",
   "repository": {
     "type": "git",
     "url": "https://github.com/nekobato/hazy.git"
