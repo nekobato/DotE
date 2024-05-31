@@ -308,7 +308,7 @@ export const mastodonDeleteStatus = async ({
   });
 };
 
-export const mastodonFavorite = async ({
+export const mastodonFavourite = async ({
   instanceUrl,
   token,
   id,
@@ -328,7 +328,7 @@ export const mastodonFavorite = async ({
   });
 };
 
-export const mastodonUnFavorite = async ({
+export const mastodonUnFavourite = async ({
   instanceUrl,
   token,
   id,

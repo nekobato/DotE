@@ -60,8 +60,12 @@ const postAtttachments = computed(() => {
   }));
 });
 
-const favourite = () => {
-  ipcSend("favourite", { postId: props.post.id });
+const toggleFavourite = () => {
+  if (props.post.favourited) {
+    ipcSend("api", { method: "mastodon:unFavourite", postId: props.post.id });
+  } else {
+    ipcSend("api", { method: "mastodon:favourite", postId: props.post.id });
+  }
 };
 
 const refreshPost = () => {
@@ -74,10 +78,6 @@ const openPost = () => {
 
 const openUserPage = (user: MastodonToot["account"]) => {
   ipcSend("open-url", { url: user.url });
-};
-
-const onClickReaction = (postId: string) => {
-  emit("reaction", { postId });
 };
 </script>
 
@@ -119,7 +119,7 @@ const onClickReaction = (postId: string) => {
         :class="{
           reacted: props.post.favourited,
         }"
-        @click="onClickReaction(props.post.id)"
+        @click="toggleFavourite"
         :title="`Favourites: ${props.post.favourites_count}`"
       >
         <Icon class="star-icon" icon="mingcute:star-fill" />

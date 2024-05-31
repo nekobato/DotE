@@ -262,6 +262,33 @@ export const misskeyGetTimelineSearch = async ({
   });
 };
 
+export const misskeyGetNotifications = async ({
+  instanceUrl,
+  token,
+  limit,
+  sinceId,
+  untilId,
+}: {
+  instanceUrl: string;
+  token: string;
+  limit: number;
+  sinceId?: string;
+  untilId?: string;
+}) => {
+  return fetch(new URL(`/api/i/notifications`, instanceUrl).toString(), {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      limit,
+      sinceId,
+      untilId,
+    }),
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
 export const misskeyCreateReaction = async ({
   instanceUrl,
   token,
