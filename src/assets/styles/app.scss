@@ -23,17 +23,17 @@ input {
   outline-color: #fff;
 }
 
-.hazy-unvisible {
+.dote-unvisible {
   visibility: hidden;
 }
 
-.hazy-field-group-title {
+.dote-field-group-title {
   display: block;
   padding: 8px 16px 4px;
   color: #bababa;
   font-weight: bold;
   font-size: 0.8rem;
-  border-top: 1px solid var(--hazy-border-color);
+  border-top: 1px solid var(--dote-border-color);
 
   &.no-border {
     margin-top: 0;
@@ -41,7 +41,7 @@ input {
   }
 }
 
-.hazy-field-row {
+.dote-field-row {
   display: flex;
   gap: 8px;
   align-items: center;

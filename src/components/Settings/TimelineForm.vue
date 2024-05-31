@@ -223,7 +223,7 @@ onMounted(() => {
 
 <template>
   <div class="accounts-container">
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:user-1-line" class="nn-icon size-small" />
         <span class="label">アカウント</span>
@@ -239,7 +239,7 @@ onMounted(() => {
         </ElSelect>
       </div>
     </div>
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:list-check-3-line" class="nn-icon size-small" />
         <span class="label">タイムライン</span>
@@ -256,7 +256,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:channel -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">チャンネル</span>
@@ -273,7 +273,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:antenna -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">アンテナ</span>
@@ -285,7 +285,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:userList -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:userList'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:userList'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
         <span class="label">リスト</span>
@@ -297,7 +297,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:search -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
       <div class="content">
         <Icon icon="mingcute:search-line" class="nn-icon size-small" />
         <span class="label">検索</span>
@@ -307,7 +307,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:hashtag -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:hashtag'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:hashtag'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
         <span class="label">ハッシュタグ</span>

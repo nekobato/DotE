@@ -1,10 +1,10 @@
 {
-  "name": "hazy",
+  "name": "dot-e",
   "version": "0.0.10",
   "description": "Fediverse client for desktop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nekobato/hazy.git"
+    "url": "https://github.com/nekobato/dot-e.git"
   },
   "scripts": {
     "dev": "vite",

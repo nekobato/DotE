@@ -38,26 +38,26 @@
   --color-text-input: #e5e5e5;
   --color-text-input-placeholder: #e5e5e5;
 
-  --hazy-color-white: #e5e5e5;
-  --hazy-color-black: #000000;
-  --hazy-color-info: #909399;
-  --hazy-color-success: #67c23a;
-  --hazy-color-warning: #e6a23c;
-  --hazy-color-error: #f56c6c;
+  --dote-color-white: #e5e5e5;
+  --dote-color-black: #000000;
+  --dote-color-info: #909399;
+  --dote-color-success: #67c23a;
+  --dote-color-warning: #e6a23c;
+  --dote-color-error: #f56c6c;
 
-  --hazy-color-white-t1: rgba(255, 255, 255, 0.08);
-  --hazy-color-white-t2: rgba(255, 255, 255, 0.32);
-  --hazy-color-white-t3: rgba(255, 255, 255, 0.48);
-  --hazy-color-white-t4: rgba(255, 255, 255, 0.64);
-  --hazy-color-white-t5: rgba(255, 255, 255, 0.8);
+  --dote-color-white-t1: rgba(255, 255, 255, 0.08);
+  --dote-color-white-t2: rgba(255, 255, 255, 0.32);
+  --dote-color-white-t3: rgba(255, 255, 255, 0.48);
+  --dote-color-white-t4: rgba(255, 255, 255, 0.64);
+  --dote-color-white-t5: rgba(255, 255, 255, 0.8);
 
-  --hazy-color-black-t1: rgba(0, 0, 0, 0.08);
-  --hazy-color-black-t2: rgba(0, 0, 0, 0.32);
-  --hazy-color-black-t3: rgba(0, 0, 0, 0.48);
-  --hazy-color-black-t4: rgba(0, 0, 0, 0.64);
-  --hazy-color-black-t5: rgba(0, 0, 0, 0.8);
+  --dote-color-black-t1: rgba(0, 0, 0, 0.08);
+  --dote-color-black-t2: rgba(0, 0, 0, 0.32);
+  --dote-color-black-t3: rgba(0, 0, 0, 0.48);
+  --dote-color-black-t4: rgba(0, 0, 0, 0.64);
+  --dote-color-black-t5: rgba(0, 0, 0, 0.8);
 
   /* Tokens */
-  --hazy-background-color: var(--color-background);
-  --hazy-border-color: var(--hazy-color-white-t1);
+  --dote-background-color: var(--color-background);
+  --dote-border-color: var(--dote-color-white-t1);
 }

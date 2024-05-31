@@ -1,6 +1,6 @@
 // chat以外は権利をいただく
 // ref: https://github.com/misskey-dev/misskey/blob/develop/packages/misskey-js/src/consts.ts
-export const hazyMisskeyPermissions: string[] = [
+export const doteMisskeyPermissions: string[] = [
   "read:account",
   "write:account",
   "read:blocks",
@@ -40,6 +40,6 @@ export const hazyMisskeyPermissions: string[] = [
   "write:flash-likes",
 ];
 
-export const hazyMisskeyPermissionString = () => {
-  return hazyMisskeyPermissions.join(",");
+export const doteMisskeyPermissionString = () => {
+  return doteMisskeyPermissions.join(",");
 };

@@ -3,7 +3,7 @@ import { useTimelineStore } from "@/store/timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, ref } from "vue";
-import HazyLoading from "./common/HazyLoading.vue";
+import DoteLoading from "./common/DoteLoading.vue";
 import { methodOfChannel } from "@/store";
 
 const timelineStore = useTimelineStore();
@@ -47,7 +47,7 @@ const readmore = async () => {
 <template>
   <div class="readmore-container" v-if="canReadmore">
     <button class="readmore-button nn-button" @click="readmore">
-      <HazyLoading size="small" v-if="loading" />
+      <DoteLoading size="small" v-if="loading" />
       <Icon icon="mingcute:arrows-down-line" :width="24" :height="24" color="#adadad" v-else />
     </button>
   </div>
@@ -66,8 +66,8 @@ const readmore = async () => {
   justify-content: center;
   width: 100%;
   height: 56px;
-  color: var(--hazy-text-color);
-  background-color: var(--hazy-background-color);
+  color: var(--dote-text-color);
+  background-color: var(--dote-background-color);
   border-radius: 8px;
   transition: background-color 0.2s;
 }

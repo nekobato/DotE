@@ -16,7 +16,7 @@ export const storeDefaults: StoreSchema = {
   timelines: [],
   settings: {
     opacity: 50,
-    hazyMode: "show",
+    mode: "show",
     windowSize: {
       width: 475,
       height: 600,
@@ -90,7 +90,7 @@ const schema: Store.Schema<StoreSchema> = {
     type: "object",
     properties: {
       opacity: { type: "number" },
-      hazyMode: { type: "string" },
+      mode: { type: "string" },
       windowSize: {
         type: "object",
         properties: {
@@ -118,7 +118,7 @@ const schema: Store.Schema<StoreSchema> = {
 };
 
 export const store = new Store<StoreSchema>({
-  name: "hazy",
+  name: "dote",
   schema,
   defaults: storeDefaults,
   clearInvalidConfig: true,
@@ -302,14 +302,14 @@ export const getSettingAll = (): StoreSchema["settings"] => {
   return store.get("settings");
 };
 
-export const getSetting = (key: "opacity" | "hazyMode") => {
+export const getSetting = (key: "opacity" | "mode") => {
   if (!key) throw new Error("key is required");
 
   switch (key) {
     case "opacity":
       return store.get("settings.opacity");
-    case "hazyMode":
-      return store.get("settings.hazyMode");
+    case "mode":
+      return store.get("settings.mode");
     default:
       throw new Error(`${key} is not defined key.`);
   }
@@ -322,8 +322,8 @@ export const setSetting = (key: string, value: any) => {
   switch (key) {
     case "opacity":
       return store.set("settings.opacity", Number(value));
-    case "hazyMode":
-      return store.set("settings.hazyMode", value);
+    case "mode":
+      return store.set("settings.mode", value);
     case "windowSize":
       return store.set("settings.windowSize", value);
     case "maxPostCount":

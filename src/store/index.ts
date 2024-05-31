@@ -41,7 +41,7 @@ export const useStore = defineStore({
     timelines: [] as TimelineStore[],
     settings: {
       opacity: 0,
-      hazyMode: "show",
+      mode: "show",
       windowSize: {
         width: 0,
         height: 0,

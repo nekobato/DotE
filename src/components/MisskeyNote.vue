@@ -132,7 +132,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="hazy-post">
+  <div class="dote-post">
     <div class="post-data-group">
       <MisskeyNoteContent
         :note="props.post"
@@ -174,14 +174,14 @@ onBeforeUnmount(() => {
         <span class="count">{{ reaction.count }}</span>
       </button>
     </div>
-    <div class="hazy-post-actions">
-      <button class="hazy-post-action" @click="refreshPost">
+    <div class="dote-post-actions">
+      <button class="dote-post-action" @click="refreshPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
       </button>
-      <button class="hazy-post-action" @click="openReactionWindow">
+      <button class="dote-post-action" @click="openReactionWindow">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
       </button>
-      <button class="hazy-post-action" @click="openPost">
+      <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
       </button>
     </div>
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-.hazy-post {
+.dote-post {
   position: relative;
   width: 100%;
   margin: 0;
@@ -200,8 +200,8 @@ onBeforeUnmount(() => {
     padding-left: 24px;
   }
 
-  & + .hazy-post {
-    border-top: 1px solid var(--hazy-color-white-t1);
+  & + .dote-post {
+    border-top: 1px solid var(--dote-color-white-t1);
   }
 }
 
@@ -235,14 +235,14 @@ onBeforeUnmount(() => {
     border: 1px solid transparent;
     border-radius: 4px;
     &:not(.remote) {
-      background-color: var(--hazy-color-white-t1);
+      background-color: var(--dote-color-white-t1);
       cursor: pointer;
       &:hover {
-        border: 1px solid var(--hazy-color-white-t2);
+        border: 1px solid var(--dote-color-white-t2);
       }
     }
     &.reacted {
-      background-color: var(--hazy-color-white-t2);
+      background-color: var(--dote-color-white-t2);
     }
     .emoji {
       height: 20px;
@@ -261,7 +261,7 @@ onBeforeUnmount(() => {
   }
 }
 
-.hazy-post-actions {
+.dote-post-actions {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -276,11 +276,11 @@ onBeforeUnmount(() => {
   visibility: hidden;
 }
 
-.hazy-post:hover .hazy-post-actions {
+.dote-post:hover .dote-post-actions {
   visibility: visible;
 }
 
-.hazy-post-action {
+.dote-post-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -288,14 +288,14 @@ onBeforeUnmount(() => {
   height: 20px;
   margin: 0 0 0 auto;
   padding: 0;
-  color: var(---hazy-color-white-t4);
+  color: var(---dote-color-white-t4);
   font-size: var(--post-action--font-size);
   line-height: var(--post-action--line-height);
   background-color: transparent;
   border: none;
   cursor: pointer;
   &:hover {
-    background: var(--hazy-color-white-t1);
+    background: var(--dote-color-white-t1);
     filter: brightness(0.9);
   }
   &.active {
@@ -304,7 +304,7 @@ onBeforeUnmount(() => {
   > .nn-icon {
     width: 16px;
     height: 16px;
-    color: var(--hazy-color-white);
+    color: var(--dote-color-white);
   }
 }
 </style>

@@ -20,11 +20,11 @@ const timelineContainer = ref<HTMLDivElement | null>(null);
 const scrollPosition = ref(0);
 
 const hazeOpacity = computed(() => {
-  return (store.settings.hazyMode === "haze" ? store.settings.opacity || 0 : 100) / 100;
+  return (store.settings.mode === "haze" ? store.settings.opacity || 0 : 100) / 100;
 });
 
 const isHazeMode = computed(() => {
-  return store.settings.hazyMode === "haze";
+  return store.settings.mode === "haze";
 });
 
 const state = reactive({
@@ -37,7 +37,7 @@ const onScroll = () => {
 };
 
 const canScrollToTop = computed(() => {
-  return store.settings.hazyMode === "show" && scrollPosition.value > 0;
+  return store.settings.mode === "show" && scrollPosition.value > 0;
 });
 
 const emojis = computed(() => {
@@ -83,7 +83,7 @@ const refreshPost = (noteId: string) => {
 timelineStore.$onAction((action) => {
   if (action.name === "addNewPost") {
     nextTick(() => {
-      if (store.$state.settings.hazyMode === "haze") {
+      if (store.$state.settings.mode === "haze") {
         console.log(timelineContainer.value);
         timelineContainer.value?.scrollTo({
           top: 0,
@@ -98,8 +98,8 @@ timelineStore.$onAction((action) => {
 <template>
   <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
     <WindowHeader windowType="main" v-show="!isHazeMode" class="header" />
-    <div class="hazy-timeline-container" v-if="store.errors.length">
-      <div class="hazy-post-list">
+    <div class="dote-timeline-container" v-if="store.errors.length">
+      <div class="dote-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
       </div>
     </div>
@@ -182,13 +182,13 @@ body::-webkit-scrollbar {
   &.is-adding {
     overflow-y: hidden;
   }
-  > .hazy-post {
+  > .dote-post {
     &:first-of-type {
       background: none;
     }
   }
 }
-.hazy-post-list {
+.dote-post-list {
   padding-top: 4px;
 }
 .loading {
@@ -208,7 +208,7 @@ body::-webkit-scrollbar {
   display: inline-flex;
   width: 80px;
   margin: 0 auto;
-  background-color: var(--hazy-color-white-t4);
+  background-color: var(--dote-color-white-t4);
   border-radius: 4px;
   transform: translateY(-56px);
   opacity: 0.2;
@@ -225,7 +225,7 @@ body::-webkit-scrollbar {
     width: 100%;
 
     .nn-icon {
-      color: var(--hazy-color-black-t5);
+      color: var(--dote-color-black-t5);
     }
   }
 }

@@ -20,7 +20,7 @@ const props = defineProps({
     trigger="hover"
     transition="none"
     :hide-after="100"
-    popper-class="hazy-popover"
+    popper-class="dote-popover"
   >
     <template #reference>
       <slot />
@@ -29,7 +29,7 @@ const props = defineProps({
 </template>
 
 <style lang="scss">
-.hazy-popover {
+.dote-popover {
   --el-popover-padding: 4px 8px;
   text-align: center;
 }

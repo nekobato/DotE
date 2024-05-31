@@ -109,7 +109,7 @@ const isTextHide = computed(() => {
 
 <template>
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
-    <div class="hazy-post-info" v-if="isContentVisible">
+    <div class="dote-post-info" v-if="isContentVisible">
       <span class="username" v-html="username" @click="openUserPage(props.note.user)" />
       <div class="renoted-by" v-if="props.originNote?.user.id && props.type === 'renoted'">
         <Icon icon="mingcute:refresh-3-line" />
@@ -121,10 +121,10 @@ const isTextHide = computed(() => {
         />
       </div>
     </div>
-    <div class="hazy-post-content">
+    <div class="dote-post-content">
       <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
       <img
-        class="hazy-avatar"
+        class="dote-avatar"
         :class="{ mini: props.type === 'renote' }"
         :src="props.note.user.avatarUrl || ''"
         alt=""
@@ -173,8 +173,8 @@ const isTextHide = computed(() => {
     /* dashed boarder */
     background-image: linear-gradient(
       to right,
-      var(--hazy-color-white-t2),
-      var(--hazy-color-white-t2) 4px,
+      var(--dote-color-white-t2),
+      var(--dote-color-white-t2) 4px,
       transparent 4px,
       transparent 6px
     );
@@ -192,7 +192,7 @@ const isTextHide = computed(() => {
   display: flex;
   align-items: center;
   height: 12px;
-  color: var(--hazy-color-white-t5);
+  color: var(--dote-color-white-t5);
   font-weight: bold;
   font-size: var(--font-size-10);
   line-height: var(--font-size-10);
@@ -200,11 +200,11 @@ const isTextHide = computed(() => {
 }
 
 .username,
-.hazy-avatar {
+.dote-avatar {
   cursor: pointer;
 }
 
-.hazy-avatar {
+.dote-avatar {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
@@ -225,15 +225,15 @@ const isTextHide = computed(() => {
   }
 }
 
-.hazy-post-content {
+.dote-post-content {
   display: flex;
   width: 100%;
 
-  > .hazy-avatar {
+  > .dote-avatar {
     flex-shrink: 0;
   }
 }
-.hazy-post-info {
+.dote-post-info {
   display: flex;
   align-items: flex-start;
   .renoted-by {
@@ -249,11 +249,11 @@ const isTextHide = computed(() => {
     }
   }
 
-  & + .hazy-post-content {
+  & + .dote-post-content {
     margin-top: 4px;
   }
 }
-.hazy-post-info .renote > .hazy-post-body > .hazy-avatar {
+.dote-post-info .renote > .dote-post-body > .dote-avatar {
   width: 20px;
   height: 20px;
 }

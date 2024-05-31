@@ -28,8 +28,8 @@ defineProps({
   margin: 8px 0 0;
   overflow: hidden;
   background-color: transparent;
-  background-color: var(--hazy-background-color);
-  border: 1px solid var(--hazy-border-color);
+  background-color: var(--dote-background-color);
+  border: 1px solid var(--dote-border-color);
   border-radius: 8px;
 }
 .misskey-ad-carousel {

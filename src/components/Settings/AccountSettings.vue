@@ -8,7 +8,7 @@ import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
 import { ElAvatar, ElRadioButton, ElRadioGroup, ElInput } from "element-plus";
 import type { User } from "@shared/types/store";
-import { hazyMisskeyPermissionString } from "@/utils/hazy";
+import { doteMisskeyPermissionString } from "@/utils/dote";
 
 const store = useStore();
 const usersStore = useUsersStore();
@@ -43,8 +43,8 @@ const newAccount = ref(newAccountDefault);
 const getMisskeyAuthUrl = (instanceUrl: string, sessionId: string) => {
   const url = new URL(`/miauth/${sessionId}`, instanceUrl);
   url.search = new URLSearchParams({
-    name: "hazy",
-    permission: hazyMisskeyPermissionString(),
+    name: "dote",
+    permission: doteMisskeyPermissionString(),
   }).toString();
   return url.toString();
 };
@@ -94,7 +94,7 @@ const checkMiAuth = async () => {
 };
 
 const registerMastodonApp = async () => {
-  const clientName = `hazy-${nanoid()}`;
+  const clientName = `dote-${nanoid()}`;
   const res = await ipcInvoke("api", {
     method: "mastodon:registerApp",
     instanceUrl: newAccount.value.instanceUrl,
@@ -213,10 +213,10 @@ const getInstanceIconFromUser = (user: User) => {
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list">
-    <h2 class="hazy-field-group-title no-border">アカウント</h2>
+  <div class="account-settings dote-post-list">
+    <h2 class="dote-field-group-title no-border">アカウント</h2>
     <div class="accounts-container" v-for="user in store.users" :key="user.id">
-      <div class="hazy-field-row">
+      <div class="dote-field-row">
         <ElAvatar shape="square" :size="40" :src="getInstanceIconFromUser(user)" class="avatar" />
         <ElAvatar :src="user.avatarUrl || ''" class="avatar" />
         <div class="content">
@@ -236,7 +236,7 @@ const getInstanceIconFromUser = (user: User) => {
           </button>
         </div>
       </div>
-      <div class="hazy-field-row as-thread indent-1" v-if="state.actions.delete.id === user.id">
+      <div class="dote-field-row as-thread indent-1" v-if="state.actions.delete.id === user.id">
         <div class="content">
           <span class="nickname">確認：削除しますか？</span>
         </div>
@@ -248,7 +248,7 @@ const getInstanceIconFromUser = (user: User) => {
       </div>
     </div>
     <!-- new accounts -->
-    <div class="hazy-field-row as-thread indent-1" :class="{ active: newAccount.progress !== 'default' }">
+    <div class="dote-field-row as-thread indent-1" :class="{ active: newAccount.progress !== 'default' }">
       <div class="actions">
         <button class="nn-button size-small action" v-if="newAccount.progress === 'default'" @click="resetStep">
           <Icon icon="ion:plus" class="nn-icon" />
@@ -259,7 +259,7 @@ const getInstanceIconFromUser = (user: User) => {
         </button>
       </div>
     </div>
-    <div class="hazy-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step1:instance'">
+    <div class="dote-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step1:instance'">
       <div class="content">
         <ElRadioGroup
           class="account-input"
@@ -272,7 +272,7 @@ const getInstanceIconFromUser = (user: User) => {
         </ElRadioGroup>
       </div>
     </div>
-    <div class="hazy-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step1:instance'">
+    <div class="dote-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step1:instance'">
       <div class="content">
         <div class="nn-form-item">
           <ElInput class="account-input" v-model="newAccount.instanceUrl" placeholder="https://..." size="small" />
@@ -285,7 +285,7 @@ const getInstanceIconFromUser = (user: User) => {
         </button>
       </div>
     </div>
-    <div class="hazy-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step2:confirm'">
+    <div class="dote-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step2:confirm'">
       <div class="content">
         <span v-if="newAccount.instanceType === 'misskey'">認証できた？</span>
         <ElInput

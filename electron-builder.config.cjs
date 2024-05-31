@@ -4,9 +4,9 @@ const pkg = require("./package.json");
  * @see https://www.electron.build/configuration/configuration
  */
 const config = {
-  appId: "net.nekobato.hazy",
+  appId: "net.nekobato.dot-e",
   asar: true,
-  productName: "hazy",
+  productName: "DotE",
   directories: {
     output: `release/${pkg.version}`,
   },

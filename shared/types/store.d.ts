@@ -75,7 +75,7 @@ export type User = {
 
 export type Settings = {
   opacity: number;
-  hazyMode: "show" | "haze" | "hide" | "settings" | "tutorial";
+  mode: "show" | "haze" | "hide" | "settings" | "tutorial";
   windowSize: {
     width: number;
     height: number;

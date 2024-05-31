@@ -82,10 +82,10 @@ const openUserPage = (user: MastodonToot["account"]) => {
 </script>
 
 <template>
-  <div class="hazy-post">
+  <div class="dote-post">
     <div class="post-data-group">
       <div class="toot-content" :class="[postType]">
-        <div class="hazy-post-info">
+        <div class="dote-post-info">
           <span class="username" @click="openUserPage(post.account)">{{
             post.account.display_name || post.account.username
           }}</span>
@@ -96,9 +96,9 @@ const openUserPage = (user: MastodonToot["account"]) => {
             }}</span>
           </div>
         </div>
-        <div class="hazy-post-content">
+        <div class="dote-post-content">
           <img
-            class="hazy-avatar"
+            class="dote-avatar"
             :class="{ mini: postType === 'reblog' }"
             :src="props.post.account.avatar || ''"
             alt=""
@@ -126,11 +126,11 @@ const openUserPage = (user: MastodonToot["account"]) => {
         <span class="count">{{ props.post.favourites_count }}</span>
       </button>
     </div>
-    <div class="hazy-post-actions">
-      <button class="hazy-post-action" @click="refreshPost">
+    <div class="dote-post-actions">
+      <button class="dote-post-action" @click="refreshPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
       </button>
-      <button class="hazy-post-action" @click="openPost">
+      <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
       </button>
     </div>
@@ -138,7 +138,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
 </template>
 
 <style lang="scss" scoped>
-.hazy-post {
+.dote-post {
   position: relative;
   width: 100%;
   margin: 0;
@@ -149,8 +149,8 @@ const openUserPage = (user: MastodonToot["account"]) => {
     padding-left: 24px;
   }
 
-  & + .hazy-post {
-    border-top: 1px solid var(--hazy-color-white-t1);
+  & + .dote-post {
+    border-top: 1px solid var(--dote-color-white-t1);
   }
 }
 
@@ -184,14 +184,14 @@ const openUserPage = (user: MastodonToot["account"]) => {
     border: 1px solid transparent;
     border-radius: 4px;
     &:not(.remote) {
-      background-color: var(--hazy-color-white-t1);
+      background-color: var(--dote-color-white-t1);
       cursor: pointer;
       &:hover {
-        border: 1px solid var(--hazy-color-white-t2);
+        border: 1px solid var(--dote-color-white-t2);
       }
     }
     &.reacted {
-      background-color: var(--hazy-color-white-t2);
+      background-color: var(--dote-color-white-t2);
     }
     .emoji {
       height: 20px;
@@ -210,12 +210,12 @@ const openUserPage = (user: MastodonToot["account"]) => {
     .star-icon {
       width: 16px;
       height: 16px;
-      color: var(--hazy-color-white);
+      color: var(--dote-color-white);
     }
   }
 }
 
-.hazy-post-actions {
+.dote-post-actions {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -230,11 +230,11 @@ const openUserPage = (user: MastodonToot["account"]) => {
   visibility: hidden;
 }
 
-.hazy-post:hover .hazy-post-actions {
+.dote-post:hover .dote-post-actions {
   visibility: visible;
 }
 
-.hazy-post-action {
+.dote-post-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -242,14 +242,14 @@ const openUserPage = (user: MastodonToot["account"]) => {
   height: 20px;
   margin: 0 0 0 auto;
   padding: 0;
-  color: var(---hazy-color-white-t4);
+  color: var(---dote-color-white-t4);
   font-size: var(--post-action--font-size);
   line-height: var(--post-action--line-height);
   background-color: transparent;
   border: none;
   cursor: pointer;
   &:hover {
-    background: var(--hazy-color-white-t1);
+    background: var(--dote-color-white-t1);
     filter: brightness(0.9);
   }
   &.active {
@@ -258,7 +258,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
   > .nn-icon {
     width: 16px;
     height: 16px;
-    color: var(--hazy-color-white);
+    color: var(--dote-color-white);
   }
 }
 
@@ -273,7 +273,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     display: flex;
     align-items: center;
     height: 12px;
-    color: var(--hazy-color-white-t5);
+    color: var(--dote-color-white-t5);
     font-weight: bold;
     font-size: var(--font-size-10);
     line-height: var(--font-size-10);
@@ -281,11 +281,11 @@ const openUserPage = (user: MastodonToot["account"]) => {
   }
 
   .username,
-  .hazy-avatar {
+  .dote-avatar {
     cursor: pointer;
   }
 
-  .hazy-avatar {
+  .dote-avatar {
     flex-shrink: 0;
     width: 32px;
     height: 32px;
@@ -306,15 +306,15 @@ const openUserPage = (user: MastodonToot["account"]) => {
     }
   }
 
-  .hazy-post-content {
+  .dote-post-content {
     display: flex;
     width: 100%;
 
-    > .hazy-avatar {
+    > .dote-avatar {
       flex-shrink: 0;
     }
   }
-  .hazy-post-info {
+  .dote-post-info {
     display: flex;
     align-items: flex-start;
     .renoted-by {
@@ -330,7 +330,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
       }
     }
 
-    & + .hazy-post-content {
+    & + .dote-post-content {
       margin-top: 4px;
     }
   }

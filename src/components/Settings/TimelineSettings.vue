@@ -13,8 +13,8 @@ const onUpdateTimeline = async (timeline: Timeline) => {
 </script>
 
 <template>
-  <div class="account-settings hazy-post-list" v-if="store.$state.users.length">
-    <h2 class="hazy-field-group-title">タイムライン</h2>
+  <div class="account-settings dote-post-list" v-if="store.$state.users.length">
+    <h2 class="dote-field-group-title">タイムライン</h2>
     <div v-for="timeline in store.timelines" :key="timeline.id">
       <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
     </div>

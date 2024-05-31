@@ -1,3 +1,3 @@
 <template>
-  <img class="hazy-avatar" alt="" src="/images/icon.png" />
+  <img class="dote-avatar" alt="" src="/images/icon.png" />
 </template>

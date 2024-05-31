@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import hazyAlert from "@/components/common/HazyAlert.vue";
+import hazyAlert from "@/components/common/DoteAlert.vue";
 import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import type { Instance, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { onMounted, reactive, ref } from "vue";
-import HazyButton from "@/components/common/HazyButton.vue";
+import DoteButton from "@/components/common/DoteButton.vue";
 
 const state = reactive({
   user: undefined as User | undefined,
@@ -86,9 +86,9 @@ document.addEventListener("keydown", (e) => {
 <template>
   <div class="post">
     <div class="header">
-      <ElAvatar :size="32" :src="state.user?.avatarUrl" class="hazy-avatar" />
+      <ElAvatar :size="32" :src="state.user?.avatarUrl" class="dote-avatar" />
       <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>
-      <HazyButton
+      <DoteButton
         class="post-action size-small"
         @click="post"
         :disabled="text.length === 0 || state.post.isSending"
@@ -96,7 +96,7 @@ document.addEventListener("keydown", (e) => {
       >
         <span>Note</span>
         <Icon slot="icon" icon="mingcute:send-line" class="nn-icon size-xsmall" />
-      </HazyButton>
+      </DoteButton>
     </div>
     <div class="post-layout">
       <div class="post-field-container">
@@ -121,13 +121,13 @@ document.addEventListener("keydown", (e) => {
   width: 100%;
   height: 100%;
   padding: 16px;
-  background-color: var(--hazy-background-color);
+  background-color: var(--dote-background-color);
 }
 .header {
   display: flex;
   gap: 8px;
   align-items: center;
-  .hazy-avatar {
+  .dote-avatar {
     border-radius: 50%;
   }
   .username {

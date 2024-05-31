@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HazyLoading from "@/components/common/HazyLoading.vue";
+import DoteLoading from "@/components/common/DoteLoading.vue";
 
 defineProps({
   loading: {
@@ -20,7 +20,7 @@ defineProps({
     <div class="button-content">
       <slot />
     </div>
-    <HazyLoading class="loading-icon" size="small" />
+    <DoteLoading class="loading-icon" size="small" />
   </button>
 </template>
 

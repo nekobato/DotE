@@ -11,6 +11,7 @@ import { watchDeep } from "@vueuse/core";
 import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
 import { RouterView, useRouter } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
+import { MisskeyNote } from "@shared/types/misskey";
 
 const router = useRouter();
 const store = useStore();
@@ -61,21 +62,24 @@ const misskeyPolling = useMisskeyPolling({
 });
 
 const mastodonStream = useMastodonStream({
+  onUpdate: (data) => {
+    timelineStore.addNewPost(data);
+  },
   onReconnect: () => {
     console.info("onReconnect");
     timelineStore.fetchDiffPosts();
   },
 });
 
-window.ipc?.on("set-hazy-mode", (_, { mode, reflect }) => {
+window.ipc?.on("set-mode", (_, { mode, reflect }) => {
   console.info(mode);
   if (reflect) return;
 
-  settingsStore.setHazyMode(mode);
+  settingsStore.setMode(mode);
 });
 
 window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
-  const post = timelineStore.current?.posts.find((post) => post.id === data.postId);
+  const post = timelineStore.current?.posts.find((post) => post.id === data.postId) as MisskeyNote;
   if (!post) return;
 
   // 既にreactionがある場合は削除してから追加
