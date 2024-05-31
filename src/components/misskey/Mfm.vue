@@ -71,9 +71,29 @@ export default defineComponent({
           };
         }
         case "tada": {
+          const speed = validTime(nodeProps.args.speed) ?? "1s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
           return {
-            animation: `mfm-tada ${nodeProps.args.speed || "1s"} linear infinite both`,
+            animation: `mfm-tada ${speed} linear infinite both; animation-delay: ${delay};`,
           };
+        }
+        case "jelly": {
+          const speed = validTime(nodeProps.args.speed) ?? "1s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
+          style = useAnim ? `animation: mfm-rubberBand ${speed} linear infinite both; animation-delay: ${delay};` : "";
+          break;
+        }
+        case "twitch": {
+          const speed = validTime(nodeProps.args.speed) ?? "0.5s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
+          style = useAnim ? `animation: mfm-twitch ${speed} ease infinite; animation-delay: ${delay};` : "";
+          break;
+        }
+        case "shake": {
+          const speed = validTime(nodeProps.args.speed) ?? "0.5s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
+          style = useAnim ? `animation: mfm-shake ${speed} ease infinite; animation-delay: ${delay};` : "";
+          break;
         }
         case "spin": {
           return {
@@ -85,28 +105,30 @@ export default defineComponent({
           };
         }
         case "jump": {
-          return {
-            animation: `mfm-jump ${nodeProps.args.speed || "1s"} linear infinite both`,
-          };
+          const speed = validTime(nodeProps.args.speed) ?? "0.75s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
+          style = useAnim ? `animation: mfm-jump ${speed} linear infinite; animation-delay: ${delay};` : "";
+          break;
         }
         case "bounce": {
-          return {
-            animation: `mfm-bounce ${nodeProps.args.speed || "1s"} linear infinite both`,
-          };
+          const speed = validTime(nodeProps.args.speed) ?? "0.75s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
+          style = useAnim
+            ? `animation: mfm-bounce ${speed} linear infinite; transform-origin: center bottom; animation-delay: ${delay};`
+            : "";
+          break;
         }
-        case "shake": {
-          return {
-            animation: `mfm-shake ${nodeProps.args.speed || "1s"} linear infinite both`,
-          };
-        }
-        case "twitch": {
-          return {
-            animation: `mfm-twitch ${nodeProps.args.speed || "1s"} linear infinite both`,
-          };
+        case "flip": {
+          const transform =
+            nodeProps.args.h && nodeProps.args.v ? "scale(-1, -1)" : nodeProps.args.v ? "scaleY(-1)" : "scaleX(-1)";
+          style = `transform: ${transform};`;
+          break;
         }
         case "rainbow": {
+          const speed = validTime(nodeProps.args.speed) ?? "1s";
+          const delay = validTime(nodeProps.args.delay) ?? "0s";
           return {
-            animation: `mfm-rainbow ${nodeProps.args.speed || "1s"} linear infinite both`,
+            animation: `mfm-rainbow ${speed} linear infinite both; animation-delay: ${delay};`,
           };
         }
         default:
