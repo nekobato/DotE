@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import hazyAlert from "@/components/common/DoteAlert.vue";
+import DoteAlert from "@/components/common/DoteAlert.vue";
 import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
@@ -101,9 +101,9 @@ document.addEventListener("keydown", (e) => {
     <div class="post-layout">
       <div class="post-field-container">
         <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" @input="onInput" />
-        <hazyAlert class="mt-4" type="error" v-if="state.post.error">
+        <DoteAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
-        </hazyAlert>
+        </DoteAlert>
       </div>
     </div>
   </div>
