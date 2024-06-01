@@ -4,6 +4,7 @@ import { defineStore } from "pinia";
 import { computed } from "vue";
 import { methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
+import { MastodonToot } from "@/types/mastodon";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -122,7 +123,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
-  const addNewPost = (post: MisskeyNote) => {
+  const addNewPost = (post: MisskeyNote | MastodonToot) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
   };
@@ -199,7 +200,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const misskeyAddReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     // TODO: reactionがremote serverだった場合
-    const post = store.timelines[currentIndex.value].posts.find((p) => p.id === postId);
+    const post = store.timelines[currentIndex.value].posts.find((p) => p.id === postId) as MisskeyNote;
     if (!post) return;
     const reactions = post.renote ? post.renote.reactions : post.reactions;
     if (Object.keys(reactions).includes(reaction)) {
@@ -255,6 +256,40 @@ export const useTimelineStore = defineStore("timeline", () => {
     return userLists;
   };
 
+  const mastodonToggleFavourite = async ({ id, favourited }: { id: string; favourited: boolean }) => {
+    if (currentUser.value) {
+      const toot = store.$state.timelines[currentIndex.value].posts.find((post) => post.id === id) as MastodonToot;
+      if (favourited) {
+        toot.favourited = false;
+        toot.favourites_count -= 1;
+      } else {
+        toot.favourited = true;
+        toot.favourites_count += 1;
+      }
+    } else {
+      throw new Error("user not found");
+    }
+  };
+
+  const mastodonUpdatePost = async ({ id }: { id: string }) => {
+    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
+
+    const res = await ipcInvoke("api", {
+      method: "mastodon:getStatus",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+      id: id,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${id}の取得失敗`,
+      });
+    });
+    const postIndex = current.value?.posts.findIndex((p) => p.id === id);
+    if (!postIndex) return;
+
+    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
+  };
+
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
@@ -283,5 +318,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     misskeyGetFollowedChannels,
     misskeyGetMyAntennas,
     misskeyGetUserLists,
+    mastodonToggleFavourite,
+    mastodonUpdatePost,
   };
 });

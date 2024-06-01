@@ -347,3 +347,22 @@ export const mastodonUnFavourite = async ({
     return res.json();
   });
 };
+
+export const mastodonGetStatus = async ({
+  instanceUrl,
+  token,
+  id,
+}: {
+  instanceUrl: string;
+  token: string;
+  id: string;
+}) => {
+  return fetch(new URL(`/api/v1/statuses/${id}`, instanceUrl).toString(), {
+    headers: {
+      ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res: Response) => {
+    return res.json();
+  });
+};

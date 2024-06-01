@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ipcSend } from "@/utils/ipc";
+import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 import PostAttachment from "./PostAttachment.vue";
@@ -29,7 +29,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["refreshPost", "reaction"]);
+const emit = defineEmits(["refreshPost", "reaction", "favourite"]);
 
 const post = computed(() => {
   return props.post.reblog || props.post;
@@ -60,12 +60,13 @@ const postAtttachments = computed(() => {
   }));
 });
 
-const toggleFavourite = () => {
+const toggleFavourite = async () => {
   if (props.post.favourited) {
-    ipcSend("api", { method: "mastodon:unFavourite", postId: props.post.id });
+    await ipcInvoke("api", { method: "mastodon:unFavourite", postId: props.post.id });
   } else {
-    ipcSend("api", { method: "mastodon:favourite", postId: props.post.id });
+    await ipcInvoke("api", { method: "mastodon:favourite", postId: props.post.id });
   }
+  emit("favourite", props.post.id);
 };
 
 const refreshPost = () => {

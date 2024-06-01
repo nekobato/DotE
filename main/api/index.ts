@@ -36,6 +36,7 @@ export const apiRequest = {
   ["mastodon:getNotifications"]: mastodonRequest.mastodonGetNotifications,
   ["mastodon:postStatus"]: mastodonRequest.mastodonPostStatus,
   ["mastodon:deleteStatus"]: mastodonRequest.mastodonDeleteStatus,
+  ["mastodon:getStaus"]: mastodonRequest.mastodonGetStatus,
   ["mastodon:favourite"]: mastodonRequest.mastodonFavourite,
   ["mastodon:unFavourite"]: mastodonRequest.mastodonUnFavourite,
 };

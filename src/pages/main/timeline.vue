@@ -137,7 +137,8 @@ timelineStore.$onAction((action) => {
           :instanceUrl="timelineStore.currentInstance?.url"
           :lineStyle="store.settings.postStyle"
           @reaction="onReaction"
-          @refreshPost="refreshPost"
+          @refreshPost="timelineStore.mastodonUpdatePost"
+          @favourite="timelineStore.mastodonToggleFavourite"
         />
       </PostList>
       <MisskeyAdCarousel :items="ads" />
