@@ -9,7 +9,8 @@ export type MisskeyChannelName =
   | "misskey:hashtag"
   | "misskey:antenna"
   | "misskey:channel"
-  | "misskey:search";
+  | "misskey:search"
+  | "misskey:notifications";
 
 export type MastodonChannelName =
   | "mastodon:homeTimeline"

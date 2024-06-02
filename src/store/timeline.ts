@@ -5,6 +5,7 @@ import { computed } from "vue";
 import { methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
 import { MastodonToot } from "@/types/mastodon";
+import { defaultChannelNameFromType } from "@/utils/dote";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -102,9 +103,10 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
     // UserはいるけどTimelineが無いならTimelineを作る
     if (store.$state.timelines.length === 0) {
+      const instance = store.instances.find((instance) => instance.id === store.users[0].instanceId);
       await createTimeline({
         userId: store.users[0].id,
-        channel: "misskey:homeTimeline",
+        channel: defaultChannelNameFromType(instance?.type),
         options: {},
         updateInterval: 60 * 1000, // 60 sec
         available: true,

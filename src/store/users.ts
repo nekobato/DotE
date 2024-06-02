@@ -5,6 +5,7 @@ import { defineStore } from "pinia";
 import { useStore } from ".";
 import { useInstanceStore } from "./instance";
 import { useTimelineStore } from "./timeline";
+import { defaultChannelNameFromType } from "@/utils/dote";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
@@ -57,7 +58,7 @@ export const useUsersStore = defineStore("users", () => {
     if (store.timelines.length === 0) {
       await timelineStore.createTimeline({
         userId: store.users[0].id,
-        channel: "misskey:homeTimeline",
+        channel: defaultChannelNameFromType(instance?.type),
         options: {},
         updateInterval: 60 * 1000, // 60 sec
         available: true,

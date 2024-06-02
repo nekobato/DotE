@@ -1,4 +1,7 @@
 // chat以外は権利をいただく
+
+import { ChannelName } from "@shared/types/store";
+
 // ref: https://github.com/misskey-dev/misskey/blob/develop/packages/misskey-js/src/consts.ts
 export const doteMisskeyPermissions: string[] = [
   "read:account",
@@ -42,4 +45,15 @@ export const doteMisskeyPermissions: string[] = [
 
 export const doteMisskeyPermissionString = () => {
   return doteMisskeyPermissions.join(",");
+};
+
+export const defaultChannelNameFromType = (type?: "misskey" | "mastodon"): ChannelName => {
+  switch (type) {
+    case "misskey":
+      return "misskey:homeTimeline";
+    case "mastodon":
+      return "misskey:homeTimeline";
+    default:
+      return "misskey:homeTimeline";
+  }
 };

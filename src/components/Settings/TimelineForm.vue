@@ -60,6 +60,10 @@ const misskeyStreamOptions: {
     label: "検索...",
     value: "misskey:search",
   },
+  {
+    label: "通知",
+    value: "misskey:notifications",
+  },
 ];
 
 const mastodonStreamOptions: {
@@ -85,6 +89,10 @@ const mastodonStreamOptions: {
   {
     label: "ハッシュタグ...",
     value: "mastodon:hashtag",
+  },
+  {
+    label: "通知",
+    value: "mastodon:notifications",
   },
 ];
 
