@@ -70,6 +70,7 @@ export const useTimelineStore = defineStore("timeline", () => {
           message: `${currentInstance.value?.name}の追加タイムラインを取得できませんでした`,
         });
       });
+      if (!data || data.length === 0) return;
       setPosts([...data, ...store.timelines[currentIndex.value]?.posts]);
     } else {
       throw new Error("user not found");

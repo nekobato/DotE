@@ -106,7 +106,10 @@ const openPost = () => {
 const openUserPage = (user: MisskeyNote["user"]) => {
   const instanceUrl = user.host || props.currentInstanceUrl;
   ipcSend("open-url", {
-    url: new URL(`/@${user.username}`, instanceUrl).toString(),
+    url: new URL(
+      `/@${user.username}`,
+      instanceUrl?.startsWith("https://") ? instanceUrl : `https://${instanceUrl}`,
+    ).toString(),
   });
 };
 

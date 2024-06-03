@@ -161,6 +161,7 @@ const authCompleted = () => {
 };
 
 const openMisskeyAuthLink = () => {
+  newAccount.value.misskey.sessionId = nanoid();
   newAccount.value.instanceUrl = /^https?:\/\//.test(newAccount.value.instanceUrl)
     ? newAccount.value.instanceUrl
     : "https://" + newAccount.value.instanceUrl;
