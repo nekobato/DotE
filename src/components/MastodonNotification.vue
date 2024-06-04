@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { MastodonToot } from "@/types/mastodon";
+import { ipcSend } from "@/utils/ipc";
+import { parseMastodonText } from "@/utils/mastodon";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 import PostAttachment from "./PostAttachment.vue";
-import { MastodonToot } from "@/types/mastodon";
-import { parseMastodonText } from "@/utils/mastodon";
 
 const props = defineProps({
+  type: {
+    type: String as PropType<"mention" | "favourite" | "follow" | "reblog">,
+    required: true,
+  },
   post: {
     type: Object as PropType<MastodonToot>,
-    required: true,
+    required: false,
+  },
+  by: {
+    type: Object as PropType<MastodonToot["account"]>,
+    required: false,
   },
   lineStyle: {
     type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
     required: true,
-  },
-  instanceUrl: {
-    type: String as PropType<string>,
-    required: false,
-  },
-  showReactions: {
-    type: Boolean as PropType<boolean>,
-    default: true,
   },
   theme: {
     type: String as PropType<"default">,
@@ -29,17 +29,15 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["refreshPost", "reaction", "favourite"]);
-
 const post = computed(() => {
-  return props.post.reblog || props.post;
+  return props.post?.reblog || props.post;
 });
 
 const postType = computed(() => {
-  if (props.post.reblog) {
+  if (props.post?.reblog) {
     return "reblog";
   }
-  if (props.post.in_reply_to_id) {
+  if (props.post?.in_reply_to_id) {
     return "reply";
   } else {
     return "note";
@@ -47,8 +45,8 @@ const postType = computed(() => {
 });
 
 const postAtttachments = computed(() => {
-  const files = props.post.media_attachments;
-  return files.map((file) => ({
+  const files = props.post?.media_attachments;
+  return files?.map((file) => ({
     type: file.type as "image" | "video" | "audio",
     url: file.url,
     thumbnailUrl: file.preview_url || "",
@@ -56,25 +54,12 @@ const postAtttachments = computed(() => {
       width: file.meta.original.width,
       height: file.meta.original.height,
     },
-    isSensitive: props.post.sensitive,
+    isSensitive: props.post?.sensitive,
   }));
 });
 
-const toggleFavourite = async () => {
-  if (props.post.favourited) {
-    await ipcInvoke("api", { method: "mastodon:unFavourite", postId: props.post.id });
-  } else {
-    await ipcInvoke("api", { method: "mastodon:favourite", postId: props.post.id });
-  }
-  emit("favourite", props.post.id);
-};
-
-const refreshPost = () => {
-  emit("refreshPost", props.post.id);
-};
-
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(post.value.url).toString() });
+  post.value && ipcSend("open-url", { url: new URL(post.value.url).toString() });
 };
 
 const openUserPage = (user: MastodonToot["account"]) => {
@@ -87,25 +72,40 @@ const openUserPage = (user: MastodonToot["account"]) => {
     <div class="post-data-group">
       <div class="toot-content" :class="[postType]">
         <div class="dote-post-info">
-          <span class="username" @click="openUserPage(post.account)">{{
+          <span class="username" v-if="post" @click="openUserPage(post.account)">{{
             post.account.display_name || post.account.username
           }}</span>
-          <div class="renoted-by" v-if="postType === 'reblog'">
-            <Icon icon="mingcute:refresh-3-line" />
-            <span class="username origin" @click="openUserPage(props.post.account)">{{
-              props.post.account.display_name
+          <div class="mentioned-by" v-if="props.type === 'mention' && props.by">
+            <Icon icon="mingcute:left-fill" />
+            <span class="username origin" @click="openUserPage(props.by)">{{
+              props.by.display_name || props.by.username
+            }}</span>
+          </div>
+          <div class="favourited-by" v-if="props.type === 'favourite' && props.by">
+            <Icon icon="mingcute:star-fill" />
+            <span class="username origin" @click="openUserPage(props.by)">{{
+              props.by.display_name || props.by.username
             }}</span>
           </div>
         </div>
         <div class="dote-post-content">
           <img
+            v-if="post"
             class="dote-avatar"
             :class="{ mini: postType === 'reblog' }"
-            :src="props.post.account.avatar || ''"
+            :src="post.account.avatar || ''"
             alt=""
             @click="openUserPage(post.account)"
           />
-          <div class="text-container" :class="[lineStyle]">
+          <img
+            class="dote-avatar mini"
+            :class="{ mini: props.type === 'mention' || props.type === 'favourite' }"
+            :src="props.by.avatar || ''"
+            alt=""
+            @click="openUserPage(props.by)"
+            v-if="props.by"
+          />
+          <div class="text-container" :class="[lineStyle]" v-if="post">
             <span class="text" v-html="parseMastodonText(post.content, post.emojis)" />
           </div>
         </div>
@@ -114,23 +114,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     <div class="attachments" v-if="postAtttachments">
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
     </div>
-    <div class="reactions" v-if="props.showReactions">
-      <button
-        class="reaction"
-        :class="{
-          reacted: props.post.favourited,
-        }"
-        @click="toggleFavourite"
-        :title="`Favourites: ${props.post.favourites_count}`"
-      >
-        <Icon class="star-icon" icon="mingcute:star-fill" />
-        <span class="count">{{ props.post.favourites_count }}</span>
-      </button>
-    </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
-      </button>
       <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
       </button>
@@ -162,59 +146,6 @@ const openUserPage = (user: MastodonToot["account"]) => {
   width: 100%;
   margin-top: 4px;
 }
-.reactions {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  width: 100%;
-  margin-top: 4px;
-  overflow-x: scroll;
-  overflow-y: hidden;
-  border-radius: 4px;
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  .reaction {
-    display: inline-flex;
-    align-items: center;
-    justify-content: flex-start;
-    height: 24px;
-    padding: 0 2px;
-    background: transparent;
-    border: none;
-    border: 1px solid transparent;
-    border-radius: 4px;
-    &:not(.remote) {
-      background-color: var(--dote-color-white-t1);
-      cursor: pointer;
-      &:hover {
-        border: 1px solid var(--dote-color-white-t2);
-      }
-    }
-    &.reacted {
-      background-color: var(--dote-color-white-t2);
-    }
-    .emoji {
-      height: 20px;
-    }
-    .emoji-default {
-      color: #fff;
-      font-size: 16px;
-      line-height: 20px;
-    }
-    .count {
-      margin-left: 4px;
-      color: #fff;
-      font-size: 12px;
-      line-height: 20px;
-    }
-    .star-icon {
-      width: 16px;
-      height: 16px;
-      color: var(--dote-color-white);
-    }
-  }
-}
 
 .dote-post-actions {
   position: absolute;
@@ -229,38 +160,38 @@ const openUserPage = (user: MastodonToot["account"]) => {
   background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   visibility: hidden;
+
+  .dote-post-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 20px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    color: var(---dote-color-white-t4);
+    font-size: var(--post-action--font-size);
+    line-height: var(--post-action--line-height);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    &:hover {
+      background: var(--dote-color-white-t1);
+      filter: brightness(0.9);
+    }
+    &.active {
+      color: var(--post-action--active-color);
+    }
+    > .nn-icon {
+      width: 16px;
+      height: 16px;
+      color: var(--dote-color-white);
+    }
+  }
 }
 
 .dote-post:hover .dote-post-actions {
   visibility: visible;
-}
-
-.dote-post-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 20px;
-  margin: 0 0 0 auto;
-  padding: 0;
-  color: var(---dote-color-white-t4);
-  font-size: var(--post-action--font-size);
-  line-height: var(--post-action--line-height);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  &:hover {
-    background: var(--dote-color-white-t1);
-    filter: brightness(0.9);
-  }
-  &.active {
-    color: var(--post-action--active-color);
-  }
-  > .nn-icon {
-    width: 16px;
-    height: 16px;
-    color: var(--dote-color-white);
-  }
 }
 
 .toot-content {
@@ -296,8 +227,9 @@ const openUserPage = (user: MastodonToot["account"]) => {
     border: 1px solid rgba(255, 255, 255, 0.24);
     border-radius: 50%;
     &.mini {
-      position: relative;
-      top: 28px;
+      position: absolute;
+      top: 50%;
+      left: 0;
       width: 20px;
       height: 20px;
     }
@@ -318,7 +250,9 @@ const openUserPage = (user: MastodonToot["account"]) => {
   .dote-post-info {
     display: flex;
     align-items: flex-start;
-    .renoted-by {
+    .renoted-by,
+    .mentioned-by,
+    .favourited-by {
       display: inline-flex;
       align-items: center;
       margin-left: 4px;

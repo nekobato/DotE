@@ -2,16 +2,17 @@
 import ErrorPost from "@/components/ErrorPost.vue";
 import MastodonToot from "@/components/MastodonToot.vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
+import MisskeyNotification from "@/components/MisskeyNotification.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
 import WindowHeader from "@/components/WindowHeader.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
+import type { MastodonNotification, MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
-import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
+import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import { computed, nextTick, reactive, ref } from "vue";
 
 const store = useStore();
@@ -113,7 +114,10 @@ timelineStore.$onAction((action) => {
     >
       <PostList v-if="timelineStore.current?.posts?.length">
         <MisskeyNote
-          v-if="timelineStore.currentInstance?.type === 'misskey'"
+          v-if="
+            timelineStore.currentInstance?.type === 'misskey' &&
+            timelineStore.current.channel !== 'misskey:notifications'
+          "
           class="post-item"
           v-for="post in timelineStore.current.posts"
           :post="post as MisskeyNoteType"
@@ -129,8 +133,24 @@ timelineStore.$onAction((action) => {
           @newReaction="openNewReaction"
           @refreshPost="refreshPost"
         />
+        <MisskeyNotification
+          v-if="timelineStore.current.channel === 'misskey:notifications'"
+          class="post-item"
+          v-for="notification in timelineStore.current.notifications as MisskeyEntities.Notification[]"
+          :notification="notification"
+          :postStyle="store.settings.postStyle"
+          :emojis="emojis"
+          :currentInstanceUrl="timelineStore.currentInstance?.url"
+          :hideCw="store.settings.misskey.hideCw"
+          :showReactions="store.settings.misskey.showReactions"
+          :lineStyle="store.settings.postStyle"
+          :key="notification.id"
+        />
         <MastodonToot
-          v-if="timelineStore.currentInstance?.type === 'mastodon'"
+          v-if="
+            timelineStore.currentInstance?.type === 'mastodon' &&
+            timelineStore.current.channel !== 'mastodon:notifications'
+          "
           v-for="toot in timelineStore.current?.posts"
           :key="toot.id"
           :post="toot as MastodonTootType"
@@ -139,6 +159,15 @@ timelineStore.$onAction((action) => {
           @reaction="onReaction"
           @refreshPost="timelineStore.mastodonUpdatePost"
           @favourite="timelineStore.mastodonToggleFavourite"
+        />
+        <MastodonNotification
+          v-if="timelineStore.current.channel === 'mastodon:notifications'"
+          v-for="notification in timelineStore.current?.notifications as MastodonNotification[]"
+          :key="notification.id"
+          :type="notification.type"
+          :by="notification.account"
+          :post="notification.status"
+          :lineStyle="store.settings.postStyle"
         />
       </PostList>
       <MisskeyAdCarousel :items="ads" />

@@ -242,3 +242,11 @@ export type MastodonToot = {
   };
   pinned?: boolean;
 };
+
+export type MastodonNotification = {
+  id: string;
+  type: "mention" | "reblog" | "favourite" | "follow";
+  created_at: string;
+  account: MastodonAccount;
+  status?: MastodonToot;
+};

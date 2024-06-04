@@ -131,13 +131,13 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
   };
 
-  const addMorePosts = (posts: MisskeyNote[]) => {
+  const addMorePosts = (posts: MisskeyNote[] | MastodonToot[]) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts];
   };
 
   const misskeyAddEmoji = async ({ postId, name }: { postId: string; name: string }) => {
-    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId);
+    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId) as MisskeyNote;
     const reactions = post?.renote ? post.renote.reactions : post?.reactions;
     if (!reactions) return;
     if (Object.keys(reactions).includes(name)) {
