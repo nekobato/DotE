@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
-import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
+import { parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
-import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
+import { computed, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachment from "./PostAttachment.vue";
+import MisskeyNotificationContent from "./MisskeyNotificationContent.vue";
 
 const props = defineProps({
   notification: {
@@ -37,66 +38,36 @@ const props = defineProps({
 
 const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction"]);
 
-const postType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quote";
-    } else {
-      return "renote";
-    }
-  } else if (props.post.replyId) {
-    return "reply";
-  } else {
-    return "note";
-  }
-});
-
-const renoteType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quoted";
-    } else {
-      return "renoted";
-    }
-  }
-});
-
 const postAtttachments = computed(() => {
-  const files = props.post.files?.length
-    ? props.post.files
-    : props.post.renote?.files?.length
-      ? props.post.renote.files
+  if (props.notification.type !== "mention") return [];
+  const files = props.notification.note.files?.length
+    ? props.notification.note.files
+    : props.notification.note.renote?.files?.length
+      ? props.notification.note.renote.files
       : [];
   return files?.length ? parseMisskeyAttachments(files) : [];
 });
 
 const reactions = computed(() => {
-  const reactions = props.post.renote && !props.post.text ? props.post.renote.reactions : props.post.reactions;
-  return Object.keys(reactions)
-    .map((key) => {
-      if (!/^:/.test(key)) return { name: key, count: reactions[key] };
-      const reactionName = key.replace(/:|@\./g, "");
-      const localEmoji = props.emojis.find((emoji) => emoji.name === reactionName);
-      return {
-        name: key,
-        url:
-          localEmoji?.url ||
-          props.post.reactionEmojis[reactionName] ||
-          (props.post.renote as MisskeyNote)?.reactionEmojis[reactionName] ||
-          "",
-        count: reactions[key],
-        isRemote: !localEmoji,
-      };
-    })
-    .sort((a, b) => b.count - a.count);
+  if (props.notification.type !== "reaction") return [];
+  const reaction = props.notification.reaction;
+  if (!/^:/.test(reaction)) return [{ name: reaction, url: undefined }];
+  const reactionName = reaction.replace(/:|@\./g, "");
+  return [
+    {
+      name: reaction,
+      url:
+        // local
+        props.emojis.find((emoji) => emoji.name === reactionName)?.url ||
+        // remote
+        props.notification.note.reactionEmojis[reaction.replace(/:/g, "")] ||
+        "",
+    },
+  ];
 });
 
-const refreshPost = () => {
-  emit("refreshPost", props.post.id);
-};
-
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.currentInstanceUrl).toString() });
+  ipcSend("open-url", { url: new URL(`/notes/${props.notification.id}`, props.currentInstanceUrl).toString() });
 };
 
 const openUserPage = (user: MisskeyNote["user"]) => {
@@ -108,48 +79,27 @@ const openUserPage = (user: MisskeyNote["user"]) => {
     ).toString(),
   });
 };
-
-const openReactionWindow = () => {
-  emit("newReaction", props.post.id);
-};
-
-const onClickReaction = (postId: string, reaction: string) => {
-  emit("reaction", { postId, reaction });
-};
-
-onMounted(() => {
-  ipcSend("stream:sub-note", {
-    postId: props.post.id,
-  });
-});
-
-onBeforeUnmount(() => {
-  ipcSend("stream:unsub-note", {
-    postId: props.post.id,
-  });
-});
 </script>
 
 <template>
   <div class="dote-post">
     <div class="post-data-group">
       <MisskeyNoteContent
-        :note="props.post"
-        :type="postType"
+        v-if="props.notification.type === 'mention' || props.notification.type === 'reaction'"
+        :note="props.notification.note"
+        :originUser="props.notification.user"
+        :type="props.notification.type"
         :lineStyle="props.lineStyle"
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
         @openUserPage="openUserPage"
       />
-      <MisskeyNoteContent
-        v-if="props.post.renote"
-        :note="props.post.renote"
-        :originNote="props.post"
-        :type="renoteType"
-        :lineStyle="props.lineStyle"
+      <MisskeyNotificationContent
+        v-else
+        :type="props.notification.type"
+        :notification="props.notification"
         :currentInstanceUrl="props.currentInstanceUrl"
-        :hideCw="props.hideCw"
         :emojis="props.emojis"
         @openUserPage="openUserPage"
       />
@@ -157,29 +107,13 @@ onBeforeUnmount(() => {
     <div class="attachments" v-if="postAtttachments">
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
     </div>
-    <div class="reactions" v-if="props.showReactions">
-      <button
-        class="reaction"
-        v-for="reaction in reactions"
-        :class="{
-          remote: reaction.isRemote,
-          reacted: isMyReaction(reaction.name, props.post.myReaction || props.post.renote?.myReaction),
-        }"
-        @click="onClickReaction(props.post.id, reaction.name)"
-        :title="reaction.name.replace(/:/g, '')"
-      >
+    <div class="reactions" v-if="reactions.length">
+      <div class="reaction" v-for="reaction in reactions" :title="reaction.name.replace(/:/g, '')">
         <img :src="reaction.url" :alt="reaction.name" class="emoji" v-if="reaction.url" />
         <span class="emoji-default" v-else>{{ reaction.name }}</span>
-        <span class="count">{{ reaction.count }}</span>
-      </button>
+      </div>
     </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
-      </button>
-      <button class="dote-post-action" @click="openReactionWindow">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
-      </button>
       <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
       </button>

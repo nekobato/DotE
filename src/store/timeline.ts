@@ -1,10 +1,10 @@
-import type { MisskeyNote } from "@shared/types/misskey";
+import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { computed } from "vue";
 import { methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
-import { MastodonToot } from "@/types/mastodon";
+import { MastodonNotification, MastodonToot } from "@/types/mastodon";
 import { defaultChannelNameFromType } from "@/utils/dote";
 
 export const useTimelineStore = defineStore("timeline", () => {
@@ -24,6 +24,12 @@ export const useTimelineStore = defineStore("timeline", () => {
   const setPosts = (posts: MisskeyNote[]) => {
     if (store.$state.timelines[currentIndex.value]) {
       store.$state.timelines[currentIndex.value].posts = posts;
+    }
+  };
+
+  const setNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
+    if (store.$state.timelines[currentIndex.value]) {
+      store.$state.timelines[currentIndex.value].notifications = notifications;
     }
   };
 
@@ -47,8 +53,11 @@ export const useTimelineStore = defineStore("timeline", () => {
         message: `${currentInstance.value?.name}のタイムラインを取得できませんでした`,
       });
     });
-    // misskeyなら という条件分岐が必要
-    setPosts(data);
+    if (current.value.channel === "misskey:notifications") {
+      setNotifications(data);
+    } else {
+      setPosts(data);
+    }
   };
 
   const fetchDiffPosts = async () => {
@@ -128,12 +137,32 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const addNewPost = (post: MisskeyNote | MastodonToot) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
-    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
+    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts] as
+      | MisskeyNote[]
+      | MastodonToot[];
+  };
+
+  const addNewNotification = (notification: MisskeyEntities.Notification | MastodonNotification) => {
+    if (!store.timelines[currentIndex.value]?.notifications) return;
+    store.timelines[currentIndex.value].notifications = [
+      notification,
+      ...store.timelines[currentIndex.value].notifications,
+    ] as MisskeyEntities.Notification[] | MastodonNotification[];
   };
 
   const addMorePosts = (posts: MisskeyNote[] | MastodonToot[]) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
-    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts];
+    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts] as
+      | MisskeyNote[]
+      | MastodonToot[];
+  };
+
+  const addMoreNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
+    if (!store.timelines[currentIndex.value]?.notifications) return;
+    store.timelines[currentIndex.value].notifications = [
+      ...store.timelines[currentIndex.value].notifications,
+      ...notifications,
+    ] as MisskeyEntities.Notification[] | MastodonNotification[];
   };
 
   const misskeyAddEmoji = async ({ postId, name }: { postId: string; name: string }) => {
@@ -313,6 +342,8 @@ export const useTimelineStore = defineStore("timeline", () => {
     createTimeline,
     addNewPost,
     addMorePosts,
+    addNewNotification,
+    addMoreNotifications,
     misskeyAddEmoji,
     misskeyAddReaction,
     misskeyCreateReaction,

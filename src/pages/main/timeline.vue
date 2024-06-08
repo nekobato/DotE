@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ErrorPost from "@/components/ErrorPost.vue";
+import MastodonNotification from "@/components/MastodonNotification.vue";
 import MastodonToot from "@/components/MastodonToot.vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
 import MisskeyNotification from "@/components/MisskeyNotification.vue";
@@ -9,7 +10,10 @@ import WindowHeader from "@/components/WindowHeader.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
-import type { MastodonNotification, MastodonToot as MastodonTootType } from "@/types/mastodon";
+import type {
+  MastodonNotification as MastodonNotificationType,
+  MastodonToot as MastodonTootType,
+} from "@/types/mastodon";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
@@ -112,7 +116,7 @@ timelineStore.$onAction((action) => {
         'is-adding': state.isAdding,
       }"
     >
-      <PostList v-if="timelineStore.current?.posts?.length">
+      <PostList v-if="timelineStore.current?.posts?.length || timelineStore.current?.notifications.length">
         <MisskeyNote
           v-if="
             timelineStore.currentInstance?.type === 'misskey' &&
@@ -162,7 +166,7 @@ timelineStore.$onAction((action) => {
         />
         <MastodonNotification
           v-if="timelineStore.current.channel === 'mastodon:notifications'"
-          v-for="notification in timelineStore.current?.notifications as MastodonNotification[]"
+          v-for="notification in timelineStore.current?.notifications as MastodonNotificationType[]"
           :key="notification.id"
           :type="notification.type"
           :by="notification.account"

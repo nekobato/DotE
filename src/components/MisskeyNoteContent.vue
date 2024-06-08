@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote } from "@shared/types/misskey";
+import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { computed, ref, type PropType } from "vue";
 import Mfm from "./misskey/Mfm.vue";
 
@@ -14,8 +14,12 @@ const props = defineProps({
     type: Object as PropType<MisskeyNote>,
     required: false,
   },
+  originUser: {
+    type: Object as PropType<MisskeyNote["user"]>,
+    required: false,
+  },
   type: {
-    type: String as PropType<"note" | "reply" | "renote" | "renoted" | "quote" | "quoted" | undefined>,
+    type: String as PropType<MisskeyEntities.Notification["type"] | "renoted" | "quoted">,
     required: true,
   },
   lineStyle: {
@@ -52,11 +56,11 @@ const noteEmojis = computed(() => {
 });
 
 const username = computed(() => {
-  return getUsernameInNote(props.note);
+  return getUsername(props.note.user);
 });
 
 const originUsername = computed(() => {
-  return props.originNote ? getUsernameInNote(props.originNote) : null;
+  return props.originNote ? getUsername(props.originNote.user) : props.originUser ? getUsername(props.originUser) : "";
 });
 
 const host = computed(() => {
@@ -67,15 +71,15 @@ const isContentVisible = computed(() => {
   return props.type !== "renote";
 });
 
-const getUsernameInNote = (note: MisskeyNote) => {
-  if (note.user.name) {
+const getUsername = (user: MisskeyNote["user"]) => {
+  if (user.name) {
     if (noteEmojis.value) {
-      return parseMisskeyText(note.user.name, noteEmojis.value);
+      return parseMisskeyText(user.name, noteEmojis.value);
     } else {
-      return note.user.name;
+      return user.name;
     }
   } else {
-    return note.user.username;
+    return user.username;
   }
 };
 
@@ -120,6 +124,24 @@ const isTextHide = computed(() => {
           v-if="props.originNote?.user.id"
         />
       </div>
+      <div class="mentioned-by" v-if="props.originUser && props.type === 'mention'">
+        <Icon icon="mingcute:left-fill" />
+        <span
+          class="username origin"
+          v-html="originUsername"
+          @click="openUserPage(props.originUser)"
+          v-if="props.originUser.id"
+        />
+      </div>
+      <div class="reacted-by" v-if="props.originUser && props.type === 'reaction'">
+        <Icon icon="mingcute:star-fill" />
+        <span
+          class="username origin"
+          v-html="originUsername"
+          @click="openUserPage(props.originUser)"
+          v-if="props.originUser.id"
+        />
+      </div>
     </div>
     <div class="dote-post-content">
       <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
@@ -129,6 +151,13 @@ const isTextHide = computed(() => {
         :src="props.note.user.avatarUrl || ''"
         alt=""
         @click="openUserPage(props.note.user)"
+      />
+      <img
+        class="dote-avatar origin-user"
+        v-if="props.originUser"
+        :src="props.originUser?.avatarUrl || ''"
+        alt=""
+        @click="openUserPage(props.originUser)"
       />
       <div class="text-container" :class="[lineClass]" v-if="isContentVisible">
         <Mfm
@@ -220,12 +249,22 @@ const isTextHide = computed(() => {
     height: 20px;
   }
 
+  &.origin-user {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    margin-left: 0px;
+  }
+
   & + * {
     margin-left: 8px;
   }
 }
 
 .dote-post-content {
+  position: relative;
   display: flex;
   width: 100%;
 
@@ -236,7 +275,9 @@ const isTextHide = computed(() => {
 .dote-post-info {
   display: flex;
   align-items: flex-start;
-  .renoted-by {
+  .renoted-by,
+  .mentioned-by,
+  .reacted-by {
     display: inline-flex;
     align-items: center;
     margin-left: 4px;

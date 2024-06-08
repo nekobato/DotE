@@ -142,6 +142,7 @@ export const useStore = defineStore({
         return {
           ...timeline,
           posts: [],
+          notifications: [],
         };
       });
       console.info("timelines initted", this.$state.timelines);

@@ -23,6 +23,7 @@ export const apiRequest = {
   ["misskey:getFollowedChannels"]: misskeyRequest.misskeyGetFollowedChannels,
   ["misskey:getMyAntennas"]: misskeyRequest.misskeyGetMyAntennas,
   ["misskey:getUserLists"]: misskeyRequest.misskeyGetUserLists,
+  ["misskey:getNotifications"]: misskeyRequest.misskeyGetNotifications,
 
   ["mastodon:registerApp"]: mastodonRequest.mastodonRegisterApp,
   ["mastodon:getAccessToken"]: mastodonRequest.mastodonGetAccessToken,

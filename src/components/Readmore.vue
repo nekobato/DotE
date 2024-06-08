@@ -38,8 +38,11 @@ const readmore = async () => {
   });
 
   if (additionalNotes) {
-    console.log("add", additionalNotes);
-    timelineStore.addMorePosts(additionalNotes);
+    if (timelineStore.current?.channel === "misskey:notifications") {
+      timelineStore.addMoreNotifications(additionalNotes);
+    } else {
+      timelineStore.addMorePosts(additionalNotes);
+    }
   }
   loading.value = false;
 };
