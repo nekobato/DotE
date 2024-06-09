@@ -67,7 +67,15 @@ const reactions = computed(() => {
 });
 
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.notification.id}`, props.currentInstanceUrl).toString() });
+  if (
+    props.notification.type === "mention" ||
+    props.notification.type === "reaction" ||
+    props.notification.type === "reply" ||
+    props.notification.type === "renote" ||
+    props.notification.type === "quote"
+  ) {
+    ipcSend("open-url", { url: new URL(`/notes/${props.notification.note.id}`, props.currentInstanceUrl).toString() });
+  }
 };
 
 const openUserPage = (user: MisskeyNote["user"]) => {
@@ -85,10 +93,16 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   <div class="dote-post">
     <div class="post-data-group">
       <MisskeyNoteContent
-        v-if="props.notification.type === 'mention' || props.notification.type === 'reaction'"
-        :note="props.notification.note"
+        v-if="
+          props.notification.type === 'mention' ||
+          props.notification.type === 'reaction' ||
+          props.notification.type === 'reply' ||
+          props.notification.type === 'renote' ||
+          props.notification.type === 'quote'
+        "
+        :note="props.notification.type === 'renote' ? props.notification.note.renote! : props.notification.note"
         :originUser="props.notification.user"
-        :type="props.notification.type"
+        :type="props.notification.type === 'renote' ? 'renoted' : props.notification.type"
         :lineStyle="props.lineStyle"
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"

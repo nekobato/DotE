@@ -15,7 +15,10 @@ const posts = computed(() => {
 });
 
 const canReadmore = computed(() => {
-  return posts.value && posts.value.length > 0;
+  return (
+    (timelineStore.current?.posts && timelineStore.current?.posts.length > 0) ||
+    (timelineStore.current?.notifications && timelineStore.current?.notifications.length > 0)
+  );
 });
 
 const readmore = async () => {

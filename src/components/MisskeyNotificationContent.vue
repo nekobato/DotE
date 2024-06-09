@@ -73,13 +73,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 <template>
   <div class="note-content">
     <div class="dote-post-content">
-      <img
-        class="dote-avatar"
-        v-if="props.user"
-        :src="props.user.avatarUrl || ''"
-        alt=""
-        @click="openUserPage(props.user)"
-      />
+      <img class="dote-avatar" v-if="user" :src="user.avatarUrl || ''" alt="" @click="openUserPage(user)" />
       <div class="text-container">
         <p v-if="props.type === 'follow'">{{ parseUsername(user?.name) }}があなたをフォローしました</p>
         <p v-if="props.type === 'followRequestAccepted'">
@@ -199,6 +193,8 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 }
 
 .text-container {
+  display: flex;
+  align-items: center;
   min-height: calc(0.8rem * 2);
   overflow: hidden;
   color: #efefef;

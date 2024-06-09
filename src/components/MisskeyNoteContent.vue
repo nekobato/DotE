@@ -55,12 +55,12 @@ const noteEmojis = computed(() => {
   return [...remoteEmojis, ...localEmojis];
 });
 
-const username = computed(() => {
-  return getUsername(props.note.user);
+const originUser = computed(() => {
+  return props.originNote ? props.originNote.user : props.originUser;
 });
 
 const originUsername = computed(() => {
-  return props.originNote ? getUsername(props.originNote.user) : props.originUser ? getUsername(props.originUser) : "";
+  return getUsername(originUser.value);
 });
 
 const host = computed(() => {
@@ -71,7 +71,8 @@ const isContentVisible = computed(() => {
   return props.type !== "renote";
 });
 
-const getUsername = (user: MisskeyNote["user"]) => {
+const getUsername = (user?: MisskeyNote["user"]) => {
+  if (!user) return "";
   if (user.name) {
     if (noteEmojis.value) {
       return parseMisskeyText(user.name, noteEmojis.value);
@@ -114,15 +115,10 @@ const isTextHide = computed(() => {
 <template>
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
     <div class="dote-post-info" v-if="isContentVisible">
-      <span class="username" v-html="username" @click="openUserPage(props.note.user)" />
-      <div class="renoted-by" v-if="props.originNote?.user.id && props.type === 'renoted'">
+      <span class="username" v-html="getUsername(props.note.user)" @click="openUserPage(props.note.user)" />
+      <div class="renoted-by" v-if="originUser?.id && props.type === 'renoted'">
         <Icon icon="mingcute:refresh-3-line" />
-        <span
-          class="username origin"
-          v-html="originUsername"
-          @click="openUserPage(props.originNote.user)"
-          v-if="props.originNote?.user.id"
-        />
+        <span class="username origin" v-if="originUser" v-html="originUsername" @click="openUserPage(originUser)" />
       </div>
       <div class="mentioned-by" v-if="props.originUser && props.type === 'mention'">
         <Icon icon="mingcute:left-fill" />
@@ -137,9 +133,9 @@ const isTextHide = computed(() => {
         <Icon icon="mingcute:star-fill" />
         <span
           class="username origin"
+          v-if="props.originUser.id"
           v-html="originUsername"
           @click="openUserPage(props.originUser)"
-          v-if="props.originUser.id"
         />
       </div>
     </div>
