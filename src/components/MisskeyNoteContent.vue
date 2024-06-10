@@ -116,27 +116,12 @@ const isTextHide = computed(() => {
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
     <div class="dote-post-info" v-if="isContentVisible">
       <span class="username" v-html="getUsername(props.note.user)" @click="openUserPage(props.note.user)" />
-      <div class="renoted-by" v-if="originUser?.id && props.type === 'renoted'">
-        <Icon icon="mingcute:refresh-3-line" />
+      <div class="acted-by" v-if="originUser">
+        <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'renoted'" />
+        <Icon icon="mingcute:left-fill" v-if="props.type === 'mention'" />
+        <Icon icon="mingcute:star-fill" v-if="props.type === 'reaction'" />
+        <Icon icon="mingcute:chart-horizontal-line" v-if="props.type === 'pollEnded'" />
         <span class="username origin" v-if="originUser" v-html="originUsername" @click="openUserPage(originUser)" />
-      </div>
-      <div class="mentioned-by" v-if="props.originUser && props.type === 'mention'">
-        <Icon icon="mingcute:left-fill" />
-        <span
-          class="username origin"
-          v-html="originUsername"
-          @click="openUserPage(props.originUser)"
-          v-if="props.originUser.id"
-        />
-      </div>
-      <div class="reacted-by" v-if="props.originUser && props.type === 'reaction'">
-        <Icon icon="mingcute:star-fill" />
-        <span
-          class="username origin"
-          v-if="props.originUser.id"
-          v-html="originUsername"
-          @click="openUserPage(props.originUser)"
-        />
       </div>
     </div>
     <div class="dote-post-content">
@@ -271,9 +256,7 @@ const isTextHide = computed(() => {
 .dote-post-info {
   display: flex;
   align-items: flex-start;
-  .renoted-by,
-  .mentioned-by,
-  .reacted-by {
+  .acted-by {
     display: inline-flex;
     align-items: center;
     margin-left: 4px;

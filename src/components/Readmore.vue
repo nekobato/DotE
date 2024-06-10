@@ -10,7 +10,11 @@ const timelineStore = useTimelineStore();
 
 const loading = ref(false);
 
-const posts = computed(() => {
+const postsOrNotifications = computed(() => {
+  if (!timelineStore.current) return [];
+  if (timelineStore.current.notifications.length > 0) {
+    return timelineStore.current.notifications;
+  }
   return timelineStore.current?.posts;
 });
 
@@ -22,7 +26,13 @@ const canReadmore = computed(() => {
 });
 
 const readmore = async () => {
-  if (!posts.value || !timelineStore.current?.channel || posts.value.length === 0 || loading.value) {
+  console.log("readmore", timelineStore.current);
+  if (
+    !postsOrNotifications.value ||
+    !timelineStore.current?.channel ||
+    postsOrNotifications.value.length === 0 ||
+    loading.value
+  ) {
     return;
   }
 
@@ -37,7 +47,7 @@ const readmore = async () => {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
     limit: 20,
-    untilId: posts.value[posts.value.length - 1].id,
+    untilId: postsOrNotifications.value[postsOrNotifications.value.length - 1].id,
   });
 
   if (additionalNotes) {

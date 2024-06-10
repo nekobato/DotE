@@ -66,6 +66,40 @@ const reactions = computed(() => {
   ];
 });
 
+const note = computed(() => {
+  switch (props.notification.type) {
+    case "renote":
+      return props.notification.note.renote;
+    case "mention":
+    case "reaction":
+    case "reply":
+    case "quote":
+    case "pollEnded":
+      return props.notification.note;
+    default:
+      return undefined;
+  }
+});
+
+const user = computed(() => {
+  switch (props.notification.type) {
+    case "follow":
+    case "followRequestAccepted":
+    case "renote":
+    case "quote":
+    case "mention":
+    case "reaction":
+    case "reply":
+    case "note":
+    case "receiveFollowRequest":
+      return props.notification.user;
+    case "pollEnded":
+      return props.notification.note.user;
+    default:
+      return undefined;
+  }
+});
+
 const openPost = () => {
   if (
     props.notification.type === "mention" ||
@@ -93,15 +127,9 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   <div class="dote-post">
     <div class="post-data-group">
       <MisskeyNoteContent
-        v-if="
-          props.notification.type === 'mention' ||
-          props.notification.type === 'reaction' ||
-          props.notification.type === 'reply' ||
-          props.notification.type === 'renote' ||
-          props.notification.type === 'quote'
-        "
-        :note="props.notification.type === 'renote' ? props.notification.note.renote! : props.notification.note"
-        :originUser="props.notification.user"
+        v-if="note"
+        :note="note"
+        :originUser="user"
         :type="props.notification.type === 'renote' ? 'renoted' : props.notification.type"
         :lineStyle="props.lineStyle"
         :currentInstanceUrl="props.currentInstanceUrl"
