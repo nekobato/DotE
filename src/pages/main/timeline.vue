@@ -89,7 +89,6 @@ timelineStore.$onAction((action) => {
   if (action.name === "addNewPost") {
     nextTick(() => {
       if (store.$state.settings.mode === "haze") {
-        console.log(timelineContainer.value);
         timelineContainer.value?.scrollTo({
           top: 0,
           behavior: "smooth",

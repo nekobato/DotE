@@ -17,7 +17,7 @@ const props = defineProps({
   },
   by: {
     type: Object as PropType<MastodonToot["account"]>,
-    required: false,
+    required: true,
   },
   lineStyle: {
     type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
@@ -27,10 +27,6 @@ const props = defineProps({
     type: String as PropType<"default">,
     default: "default",
   },
-});
-
-const post = computed(() => {
-  return props.post?.reblog || props.post;
 });
 
 const postType = computed(() => {
@@ -59,7 +55,7 @@ const postAtttachments = computed(() => {
 });
 
 const openPost = () => {
-  post.value && ipcSend("open-url", { url: new URL(post.value.url).toString() });
+  props.post && ipcSend("open-url", { url: new URL(props.post.url).toString() });
 };
 
 const openUserPage = (user: MastodonToot["account"]) => {
@@ -75,14 +71,10 @@ const openUserPage = (user: MastodonToot["account"]) => {
           <span class="username" v-if="post" @click="openUserPage(post.account)">{{
             post.account.display_name || post.account.username
           }}</span>
-          <div class="mentioned-by" v-if="props.type === 'mention' && props.by">
-            <Icon icon="mingcute:left-fill" />
-            <span class="username origin" @click="openUserPage(props.by)">{{
-              props.by.display_name || props.by.username
-            }}</span>
-          </div>
-          <div class="favourited-by" v-if="props.type === 'favourite' && props.by">
-            <Icon icon="mingcute:star-fill" />
+          <div class="mentioned-by" v-if="props.by">
+            <Icon icon="mingcute:left-fill" v-if="props.type === 'mention'" />
+            <Icon icon="mingcute:star-fill" v-if="props.type === 'favourite'" />
+            <Icon icon="mingcute:user-add-fill" v-if="props.type === 'follow'" />
             <span class="username origin" @click="openUserPage(props.by)">{{
               props.by.display_name || props.by.username
             }}</span>
@@ -90,12 +82,11 @@ const openUserPage = (user: MastodonToot["account"]) => {
         </div>
         <div class="dote-post-content">
           <img
-            v-if="post"
+            v-if="props.post || props.by"
             class="dote-avatar"
-            :class="{ mini: postType === 'reblog' }"
-            :src="post.account.avatar || ''"
+            :src="props.post?.account.avatar || props.by?.avatar || ''"
             alt=""
-            @click="openUserPage(post.account)"
+            @click="openUserPage(props.post?.account || props.by)"
           />
           <img
             class="dote-avatar mini"
@@ -103,10 +94,15 @@ const openUserPage = (user: MastodonToot["account"]) => {
             :src="props.by.avatar || ''"
             alt=""
             @click="openUserPage(props.by)"
-            v-if="props.by"
+            v-if="props.post && props.by"
           />
           <div class="text-container" :class="[lineStyle]" v-if="post">
             <span class="text" v-html="parseMastodonText(post.content, post.emojis)" />
+          </div>
+          <div class="notification-text-container" :class="[lineStyle]" v-else>
+            <span class="text" v-if="props.type === 'follow'">
+              {{ props.by.display_name || props.by.username }} にフォローされました
+            </span>
           </div>
         </div>
       </div>
@@ -210,6 +206,10 @@ const openUserPage = (user: MastodonToot["account"]) => {
     font-size: var(--font-size-10);
     line-height: var(--font-size-10);
     white-space: nowrap;
+
+    & + * {
+      margin-left: 4px;
+    }
   }
 
   .username,
@@ -228,7 +228,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     border-radius: 50%;
     &.mini {
       position: absolute;
-      top: 50%;
+      top: 32px;
       left: 0;
       width: 20px;
       height: 20px;
@@ -255,7 +255,6 @@ const openUserPage = (user: MastodonToot["account"]) => {
     .favourited-by {
       display: inline-flex;
       align-items: center;
-      margin-left: 4px;
       opacity: 0.6;
       > svg {
         height: var(--font-size-12);
@@ -273,6 +272,15 @@ const openUserPage = (user: MastodonToot["account"]) => {
   .text-container {
     min-height: calc(0.8rem * 2);
     overflow: hidden;
+    color: #efefef;
+    font-size: 0.6rem;
+    line-height: 0.8rem;
+  }
+
+  .notification-text-container {
+    display: flex;
+    align-items: center;
+    min-height: calc(0.8rem * 2);
     color: #efefef;
     font-size: 0.6rem;
     line-height: 0.8rem;

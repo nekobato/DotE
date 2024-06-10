@@ -53,7 +53,7 @@ export const useTimelineStore = defineStore("timeline", () => {
         message: `${currentInstance.value?.name}のタイムラインを取得できませんでした`,
       });
     });
-    if (current.value.channel === "misskey:notifications") {
+    if (current.value.channel === "misskey:notifications" || current.value.channel === "mastodon:notifications") {
       setNotifications(data);
     } else {
       setPosts(data);
