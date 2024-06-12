@@ -1,6 +1,7 @@
 import { ref, computed, onUpdated } from "vue";
 import { nanoid } from "nanoid/non-secure";
 import { ChannelName, MastodonChannelName } from "@shared/types/store";
+import { MastodonToot } from "@/types/mastodon";
 
 export type MastodonStreamChannel =
   | "public"
@@ -59,9 +60,13 @@ export const disconnectWebSocket = (ws: WebSocket | null) => {
 
 export const useMastodonStream = ({
   onUpdate,
+  onStatusUpdate,
+  onDelete,
   onReconnect,
 }: {
-  onUpdate: (payload: any) => void;
+  onUpdate: (toot: MastodonToot) => void;
+  onStatusUpdate: (toot: MastodonToot) => void;
+  onDelete: (id: string) => void;
   onReconnect: () => void;
 }) => {
   let ws: WebSocket;
@@ -156,8 +161,22 @@ export const useMastodonStream = ({
           onConnected();
           break;
         case "update":
-          console.info("update", data);
-          onUpdate(data.payload);
+          try {
+            onUpdate(JSON.parse(data.payload));
+          } catch (e) {
+            console.error(e);
+          }
+          break;
+        case "status.update":
+          try {
+            onStatusUpdate(JSON.parse(data.payload));
+          } catch (e) {
+            console.error(e);
+          }
+          break;
+        case "delete":
+          console.info("delete", data.payload);
+          onDelete(data.payload);
           break;
         default:
           console.info("unhandled stream message", data);

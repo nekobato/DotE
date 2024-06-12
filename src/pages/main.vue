@@ -12,6 +12,7 @@ import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
 import { RouterView, useRouter } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
+import { MastodonToot } from "@/types/mastodon";
 
 const router = useRouter();
 const store = useStore();
@@ -62,8 +63,17 @@ const misskeyPolling = useMisskeyPolling({
 });
 
 const mastodonStream = useMastodonStream({
-  onUpdate: (data) => {
-    timelineStore.addNewPost(data);
+  onUpdate: (toot) => {
+    console.info("onUpdate", toot);
+    timelineStore.addNewPost(toot);
+  },
+  onStatusUpdate: (toot: MastodonToot) => {
+    console.info("onStatusUpdated", toot);
+    timelineStore.updatePost(toot);
+  },
+  onDelete: (id) => {
+    console.info("onDelete", id);
+    timelineStore.removePost(id);
   },
   onReconnect: () => {
     console.info("onReconnect");
@@ -109,11 +119,11 @@ const initStream = () => {
   mastodonStream.disconnect();
 
   if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
-    // mastodonStream.connect({
-    //   host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
-    //   channel: current.channel as MastodonChannelName,
-    //   token: timelineStore.currentUser.token,
-    // });
+    mastodonStream.connect({
+      host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
+      channel: current.channel as MastodonChannelName,
+      token: timelineStore.currentUser.token,
+    });
   }
 
   if (misskeyChannels.includes(current.channel as MisskeyChannelName)) {

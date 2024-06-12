@@ -142,7 +142,22 @@ export const useTimelineStore = defineStore("timeline", () => {
       | MastodonToot[];
   };
 
-  const addNewNotification = (notification: MisskeyEntities.Notification | MastodonNotification) => {
+  const updatePost = <T extends MisskeyNote | MastodonToot>(post: T) => {
+    const currentPosts = store.timelines[currentIndex.value].posts as T[];
+    if (!currentPosts) return;
+    const postIndex = currentPosts.findIndex((p) => p.id === post.id);
+    if (postIndex === -1) return;
+    currentPosts.splice(postIndex, 1, post);
+  };
+
+  const removePost = (postId: string) => {
+    if (!store.timelines[currentIndex.value]?.posts) return;
+    store.timelines[currentIndex.value].posts = store.timelines[currentIndex.value].posts.filter(
+      (post) => post.id !== postId,
+    ) as MastodonToot[] | MisskeyNote[];
+  };
+
+  const addNewNotification = <T extends MisskeyEntities.Notification | MastodonNotification>(notification: T) => {
     if (!store.timelines[currentIndex.value]?.notifications) return;
     store.timelines[currentIndex.value].notifications = [
       notification,
@@ -341,6 +356,8 @@ export const useTimelineStore = defineStore("timeline", () => {
     updateTimeline,
     createTimeline,
     addNewPost,
+    updatePost,
+    removePost,
     addMorePosts,
     addNewNotification,
     addMoreNotifications,

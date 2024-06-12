@@ -53,8 +53,8 @@ const postAtttachments = computed(() => {
     url: file.url,
     thumbnailUrl: file.preview_url || "",
     size: {
-      width: file.meta.original.width,
-      height: file.meta.original.height,
+      width: file.meta?.original?.width,
+      height: file.meta?.original?.height,
     },
     isSensitive: props.post.sensitive,
   }));
