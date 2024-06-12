@@ -9,6 +9,6 @@
   grid-template-rows: 24px 1fr;
   width: 100%;
   height: 100%;
-  background-color: var(--hazy-background-color);
+  background-color: var(--dote-background-color);
 }
 </style>

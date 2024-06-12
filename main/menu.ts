@@ -5,17 +5,17 @@ type MenuTemplate = (electron.MenuItemConstructorOptions | electron.MenuItem)[];
 const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | null }): MenuTemplate => [
   // @ts-ignore: appMenu is not defined in d.ts
   {
-    label: "hazy",
+    label: "DotE",
     submenu: [
       {
-        label: "About Hazy",
+        label: "About DotE",
         click: () => {
           dialog.showMessageBox({
             type: "info",
             icon: `${__dirname}/../public/icons/png/128x128.png`,
-            title: "Hazy",
-            message: `Hazy`,
-            detail: `Version: ${app.getVersion()}\n\nhttps://github.com/nekobato/hazy/`,
+            title: "Daydream of the Elephants",
+            message: `Daydream of the Elephants`,
+            detail: `Version: ${app.getVersion()}\n\nhttps://github.com/nekobato/dot-e/`,
           });
         },
       },
@@ -34,7 +34,7 @@ const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | nul
       },
       {
         id: "quit",
-        label: "Quit Hazy",
+        label: "Quit DotE",
         role: "quit",
       },
     ],

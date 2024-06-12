@@ -8,6 +8,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--hazy-background-color);
+  background-color: var(--dote-background-color);
 }
 </style>

@@ -45,7 +45,7 @@ const exit = () => {
       ipcSend("post:close");
       break;
     case "main":
-      ipcSend("set-hazy-mode", { mode: "hide" });
+      ipcSend("set-mode", { mode: "hide" });
       break;
     case "settings":
       router.push("/main/timeline");
@@ -54,7 +54,7 @@ const exit = () => {
 };
 
 const haze = () => {
-  ipcSend("set-hazy-mode", { mode: "haze" });
+  ipcSend("set-mode", { mode: "haze" });
 };
 
 const post = () => {
@@ -121,8 +121,8 @@ const settings = () => {
   align-items: center;
   height: 24px;
   overflow: hidden;
-  background-color: var(--hazy-background-color);
-  border: 1px solid var(--hazy-border-color);
+  background-color: var(--dote-background-color);
+  border: 1px solid var(--dote-border-color);
   border-radius: 4px;
 }
 .rest {
@@ -149,7 +149,7 @@ const settings = () => {
   background-color: var(--color-background);
   border-radius: 4px;
   > p {
-    color: var(--hazy-text-color);
+    color: var(--dote-text-color);
     font-size: 12px;
     text-align: center;
   }

@@ -133,8 +133,8 @@ button {
   }
 
   &[disabled] {
-    color: var(--hazy-color-white-t2);
-    background: var(--hazy-color-white-t1);
+    color: var(--dote-color-white-t2);
+    background: var(--dote-color-white-t1);
   }
 
   &.type-ghost {
@@ -154,7 +154,7 @@ button {
     }
 
     &[disabled] {
-      color: var(--hazy-color-white-t2);
+      color: var(--dote-color-white-t2);
     }
   }
 }

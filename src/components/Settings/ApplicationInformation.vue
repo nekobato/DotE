@@ -3,10 +3,10 @@ import { information } from "@/store/information";
 </script>
 
 <template>
-  <div class="information hazy-post-list">
-    <h2 class="hazy-field-group-title">その他</h2>
+  <div class="information dote-post-list">
+    <h2 class="dote-field-group-title">その他</h2>
 
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">バージョン</div>
       <div class="form-actions">
         <span>{{ information.version }}</span>
@@ -38,7 +38,7 @@ import { information } from "@/store/information";
   color: var(--color-text-body);
   font-size: var(--font-size-16);
 }
-.hazy-post {
+.dote-post {
   display: flex;
   border: none;
 }

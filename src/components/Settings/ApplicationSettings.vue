@@ -80,8 +80,8 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
 
 <template>
   <div class="account-settings" v-if="store.settings">
-    <h2 class="hazy-field-group-title">設定</h2>
-    <div class="hazy-field-row indent-1 wrap">
+    <h2 class="dote-field-group-title">設定</h2>
+    <div class="dote-field-row indent-1 wrap">
       <div class="content">
         <span class="title"><Icon icon="mingcute:ghost-line" class="nn-icon size-small" /><span>の透明度</span></span>
       </div>
@@ -90,7 +90,7 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
       </div>
     </div>
 
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <span class="title">タイムラインの最大表示数</span>
       </div>
@@ -106,7 +106,7 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
       </div>
     </div>
 
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <span class="title">ノートの表示スタイル</span>
       </div>
@@ -128,7 +128,7 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
     </div>
 
     <!-- <SectionTitle title="グローバルショートカットキー" />
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <span class="title">タイムライン表示/非表示切り替え</span>
       </div>
@@ -143,8 +143,8 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         />
       </div>
     </div> -->
-    <h2 class="hazy-field-group-title">Misskey</h2>
-    <div class="hazy-field-row indent-1">
+    <h2 class="dote-field-group-title">Misskey</h2>
+    <div class="dote-field-row indent-1">
       <div class="content">
         <span class="title">隠された文字をデフォルトで表示する</span>
       </div>
@@ -154,7 +154,7 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         </label>
       </div>
     </div>
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <span class="title">リアクションを表示する</span>
       </div>
@@ -186,7 +186,7 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
   }
 }
 
-.hazy-field-row {
+.dote-field-row {
   display: flex;
   border: none;
 }

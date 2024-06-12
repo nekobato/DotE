@@ -1,15 +1,22 @@
 <script setup lang="ts">
 import ErrorPost from "@/components/ErrorPost.vue";
+import MastodonNotification from "@/components/MastodonNotification.vue";
+import MastodonToot from "@/components/MastodonToot.vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
+import MisskeyNotification from "@/components/MisskeyNotification.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
 import WindowHeader from "@/components/WindowHeader.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
+import type {
+  MastodonNotification as MastodonNotificationType,
+  MastodonToot as MastodonTootType,
+} from "@/types/mastodon";
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
+import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import { computed, nextTick, reactive, ref } from "vue";
 
 const store = useStore();
@@ -18,11 +25,11 @@ const timelineContainer = ref<HTMLDivElement | null>(null);
 const scrollPosition = ref(0);
 
 const hazeOpacity = computed(() => {
-  return (store.settings.hazyMode === "haze" ? store.settings.opacity || 0 : 100) / 100;
+  return (store.settings.mode === "haze" ? store.settings.opacity || 0 : 100) / 100;
 });
 
 const isHazeMode = computed(() => {
-  return store.settings.hazyMode === "haze";
+  return store.settings.mode === "haze";
 });
 
 const state = reactive({
@@ -35,11 +42,20 @@ const onScroll = () => {
 };
 
 const canScrollToTop = computed(() => {
-  return store.settings.hazyMode === "show" && scrollPosition.value > 0;
+  return store.settings.mode === "show" && scrollPosition.value > 0;
+});
+
+const emojis = computed(() => {
+  return timelineStore.currentInstance?.type === "misskey" ? timelineStore.currentInstance?.misskey?.emojis : [];
 });
 
 const ads = computed(() => {
-  return timelineStore.currentInstance?.misskey?.meta.ads || [];
+  return timelineStore.currentInstance?.type === "misskey" &&
+    !isHazeMode &&
+    timelineStore.currentInstance?.misskey?.meta.ads.length > 0 &&
+    timelineStore.current?.posts.length
+    ? timelineStore.currentInstance?.misskey?.meta.ads
+    : [];
 });
 
 const scrollToTop = () => {
@@ -61,30 +77,18 @@ const openNewReaction = (noteId: string) => {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
     noteId: noteId,
-    emojis: timelineStore.currentInstance?.misskey?.emojis,
+    emojis: emojis.value,
   });
 };
 
 const refreshPost = (noteId: string) => {
-  timelineStore.updatePost({ postId: noteId });
-};
-
-const openPost = (noteId: string) => {
-  ipcSend("open-url", { url: new URL(`/notes/${noteId}`, timelineStore.currentInstance?.url).toString() });
-};
-
-const openUserPage = (user: MisskeyNoteType["user"]) => {
-  const instanceUrl = user.host || timelineStore.currentInstance?.url;
-  ipcSend("open-url", {
-    url: new URL(`/@${user.username}`, instanceUrl).toString(),
-  });
+  timelineStore.misskeyUpdatePost({ postId: noteId });
 };
 
 timelineStore.$onAction((action) => {
   if (action.name === "addNewPost") {
     nextTick(() => {
-      if (store.$state.settings.hazyMode === "haze") {
-        console.log(timelineContainer.value);
+      if (store.$state.settings.mode === "haze") {
         timelineContainer.value?.scrollTo({
           top: 0,
           behavior: "smooth",
@@ -98,8 +102,8 @@ timelineStore.$onAction((action) => {
 <template>
   <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
     <WindowHeader windowType="main" v-show="!isHazeMode" class="header" />
-    <div class="hazy-timeline-container" v-if="store.errors.length">
-      <div class="hazy-post-list">
+    <div class="dote-timeline-container" v-if="store.errors.length">
+      <div class="dote-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
       </div>
     </div>
@@ -111,13 +115,17 @@ timelineStore.$onAction((action) => {
         'is-adding': state.isAdding,
       }"
     >
-      <PostList v-if="timelineStore.current?.posts?.length">
+      <PostList v-if="timelineStore.current?.posts?.length || timelineStore.current?.notifications.length">
         <MisskeyNote
+          v-if="
+            timelineStore.currentInstance?.type === 'misskey' &&
+            timelineStore.current.channel !== 'misskey:notifications'
+          "
           class="post-item"
           v-for="post in timelineStore.current.posts"
-          :post="post"
+          :post="post as MisskeyNoteType"
           :postStyle="store.settings.postStyle"
-          :emojis="timelineStore.currentInstance?.misskey?.emojis"
+          :emojis="emojis"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           :hideCw="store.settings.misskey.hideCw"
           :showReactions="store.settings.misskey.showReactions"
@@ -126,12 +134,45 @@ timelineStore.$onAction((action) => {
           :key="post.id"
           @reaction="onReaction"
           @newReaction="openNewReaction"
-          @openPost="openPost"
-          @openUserPage="openUserPage"
           @refreshPost="refreshPost"
         />
+        <MisskeyNotification
+          v-if="timelineStore.current.channel === 'misskey:notifications'"
+          class="post-item"
+          v-for="notification in timelineStore.current.notifications as MisskeyEntities.Notification[]"
+          :notification="notification"
+          :postStyle="store.settings.postStyle"
+          :emojis="emojis"
+          :currentInstanceUrl="timelineStore.currentInstance?.url"
+          :hideCw="store.settings.misskey.hideCw"
+          :showReactions="store.settings.misskey.showReactions"
+          :lineStyle="store.settings.postStyle"
+          :key="notification.id"
+        />
+        <MastodonToot
+          v-if="
+            timelineStore.currentInstance?.type === 'mastodon' &&
+            timelineStore.current.channel !== 'mastodon:notifications'
+          "
+          v-for="toot in timelineStore.current?.posts"
+          :key="toot.id"
+          :post="toot as MastodonTootType"
+          :instanceUrl="timelineStore.currentInstance?.url"
+          :lineStyle="store.settings.postStyle"
+          @refreshPost="timelineStore.mastodonUpdatePost"
+          @favourite="timelineStore.mastodonToggleFavourite"
+        />
+        <MastodonNotification
+          v-if="timelineStore.current.channel === 'mastodon:notifications'"
+          v-for="notification in timelineStore.current?.notifications as MastodonNotificationType[]"
+          :key="notification.id"
+          :type="notification.type"
+          :by="notification.account"
+          :post="notification.status"
+          :lineStyle="store.settings.postStyle"
+        />
       </PostList>
-      <MisskeyAdCarousel v-if="!isHazeMode && ads.length > 0 && timelineStore.current?.posts.length" :items="ads" />
+      <MisskeyAdCarousel :items="ads" />
       <ReadMore v-if="!isHazeMode" />
     </div>
     <div class="scroll-to-top" :class="{ visible: canScrollToTop }">
@@ -173,13 +214,13 @@ body::-webkit-scrollbar {
   &.is-adding {
     overflow-y: hidden;
   }
-  > .hazy-post {
+  > .dote-post {
     &:first-of-type {
       background: none;
     }
   }
 }
-.hazy-post-list {
+.dote-post-list {
   padding-top: 4px;
 }
 .loading {
@@ -199,7 +240,7 @@ body::-webkit-scrollbar {
   display: inline-flex;
   width: 80px;
   margin: 0 auto;
-  background-color: var(--hazy-color-white-t4);
+  background-color: var(--dote-color-white-t4);
   border-radius: 4px;
   transform: translateY(-56px);
   opacity: 0.2;
@@ -216,7 +257,7 @@ body::-webkit-scrollbar {
     width: 100%;
 
     .nn-icon {
-      color: var(--hazy-color-black-t5);
+      color: var(--dote-color-black-t5);
     }
   }
 }

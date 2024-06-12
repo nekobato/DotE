@@ -11,7 +11,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="hazy-alert" :class="[props.type]">
+  <div class="dote-alert" :class="[props.type]">
     <Icon icon="mingcute:flag-3-fill" class="nn-icon size-small color-white" v-if="props.type === 'success'" />
     <Icon icon="mingcute:chat-3-fill" class="nn-icon size-small color-white" v-if="props.type === 'info'" />
     <Icon icon="mingcute:alert-octagon-fill" class="nn-icon size-small color-white" v-if="props.type === 'warning'" />
@@ -23,28 +23,28 @@ const props = defineProps({
 </template>
 
 <style lang="scss" scoped>
-.hazy-alert {
+.dote-alert {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
   padding: 4px 8px;
   overflow: hidden;
-  color: var(--hazy-color-white);
-  background-color: var(--hazy-color-white);
-  border: 1px solid var(--hazy-color-white-t2);
+  color: var(--dote-color-white);
+  background-color: var(--dote-color-white);
+  border: 1px solid var(--dote-color-white-t2);
   border-radius: 4px;
   &.info {
-    background-color: var(--hazy-color-info);
+    background-color: var(--dote-color-info);
   }
   &.success {
-    background-color: var(--hazy-color-success);
+    background-color: var(--dote-color-success);
   }
   &.warning {
-    background-color: var(--hazy-color-warning);
+    background-color: var(--dote-color-warning);
   }
   &.error {
-    background-color: var(--hazy-color-error);
+    background-color: var(--dote-color-error);
   }
   .content {
     display: flex;

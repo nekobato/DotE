@@ -12,7 +12,7 @@ const timelineStore = useTimelineStore();
 <template>
   <div class="settings">
     <WindowHeader windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
-    <div class="hazy-scroller">
+    <div class="dote-scroller">
       <AccountSettings />
       <TimelineSettings />
       <ApplicationSettings />
@@ -31,14 +31,14 @@ const timelineStore = useTimelineStore();
   overflow: hidden;
   border-radius: 8px;
 }
-.hazy-scroller {
+.dote-scroller {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
   overflow: auto;
   background: var(--color-background);
-  border: 1px solid var(--hazy-border-color);
+  border: 1px solid var(--dote-border-color);
   border-radius: 8px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;

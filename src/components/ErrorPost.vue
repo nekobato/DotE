@@ -18,7 +18,7 @@ const deleteError = (index: number) => {
 </script>
 
 <template>
-  <div class="hazy-error-post">
+  <div class="dote-error-post">
     <div class="icon">
       <Icon icon="mingcute:alert-fill" class="nn-icon size-small" />
     </div>
@@ -34,13 +34,13 @@ const deleteError = (index: number) => {
 </template>
 
 <style lang="scss" scoped>
-.hazy-error-post {
+.dote-error-post {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
   padding: 8px;
-  color: var(--hazy-text-color);
-  background-color: var(--hazy-background-color);
+  color: var(--dote-text-color);
+  background-color: var(--dote-background-color);
   border-radius: 8px;
 }
 .icon {

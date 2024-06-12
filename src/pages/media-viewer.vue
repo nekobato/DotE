@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
 import { reactive } from "vue";
-import Loading from "@/components/common/HazyLoading.vue";
+import Loading from "@/components/common/DoteLoading.vue";
 
 const getMediaWindowSize = (maxWidth: number, maxHeight: number, width?: number, height?: number) => {
   if (!width || !height) return { width: 0, height: 0 };

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote } from "@shared/types/misskey";
+import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { computed, ref, type PropType } from "vue";
 import Mfm from "./misskey/Mfm.vue";
 
@@ -14,8 +14,12 @@ const props = defineProps({
     type: Object as PropType<MisskeyNote>,
     required: false,
   },
+  originUser: {
+    type: Object as PropType<MisskeyNote["user"]>,
+    required: false,
+  },
   type: {
-    type: String as PropType<"note" | "reply" | "renote" | "renoted" | "quote" | "quoted" | undefined>,
+    type: String as PropType<MisskeyEntities.Notification["type"] | "renoted" | "quoted">,
     required: true,
   },
   lineStyle: {
@@ -51,12 +55,12 @@ const noteEmojis = computed(() => {
   return [...remoteEmojis, ...localEmojis];
 });
 
-const username = computed(() => {
-  return getUsernameInNote(props.note);
+const originUser = computed(() => {
+  return props.originNote ? props.originNote.user : props.originUser;
 });
 
 const originUsername = computed(() => {
-  return props.originNote ? getUsernameInNote(props.originNote) : null;
+  return getUsername(originUser.value);
 });
 
 const host = computed(() => {
@@ -67,15 +71,16 @@ const isContentVisible = computed(() => {
   return props.type !== "renote";
 });
 
-const getUsernameInNote = (note: MisskeyNote) => {
-  if (note.user.name) {
+const getUsername = (user?: MisskeyNote["user"]) => {
+  if (!user) return "";
+  if (user.name) {
     if (noteEmojis.value) {
-      return parseMisskeyText(note.user.name, noteEmojis.value);
+      return parseMisskeyText(user.name, noteEmojis.value);
     } else {
-      return note.user.name;
+      return user.name;
     }
   } else {
-    return note.user.username;
+    return user.username;
   }
 };
 
@@ -109,26 +114,31 @@ const isTextHide = computed(() => {
 
 <template>
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
-    <div class="hazy-post-info" v-if="isContentVisible">
-      <span class="username" v-html="username" @click="openUserPage(props.note.user)" />
-      <div class="renoted-by" v-if="props.originNote?.user.id && props.type === 'renoted'">
-        <Icon icon="mingcute:refresh-3-line" />
-        <span
-          class="username origin"
-          v-html="originUsername"
-          @click="openUserPage(props.originNote.user)"
-          v-if="props.originNote?.user.id"
-        />
+    <div class="dote-post-info" v-if="isContentVisible">
+      <span class="username" v-html="getUsername(props.note.user)" @click="openUserPage(props.note.user)" />
+      <div class="acted-by" v-if="originUser">
+        <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'renoted'" />
+        <Icon icon="mingcute:left-fill" v-if="props.type === 'mention'" />
+        <Icon icon="mingcute:star-fill" v-if="props.type === 'reaction'" />
+        <Icon icon="mingcute:chart-horizontal-line" v-if="props.type === 'pollEnded'" />
+        <span class="username origin" v-if="originUser" v-html="originUsername" @click="openUserPage(originUser)" />
       </div>
     </div>
-    <div class="hazy-post-content">
+    <div class="dote-post-content">
       <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
       <img
-        class="hazy-avatar"
+        class="dote-avatar"
         :class="{ mini: props.type === 'renote' }"
         :src="props.note.user.avatarUrl || ''"
         alt=""
         @click="openUserPage(props.note.user)"
+      />
+      <img
+        class="dote-avatar origin-user"
+        v-if="props.originUser"
+        :src="props.originUser?.avatarUrl || ''"
+        alt=""
+        @click="openUserPage(props.originUser)"
       />
       <div class="text-container" :class="[lineClass]" v-if="isContentVisible">
         <Mfm
@@ -178,8 +188,8 @@ const isTextHide = computed(() => {
     /* dashed boarder */
     background-image: linear-gradient(
       to right,
-      var(--hazy-color-white-t2),
-      var(--hazy-color-white-t2) 4px,
+      var(--dote-color-white-t2),
+      var(--dote-color-white-t2) 4px,
       transparent 4px,
       transparent 6px
     );
@@ -197,7 +207,7 @@ const isTextHide = computed(() => {
   display: flex;
   align-items: center;
   height: 12px;
-  color: var(--hazy-color-white-t5);
+  color: var(--dote-color-white-t5);
   font-weight: bold;
   font-size: var(--font-size-10);
   line-height: var(--font-size-10);
@@ -205,11 +215,11 @@ const isTextHide = computed(() => {
 }
 
 .username,
-.hazy-avatar {
+.dote-avatar {
   cursor: pointer;
 }
 
-.hazy-avatar {
+.dote-avatar {
   flex-shrink: 0;
   width: 32px;
   height: 32px;
@@ -225,23 +235,33 @@ const isTextHide = computed(() => {
     height: 20px;
   }
 
+  &.origin-user {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    margin-left: 0px;
+  }
+
   & + * {
     margin-left: 8px;
   }
 }
 
-.hazy-post-content {
+.dote-post-content {
+  position: relative;
   display: flex;
   width: 100%;
 
-  > .hazy-avatar {
+  > .dote-avatar {
     flex-shrink: 0;
   }
 }
-.hazy-post-info {
+.dote-post-info {
   display: flex;
   align-items: flex-start;
-  .renoted-by {
+  .acted-by {
     display: inline-flex;
     align-items: center;
     margin-left: 4px;
@@ -254,11 +274,11 @@ const isTextHide = computed(() => {
     }
   }
 
-  & + .hazy-post-content {
+  & + .dote-post-content {
     margin-top: 4px;
   }
 }
-.hazy-post-info .renote > .hazy-post-body > .hazy-avatar {
+.dote-post-info .renote > .dote-post-body > .dote-avatar {
   width: 20px;
   height: 20px;
 }

@@ -1,13 +1,18 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { MisskeyEntities } from "@shared/types/misskey";
-import type { User } from "@shared/types/store";
+import type { Instance, User } from "@shared/types/store";
 import { defineStore } from "pinia";
 import { useStore } from ".";
 import { useInstanceStore } from "./instance";
 import { useTimelineStore } from "./timeline";
+import { defaultChannelNameFromType } from "@/utils/dote";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
+  instanceType: "misskey" | "mastodon";
+  options?: {
+    [key: string]: any;
+  };
 };
 
 export const useUsersStore = defineStore("users", () => {
@@ -24,23 +29,25 @@ export const useUsersStore = defineStore("users", () => {
     await timelineStore.deleteTimelineByUserId(id);
   };
 
-  const createUser = async (user: NewUser) => {
+  const createUser = async (newUser: NewUser) => {
+    let instance: Instance | undefined = instanceStore.findInstance(newUser.instanceUrl);
     // Instanceが無ければ作成
-    const instance =
-      instanceStore.findInstance(user.instanceUrl) || (await instanceStore.createInstance(user.instanceUrl));
+    if (!instance) {
+      instance = await instanceStore.createInstance(newUser.instanceUrl, newUser.instanceType);
+    }
 
     if (!instance) {
       store.$state.errors.push({
-        message: `${user.instanceUrl}のデータを作るのに失敗しちゃった`,
+        message: `${newUser.instanceUrl}のデータを作るのに失敗しちゃった`,
       });
       return;
     }
 
     // User作成
     await ipcInvoke("db:upsert-user", {
-      name: user.name,
-      avatarUrl: user.avatarUrl || "",
-      token: user.token,
+      name: newUser.name,
+      avatarUrl: newUser.avatarUrl || "",
+      token: newUser.token,
       instanceId: instance.id,
     });
 
@@ -51,7 +58,7 @@ export const useUsersStore = defineStore("users", () => {
     if (store.timelines.length === 0) {
       await timelineStore.createTimeline({
         userId: store.users[0].id,
-        channel: "misskey:homeTimeline",
+        channel: defaultChannelNameFromType(instance?.type),
         options: {},
         updateInterval: 60 * 1000, // 60 sec
         available: true,
@@ -86,12 +93,28 @@ export const useUsersStore = defineStore("users", () => {
           id: user.id,
           name: result.username,
           avatarUrl: result.avatarUrl ?? undefined,
-          token: user.token,
-          instanceId: instance.id,
         });
-        await store.initUsers();
+      }
+    } else if (instance.type === "mastodon") {
+      const result: any = await ipcInvoke("api", {
+        method: "mastodon:getAccount",
+        instanceUrl: instance.url,
+        token: user.token,
+      }).catch(() => {
+        store.$state.errors.push({
+          message: `${user.name}の認証失敗`,
+        });
+      });
+
+      if (result) {
+        await ipcInvoke("db:upsert-user", {
+          id: user.id,
+          name: result.username,
+          avatarUrl: result.avatar,
+        });
       }
     }
+    await store.initUsers();
   };
 
   const checkAndUpdateUsers = async () => {
