@@ -7,6 +7,7 @@ import type { MisskeyChannel, MisskeyEntities } from "@shared/types/misskey";
 import type { ChannelName, Timeline } from "@shared/types/store";
 import { ElInput, ElSelect, ElOption } from "element-plus";
 import { useInstanceStore } from "@/store/instance";
+import { MastodonListItem } from "@/types/mastodon";
 
 const props = defineProps<{
   timeline: Timeline;
@@ -99,6 +100,7 @@ const mastodonStreamOptions: {
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
 const myMisskeyUserLists = ref<MisskeyEntities.UserList[]>([]);
+const myMastodonList = ref<MastodonListItem[]>([]);
 const channelId = ref(props.timeline.options?.channelId ?? "");
 const antennaId = ref(props.timeline.options?.antennaId ?? "");
 const listId = ref(props.timeline.options?.listId ?? "");
@@ -215,6 +217,9 @@ const fetchSelectionsFromChannel = async (channel: ChannelName) => {
   if (channel === "misskey:userList") {
     myMisskeyUserLists.value = await timelineStore.misskeyGetUserLists();
   }
+  if (channel === "mastodon:list") {
+    myMastodonList.value = await timelineStore.mastodonGetList();
+  }
 };
 
 watch(
@@ -316,6 +321,28 @@ onMounted(() => {
     </div>
     <!-- misskey:hashtag -->
     <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:hashtag'">
+      <div class="content">
+        <Icon icon="mingcute:list-line" class="nn-icon size-small" />
+        <span class="label">ハッシュタグ</span>
+      </div>
+      <div class="actions for-text-field">
+        <ElInput size="small" placeholder="#" v-model="tag" @change="onChangeHashtag" />
+      </div>
+    </div>
+    <!-- mastodon:list -->
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'mastodon:list'">
+      <div class="content">
+        <Icon icon="mingcute:list-line" class="nn-icon size-small" />
+        <span class="label">リスト</span>
+      </div>
+      <div class="actions for-select">
+        <ElSelect v-if="myMastodonList.length" v-model="listId" @change="onChangeList" size="small">
+          <ElOption v-for="list in myMastodonList" :key="list.id" :label="list.title" :value="list.id" />
+        </ElSelect>
+      </div>
+    </div>
+    <!-- mastdon:hashtag -->
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'mastodon:hashtag'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
         <span class="label">ハッシュタグ</span>

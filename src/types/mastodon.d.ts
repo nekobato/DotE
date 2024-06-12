@@ -250,3 +250,10 @@ export type MastodonNotification = {
   account: MastodonAccount;
   status?: MastodonToot;
 };
+
+export type MastodonListItem = {
+  id: string;
+  title: string;
+  replies_policy: string;
+  exclusive: boolean;
+};

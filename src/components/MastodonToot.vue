@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 import PostAttachment from "./PostAttachment.vue";
@@ -61,12 +61,7 @@ const postAtttachments = computed(() => {
 });
 
 const toggleFavourite = async () => {
-  if (props.post.favourited) {
-    await ipcInvoke("api", { method: "mastodon:unFavourite", postId: props.post.id });
-  } else {
-    await ipcInvoke("api", { method: "mastodon:favourite", postId: props.post.id });
-  }
-  emit("favourite", props.post.id);
+  emit("favourite", { id: props.post.id, favourited: props.post.favourited });
 };
 
 const refreshPost = () => {

@@ -303,8 +303,33 @@ export const useTimelineStore = defineStore("timeline", () => {
     return userLists;
   };
 
+  const mastodonGetList = async () => {
+    if (!currentUser.value) return;
+    const res = await ipcInvoke("api", {
+      method: "mastodon:getList",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `リストの取得失敗`,
+      });
+    });
+    return res;
+  };
+
   const mastodonToggleFavourite = async ({ id, favourited }: { id: string; favourited: boolean }) => {
+    console.log("favourited", favourited);
     if (currentUser.value) {
+      await ipcInvoke("api", {
+        method: favourited ? "mastodon:unFavourite" : "mastodon:favourite",
+        instanceUrl: currentInstance.value?.url,
+        token: currentUser.value.token,
+        id: id,
+      }).catch(() => {
+        return store.$state.errors.push({
+          message: `${id}の${favourited ? "お気に入り解除" : "お気に入り"}失敗`,
+        });
+      });
       const toot = store.$state.timelines[currentIndex.value].posts.find((post) => post.id === id) as MastodonToot;
       if (favourited) {
         toot.favourited = false;
@@ -369,6 +394,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     misskeyGetFollowedChannels,
     misskeyGetMyAntennas,
     misskeyGetUserLists,
+    mastodonGetList,
     mastodonToggleFavourite,
     mastodonUpdatePost,
   };

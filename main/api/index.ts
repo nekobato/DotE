@@ -40,4 +40,5 @@ export const apiRequest = {
   ["mastodon:getStaus"]: mastodonRequest.mastodonGetStatus,
   ["mastodon:favourite"]: mastodonRequest.mastodonFavourite,
   ["mastodon:unFavourite"]: mastodonRequest.mastodonUnFavourite,
+  ["mastodon:getList"]: mastodonRequest.mastodonGetList,
 };

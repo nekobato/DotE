@@ -119,6 +119,13 @@ const initStream = () => {
   mastodonStream.disconnect();
 
   if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
+    if (current.channel === "mastodon:list" && !current.options?.listId) {
+      store.$state.errors.push({
+        message: `リストの指定がありません。設定でやっていってください`,
+      });
+      return;
+    }
+
     mastodonStream.connect({
       host: timelineStore.currentInstance.url.replace(/https?:\/\//, ""),
       channel: current.channel as MastodonChannelName,

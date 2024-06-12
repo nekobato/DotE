@@ -159,7 +159,6 @@ timelineStore.$onAction((action) => {
           :post="toot as MastodonTootType"
           :instanceUrl="timelineStore.currentInstance?.url"
           :lineStyle="store.settings.postStyle"
-          @reaction="onReaction"
           @refreshPost="timelineStore.mastodonUpdatePost"
           @favourite="timelineStore.mastodonToggleFavourite"
         />

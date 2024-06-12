@@ -157,18 +157,18 @@ export const mastodonGetTimelineHashtag = async ({
   instanceUrl,
   token,
   limit,
-  hashtag,
+  tag,
   sinceId,
   untilId,
 }: {
   instanceUrl: string;
   token: string;
   limit: number;
-  hashtag: string;
+  tag: string;
   sinceId?: string;
   untilId?: string;
 }) => {
-  const url = new URL(`/api/v1/timelines/tag/${hashtag}`, instanceUrl);
+  const url = new URL(`/api/v1/timelines/tag/${tag}`, instanceUrl);
   url.searchParams.append("limit", limit.toString());
   if (sinceId) {
     url.searchParams.append("since_id", sinceId);
@@ -358,6 +358,17 @@ export const mastodonGetStatus = async ({
   id: string;
 }) => {
   return fetch(new URL(`/api/v1/statuses/${id}`, instanceUrl).toString(), {
+    headers: {
+      ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+  }).then((res: Response) => {
+    return res.json();
+  });
+};
+
+export const mastodonGetList = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
+  return fetch(new URL(`/api/v1/lists`, instanceUrl).toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
