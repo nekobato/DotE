@@ -9,15 +9,6 @@ export const mastodonChannels: MastodonChannelName[] = [
   "mastodon:notifications",
 ];
 
-export const mastodonStreamChannels = [
-  "homeTimeline",
-  "localTimeline",
-  "publicTimeline",
-  "hashtag",
-  "list",
-  "notifications",
-];
-
 export const parseMastodonText = (text: string | null, emojis: { shortcode: string; url: string }[]): string => {
   return (
     text

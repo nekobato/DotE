@@ -1,4 +1,4 @@
-import { ref, computed, onUpdated } from "vue";
+import { ref, computed } from "vue";
 import { nanoid } from "nanoid/non-secure";
 import { ChannelName, MastodonChannelName } from "@shared/types/store";
 import { MastodonToot } from "@/types/mastodon";
@@ -17,10 +17,10 @@ export type MastodonStreamChannel =
   | "list"
   | "direct"; // 使ってない
 
-export const channelToMastodonStreamChannel = (channel: ChannelName): MastodonStreamChannel => {
+export const channelToMastodonStreaName = (channel: ChannelName): string => {
   switch (channel) {
     case "mastodon:homeTimeline":
-      return "public";
+      return "user";
     case "mastodon:localTimeline":
       return "public:local";
     case "mastodon:publicTimeline":
@@ -44,8 +44,25 @@ export const webSocketState = {
 };
 
 // https://docs.joinmastodon.org/methods/streaming/
-export const connectToMastodonStream = (host: string, token: string, type: MastodonStreamChannel) => {
-  return new WebSocket(`wss://${host}/api/v1/streaming?access_token=${token}&stream=${type}`);
+export const connectToMastodonStream = (
+  host: string,
+  params: {
+    access_token: string;
+    stream: MastodonStreamChannel;
+    list?: string;
+    tag?: string;
+  },
+) => {
+  const wsParams = new URLSearchParams();
+  wsParams.append("access_token", params.access_token);
+  wsParams.append("stream", params.stream);
+  if (params.list) {
+    wsParams.append("list", params.list);
+  }
+  if (params.tag) {
+    wsParams.append("tag", params.tag);
+  }
+  return new WebSocket(`wss://${host}/api/v1/streaming?${wsParams.toString()}`);
 };
 
 export const disconnectWebSocket = (ws: WebSocket | null) => {
@@ -99,42 +116,31 @@ export const useMastodonStream = ({
     channel,
     tag,
     listId,
-    query,
   }: {
     host: string;
     token: string;
     channel: MastodonChannelName;
     tag?: string;
     listId?: string;
-    query?: string;
   }) => {
     if (channel === "mastodon:list" && !listId) return;
     if (channel === "mastodon:hashtag" && !tag) return;
 
-    const streamChannel = channelToMastodonStreamChannel(channel);
+    const streamName = channelToMastodonStreaName(channel);
 
     shouldConnect.value = true;
     webSocketId.value = nanoid();
-    ws = connectToMastodonStream(host, token, streamChannel);
+    ws = connectToMastodonStream(host, {
+      access_token: token,
+      stream: streamName,
+      list: listId,
+      tag,
+    });
 
     ws.onopen = () => {
       console.info("ws:open");
       eventTime.lastOpen = Date.now();
 
-      ws?.send(
-        JSON.stringify({
-          type: "connect",
-          body: {
-            channel,
-            id: webSocketId.value,
-            params: {
-              ...(channel === "mastodon:list" ? { listId } : {}),
-              ...(channel === "mastodon:hashtag" ? { tag } : {}),
-              ...(query ? { query } : {}),
-            },
-          },
-        }),
-      );
       if (eventTime.lastClose) {
         onReconnect();
       }
@@ -192,29 +198,5 @@ export const useMastodonStream = ({
 
   const state = computed(() => ws?.readyState);
 
-  const subNote = (postId: string) => {
-    if (state.value === webSocketState.OPEN) {
-      ws?.send(
-        JSON.stringify({
-          type: "subNote",
-          body: { id: postId },
-        }),
-      );
-    } else {
-      wsNoteSubScriptionQueue.push(postId);
-    }
-  };
-
-  const unsubNote = (postId: string) => {
-    if (state.value === webSocketState.OPEN) {
-      ws?.send(
-        JSON.stringify({
-          type: "unsubNote",
-          body: { id: postId },
-        }),
-      );
-    }
-  };
-
-  return { connect, disconnect, state, subNote, unsubNote, subNoteQueue: wsNoteSubScriptionQueue };
+  return { connect, disconnect, state };
 };

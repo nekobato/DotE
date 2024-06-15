@@ -20,37 +20,67 @@ const state = reactive({
 const text = ref("");
 const textCw = ref("");
 
-const post = async () => {
-  if (text) {
-    state.post.isSending = true;
-    const res = await ipcInvoke("api", {
-      method: "misskey:createNote",
-      instanceUrl: state.instance?.url,
-      token: state.user?.token,
-      i: state.user?.token,
-      // visibility: "public",
-      // visibleUserIds: [],
-      text: text.value,
-      cw: textCw.value || null,
-      // localOnly: false,
-      // noExtractMentions: false,
-      // noExtractHashtags: false,
-      // noExtractEmojis: false,
-      // noExtractLinks: false,
-      // poll: null,
-      // replyId: null,
-      // renoteId: null,
-      // renote: null,
-      // fileIds: [],
-    });
-    if (res.createdNote) {
-      text.value = "";
-      textCw.value = "";
-      ipcSend("post:close");
-    } else {
-    }
-    state.post.isSending = false;
+const postToMisskey = async () => {
+  const res = await ipcInvoke("api", {
+    method: "misskey:createNote",
+    instanceUrl: state.instance?.url,
+    token: state.user?.token,
+    i: state.user?.token,
+    // visibility: "public",
+    // visibleUserIds: [],
+    text: text.value,
+    cw: textCw.value || null,
+    // localOnly: false,
+    // noExtractMentions: false,
+    // noExtractHashtags: false,
+    // noExtractEmojis: false,
+    // noExtractLinks: false,
+    // poll: null,
+    // replyId: null,
+    // renoteId: null,
+    // renote: null,
+    // fileIds: [],
+  });
+  if (res.createdNote) {
+    text.value = "";
+    textCw.value = "";
+    ipcSend("post:close");
   }
+};
+
+const postToMastodon = async () => {
+  const res = await ipcInvoke("api", {
+    method: "mastodon:postStatus",
+    instanceUrl: state.instance?.url,
+    token: state.user?.token,
+    status: text.value,
+    // inReplyToId: null,
+    // mediaIds: [],
+    // sensitive: false,
+    // spoilerText: null,
+    // visibility: "public",
+  });
+  if (res.id) {
+    text.value = "";
+    ipcSend("post:close");
+  }
+};
+
+const post = async () => {
+  state.post.isSending = true;
+  if (text) {
+    switch (state.instance?.type) {
+      case "misskey":
+        await postToMisskey();
+        break;
+      case "mastodon":
+        await postToMastodon();
+        break;
+      default:
+        break;
+    }
+  }
+  state.post.isSending = false;
 };
 
 const onInput = (value: string) => {
