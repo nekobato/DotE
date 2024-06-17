@@ -70,12 +70,6 @@ const onInputSearchEmoji = () => {
   categoryFilter.value = [];
 };
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    ipcSend("post:close");
-  }
-});
-
 window.ipc?.on("post:reaction", () => {
   search.value === "";
 });

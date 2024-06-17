@@ -108,6 +108,7 @@ const start = () => {
         break;
       case "post:create":
         postWindow?.webContents.send(event, data);
+        postWindow?.center();
         postWindow?.show();
         break;
       case "post:close":
@@ -115,6 +116,7 @@ const start = () => {
         break;
       case "post:reaction":
         postWindow?.webContents.send(event, data);
+        postWindow?.center();
         postWindow?.show();
         break;
       case "stream:sub-note":

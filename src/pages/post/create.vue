@@ -104,13 +104,6 @@ document.addEventListener("keydown", (e) => {
     post();
   }
 });
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    e.preventDefault();
-    ipcSend("post:close");
-  }
-});
 </script>
 
 <template>

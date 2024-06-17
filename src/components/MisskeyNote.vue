@@ -56,12 +56,10 @@ const postType = computed(() => {
 });
 
 const renoteType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quoted";
-    } else {
-      return "renoted";
-    }
+  if (props.post.text) {
+    return "quoted";
+  } else {
+    return "renoted";
   }
 });
 

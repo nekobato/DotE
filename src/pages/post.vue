@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import WindowHeader from "@/components/WindowHeader.vue";
 import Layout from "@/components/layouts/WithHeader.vue";
+import { ipcSend } from "@/utils/ipc";
 import { ref } from "vue";
 import { useRouter, RouterView } from "vue-router";
 
@@ -26,6 +27,15 @@ window.ipc?.on("post:reaction", (_, payload) => {
   pagedata.value = payload;
   console.log(payload);
   router.push("/post/reaction");
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    pagedata.value = {};
+    router.push("/post");
+    ipcSend("post:close");
+  }
 });
 </script>
 
