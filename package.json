@@ -1,10 +1,10 @@
 {
-  "name": "hazy",
+  "name": "dot-e",
   "version": "0.0.11",
-  "description": "Misskey client for desktop",
+  "description": "Fediverse client for desktop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nekobato/hazy.git"
+    "url": "https://github.com/nekobato/dot-e.git"
   },
   "scripts": {
     "dev": "vite",
@@ -25,7 +25,7 @@
   "main": "./dist-electron/index.js",
   "dependencies": {
     "electron-fetch": "^1.9.1",
-    "electron-log": "^5.1.2",
+    "electron-log": "^5.1.4",
     "electron-store": "^9.0.0",
     "electron-updater": "^6.1.8"
   },
@@ -34,7 +34,7 @@
     "@vitejs/plugin-vue": "^5.0.4",
     "@vitejs/plugin-vue-jsx": "^3.1.0",
     "@vueuse/core": "^10.9.0",
-    "electron": "30.0.3",
+    "electron": "30.0.8",
     "electron-builder": "^24.13.3",
     "electron-icon-builder": "^2.0.1",
     "element-plus": "^2.7.3",
@@ -44,7 +44,7 @@
     "pinia": "^2.1.7",
     "postcss-html": "^1.7.0",
     "prettier": "^3.2.5",
-    "sass": "^1.77.1",
+    "sass": "^1.77.2",
     "stylelint": "^16.5.0",
     "stylelint-config-rational-order": "^0.1.2",
     "stylelint-config-recommended-scss": "^14.0.0",
@@ -55,9 +55,9 @@
     "vite-plugin-electron": "^0.28.7",
     "vite-plugin-electron-renderer": "^0.14.5",
     "vite-plugin-resolve": "^2.5.1",
-    "vitepress": "^1.1.4",
+    "vitepress": "^1.2.2",
     "vue": "^3.4.23",
     "vue-router": "^4.3.2",
-    "vue-tsc": "^2.0.17"
+    "vue-tsc": "^2.0.19"
   }
 }

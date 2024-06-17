@@ -1,13 +1,6 @@
 import { MisskeyEntities } from "misskey-js";
 
-export type InstanceStore = Instance & {
-  misskey?: {
-    emojis: MisskeyEntities.CustomEmoji[];
-    meta: MisskeyEntities.DetailedInstanceMetadata | null;
-  };
-};
-
-export type ChannelName =
+export type MisskeyChannelName =
   | "misskey:homeTimeline"
   | "misskey:localTimeline"
   | "misskey:socialTimeline"
@@ -16,7 +9,18 @@ export type ChannelName =
   | "misskey:hashtag"
   | "misskey:antenna"
   | "misskey:channel"
-  | "misskey:search";
+  | "misskey:search"
+  | "misskey:notifications";
+
+export type MastodonChannelName =
+  | "mastodon:homeTimeline"
+  | "mastodon:localTimeline"
+  | "mastodon:publicTimeline"
+  | "mastodon:hashtag"
+  | "mastodon:list"
+  | "mastodon:notifications";
+
+export type ChannelName = MisskeyChannelName | MastodonChannelName;
 
 export type Timeline = {
   id: string; // uuid
@@ -33,13 +37,34 @@ export type Timeline = {
   available: boolean;
 };
 
-export type Instance = {
+type InsranceBase = {
   id: string; // uuid
-  type: "mastodon" | "misskey" | "bluesky" | "threads";
   name: string;
   url: string;
   iconUrl: string;
 };
+
+export type InstanceMisskey = InsranceBase & {
+  type: "misskey";
+};
+
+export type InstanceMisskeyStore = InstanceMisskey & {
+  misskey: {
+    meta: MisskeyEntities.DetailedInstanceMetadata | null;
+    emojis: MisskeyEntities.CustomEmoji[];
+  };
+};
+
+export type InstanceMastodon = InsranceBase & {
+  type: "mastodon";
+  mastodon: {
+    clientName: string;
+    meta: MastodonMeta;
+  };
+};
+
+export type Instance = InstanceMisskey | InstanceMastodon;
+export type InstanceStore = InstanceMisskeyStore | InstanceMastodon;
 
 export type User = {
   id: string; // uuid
@@ -51,7 +76,7 @@ export type User = {
 
 export type Settings = {
   opacity: number;
-  hazyMode: "show" | "haze" | "hide" | "settings" | "tutorial";
+  mode: "show" | "haze" | "hide" | "settings" | "tutorial";
   windowSize: {
     width: number;
     height: number;

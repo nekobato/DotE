@@ -1,6 +1,30 @@
 import type { Post } from "@shared/types/post";
 import { useTimelineStore } from "@/store/timeline";
 import type { MisskeyNote } from "@shared/types/misskey";
+import { MisskeyChannelName } from "@shared/types/store";
+import { MisskeyStreamChannel } from "./misskeyStream";
+
+export const misskeyChannels: MisskeyChannelName[] = [
+  "misskey:homeTimeline",
+  "misskey:localTimeline",
+  "misskey:socialTimeline",
+  "misskey:globalTimeline",
+  "misskey:userList",
+  "misskey:hashtag",
+  "misskey:antenna",
+  "misskey:channel",
+  "misskey:search",
+];
+
+export const misskeyStreamChannels: MisskeyStreamChannel[] = [
+  "homeTimeline",
+  "localTimeline",
+  "globalTimeline",
+  "userList",
+  "hashtag",
+  "antenna",
+  "channel",
+];
 
 export const parseMisskeyAttachments = (post: MisskeyNote): Post["attachments"] => {
   const files = post.files?.length
@@ -59,9 +83,9 @@ export const isMyReaction = (reaction: string, myReaction?: string) => {
   return reaction === myReaction;
 };
 
-export const createReaction = async (postId: string, reaction: string) => {
+export const misskeyCreateReaction = async (postId: string, reaction: string) => {
   const timelineStore = useTimelineStore();
-  await timelineStore.createReaction({
+  await timelineStore.misskeyCreateReaction({
     postId,
     reaction,
   });
@@ -77,9 +101,9 @@ export const createReaction = async (postId: string, reaction: string) => {
   }
 };
 
-export const deleteReaction = async (postId: string) => {
+export const misskeyDeleteReaction = async (postId: string) => {
   const timelineStore = useTimelineStore();
-  await timelineStore.deleteReaction({
+  await timelineStore.misskeyDeleteReaction({
     postId,
   });
   // Delete reaction on Local

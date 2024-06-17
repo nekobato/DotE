@@ -234,7 +234,7 @@ export default defineComponent({
         }
       });
 
-    return h("p", { class: ["hazy-post-body", this.postStyle, { plain: this.plain }] }, structElement(ast));
+    return h("p", { class: ["dote-post-body", this.postStyle, { plain: this.plain }] }, structElement(ast));
   },
 });
 </script>
@@ -526,7 +526,7 @@ export default defineComponent({
   }
 }
 
-.hazy-post-body {
+.dote-post-body {
   width: 100%;
   font-size: 0.6rem;
   line-height: 0.8rem;
@@ -571,8 +571,8 @@ export default defineComponent({
     margin: 0 2px;
     padding: 0 4px;
     color: var(--color-text-code);
-    background-color: var(--hazy-color-black-t5);
-    border: 1px solid var(--hazy-color-white-t2);
+    background-color: var(--dote-color-black-t5);
+    border: 1px solid var(--dote-color-white-t2);
     border-radius: 2px;
   }
 

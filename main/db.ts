@@ -1,7 +1,7 @@
 import { safeStorage } from "electron";
 import Store from "electron-store";
 import { nanoid } from "nanoid/non-secure";
-import type { Instance, Timeline, User, Settings, InstanceStore } from "../shared/types/store";
+import type { Instance, Timeline, User, Settings } from "../shared/types/store";
 
 export type StoreSchema = {
   timelines: Timeline[];
@@ -10,25 +10,27 @@ export type StoreSchema = {
   settings: Settings;
 };
 
-export const storeDefaults = {
-  users: [] as User[],
-  instances: [] as InstanceStore[],
-  timelines: [] as Timeline[],
+export const storeDefaults: StoreSchema = {
+  users: [],
+  instances: [],
+  timelines: [],
   settings: {
     opacity: 50,
-    hazyMode: "show",
+    mode: "show",
     windowSize: {
       width: 475,
       height: 600,
     },
     maxPostCount: 1000,
     postStyle: "all",
-    shortcuts: {},
+    shortcuts: {
+      toggleTimeline: "Ctrl+Alt+x",
+    },
     misskey: {
       hideCw: false,
       showReactions: true,
     },
-  } as Settings,
+  },
 };
 
 const schema: Store.Schema<StoreSchema> = {
@@ -88,7 +90,7 @@ const schema: Store.Schema<StoreSchema> = {
     type: "object",
     properties: {
       opacity: { type: "number" },
-      hazyMode: { type: "string" },
+      mode: { type: "string" },
       windowSize: {
         type: "object",
         properties: {
@@ -116,7 +118,7 @@ const schema: Store.Schema<StoreSchema> = {
 };
 
 export const store = new Store<StoreSchema>({
-  name: "hazy",
+  name: "dote",
   schema,
   defaults: storeDefaults,
   clearInvalidConfig: true,
@@ -300,14 +302,14 @@ export const getSettingAll = (): StoreSchema["settings"] => {
   return store.get("settings");
 };
 
-export const getSetting = (key: "opacity" | "hazyMode") => {
+export const getSetting = (key: "opacity" | "mode") => {
   if (!key) throw new Error("key is required");
 
   switch (key) {
     case "opacity":
       return store.get("settings.opacity");
-    case "hazyMode":
-      return store.get("settings.hazyMode");
+    case "mode":
+      return store.get("settings.mode");
     default:
       throw new Error(`${key} is not defined key.`);
   }
@@ -320,8 +322,8 @@ export const setSetting = (key: string, value: any) => {
   switch (key) {
     case "opacity":
       return store.set("settings.opacity", Number(value));
-    case "hazyMode":
-      return store.set("settings.hazyMode", value);
+    case "mode":
+      return store.set("settings.mode", value);
     case "windowSize":
       return store.set("settings.windowSize", value);
     case "maxPostCount":

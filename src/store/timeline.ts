@@ -1,9 +1,11 @@
-import type { MisskeyNote } from "@shared/types/misskey";
+import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { computed } from "vue";
 import { TimelineStore, methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
+import { MastodonNotification, MastodonToot } from "@/types/mastodon";
+import { defaultChannelNameFromType } from "@/utils/dote";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -32,9 +34,15 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
+  const setNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
+    if (store.$state.timelines[currentIndex.value]) {
+      store.$state.timelines[currentIndex.value].notifications = notifications;
+    }
+  };
+
   const fetchInitialPosts = async () => {
     if (!current.value || !currentUser.value || !currentInstance.value) {
-      throw new Error("user not found");
+      throw new Error("ユーザーが見つかりませんでした");
     }
 
     const data = await ipcInvoke("api", {
@@ -49,11 +57,14 @@ export const useTimelineStore = defineStore("timeline", () => {
       limit: 40,
     }).catch(() => {
       store.$state.errors.push({
-        message: `${currentInstance.value?.name}のノートを取得できませんでした`,
+        message: `${currentInstance.value?.name}のタイムラインを取得できませんでした`,
       });
     });
-    // misskeyなら という条件分岐が必要
-    setPosts(data);
+    if (current.value.channel === "misskey:notifications" || current.value.channel === "mastodon:notifications") {
+      setNotifications(data);
+    } else {
+      setPosts(data);
+    }
   };
 
   const fetchDiffPosts = async () => {
@@ -75,13 +86,14 @@ export const useTimelineStore = defineStore("timeline", () => {
           message: `${currentInstance.value?.name}の追加タイムラインを取得できませんでした`,
         });
       });
+      if (!data || data.length === 0) return;
       setPosts([...data, ...store.timelines[currentIndex.value]?.posts]);
     } else {
       throw new Error("user not found");
     }
   };
 
-  const updateTimeline = async ({ posts, channels, ...timeline }: TimelineStore) => {
+  const updateTimeline = async ({ posts, ...timeline }: TimelineStore) => {
     await ipcInvoke("db:set-timeline", timeline);
     await store.initTimelines();
   };
@@ -108,9 +120,10 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
     // UserはいるけどTimelineが無いならTimelineを作る
     if (store.$state.timelines.length === 0) {
+      const instance = store.instances.find((instance) => instance.id === store.users[0].instanceId);
       await createTimeline({
         userId: store.users[0].id,
-        channel: "misskey:homeTimeline",
+        channel: defaultChannelNameFromType(instance?.type),
         options: {},
         updateInterval: 60 * 1000, // 60 sec
         available: true,
@@ -118,6 +131,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       return;
     }
 
+    // すべてのTimelineがavailableならば最初のTimelineをavailableにする
     if (!store.$state.timelines.some((timeline) => !timeline.available)) {
       await updateTimeline({
         ...store.$state.timelines[0],
@@ -128,22 +142,57 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
-  const addNewPost = (post: MisskeyNote) => {
+  const addNewPost = (post: MisskeyNote | MastodonToot) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
-    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts];
+    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts] as
+      | MisskeyNote[]
+      | MastodonToot[];
 
     if (store.settings.maxPostCount < store.timelines[currentIndex.value].posts.length) {
       store.timelines[currentIndex.value].posts.pop();
     }
   };
 
-  const addMorePosts = (posts: MisskeyNote[]) => {
-    if (!store.timelines[currentIndex.value]?.posts) return;
-    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts];
+  const updatePost = <T extends MisskeyNote | MastodonToot>(post: T) => {
+    const currentPosts = store.timelines[currentIndex.value].posts as T[];
+    if (!currentPosts) return;
+    const postIndex = currentPosts.findIndex((p) => p.id === post.id);
+    if (postIndex === -1) return;
+    currentPosts.splice(postIndex, 1, post);
   };
 
-  const addEmoji = async ({ postId, name }: { postId: string; name: string }) => {
-    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId);
+  const removePost = (postId: string) => {
+    if (!store.timelines[currentIndex.value]?.posts) return;
+    store.timelines[currentIndex.value].posts = store.timelines[currentIndex.value].posts.filter(
+      (post) => post.id !== postId,
+    ) as MastodonToot[] | MisskeyNote[];
+  };
+
+  const addNewNotification = <T extends MisskeyEntities.Notification | MastodonNotification>(notification: T) => {
+    if (!store.timelines[currentIndex.value]?.notifications) return;
+    store.timelines[currentIndex.value].notifications = [
+      notification,
+      ...store.timelines[currentIndex.value].notifications,
+    ] as MisskeyEntities.Notification[] | MastodonNotification[];
+  };
+
+  const addMorePosts = (posts: MisskeyNote[] | MastodonToot[]) => {
+    if (!store.timelines[currentIndex.value]?.posts) return;
+    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts] as
+      | MisskeyNote[]
+      | MastodonToot[];
+  };
+
+  const addMoreNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
+    if (!store.timelines[currentIndex.value]?.notifications) return;
+    store.timelines[currentIndex.value].notifications = [
+      ...store.timelines[currentIndex.value].notifications,
+      ...notifications,
+    ] as MisskeyEntities.Notification[] | MastodonNotification[];
+  };
+
+  const misskeyAddEmoji = async ({ postId, name }: { postId: string; name: string }) => {
+    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId) as MisskeyNote;
     const reactions = post?.renote ? post.renote.reactions : post?.reactions;
     if (!reactions) return;
     if (Object.keys(reactions).includes(name)) {
@@ -153,7 +202,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const createReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+  const misskeyCreateReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     if (currentUser.value) {
       await ipcInvoke("api", {
         method: "misskey:createReaction",
@@ -171,7 +220,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const deleteReaction = async ({ postId }: { postId: string }) => {
+  const misskeyDeleteReaction = async ({ postId }: { postId: string }) => {
     if (currentUser.value) {
       await ipcInvoke("api", {
         method: "misskey:deleteReaction",
@@ -188,7 +237,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updatePost = async ({ postId }: { postId: string }) => {
+  const misskeyUpdatePost = async ({ postId }: { postId: string }) => {
     if (!store.timelines[currentIndex.value] || !currentUser.value) return;
 
     const res = await ipcInvoke("api", {
@@ -207,9 +256,9 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
-  const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+  const misskeyAddReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     // TODO: reactionがremote serverだった場合
-    const post = store.timelines[currentIndex.value].posts.find((p) => p.id === postId);
+    const post = store.timelines[currentIndex.value].posts.find((p) => p.id === postId) as MisskeyNote;
     if (!post) return;
     const reactions = post.renote ? post.renote.reactions : post.reactions;
     if (Object.keys(reactions).includes(reaction)) {
@@ -219,7 +268,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const getFollowedChannels = () => {
+  const misskeyGetFollowedChannels = () => {
     if (!currentUser.value) return;
     const myChannels = ipcInvoke("api", {
       method: "misskey:getFollowedChannels",
@@ -234,7 +283,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myChannels;
   };
 
-  const getMyAntennas = () => {
+  const misskeyGetMyAntennas = () => {
     if (!currentUser.value) return;
     const myAntennas = ipcInvoke("api", {
       method: "misskey:getMyAntennas",
@@ -249,7 +298,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     return myAntennas;
   };
 
-  const getUserLists = () => {
+  const misskeyGetUserLists = () => {
     if (!currentUser.value) return;
     const userLists = ipcInvoke("api", {
       method: "misskey:getUserLists",
@@ -263,6 +312,65 @@ export const useTimelineStore = defineStore("timeline", () => {
       console.error("リストの取得に失敗しました");
     });
     return userLists;
+  };
+
+  const mastodonGetList = async () => {
+    if (!currentUser.value) return;
+    const res = await ipcInvoke("api", {
+      method: "mastodon:getList",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `リストの取得失敗`,
+      });
+    });
+    return res;
+  };
+
+  const mastodonToggleFavourite = async ({ id, favourited }: { id: string; favourited: boolean }) => {
+    console.log("favourited", favourited);
+    if (currentUser.value) {
+      await ipcInvoke("api", {
+        method: favourited ? "mastodon:unFavourite" : "mastodon:favourite",
+        instanceUrl: currentInstance.value?.url,
+        token: currentUser.value.token,
+        id: id,
+      }).catch(() => {
+        return store.$state.errors.push({
+          message: `${id}の${favourited ? "お気に入り解除" : "お気に入り"}失敗`,
+        });
+      });
+      const toot = store.$state.timelines[currentIndex.value].posts.find((post) => post.id === id) as MastodonToot;
+      if (favourited) {
+        toot.favourited = false;
+        toot.favourites_count -= 1;
+      } else {
+        toot.favourited = true;
+        toot.favourites_count += 1;
+      }
+    } else {
+      throw new Error("user not found");
+    }
+  };
+
+  const mastodonUpdatePost = async ({ id }: { id: string }) => {
+    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
+
+    const res = await ipcInvoke("api", {
+      method: "mastodon:getStatus",
+      instanceUrl: currentInstance.value?.url,
+      token: currentUser.value.token,
+      id: id,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${id}の取得失敗`,
+      });
+    });
+    const postIndex = current.value?.posts.findIndex((p) => p.id === id);
+    if (!postIndex) return;
+
+    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
   const isTimelineAvailable = computed(() => {
@@ -284,14 +392,21 @@ export const useTimelineStore = defineStore("timeline", () => {
     updateTimeline,
     createTimeline,
     addNewPost,
-    addMorePosts,
-    addEmoji,
-    addReaction,
-    createReaction,
-    deleteReaction,
     updatePost,
-    getFollowedChannels,
-    getMyAntennas,
-    getUserLists,
+    removePost,
+    addMorePosts,
+    addNewNotification,
+    addMoreNotifications,
+    misskeyAddEmoji,
+    misskeyAddReaction,
+    misskeyCreateReaction,
+    misskeyDeleteReaction,
+    misskeyUpdatePost,
+    misskeyGetFollowedChannels,
+    misskeyGetMyAntennas,
+    misskeyGetUserLists,
+    mastodonGetList,
+    mastodonToggleFavourite,
+    mastodonUpdatePost,
   };
 });

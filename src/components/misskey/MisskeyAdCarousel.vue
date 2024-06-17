@@ -11,7 +11,7 @@ defineProps({
 });
 </script>
 <template>
-  <div class="ad-container">
+  <div class="ad-container" v-if="items.length > 0">
     <ElCarousel class="carousel misskey-ad-carousel" :autoplay="true" :interval="5000" arrow="always">
       <ElCarouselItem class="carousel-item" v-for="(item, index) in items" :key="index">
         <a :href="item.url" target="_blank" rel="noopener noreferrer">
@@ -28,8 +28,8 @@ defineProps({
   margin: 8px 0 0;
   overflow: hidden;
   background-color: transparent;
-  background-color: var(--hazy-background-color);
-  border: 1px solid var(--hazy-border-color);
+  background-color: var(--dote-background-color);
+  border: 1px solid var(--dote-border-color);
   border-radius: 8px;
 }
 .misskey-ad-carousel {

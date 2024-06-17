@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import hazyAlert from "@/components/common/HazyAlert.vue";
+import DoteAlert from "@/components/common/DoteAlert.vue";
 import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import type { Instance, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { onMounted, reactive, ref } from "vue";
-import HazyButton from "@/components/common/HazyButton.vue";
+import DoteButton from "@/components/common/DoteButton.vue";
 
 const state = reactive({
   user: undefined as User | undefined,
@@ -20,37 +20,67 @@ const state = reactive({
 const text = ref("");
 const textCw = ref("");
 
-const post = async () => {
-  if (text) {
-    state.post.isSending = true;
-    const res = await ipcInvoke("api", {
-      method: "misskey:createNote",
-      instanceUrl: state.instance?.url,
-      token: state.user?.token,
-      i: state.user?.token,
-      // visibility: "public",
-      // visibleUserIds: [],
-      text: text.value,
-      cw: textCw.value || null,
-      // localOnly: false,
-      // noExtractMentions: false,
-      // noExtractHashtags: false,
-      // noExtractEmojis: false,
-      // noExtractLinks: false,
-      // poll: null,
-      // replyId: null,
-      // renoteId: null,
-      // renote: null,
-      // fileIds: [],
-    });
-    if (res.createdNote) {
-      text.value = "";
-      textCw.value = "";
-      ipcSend("post:close");
-    } else {
-    }
-    state.post.isSending = false;
+const postToMisskey = async () => {
+  const res = await ipcInvoke("api", {
+    method: "misskey:createNote",
+    instanceUrl: state.instance?.url,
+    token: state.user?.token,
+    i: state.user?.token,
+    // visibility: "public",
+    // visibleUserIds: [],
+    text: text.value,
+    cw: textCw.value || null,
+    // localOnly: false,
+    // noExtractMentions: false,
+    // noExtractHashtags: false,
+    // noExtractEmojis: false,
+    // noExtractLinks: false,
+    // poll: null,
+    // replyId: null,
+    // renoteId: null,
+    // renote: null,
+    // fileIds: [],
+  });
+  if (res.createdNote) {
+    text.value = "";
+    textCw.value = "";
+    ipcSend("post:close");
   }
+};
+
+const postToMastodon = async () => {
+  const res = await ipcInvoke("api", {
+    method: "mastodon:postStatus",
+    instanceUrl: state.instance?.url,
+    token: state.user?.token,
+    status: text.value,
+    // inReplyToId: null,
+    // mediaIds: [],
+    // sensitive: false,
+    // spoilerText: null,
+    // visibility: "public",
+  });
+  if (res.id) {
+    text.value = "";
+    ipcSend("post:close");
+  }
+};
+
+const post = async () => {
+  state.post.isSending = true;
+  if (text) {
+    switch (state.instance?.type) {
+      case "misskey":
+        await postToMisskey();
+        break;
+      case "mastodon":
+        await postToMastodon();
+        break;
+      default:
+        break;
+    }
+  }
+  state.post.isSending = false;
 };
 
 const onInput = (value: string) => {
@@ -74,21 +104,14 @@ document.addEventListener("keydown", (e) => {
     post();
   }
 });
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    e.preventDefault();
-    ipcSend("post:close");
-  }
-});
 </script>
 
 <template>
   <div class="post">
     <div class="header">
-      <ElAvatar :size="32" :src="state.user?.avatarUrl" class="hazy-avatar" />
+      <ElAvatar :size="32" :src="state.user?.avatarUrl" class="dote-avatar" />
       <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>
-      <HazyButton
+      <DoteButton
         class="post-action size-small"
         @click="post"
         :disabled="text.length === 0 || state.post.isSending"
@@ -96,14 +119,14 @@ document.addEventListener("keydown", (e) => {
       >
         <span>Note</span>
         <Icon slot="icon" icon="mingcute:send-line" class="nn-icon size-xsmall" />
-      </HazyButton>
+      </DoteButton>
     </div>
     <div class="post-layout">
       <div class="post-field-container">
         <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" @input="onInput" />
-        <hazyAlert class="mt-4" type="error" v-if="state.post.error">
+        <DoteAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
-        </hazyAlert>
+        </DoteAlert>
       </div>
     </div>
   </div>
@@ -121,13 +144,13 @@ document.addEventListener("keydown", (e) => {
   width: 100%;
   height: 100%;
   padding: 16px;
-  background-color: var(--hazy-background-color);
+  background-color: var(--dote-background-color);
 }
 .header {
   display: flex;
   gap: 8px;
   align-items: center;
-  .hazy-avatar {
+  .dote-avatar {
     border-radius: 50%;
   }
   .username {

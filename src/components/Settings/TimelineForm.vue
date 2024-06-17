@@ -6,6 +6,8 @@ import { computed, onMounted, ref, watch } from "vue";
 import type { MisskeyChannel, MisskeyEntities } from "@shared/types/misskey";
 import type { ChannelName, Timeline } from "@shared/types/store";
 import { ElInput, ElSelect, ElOption } from "element-plus";
+import { useInstanceStore } from "@/store/instance";
+import { MastodonListItem } from "@/types/mastodon";
 
 const props = defineProps<{
   timeline: Timeline;
@@ -17,8 +19,9 @@ const emit = defineEmits<{
 
 const store = useStore();
 const timelineStore = useTimelineStore();
+const instanceStore = useInstanceStore();
 
-const streamOptions: {
+const misskeyStreamOptions: {
   label: string;
   value: ChannelName;
 }[] = [
@@ -58,11 +61,46 @@ const streamOptions: {
     label: "検索...",
     value: "misskey:search",
   },
+  {
+    label: "通知",
+    value: "misskey:notifications",
+  },
+];
+
+const mastodonStreamOptions: {
+  label: string;
+  value: ChannelName;
+}[] = [
+  {
+    label: "ホーム",
+    value: "mastodon:homeTimeline",
+  },
+  {
+    label: "ローカル",
+    value: "mastodon:localTimeline",
+  },
+  {
+    label: "パブリック",
+    value: "mastodon:publicTimeline",
+  },
+  {
+    label: "リスト...",
+    value: "mastodon:list",
+  },
+  {
+    label: "ハッシュタグ...",
+    value: "mastodon:hashtag",
+  },
+  {
+    label: "通知",
+    value: "mastodon:notifications",
+  },
 ];
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
 const myMisskeyUserLists = ref<MisskeyEntities.UserList[]>([]);
+const myMastodonList = ref<MastodonListItem[]>([]);
 const channelId = ref(props.timeline.options?.channelId ?? "");
 const antennaId = ref(props.timeline.options?.antennaId ?? "");
 const listId = ref(props.timeline.options?.listId ?? "");
@@ -79,6 +117,23 @@ const accountOptions = computed(() =>
   })),
 );
 
+const streamOptions = (
+  timeline: Timeline,
+): {
+  label: string;
+  value: ChannelName;
+}[] => {
+  const instance = instanceStore.findInstanceByUserId(timeline.userId);
+  switch (instance?.type) {
+    case "misskey":
+      return misskeyStreamOptions;
+    case "mastodon":
+      return mastodonStreamOptions;
+    default:
+      return [];
+  }
+};
+
 const clearOptionValues = () => {
   channelId.value = "";
   antennaId.value = "";
@@ -88,18 +143,21 @@ const clearOptionValues = () => {
 };
 
 const onChangeUser = async (userId: string) => {
+  const defaultChannel =
+    instanceStore.findInstanceByUserId(userId)?.type === "misskey" ? "misskey:homeTimeline" : "mastodon:homeTimeline";
   emit("updateTimeline", {
     ...props.timeline,
     userId,
+    channel: defaultChannel,
     options: {},
   });
 };
 
-const onChangeStream = async (stream: ChannelName) => {
+const onChangeStream = async (channel: ChannelName) => {
   clearOptionValues();
   emit("updateTimeline", {
     ...props.timeline,
-    channel: stream,
+    channel,
     options: {},
   });
 };
@@ -151,13 +209,16 @@ const onChangeSearchQuery = async (query: string) => {
 
 const fetchSelectionsFromChannel = async (channel: ChannelName) => {
   if (channel === "misskey:channel") {
-    followedMisskeyChannels.value = await timelineStore.getFollowedChannels();
+    followedMisskeyChannels.value = await timelineStore.misskeyGetFollowedChannels();
   }
   if (channel === "misskey:antenna") {
-    myMisskeyAntennas.value = await timelineStore.getMyAntennas();
+    myMisskeyAntennas.value = await timelineStore.misskeyGetMyAntennas();
   }
   if (channel === "misskey:userList") {
-    myMisskeyUserLists.value = await timelineStore.getUserLists();
+    myMisskeyUserLists.value = await timelineStore.misskeyGetUserLists();
+  }
+  if (channel === "mastodon:list") {
+    myMastodonList.value = await timelineStore.mastodonGetList();
   }
 };
 
@@ -175,7 +236,7 @@ onMounted(() => {
 
 <template>
   <div class="accounts-container">
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:user-1-line" class="nn-icon size-small" />
         <span class="label">アカウント</span>
@@ -191,19 +252,24 @@ onMounted(() => {
         </ElSelect>
       </div>
     </div>
-    <div class="hazy-field-row indent-1">
+    <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:list-check-3-line" class="nn-icon size-small" />
         <span class="label">タイムライン</span>
       </div>
       <div class="actions for-select">
         <ElSelect v-model="props.timeline.channel" size="small" @change="onChangeStream">
-          <ElOption v-for="option in streamOptions" :key="option.value" :label="option.label" :value="option.value" />
+          <ElOption
+            v-for="option in streamOptions(timeline)"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
         </ElSelect>
       </div>
     </div>
     <!-- misskey:channel -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:channel'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">チャンネル</span>
@@ -220,7 +286,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:antenna -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:antenna'">
       <div class="content">
         <Icon icon="mingcute:tv-2-line" class="nn-icon size-small" />
         <span class="label">アンテナ</span>
@@ -232,7 +298,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:userList -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:userList'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:userList'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
         <span class="label">リスト</span>
@@ -244,7 +310,7 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:search -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:search'">
       <div class="content">
         <Icon icon="mingcute:search-line" class="nn-icon size-small" />
         <span class="label">検索</span>
@@ -254,7 +320,29 @@ onMounted(() => {
       </div>
     </div>
     <!-- misskey:hashtag -->
-    <div class="hazy-field-row indent-1" v-if="props.timeline.channel === 'misskey:hashtag'">
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'misskey:hashtag'">
+      <div class="content">
+        <Icon icon="mingcute:list-line" class="nn-icon size-small" />
+        <span class="label">ハッシュタグ</span>
+      </div>
+      <div class="actions for-text-field">
+        <ElInput size="small" placeholder="#" v-model="tag" @change="onChangeHashtag" />
+      </div>
+    </div>
+    <!-- mastodon:list -->
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'mastodon:list'">
+      <div class="content">
+        <Icon icon="mingcute:list-line" class="nn-icon size-small" />
+        <span class="label">リスト</span>
+      </div>
+      <div class="actions for-select">
+        <ElSelect v-if="myMastodonList.length" v-model="listId" @change="onChangeList" size="small">
+          <ElOption v-for="list in myMastodonList" :key="list.id" :label="list.title" :value="list.id" />
+        </ElSelect>
+      </div>
+    </div>
+    <!-- mastdon:hashtag -->
+    <div class="dote-field-row indent-1" v-if="props.timeline.channel === 'mastodon:hashtag'">
       <div class="content">
         <Icon icon="mingcute:list-line" class="nn-icon size-small" />
         <span class="label">ハッシュタグ</span>

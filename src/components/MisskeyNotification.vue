@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
-import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
+import { parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote } from "@shared/types/misskey";
-import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
+import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
+import { computed, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachment from "./PostAttachment.vue";
+import MisskeyNotificationContent from "./MisskeyNotificationContent.vue";
 
 const props = defineProps({
-  post: {
-    type: Object as PropType<MisskeyNote>,
+  notification: {
+    type: Object as PropType<MisskeyEntities.Notification>,
     required: true,
   },
   emojis: {
@@ -29,10 +30,6 @@ const props = defineProps({
     default: false,
     required: true,
   },
-  showReactions: {
-    type: Boolean as PropType<boolean>,
-    default: true,
-  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
@@ -41,59 +38,78 @@ const props = defineProps({
 
 const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction"]);
 
-const postType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quote";
-    } else {
-      return "renote";
-    }
-  } else if (props.post.replyId) {
-    return "reply";
-  } else {
-    return "note";
-  }
-});
-
-const renoteType = computed(() => {
-  if (props.post.text) {
-    return "quoted";
-  } else {
-    return "renoted";
-  }
-});
-
 const postAtttachments = computed(() => {
-  return parseMisskeyAttachments(props.post);
+  if (props.notification.type !== "mention") return [];
+  const files = props.notification.note.files?.length
+    ? props.notification.note.files
+    : props.notification.note.renote?.files?.length
+      ? props.notification.note.renote.files
+      : [];
+  return files?.length ? parseMisskeyAttachments(files) : [];
 });
 
 const reactions = computed(() => {
-  const reactions = props.post.renote && !props.post.text ? props.post.renote.reactions : props.post.reactions;
-  return Object.keys(reactions)
-    .map((key) => {
-      if (!/^:/.test(key)) return { name: key, count: reactions[key] };
-      const reactionName = key.replace(/:|@\./g, "");
-      const localEmoji = props.emojis.find((emoji) => emoji.name === reactionName);
-      return {
-        name: key,
-        url:
-          localEmoji?.url ||
-          props.post.reactionEmojis[reactionName] ||
-          (props.post.renote as MisskeyNote)?.reactionEmojis[reactionName] ||
-          "",
-        count: reactions[key],
-        isRemote: !localEmoji,
-      };
-    })
-    .sort((a, b) => b.count - a.count);
+  if (props.notification.type !== "reaction") return [];
+  const reaction = props.notification.reaction;
+  if (!/^:/.test(reaction)) return [{ name: reaction, url: undefined }];
+  const reactionName = reaction.replace(/:|@\./g, "");
+  return [
+    {
+      name: reaction,
+      url:
+        // local
+        props.emojis.find((emoji) => emoji.name === reactionName)?.url ||
+        // remote
+        props.notification.note.reactionEmojis[reaction.replace(/:/g, "")] ||
+        "",
+    },
+  ];
 });
 
-const refreshPost = () => {
-  emit("refreshPost", props.post.id);
-};
+const note = computed(() => {
+  switch (props.notification.type) {
+    case "renote":
+      return props.notification.note.renote;
+    case "mention":
+    case "reaction":
+    case "reply":
+    case "quote":
+    case "pollEnded":
+      return props.notification.note;
+    default:
+      return undefined;
+  }
+});
+
+const user = computed(() => {
+  switch (props.notification.type) {
+    case "follow":
+    case "followRequestAccepted":
+    case "renote":
+    case "quote":
+    case "mention":
+    case "reaction":
+    case "reply":
+    case "note":
+    case "receiveFollowRequest":
+      return props.notification.user;
+    case "pollEnded":
+      return props.notification.note.user;
+    default:
+      return undefined;
+  }
+});
 
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.currentInstanceUrl).toString() });
+  if (
+    props.notification.type === "mention" ||
+    props.notification.type === "reaction" ||
+    props.notification.type === "reply" ||
+    props.notification.type === "renote" ||
+    props.notification.type === "quote"
+  ) {
+    ipcSend("open-url", { url: new URL(`/notes/${props.notification.note.id}`, props.currentInstanceUrl).toString() });
+  }
 };
 
 const openUserPage = (user: MisskeyNote["user"]) => {
@@ -105,48 +121,27 @@ const openUserPage = (user: MisskeyNote["user"]) => {
     ).toString(),
   });
 };
-
-const openReactionWindow = () => {
-  emit("newReaction", props.post.id);
-};
-
-const onClickReaction = (postId: string, reaction: string) => {
-  emit("reaction", { postId, reaction });
-};
-
-onMounted(() => {
-  ipcSend("stream:sub-note", {
-    postId: props.post.id,
-  });
-});
-
-onBeforeUnmount(() => {
-  ipcSend("stream:unsub-note", {
-    postId: props.post.id,
-  });
-});
 </script>
 
 <template>
   <div class="dote-post">
     <div class="post-data-group">
       <MisskeyNoteContent
-        :note="props.post"
-        :type="postType"
+        v-if="note"
+        :note="note"
+        :originUser="user"
+        :type="props.notification.type === 'renote' ? 'renoted' : props.notification.type"
         :lineStyle="props.lineStyle"
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
         @openUserPage="openUserPage"
       />
-      <MisskeyNoteContent
-        v-if="props.post.renote"
-        :note="props.post.renote"
-        :originNote="props.post"
-        :type="renoteType"
-        :lineStyle="props.lineStyle"
+      <MisskeyNotificationContent
+        v-else
+        :type="props.notification.type"
+        :notification="props.notification"
         :currentInstanceUrl="props.currentInstanceUrl"
-        :hideCw="props.hideCw"
         :emojis="props.emojis"
         @openUserPage="openUserPage"
       />
@@ -154,30 +149,13 @@ onBeforeUnmount(() => {
     <div class="attachments" v-if="postAtttachments">
       <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
     </div>
-    <div class="reactions" v-if="props.showReactions">
-      <button
-        class="reaction"
-        v-for="reaction in reactions"
-        :class="{
-          remote: reaction.isRemote,
-          reacted: isMyReaction(reaction.name, props.post.myReaction || props.post.renote?.myReaction),
-        }"
-        @click="onClickReaction(props.post.id, reaction.name)"
-        :title="reaction.name.replace(/:/g, '')"
-        :disabled="reaction.isRemote"
-      >
+    <div class="reactions" v-if="reactions.length">
+      <div class="reaction" v-for="reaction in reactions" :title="reaction.name.replace(/:/g, '')">
         <img :src="reaction.url" :alt="reaction.name" class="emoji" v-if="reaction.url" />
         <span class="emoji-default" v-else>{{ reaction.name }}</span>
-        <span class="count">{{ reaction.count }}</span>
-      </button>
+      </div>
     </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
-      </button>
-      <button class="dote-post-action" @click="openReactionWindow">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
-      </button>
       <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
       </button>

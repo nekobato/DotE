@@ -3,23 +3,36 @@ import { useTimelineStore } from "@/store/timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, ref } from "vue";
-import HazyLoading from "./common/HazyLoading.vue";
+import DoteLoading from "./common/DoteLoading.vue";
 import { methodOfChannel } from "@/store";
 
 const timelineStore = useTimelineStore();
 
 const loading = ref(false);
 
-const posts = computed(() => {
+const postsOrNotifications = computed(() => {
+  if (!timelineStore.current) return [];
+  if (timelineStore.current.notifications.length > 0) {
+    return timelineStore.current.notifications;
+  }
   return timelineStore.current?.posts;
 });
 
 const canReadmore = computed(() => {
-  return posts.value && posts.value.length > 0;
+  return (
+    (timelineStore.current?.posts && timelineStore.current?.posts.length > 0) ||
+    (timelineStore.current?.notifications && timelineStore.current?.notifications.length > 0)
+  );
 });
 
 const readmore = async () => {
-  if (!posts.value || !timelineStore.current?.channel || posts.value.length === 0 || loading.value) {
+  console.log("readmore", timelineStore.current);
+  if (
+    !postsOrNotifications.value ||
+    !timelineStore.current?.channel ||
+    postsOrNotifications.value.length === 0 ||
+    loading.value
+  ) {
     return;
   }
 
@@ -34,12 +47,15 @@ const readmore = async () => {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
     limit: 20,
-    untilId: posts.value[posts.value.length - 1].id,
+    untilId: postsOrNotifications.value[postsOrNotifications.value.length - 1].id,
   });
 
   if (additionalNotes) {
-    console.log("add", additionalNotes);
-    timelineStore.addMorePosts(additionalNotes);
+    if (timelineStore.current?.channel === "misskey:notifications") {
+      timelineStore.addMoreNotifications(additionalNotes);
+    } else {
+      timelineStore.addMorePosts(additionalNotes);
+    }
   }
   loading.value = false;
 };
@@ -47,7 +63,7 @@ const readmore = async () => {
 <template>
   <div class="readmore-container" v-if="canReadmore">
     <button class="readmore-button nn-button" @click="readmore">
-      <HazyLoading size="small" v-if="loading" />
+      <DoteLoading size="small" v-if="loading" />
       <Icon icon="mingcute:arrows-down-line" :width="24" :height="24" color="#adadad" v-else />
     </button>
   </div>
@@ -66,8 +82,8 @@ const readmore = async () => {
   justify-content: center;
   width: 100%;
   height: 56px;
-  color: var(--hazy-text-color);
-  background-color: var(--hazy-background-color);
+  color: var(--dote-text-color);
+  background-color: var(--dote-background-color);
   border-radius: 8px;
   transition: background-color 0.2s;
 }

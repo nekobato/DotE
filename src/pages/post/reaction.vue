@@ -70,12 +70,6 @@ const onInputSearchEmoji = () => {
   categoryFilter.value = [];
 };
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    ipcSend("post:close");
-  }
-});
-
 window.ipc?.on("post:reaction", () => {
   search.value === "";
 });
@@ -150,13 +144,13 @@ watch(
 .reaction-button {
   height: 32px;
   padding: 0;
-  border-color: var(--hazy-color-white-t1);
+  border-color: var(--dote-color-white-t1);
   > img {
     width: auto;
     height: 100%;
   }
   &:hover {
-    border-color: var(--hazy-color-white-t2);
+    border-color: var(--dote-color-white-t2);
   }
 }
 
@@ -188,7 +182,7 @@ watch(
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        border-right: 1px solid var(--hazy-color-white-t1);
+        border-right: 1px solid var(--dote-color-white-t1);
       }
       > img {
         width: auto;
@@ -206,7 +200,7 @@ watch(
 }
 .search-container {
   padding: 8px;
-  border-bottom: 1px solid var(--hazy-color-white-t1);
+  border-bottom: 1px solid var(--dote-color-white-t1);
 }
 
 .emoji-list-group {

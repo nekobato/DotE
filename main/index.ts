@@ -34,8 +34,8 @@ let postWindow: BrowserWindow | null = null;
 protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }]);
 
 const initialize = async () => {
-  const hazyMode = (await db.getSetting("hazyMode")) as Settings["hazyMode"];
-  setMainWindowMode(hazyMode);
+  const mode = (await db.getSetting("mode")) as Settings["mode"];
+  setMainWindowMode(mode);
 };
 
 const setMainWindowMode = async (mode: string) => {
@@ -78,10 +78,10 @@ const start = () => {
     const data = payload ? JSON.parse(payload) : null;
     console.log(event);
     switch (event) {
-      case "set-hazy-mode":
+      case "set-mode":
         setMainWindowMode(data.mode);
-        db.setSetting("hazyMode", data.mode);
-        mainWindow?.webContents.send("set-hazy-mode", data);
+        db.setSetting("mode", data.mode);
+        mainWindow?.webContents.send("set-mode", data);
         break;
       case "open-url":
         electron.shell.openExternal(data.url);
@@ -99,7 +99,7 @@ const start = () => {
         mediaViewerWindow?.hide();
         break;
       case "main:reload":
-        db.setSetting("hazyMode", "show");
+        db.setSetting("mode", "show");
         mainWindow?.webContents.reload();
         break;
       case "main:reaction":
@@ -108,6 +108,7 @@ const start = () => {
         break;
       case "post:create":
         postWindow?.webContents.send(event, data);
+        postWindow?.center();
         postWindow?.show();
         break;
       case "post:close":
@@ -115,6 +116,7 @@ const start = () => {
         break;
       case "post:reaction":
         postWindow?.webContents.send(event, data);
+        postWindow?.center();
         postWindow?.show();
         break;
       case "stream:sub-note":
@@ -199,10 +201,10 @@ app.on("activate", async () => {
   if (mainWindow === null) {
     start();
   }
-  const hazyMode = (await db.getSetting("hazyMode")) as Settings["hazyMode"];
-  if (hazyMode === "haze" || hazyMode === "hide") {
+  const mode = (await db.getSetting("mode")) as Settings["mode"];
+  if (mode === "haze" || mode === "hide") {
     setMainWindowMode("show");
-    mainWindow?.webContents.send("set-hazy-mode", { mode: "show" });
+    mainWindow?.webContents.send("set-mode", { mode: "show" });
   }
 });
 

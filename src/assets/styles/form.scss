@@ -141,11 +141,11 @@ textarea.nn-text-field {
   font-weight: normal;
   font-size: 16px;
   background: transparent;
-  border: 1px solid var(--hazy-color-white-t2);
+  border: 1px solid var(--dote-color-white-t2);
   border-radius: 4px;
 
   &:focus {
-    border-color: var(--hazy-color-white-t3);
+    border-color: var(--dote-color-white-t3);
   }
 }
 
