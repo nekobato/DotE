@@ -4,6 +4,19 @@ import * as mfm from "mfm-js";
 import { defineComponent, h, type PropType } from "vue";
 import type { Settings } from "@shared/types/store";
 
+// from https://github.com/misskey-dev/misskey/
+const validTime = (t: string | boolean | null | undefined) => {
+  if (t == null) return null;
+  if (typeof t === "boolean") return null;
+  return t.match(/^[0-9.]+s$/) ? t : null;
+};
+
+// from https://github.com/misskey-dev/misskey/
+const validColor = (c: unknown): string | null => {
+  if (typeof c !== "string") return null;
+  return c.match(/^[0-9a-f]{3,6}$/i) ? c : null;
+};
+
 export default defineComponent({
   name: "Mfm",
   props: {
@@ -32,10 +45,12 @@ export default defineComponent({
     fnStyle(nodeProps: { name: string; args: any }) {
       switch (nodeProps.name) {
         case "fg": {
-          return { color: "#" + nodeProps.args.color };
+          const color = validColor(nodeProps.args.color) || "f00";
+          return { color: "#" + color };
         }
         case "bg": {
-          return { backgroundColor: "#" + nodeProps.args.color };
+          const color = validColor(nodeProps.args.color) || "f00";
+          return { backgroundColor: "#" + color };
         }
         case "font": {
           const fonts = ["serif", "monospace", "cursive", "fantasy"];
@@ -572,14 +587,34 @@ export default defineComponent({
 
   &.x2 {
     font-size: 2em;
+    img.emoji {
+      height: calc(var(--post-body--line-height) * 2);
+      line-height: calc(var(--post-body--line-height) * 2);
+    }
   }
 
   &.x3 {
     font-size: 3em;
+    img.emoji {
+      height: calc(var(--post-body--line-height) * 3);
+      line-height: calc(var(--post-body--line-height) * 3);
+    }
   }
 
   &.x4 {
     font-size: 4em;
+    img.emoji {
+      height: calc(var(--post-body--line-height) * 3);
+      line-height: calc(var(--post-body--line-height) * 3);
+    }
+  }
+
+  &.fg {
+    overflow-wrap: anywhere;
+  }
+
+  &.bg {
+    overflow-wrap: anywhere;
   }
 }
 </style>

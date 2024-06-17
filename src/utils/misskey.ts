@@ -26,8 +26,15 @@ export const misskeyStreamChannels: MisskeyStreamChannel[] = [
   "channel",
 ];
 
-export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["attachments"] => {
-  return (
+export const parseMisskeyAttachments = (post: MisskeyNote): Post["attachments"] => {
+  const files = post.files?.length
+    ? post.files
+    : (post.renote as MisskeyNote)?.files?.length
+      ? (post.renote as MisskeyNote).files
+      : [];
+  const poll = post.poll || (post.renote as MisskeyNote)?.poll;
+
+  const fileAttachments =
     files?.map((file) => {
       return {
         type: file.type.split("/")[0] as "image" | "video",
@@ -39,8 +46,17 @@ export const parseMisskeyAttachments = (files: MisskeyNote["files"]): Post["atta
         },
         isSensitive: file.isSensitive,
       };
-    }) || []
-  );
+    }) || [];
+  const pollAttachments = poll
+    ? [
+        {
+          type: "poll" as const,
+          voted: poll.choices.some((choice) => choice.isVoted),
+          url: post.url,
+        },
+      ]
+    : [];
+  return [...fileAttachments, ...pollAttachments];
 };
 
 export const parseMisskeyText = (text: string | null, emojis: { name: string; url: string }[]): string => {

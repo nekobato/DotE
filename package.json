@@ -11,7 +11,7 @@
     "build": "vue-tsc && vite build && electron-builder --config electron-builder.config.cjs",
     "preview": "vite preview",
     "release": "pnpm build && electron-builder --publish always -c --config electron-builder.config.cjs",
-    "build:icon": "electron-icon-builder --input=./assets/icons/app_icon.png --output=./public",
+    "build:icon": "electron-icon-builder --input=./public/images/logo/hazy.png --output=./public",
     "typecheck": "tsc",
     "press": "vitepress dev docs",
     "docs:dev": "vitepress dev docs",
