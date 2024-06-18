@@ -43,6 +43,7 @@ export function createMainWindow() {
   win.webContents?.on("will-navigate", (e, url) => {
     e.preventDefault();
     console.log("will-navigate", url);
+    if (!url.startsWith("https://")) return;
     electron.shell.openExternal(url);
   });
 

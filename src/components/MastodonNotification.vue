@@ -230,6 +230,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
       position: absolute;
       top: 32px;
       left: 0;
+      z-index: 1;
       width: 20px;
       height: 20px;
     }

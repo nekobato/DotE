@@ -144,6 +144,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const addNewPost = (post: MisskeyNote | MastodonToot) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
+    if (store.timelines[currentIndex.value].posts.some((p) => p.id === post.id)) return;
     store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts] as
       | MisskeyNote[]
       | MastodonToot[];
@@ -178,7 +179,10 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const addMorePosts = (posts: MisskeyNote[] | MastodonToot[]) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
-    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...posts] as
+    const filteredPosts = posts.filter(
+      (post) => !store.timelines[currentIndex.value].posts.some((p) => p.id === post.id),
+    );
+    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...filteredPosts] as
       | MisskeyNote[]
       | MastodonToot[];
   };
