@@ -1,6 +1,10 @@
 {
   "name": "dot-e",
   "version": "0.0.11",
+  "author": {
+    "name": "nekobato",
+    "email": "nekobato@gmail.com"
+  },
   "description": "Fediverse client for desktop",
   "repository": {
     "type": "git",
