@@ -17,7 +17,7 @@ export type MastodonStreamChannel =
   | "list"
   | "direct"; // 使ってない
 
-export const channelToMastodonStreaName = (channel: ChannelName): string => {
+export const channelToMastodonStreaName = (channel: ChannelName): MastodonStreamChannel => {
   switch (channel) {
     case "mastodon:homeTimeline":
       return "user";

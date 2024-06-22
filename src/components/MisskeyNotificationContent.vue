@@ -52,10 +52,6 @@ const user = computed(() => {
   }
 });
 
-const host = computed(() => {
-  return props.user?.host ? "https://" + props.user.host : props.currentInstanceUrl;
-});
-
 const parseUsername = (name?: string | null) => {
   if (!name) return "";
   if (noteEmojis.value) {
@@ -79,7 +75,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
         <p v-if="props.type === 'followRequestAccepted'">
           {{ parseUsername(user?.name) }}があなたのフォローリクエストを承認しました
         </p>
-        <p v-if="props.type === 'achievementEarned'">{{ props.notification.achievement }}の実績を獲得しました</p>
+        <p v-if="props.type === 'achievementEarned'">{{ props.notification?.achievement }}の実績を獲得しました</p>
       </div>
     </div>
   </div>
