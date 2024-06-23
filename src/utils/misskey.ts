@@ -90,7 +90,7 @@ export const misskeyCreateReaction = async (postId: string, reaction: string) =>
     reaction,
   });
   // Update reaction on Local
-  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId);
+  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId) as MisskeyNote;
   if (targetPost) {
     targetPost.myReaction = reaction;
     if (targetPost.reactions[reaction]) {
@@ -107,7 +107,7 @@ export const misskeyDeleteReaction = async (postId: string) => {
     postId,
   });
   // Delete reaction on Local
-  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId);
+  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId) as MisskeyNote;
   if (targetPost && targetPost.myReaction) {
     if (targetPost.reactions[targetPost.myReaction] === 1) {
       delete targetPost.reactions[targetPost.myReaction];
