@@ -71,11 +71,13 @@ const openUserPage = (user: MisskeyNote["user"]) => {
     <div class="dote-post-content">
       <img class="dote-avatar" v-if="user" :src="user.avatarUrl || ''" alt="" @click="openUserPage(user)" />
       <div class="text-container">
-        <p v-if="props.type === 'follow'">{{ parseUsername(user?.name) }}があなたをフォローしました</p>
-        <p v-if="props.type === 'followRequestAccepted'">
+        <p v-if="props.notification.type === 'follow'">{{ parseUsername(user?.name) }}があなたをフォローしました</p>
+        <p v-if="props.notification.type === 'followRequestAccepted'">
           {{ parseUsername(user?.name) }}があなたのフォローリクエストを承認しました
         </p>
-        <p v-if="props.type === 'achievementEarned'">{{ props.notification?.achievement }}の実績を獲得しました</p>
+        <p v-if="props.notification.type === 'achievementEarned'">
+          {{ props.notification.achievement }}の実績を獲得しました
+        </p>
       </div>
     </div>
   </div>
