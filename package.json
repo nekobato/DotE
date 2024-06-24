@@ -8,14 +8,14 @@
   "description": "Fediverse client for desktop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/nekobato/dot-e.git"
+    "url": "https://github.com/nekobato/dote.git"
   },
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc && vite build && electron-builder --config electron-builder.config.cjs",
     "preview": "vite preview",
     "release": "pnpm build && electron-builder --publish always -c --config electron-builder.config.cjs",
-    "build:icon": "electron-icon-builder --input=./public/images/logo/hazy.png --output=./public",
+    "build:icon": "electron-icon-builder --input=./public/images/logo/icon.png --output=./public",
     "typecheck": "tsc",
     "press": "vitepress dev docs",
     "docs:dev": "vitepress dev docs",

@@ -15,7 +15,7 @@ const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | nul
             icon: `${__dirname}/../public/icons/png/128x128.png`,
             title: "Daydream of the Elephants",
             message: `Daydream of the Elephants`,
-            detail: `Version: ${app.getVersion()}\n\nhttps://github.com/nekobato/dot-e/`,
+            detail: `Version: ${app.getVersion()}\n\nhttps://github.com/nekobato/dote/`,
           });
         },
       },
