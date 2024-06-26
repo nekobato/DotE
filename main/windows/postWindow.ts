@@ -13,7 +13,6 @@ export function createPostWindow() {
     show: false,
     resizable: true,
     webPreferences: {
-      nodeIntegration: true,
       preload: preload,
     },
     useContentSize: false,

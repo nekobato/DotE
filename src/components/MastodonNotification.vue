@@ -4,7 +4,7 @@ import { ipcSend } from "@/utils/ipc";
 import { parseMastodonText } from "@/utils/mastodon";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
-import PostAttachment from "./PostAttachment.vue";
+import PostAttachments from "./PostAttachments.vue";
 
 const props = defineProps({
   type: {
@@ -108,7 +108,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
       </div>
     </div>
     <div class="attachments" v-if="postAtttachments">
-      <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
+      <PostAttachments :attachments="postAtttachments" />
     </div>
     <div class="dote-post-actions">
       <button class="dote-post-action" @click="openPost">

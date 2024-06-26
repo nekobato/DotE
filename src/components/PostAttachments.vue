@@ -4,14 +4,14 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { type PropType } from "vue";
 
-defineProps({
-  attachment: {
-    type: Object as PropType<Attachment>,
+const props = defineProps({
+  attachments: {
+    type: Object as PropType<Attachment[]>,
     required: true,
   },
 });
 
-const attachmentAction = (attachment: Attachment) => {
+const attachmentAction = (attachment: Attachment, index: number) => {
   switch (attachment.type) {
     case "url":
       ipcSend("open-url", { url: attachment.url });
@@ -20,14 +20,19 @@ const attachmentAction = (attachment: Attachment) => {
       ipcSend("open-url", { url: attachment.url });
       break;
     default:
-      ipcSend("media-viewer:open", attachment);
+      ipcSend("media-viewer:open", { media: props.attachments, index });
       break;
   }
 };
 </script>
 
 <template>
-  <button class="attachment" :class="[attachment.type]" @click="attachmentAction(attachment)">
+  <button
+    class="attachment"
+    v-for="(attachment, index) in props.attachments"
+    :class="[attachment.type]"
+    @click="attachmentAction(attachment, index)"
+  >
     <Icon icon="mingcute:music-2-line" class="nn-icon size-small audio" v-if="attachment.type === 'audio'" />
     <Icon icon="mingcute:film-line" class="nn-icon size-small video" v-if="attachment.type === 'video'" />
     <Icon
@@ -44,7 +49,7 @@ const attachmentAction = (attachment: Attachment) => {
       class="image"
       :src="attachment.thumbnailUrl"
       alt=""
-      @click="attachmentAction(attachment)"
+      @click="attachmentAction(attachment, index)"
       :tabindex="0"
       v-if="attachment.type === 'image'"
     />

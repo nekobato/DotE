@@ -2,7 +2,7 @@
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
-import PostAttachment from "./PostAttachment.vue";
+import PostAttachments from "./PostAttachments.vue";
 import { MastodonToot } from "@/types/mastodon";
 import { parseMastodonText } from "@/utils/mastodon";
 
@@ -107,7 +107,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
       </div>
     </div>
     <div class="attachments" v-if="postAtttachments">
-      <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
+      <PostAttachments :attachments="postAtttachments" />
     </div>
     <div class="reactions" v-if="props.showReactions">
       <button

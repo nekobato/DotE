@@ -1,75 +1,141 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
-import { reactive } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import Loading from "@/components/common/DoteLoading.vue";
-
-const getMediaWindowSize = (maxWidth: number, maxHeight: number, width?: number, height?: number) => {
-  if (!width || !height) return { width: 0, height: 0 };
-
-  let contractionRatio = 1;
-  const widthRatio = (maxWidth * 0.8) / width;
-  const heightRatio = (maxHeight * 0.8) / height;
-  contractionRatio = 1 > widthRatio ? widthRatio : 1;
-  contractionRatio = 1 > heightRatio && widthRatio > heightRatio ? heightRatio : contractionRatio;
-  return { width: width * contractionRatio, height: height * contractionRatio };
-};
 
 type Media = {
   type: "image" | "video" | "audio";
   url: string;
   thumbnailUrl: string;
   size: { width: number; height: number };
-  maxSize: { width: number; height: number };
+  isSensitive: boolean;
 };
 
-const state = reactive({
-  media: {} as Media,
-  size: { width: 0, height: 0 },
-  isLoading: true,
-});
+const media = ref<Media[]>([]);
+const index = ref<number>(0);
+const isLoading = ref(true);
 
 const onReady = () => {
-  state.isLoading = false;
+  isLoading.value = false;
 };
 
-window.ipc?.on("media-viewer:open", (_, data: Media) => {
-  state.media = data;
-  state.size = getMediaWindowSize(data.maxSize.width, data.maxSize.height, data.size?.width, data.size?.height);
+window.ipc?.on(
+  "media-viewer:open",
+  (
+    _,
+    data: {
+      media: Media[];
+      index: number;
+    },
+  ) => {
+    media.value = data.media;
+    index.value = data.index;
+  },
+);
 
-  if (data.type === "video") {
-    // state.variants = data.variants;
+const currentMedia = computed(() => media.value[index.value]);
+
+const imageSize = computed(() => {
+  // fit to image size if 70% screen size is smaller than image
+  const width = window.innerWidth * 0.7;
+  const height = window.innerHeight * 0.7;
+  const { width: imageWidth, height: imageHeight } = currentMedia.value.size;
+  if (imageWidth > width || imageHeight > height) {
+    const ratio = Math.min(width / imageWidth, height / imageHeight);
+    return {
+      width: imageWidth * ratio,
+      height: imageHeight * ratio,
+    };
+  } else {
+    return {
+      width: imageWidth,
+      height: imageHeight,
+    };
   }
 });
 
-const closeWindow = () => {
-  ipcSend("media-viewer:close");
-  // reset state
-  state.media = {} as Media;
-  state.size = { width: 0, height: 0 };
-  state.isLoading = true;
+const prev = () => {
+  if (index.value > 0) {
+    index.value -= 1;
+    isLoading.value = true;
+  }
 };
+
+const next = () => {
+  if (index.value < media.value.length - 1) {
+    index.value += 1;
+    isLoading.value = true;
+  }
+};
+
+const closeWindow = () => {
+  media.value = [];
+  isLoading.value = true;
+  index.value = 0;
+  ipcSend("media-viewer:close");
+};
+
+const onKeydown = (e: KeyboardEvent) => {
+  if (e.key === "Escape") {
+    e.preventDefault();
+    media.value = [];
+    isLoading.value = true;
+    ipcSend("media-viewer:close");
+  }
+  if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    prev();
+  }
+  if (e.key === "ArrowRight") {
+    e.preventDefault();
+    next();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", onKeydown);
+});
 </script>
 
 <template>
   <div class="media-viewer" @click="closeWindow">
-    <video
-      v-if="state.media.type === 'video'"
-      :src="state.media.url"
-      :width="state.size?.width || undefined"
-      :height="state.size?.height || undefined"
-      autoplay
-      controls
-      @canplay="onReady"
-    />
-    <img
-      v-if="state.media.type === 'image'"
-      :src="state.media.url"
-      :width="state.size?.width || undefined"
-      :height="state.size?.height || undefined"
-      @load="onReady"
-    />
-    <audio v-if="state.media.type === 'audio'" :src="state.media.url" @load="onReady" controls @click.stop />
-    <Loading class="loading" v-if="state.isLoading" />
+    <div class="media-container" v-show="!isLoading">
+      <video
+        v-if="currentMedia?.type === 'video'"
+        :src="currentMedia.url"
+        :width="imageSize.width"
+        :height="imageSize.height"
+        autoplay
+        controls
+        @canplay="onReady"
+      />
+      <img
+        v-if="currentMedia?.type === 'image'"
+        :src="currentMedia.url"
+        :width="imageSize.width"
+        :height="imageSize.height"
+        @load="onReady"
+      />
+      <audio v-if="currentMedia?.type === 'audio'" :src="currentMedia.url" @load="onReady" controls @click.stop />
+    </div>
+    <Loading class="loading" v-if="isLoading" />
+    <div class="controller">
+      <button class="pagination prev" @click.stop="prev">
+        <Icon icon="mingcute:left-line" />
+      </button>
+      <div class="indicators">
+        <div class="indicator" v-for="(_, i) in media" :key="i" :class="{ active: i === index }">
+          <Icon clas="icon" icon="mingcute:alert-line" />
+        </div>
+      </div>
+      <button class="pagination next" @click.stop="next">
+        <Icon icon="mingcute:right-line" />
+      </button>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -80,6 +146,7 @@ const closeWindow = () => {
   justify-content: center;
   width: 100%;
   height: 100%;
+  background-color: var(--dote-color-black-t3);
 }
 img,
 video,
@@ -95,5 +162,13 @@ audio {
   bottom: 0;
   left: 0;
   margin: auto;
+}
+.controller {
+  position: absolute;
+  top: 70%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 400px;
 }
 </style>
