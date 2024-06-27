@@ -6,6 +6,7 @@ import type { MisskeyNote } from "@shared/types/misskey";
 import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
+import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 
 const props = defineProps({
   post: {
@@ -151,9 +152,9 @@ onBeforeUnmount(() => {
         @openUserPage="openUserPage"
       />
     </div>
-    <div class="attachments" v-if="postAtttachments">
+    <PostAttachmentsContainer class="attachments" v-if="postAtttachments">
       <PostAttachments :attachments="postAtttachments" />
-    </div>
+    </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">
       <button
         class="reaction"
@@ -203,12 +204,9 @@ onBeforeUnmount(() => {
 }
 
 .attachments {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  width: 100%;
   margin-top: 4px;
 }
+
 .reactions {
   display: flex;
   gap: 4px;

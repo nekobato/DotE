@@ -2,6 +2,9 @@
 import { ipcSend } from "@/utils/ipc";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import Loading from "@/components/common/DoteLoading.vue";
+import { Icon } from "@iconify/vue";
+import PostAttachments from "@/components/PostAttachments.vue";
+import PostAttachmentsContainer from "@/components/PostAttachmentsContainer.vue";
 
 type Media = {
   type: "image" | "video" | "audio";
@@ -53,6 +56,9 @@ const imageSize = computed(() => {
     };
   }
 });
+
+const canGoPrev = computed(() => index.value > 0);
+const canGoNext = computed(() => index.value < media.value.length - 1);
 
 const prev = () => {
   if (index.value > 0) {
@@ -124,17 +130,15 @@ onBeforeUnmount(() => {
     </div>
     <Loading class="loading" v-if="isLoading" />
     <div class="controller">
-      <button class="pagination prev" @click.stop="prev">
-        <Icon icon="mingcute:left-line" />
+      <button class="pager prev" @click.stop="prev" v-if="canGoPrev">
+        <Icon class="icon" icon="mingcute:left-line" />
       </button>
-      <div class="indicators">
-        <div class="indicator" v-for="(_, i) in media" :key="i" :class="{ active: i === index }">
-          <Icon clas="icon" icon="mingcute:alert-line" />
-        </div>
+      <button class="pager next" @click.stop="next" v-if="canGoNext">
+        <Icon class="icon" icon="mingcute:right-line" />
+      </button>
+      <div class="attachments" v-if="media.length">
+        <PostAttachments :attachments="media" :activeIndex="index" :itemWidth="120" />
       </div>
-      <button class="pagination next" @click.stop="next">
-        <Icon icon="mingcute:right-line" />
-      </button>
     </div>
   </div>
 </template>
@@ -165,10 +169,50 @@ audio {
 }
 .controller {
   position: absolute;
-  top: 70%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 400px;
+  width: 100%;
+  height: 100%;
+  .pager {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    color: var(--dote-color-white);
+    font-size: 24px;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    &:hover {
+      color: var(--dote-color-white-t2);
+    }
+    &.prev {
+      left: 80px;
+    }
+    &.next {
+      right: 80px;
+    }
+    > .icon {
+      width: 32px;
+      height: 32px;
+      color: var(--dote-color-white);
+    }
+  }
+  .attachments {
+    position: absolute;
+    right: 0;
+    bottom: 80px;
+    left: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    width: 500px;
+    margin: auto;
+  }
 }
 </style>

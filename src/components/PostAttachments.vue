@@ -9,6 +9,12 @@ const props = defineProps({
     type: Object as PropType<Attachment[]>,
     required: true,
   },
+  activeIndex: {
+    type: Number as PropType<number>,
+  },
+  itemWidth: {
+    type: Number as PropType<number>,
+  },
 });
 
 const attachmentAction = (attachment: Attachment, index: number) => {
@@ -30,8 +36,9 @@ const attachmentAction = (attachment: Attachment, index: number) => {
   <button
     class="attachment"
     v-for="(attachment, index) in props.attachments"
-    :class="[attachment.type]"
+    :class="[attachment.type, { active: index === props.activeIndex }]"
     @click="attachmentAction(attachment, index)"
+    :style="{ width: props.itemWidth ? `${props.itemWidth}px` : '100%' }"
   >
     <Icon icon="mingcute:music-2-line" class="nn-icon size-small audio" v-if="attachment.type === 'audio'" />
     <Icon icon="mingcute:film-line" class="nn-icon size-small video" v-if="attachment.type === 'video'" />
@@ -74,15 +81,18 @@ const attachmentAction = (attachment: Attachment, index: number) => {
   border-radius: 4px;
   cursor: pointer;
   &.video {
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--dote-color-white-t3);
+  }
+  &.active {
+    border: 1px solid var(--dote-color-white-t5);
   }
   &:hover {
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--dote-color-white-t3);
   }
   > .nn-icon {
     width: 16px;
     height: 16px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--dote-color-white-t3);
   }
 }
 /* opacity: 0.5; */
