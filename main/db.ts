@@ -21,7 +21,7 @@ export const storeDefaults: StoreSchema = {
       width: 475,
       height: 600,
     },
-    maxPostCount: 1000,
+    maxPostCount: 500,
     postStyle: "all",
     shortcuts: {
       toggleTimeline: "Ctrl+Alt+x",

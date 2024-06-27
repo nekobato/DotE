@@ -6,11 +6,9 @@ const pageName = "/media-viewer";
 
 export function createMediaViewerWindow() {
   const win = new BrowserWindow({
-    useContentSize: true,
     show: false,
     resizable: true,
     webPreferences: {
-      nodeIntegration: true,
       preload: preload,
     },
     frame: false,
@@ -18,7 +16,7 @@ export function createMediaViewerWindow() {
     hasShadow: false,
     alwaysOnTop: true,
     center: true,
-    focusable: false,
+    focusable: true,
     roundedCorners: false,
   });
 

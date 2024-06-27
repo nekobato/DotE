@@ -16,7 +16,6 @@ export function createMainWindow() {
     minHeight: 240,
     resizable: true,
     webPreferences: {
-      nodeIntegration: true,
       preload: preload,
     },
     frame: false,

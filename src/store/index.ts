@@ -47,7 +47,7 @@ export const useStore = defineStore({
         width: 0,
         height: 0,
       },
-      maxPostCount: 1000,
+      maxPostCount: 500,
       postStyle: "all",
       shortcuts: {} as Settings["shortcuts"],
     } as Settings,

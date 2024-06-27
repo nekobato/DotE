@@ -2,9 +2,10 @@
 import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
-import PostAttachment from "./PostAttachment.vue";
+import PostAttachments from "./PostAttachments.vue";
 import { MastodonToot } from "@/types/mastodon";
 import { parseMastodonText } from "@/utils/mastodon";
+import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 
 const props = defineProps({
   post: {
@@ -106,9 +107,9 @@ const openUserPage = (user: MastodonToot["account"]) => {
         </div>
       </div>
     </div>
-    <div class="attachments" v-if="postAtttachments">
-      <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
-    </div>
+    <PostAttachmentsContainer class="attachments" v-if="postAtttachments">
+      <PostAttachments :attachments="postAtttachments" />
+    </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">
       <button
         class="reaction"
@@ -151,10 +152,6 @@ const openUserPage = (user: MastodonToot["account"]) => {
 }
 
 .attachments {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
-  width: 100%;
   margin-top: 4px;
 }
 .reactions {

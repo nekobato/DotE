@@ -89,10 +89,16 @@ const start = () => {
       case "media-viewer:open":
         const pointerDisplay = electron.screen.getDisplayNearestPoint(electron.screen.getCursorScreenPoint());
         const workAreaSize = pointerDisplay.workAreaSize;
-        mediaViewerWindow?.setPosition(pointerDisplay.bounds.x, pointerDisplay.bounds.y);
+        mediaViewerWindow?.setBounds({
+          x: pointerDisplay.bounds.x,
+          y: pointerDisplay.bounds.y,
+          width: workAreaSize.width,
+          height: workAreaSize.height,
+        });
         mediaViewerWindow?.center();
-        mediaViewerWindow?.webContents.send(event, { ...data, maxSize: workAreaSize });
+        mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.show();
+        mediaViewerWindow?.focus();
         break;
       case "media-viewer:close":
         mediaViewerWindow?.webContents.send(event, data);

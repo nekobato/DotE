@@ -5,7 +5,7 @@ import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { computed, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
-import PostAttachment from "./PostAttachment.vue";
+import PostAttachments from "./PostAttachments.vue";
 import MisskeyNotificationContent from "./MisskeyNotificationContent.vue";
 
 const props = defineProps({
@@ -147,7 +147,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
       />
     </div>
     <div class="attachments" v-if="postAtttachments">
-      <PostAttachment v-for="attachment in postAtttachments" :attachment="attachment" />
+      <PostAttachments :attachments="postAtttachments" />
     </div>
     <div class="reactions" v-if="reactions.length">
       <div class="reaction" v-for="reaction in reactions" :title="reaction.name.replace(/:/g, '')">
