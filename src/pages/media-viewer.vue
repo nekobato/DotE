@@ -4,7 +4,6 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import Loading from "@/components/common/DoteLoading.vue";
 import { Icon } from "@iconify/vue";
 import PostAttachments from "@/components/PostAttachments.vue";
-import PostAttachmentsContainer from "@/components/PostAttachmentsContainer.vue";
 
 type Media = {
   type: "image" | "video" | "audio";
