@@ -3,15 +3,12 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
-import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption } from "element-plus";
-import { watch } from "vue";
+import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption, ElInput } from "element-plus";
+import { ref, watch } from "vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
-
-// const shortcuts = reactive<Settings["shortcuts"]>({
-//   toggleTimeline: store.settings?.shortcuts.toggleTimeline || "",
-// });
+const shortcutInput = ref<HTMLElement | null>(null);
 
 watch(
   () => store.settings?.opacity,
@@ -47,27 +44,25 @@ const onChangePostStyle = (value: string | number | boolean) => {
   settingsStore.setPostStyle(value as Settings["postStyle"]);
 };
 
-// const onKeyDownOn = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEvent) => {
-//   e.preventDefault();
+const focusShortcutInput = () => {
+  shortcutInput.value?.focus();
+};
 
-//   let shortcut = "";
-//   shortcut += e.metaKey ? "Meta+" : "";
-//   shortcut += e.ctrlKey ? "Ctrl+" : "";
-//   shortcut += e.shiftKey ? "Shift+" : "";
-//   shortcut += e.altKey ? "Alt+" : "";
+const onKeyDownOnShortcut = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEvent) => {
+  e.preventDefault();
 
-//   if (e.key !== "Meta" && e.key !== "Ctrl" && e.key !== "Shift" && e.key !== "Alt") {
-//     shortcut += e.key === " " ? "Space" : e.key;
-//   }
+  let shortcut = "";
+  shortcut += e.metaKey ? "Meta+" : "";
+  shortcut += e.ctrlKey ? "Ctrl+" : "";
+  shortcut += e.shiftKey ? "Shift+" : "";
+  shortcut += e.altKey ? "Alt+" : "";
 
-//   shortcuts[key] = shortcut;
-// };
+  if (e.key !== "Meta" && e.key !== "Ctrl" && e.key !== "Shift" && e.key !== "Alt") {
+    shortcut += e.key === " " ? "Space" : e.key;
+  }
 
-// const onChangeShortcut = async (key: keyof Settings["shortcuts"]) => {
-//   if (!/\+$/.test(shortcuts[key])) {
-//     await settingsStore.setShortcutKey(key, shortcuts[key]);
-//   }
-// };
+  settingsStore.setShortcutKey(key, shortcut);
+};
 
 const onChangeHideCw = async (value: string | number | boolean) => {
   await settingsStore.setMisskeyHideCw(!value);
@@ -126,23 +121,6 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         </ElSelect>
       </div>
     </div>
-
-    <!-- <SectionTitle title="グローバルショートカットキー" />
-    <div class="dote-field-row indent-1">
-      <div class="content">
-        <span class="title">タイムライン表示/非表示切り替え</span>
-      </div>
-      <div class="form-actions">
-        <input
-          type="text"
-          readonly
-          class="nn-text-field shortcut-key"
-          v-model="shortcuts.toggleTimeline"
-          @keydown="onKeyDownOn('toggleTimeline')($event)"
-          @input="onChangeShortcut('toggleTimeline')"
-        />
-      </div>
-    </div> -->
     <h2 class="dote-field-group-title">Misskey</h2>
     <div class="dote-field-row indent-1">
       <div class="content">
@@ -161,6 +139,26 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
       <div class="form-actions">
         <label class="nn-checkbox">
           <ElSwitch :model-value="store.settings.misskey?.showReactions" @change="onChangeShowReaction" />
+        </label>
+      </div>
+    </div>
+    <h2 class="dote-field-group-title">グローバルショートカットキー</h2>
+    <div class="dote-field-row indent-1">
+      <div class="content">
+        <span class="title">ウィンドウを表示/非表示切り替え</span>
+      </div>
+      <div class="form-actions">
+        <label class="nn-checkbox">
+          <ElInput
+            id="shortcut"
+            type="text"
+            :value="store.settings.shortcuts.toggleTimeline"
+            @keydown.prevent="onKeyDownOnShortcut('toggleTimeline')"
+            readonly
+            @click="focusShortcutInput"
+            ref="shortcutInput"
+            placeholder="キーの組み合わせを入力してください"
+          />
         </label>
       </div>
     </div>
