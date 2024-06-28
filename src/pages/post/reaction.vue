@@ -3,6 +3,8 @@ import { useStorage } from "@vueuse/core";
 import type { MisskeyEntities } from "@shared/types/misskey";
 import { PropType, computed, ref, watch } from "vue";
 import { ipcSend } from "@/utils/ipc";
+import { onMounted } from "vue";
+import router from "@/router";
 
 type PageProps = {
   instanceUrl: string;
@@ -61,13 +63,17 @@ const selectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
     postId: props.data.noteId,
     reaction: `:${emoji.name}@.:`,
   });
-  ipcSend("post:close");
+  close();
 };
 
 const onInputSearchEmoji = () => {
   search.value = search.value.trim();
   if (search.value === "") return;
   categoryFilter.value = [];
+};
+
+const close = () => {
+  ipcSend("post:close");
 };
 
 window.ipc?.on("post:reaction", () => {
@@ -78,13 +84,18 @@ watch(
   () => props.data.noteId,
   () => {
     if (!props.data.noteId) {
-      ipcSend("post:close");
+      close();
     }
 
     searchInput.value?.focus();
     search.value === "";
   },
 );
+
+onMounted(() => {
+  search.value === "";
+  searchInput.value?.focus();
+});
 </script>
 
 <template>

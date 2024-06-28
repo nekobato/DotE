@@ -118,6 +118,7 @@ const start = () => {
         postWindow?.show();
         break;
       case "post:close":
+        postWindow?.webContents.send(event, data);
         postWindow?.hide();
         break;
       case "post:reaction":
