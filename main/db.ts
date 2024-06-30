@@ -328,8 +328,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.windowSize", value);
     case "maxPostCount":
       return store.set("settings.maxPostCount", Number(value));
-    case "shortcuts.toggleTimelines":
-      return store.set("settings.maxPostCount", Number(value));
+    case "shortcuts.toggleTimeline":
+      return store.set("settings.shortcuts.toggleTimeline", value);
     case "postStyle":
       return store.set("settings.postStyle", value);
     case "misskey.hideCw":

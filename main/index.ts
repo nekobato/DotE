@@ -1,4 +1,14 @@
-import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, powerMonitor, protocol } from "electron";
+import electron, {
+  app,
+  BrowserWindow,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  powerMonitor,
+  protocol,
+  screen,
+} from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createPostWindow } from "./windows/postWindow";
 import { createMediaViewerWindow } from "./windows/mediaViewerWindow";
@@ -38,6 +48,22 @@ const initialize = async () => {
   setMainWindowMode(mode);
 };
 
+const toggleTimeline = async () => {
+  if (mainWindow?.isVisible()) {
+    mainWindow?.hide();
+  } else {
+    mainWindow?.show();
+  }
+};
+
+function setGlobalShortcut() {
+  const settings = db.getSettingAll();
+  if (globalShortcut.isRegistered(settings.shortcuts.toggleTimeline)) {
+    globalShortcut.unregister(settings.shortcuts.toggleTimeline);
+  }
+  globalShortcut.register(settings.shortcuts.toggleTimeline, toggleTimeline);
+}
+
 const setMainWindowMode = async (mode: string) => {
   switch (mode) {
     case "show":
@@ -69,6 +95,7 @@ const start = () => {
     }),
   );
   Menu.setApplicationMenu(menu);
+  setGlobalShortcut();
 
   mainWindow = createMainWindow();
   mediaViewerWindow = createMediaViewerWindow();

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
+import { keyboardEventToElectronAccelerator } from "@/utils/dote";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
 import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption, ElInput } from "element-plus";
@@ -48,20 +49,17 @@ const focusShortcutInput = () => {
   shortcutInput.value?.focus();
 };
 
-const onKeyDownOnShortcut = (key: keyof Settings["shortcuts"]) => async (e: KeyboardEvent) => {
-  e.preventDefault();
+const onKeyDownOnShortcut = (key: keyof Settings["shortcuts"]) => {
+  console.log("onKeyDownOnShortcut", key);
+  return async (e: KeyboardEvent) => {
+    const shortcut = keyboardEventToElectronAccelerator(e);
 
-  let shortcut = "";
-  shortcut += e.metaKey ? "Meta+" : "";
-  shortcut += e.ctrlKey ? "Ctrl+" : "";
-  shortcut += e.shiftKey ? "Shift+" : "";
-  shortcut += e.altKey ? "Alt+" : "";
+    if (shortcut === "" || shortcut === store.settings.shortcuts.toggleTimeline) {
+      return;
+    }
 
-  if (e.key !== "Meta" && e.key !== "Ctrl" && e.key !== "Shift" && e.key !== "Alt") {
-    shortcut += e.key === " " ? "Space" : e.key;
-  }
-
-  settingsStore.setShortcutKey(key, shortcut);
+    settingsStore.setShortcutKey(key, shortcut);
+  };
 };
 
 const onChangeHideCw = async (value: string | number | boolean) => {
@@ -148,18 +146,17 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         <span class="title">ウィンドウを表示/非表示切り替え</span>
       </div>
       <div class="form-actions">
-        <label class="nn-checkbox">
-          <ElInput
-            id="shortcut"
-            type="text"
-            :value="store.settings.shortcuts.toggleTimeline"
-            @keydown.prevent="onKeyDownOnShortcut('toggleTimeline')"
-            readonly
-            @click="focusShortcutInput"
-            ref="shortcutInput"
-            placeholder="キーの組み合わせを入力してください"
-          />
-        </label>
+        <input
+          id="shortcut"
+          class="shortcut-input"
+          type="text"
+          :value="store.settings.shortcuts.toggleTimeline"
+          @keydown.prevent="onKeyDownOnShortcut('toggleTimeline')($event)"
+          readonly
+          @click="focusShortcutInput"
+          ref="shortcutInput"
+          placeholder="キーの組み合わせを入力してください"
+        />
       </div>
     </div>
   </div>
@@ -192,9 +189,14 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
 .max-post-count {
   width: 80px;
 }
-.shortcut-key {
-  width: 120px;
-  font-size: var(--font-size-12);
+.shortcut-input {
+  width: 140px;
+  font-size: var(--font-size-14);
+  cursor: pointer;
+  border: 1px solid var(--dote-color-white-t2);
+  background-color: transparent;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 .action-field {
   width: 130px;
