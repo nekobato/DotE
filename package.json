@@ -5,6 +5,7 @@
     "name": "nekobato",
     "email": "nekobato@gmail.com"
   },
+  "license": "MIT",
   "description": "Fediverse client for desktop",
   "repository": {
     "type": "git",
