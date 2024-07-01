@@ -19,6 +19,7 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import { computed, nextTick, reactive, ref } from "vue";
+import { onMounted } from "vue";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -104,6 +105,10 @@ timelineStore.$onAction((action) => {
       }
     });
   }
+});
+
+onMounted(() => {
+  ipcSend("init-shortcuts");
 });
 </script>
 

@@ -110,6 +110,9 @@ const start = () => {
         db.setSetting("mode", data.mode);
         mainWindow?.webContents.send("set-mode", data);
         break;
+      case "init-shortcuts":
+        setGlobalShortcut();
+        break;
       case "open-url":
         electron.shell.openExternal(data.url);
         break;
