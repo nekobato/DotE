@@ -8,6 +8,20 @@ DotE はながら見のシチュエーションでの表示に特化した UI �
 - [x] [Mastodon](https://joinmastodon.org/)
 - [ ] [Bluesky](https://bluesky-web.com/)
 
+## 機能
+
+### ながら見
+
+ウィンドウを透明にして、他のアプリを使用しながらタイムラインを閲覧することが可能です。
+
+### コンパクトなテーマ
+
+コンパクトなテーマにより、多くの投稿を一度に表示できます。
+
+### 閲覧特化
+
+現時点では画像投稿やリプライ、リノート（ブースト）などの操作はできませんが、各投稿のURLをブラウザで開くことができます。
+
 ## ダウンロード
 
 - Mac OS X: https://github.com/nekobato/hazy/releases/latest
