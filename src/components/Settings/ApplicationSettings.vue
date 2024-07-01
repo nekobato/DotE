@@ -4,7 +4,7 @@ import { useSettingsStore } from "@/store/settings";
 import { keyboardEventToElectronAccelerator } from "@/utils/dote";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
-import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption, ElInput } from "element-plus";
+import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption } from "element-plus";
 import { ref, watch } from "vue";
 
 const store = useStore();
@@ -191,12 +191,12 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
 }
 .shortcut-input {
   width: 140px;
-  font-size: var(--font-size-14);
-  cursor: pointer;
-  border: 1px solid var(--dote-color-white-t2);
-  background-color: transparent;
   padding: 2px 8px;
+  font-size: var(--font-size-14);
+  background-color: transparent;
+  border: 1px solid var(--dote-color-white-t2);
   border-radius: 4px;
+  cursor: pointer;
 }
 .action-field {
   width: 130px;

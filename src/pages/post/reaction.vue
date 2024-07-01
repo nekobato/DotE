@@ -4,7 +4,6 @@ import type { MisskeyEntities } from "@shared/types/misskey";
 import { PropType, computed, ref, watch } from "vue";
 import { ipcSend } from "@/utils/ipc";
 import { onMounted } from "vue";
-import router from "@/router";
 
 type PageProps = {
   instanceUrl: string;
