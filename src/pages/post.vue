@@ -13,10 +13,6 @@ window.ipc?.on("post:create", () => {
   router.push("/post/create");
 });
 
-window.ipc?.on("post:close", () => {
-  router.push("/post");
-});
-
 window.ipc?.on("post:detail", (_, payload) => {
   pagedata.value = payload;
   console.info(pagedata);
@@ -29,11 +25,15 @@ window.ipc?.on("post:reaction", (_, payload) => {
   router.push("/post/reaction");
 });
 
+window.ipc?.on("post:close", () => {
+  pagedata.value = {};
+  router.replace("/post");
+});
+
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     e.preventDefault();
     pagedata.value = {};
-    router.push("/post");
     ipcSend("post:close");
   }
 });
@@ -42,6 +42,6 @@ document.addEventListener("keydown", (e) => {
 <template>
   <Layout>
     <WindowHeader windowType="post" />
-    <RouterView :data="pagedata" />
+    <RouterView :data="pagedata" @close="" />
   </Layout>
 </template>

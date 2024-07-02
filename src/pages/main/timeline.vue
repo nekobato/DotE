@@ -8,6 +8,7 @@ import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
 import WindowHeader from "@/components/WindowHeader.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
+import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import type {
@@ -18,6 +19,7 @@ import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import { computed, nextTick, reactive, ref } from "vue";
+import { onMounted } from "vue";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -43,6 +45,13 @@ const onScroll = () => {
 
 const canScrollToTop = computed(() => {
   return store.settings.mode === "show" && scrollPosition.value > 0;
+});
+
+const canReadMore = computed(() => {
+  return (
+    (timelineStore.current?.posts.length && timelineStore.current?.posts.length > 0) ||
+    (timelineStore.current?.notifications.length && timelineStore.current?.notifications.length > 0)
+  );
 });
 
 const emojis = computed(() => {
@@ -96,6 +105,10 @@ timelineStore.$onAction((action) => {
       }
     });
   }
+});
+
+onMounted(() => {
+  ipcSend("init-shortcuts");
 });
 </script>
 
@@ -172,8 +185,12 @@ timelineStore.$onAction((action) => {
           :lineStyle="store.settings.postStyle"
         />
       </PostList>
-      <MisskeyAdCarousel :items="ads" />
-      <ReadMore v-if="!isHazeMode" />
+      <MisskeyAdCarousel v-if="ads.length" :items="ads" />
+      <DoteKiraKiraLoading
+        class="timeline-loading"
+        v-if="!timelineStore.current?.posts?.length && !timelineStore.current?.notifications.length"
+      />
+      <ReadMore v-if="!isHazeMode && canReadMore" />
     </div>
     <div class="scroll-to-top" :class="{ visible: canScrollToTop }">
       <button @click="scrollToTop" class="nn-button size-small">
@@ -205,6 +222,7 @@ body::-webkit-scrollbar {
   }
 }
 .timeline-container {
+  position: relative;
   width: 100%;
   height: 100%;
   padding-top: 8px;
@@ -222,15 +240,6 @@ body::-webkit-scrollbar {
 }
 .dote-post-list {
   padding-top: 4px;
-}
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: #fff;
-  text-shadow: 1px 0 1px #000;
 }
 .scroll-to-top {
   position: fixed;
@@ -260,5 +269,8 @@ body::-webkit-scrollbar {
       color: var(--dote-color-black-t5);
     }
   }
+}
+.timeline-loading {
+  margin-top: 16px;
 }
 </style>
