@@ -12,9 +12,9 @@
     "url": "https://github.com/nekobato/dote.git"
   },
   "scripts": {
+    "prepare": "rm -rf node_modules/electron/dist",
     "dev": "vite",
-    "build": "vue-tsc && vite build && electron-builder --config electron-builder.config.cjs",
-    "preview": "vite preview",
+    "build": "pnpm prepare && vue-tsc && vite build && electron-builder --config electron-builder.config.cjs",
     "release": "pnpm build && electron-builder --publish always -c --config electron-builder.config.cjs",
     "build:icon": "electron-icon-builder --input=./public/images/logo/icon.png --output=./public",
     "typecheck": "tsc",

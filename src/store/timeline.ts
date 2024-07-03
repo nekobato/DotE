@@ -2,7 +2,7 @@ import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { ipcInvoke } from "@/utils/ipc";
 import { defineStore } from "pinia";
 import { computed } from "vue";
-import { TimelineStore, methodOfChannel, useStore } from ".";
+import { DotEPost, TimelineStore, methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
 import { MastodonNotification, MastodonToot } from "@/types/mastodon";
 import { defaultChannelNameFromType } from "@/utils/dote";
@@ -21,7 +21,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     return store.instances.find((instance) => instance.id === currentUser?.value?.instanceId);
   });
 
-  const setPosts = (posts: MisskeyNote[]) => {
+  const setPosts = (posts: DotEPost[]) => {
     if (store.$state.timelines[currentIndex.value]) {
       store.$state.timelines[currentIndex.value].posts = posts;
 
@@ -70,24 +70,30 @@ export const useTimelineStore = defineStore("timeline", () => {
   const fetchDiffPosts = async () => {
     if (store.timelines[currentIndex.value]?.posts?.length === 0) return;
     if (current.value && currentUser.value && currentInstance.value) {
-      const data = await ipcInvoke("api", {
-        method: methodOfChannel[current.value.channel],
-        instanceUrl: currentInstance.value?.url,
-        token: currentUser.value.token,
-        channelId: current?.value.options?.channelId, // option
-        antennaId: current?.value.options?.antennaId, // option
-        listId: current?.value.options?.listId, // option
-        query: current?.value.options?.query, // option
-        tag: current?.value.options?.tag, // option
-        sinceId: store.timelines[currentIndex.value]?.posts[0]?.id,
-        limit: 40,
-      }).catch(() => {
+      try {
+        const data: DotEPost[] = await ipcInvoke("api", {
+          method: methodOfChannel[current.value.channel],
+          instanceUrl: currentInstance.value?.url,
+          token: currentUser.value.token,
+          channelId: current?.value.options?.channelId, // option
+          antennaId: current?.value.options?.antennaId, // option
+          listId: current?.value.options?.listId, // option
+          query: current?.value.options?.query, // option
+          tag: current?.value.options?.tag, // option
+          sinceId: store.timelines[currentIndex.value]?.posts[0]?.id,
+          limit: 40,
+        });
+        if (!data || data.length === 0) return;
+        const filteredPosts = data.filter(
+          (post) => !store.timelines[currentIndex.value]?.posts?.some((p) => p.id === post.id),
+        );
+
+        setPosts([...filteredPosts, ...store.timelines[currentIndex.value]?.posts]);
+      } catch (e) {
         store.$state.errors.push({
           message: `${currentInstance.value?.name}の追加タイムラインを取得できませんでした`,
         });
-      });
-      if (!data || data.length === 0) return;
-      setPosts([...data, ...store.timelines[currentIndex.value]?.posts]);
+      }
     } else {
       throw new Error("user not found");
     }
@@ -142,19 +148,19 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
-  const addNewPost = (post: MisskeyNote | MastodonToot) => {
+  const addNewPost = (post: DotEPost) => {
+    // abort if no posts
     if (!store.timelines[currentIndex.value]?.posts) return;
+    // detect duplicate
     if (store.timelines[currentIndex.value].posts.some((p) => p.id === post.id)) return;
-    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts] as
-      | MisskeyNote[]
-      | MastodonToot[];
+    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts] as DotEPost[];
 
     if (store.settings.maxPostCount < store.timelines[currentIndex.value].posts.length) {
       store.timelines[currentIndex.value].posts.pop();
     }
   };
 
-  const updatePost = <T extends MisskeyNote | MastodonToot>(post: T) => {
+  const updatePost = <T extends DotEPost>(post: T) => {
     const currentPosts = store.timelines[currentIndex.value].posts as T[];
     if (!currentPosts) return;
     const postIndex = currentPosts.findIndex((p) => p.id === post.id);
@@ -166,7 +172,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     store.timelines[currentIndex.value].posts = store.timelines[currentIndex.value].posts.filter(
       (post) => post.id !== postId,
-    ) as MastodonToot[] | MisskeyNote[];
+    ) as DotEPost[];
   };
 
   const addNewNotification = <T extends MisskeyEntities.Notification | MastodonNotification>(notification: T) => {
@@ -177,14 +183,15 @@ export const useTimelineStore = defineStore("timeline", () => {
     ] as MisskeyEntities.Notification[] | MastodonNotification[];
   };
 
-  const addMorePosts = (posts: MisskeyNote[] | MastodonToot[]) => {
+  const addMorePosts = (posts: DotEPost[]) => {
     if (!store.timelines[currentIndex.value]?.posts) return;
     const filteredPosts = posts.filter(
       (post) => !store.timelines[currentIndex.value].posts.some((p) => p.id === post.id),
     );
-    store.timelines[currentIndex.value].posts = [...store.timelines[currentIndex.value].posts, ...filteredPosts] as
-      | MisskeyNote[]
-      | MastodonToot[];
+    store.timelines[currentIndex.value].posts = [
+      ...store.timelines[currentIndex.value].posts,
+      ...filteredPosts,
+    ] as DotEPost[];
   };
 
   const addMoreNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {

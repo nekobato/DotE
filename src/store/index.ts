@@ -24,8 +24,10 @@ export const methodOfChannel = {
   "mastodon:notifications": "mastodon:getNotifications",
 };
 
+export type DotEPost = MisskeyNote | MastodonToot;
+
 export type TimelineStore = Timeline & {
-  posts: MisskeyNote[] | MastodonToot[];
+  posts: DotEPost[];
   notifications: MisskeyEntities.Notification[] | MastodonNotification[];
 };
 
