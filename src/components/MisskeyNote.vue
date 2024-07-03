@@ -65,7 +65,7 @@ const renoteType = computed(() => {
 });
 
 const postAtttachments = computed(() => {
-  return parseMisskeyAttachments(props.post);
+  return parseMisskeyAttachments(props.post, props.currentInstanceUrl);
 });
 
 const reactions = computed(() => {

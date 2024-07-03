@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useStore, type ErrorItem } from "@/store";
 import { Icon } from "@iconify/vue";
+import { onMounted } from "vue";
 import { type PropType } from "vue";
 
 const store = useStore();
@@ -15,6 +16,12 @@ const props = defineProps({
 const deleteError = (index: number) => {
   store.$state.errors.splice(index, 1);
 };
+
+onMounted(() => {
+  setTimeout(() => {
+    deleteError(props.error.index);
+  }, 5000);
+});
 </script>
 
 <template>
@@ -26,7 +33,7 @@ const deleteError = (index: number) => {
       {{ props.error.message }}
     </p>
     <div class="actions">
-      <button class="action" @click="deleteError(props.error.index)">
+      <button class="nn-button action" @click="deleteError(props.error.index)">
         <Icon class="nn-icon size-xsmall" icon="mingcute:close-line" />
       </button>
     </div>
@@ -37,6 +44,7 @@ const deleteError = (index: number) => {
 .dote-error-post {
   display: flex;
   align-items: center;
+  height: 56px;
   margin-bottom: 8px;
   padding: 8px;
   color: var(--dote-text-color);

@@ -26,7 +26,7 @@ export const misskeyStreamChannels: MisskeyStreamChannel[] = [
   "channel",
 ];
 
-export const parseMisskeyAttachments = (post: MisskeyNote): Post["attachments"] => {
+export const parseMisskeyAttachments = (post: MisskeyNote, host?: string): Post["attachments"] => {
   const files = post.files?.length
     ? post.files
     : (post.renote as MisskeyNote)?.files?.length
@@ -52,7 +52,7 @@ export const parseMisskeyAttachments = (post: MisskeyNote): Post["attachments"] 
         {
           type: "poll" as const,
           voted: poll.choices.some((choice) => choice.isVoted),
-          url: post.url,
+          url: post.url || new URL(`/notes/${post.id}`, host).toString(),
         },
       ]
     : [];
