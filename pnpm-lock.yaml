@@ -34,8 +34,8 @@ importers:
         specifier: ^10.9.0
         version: 10.9.0(vue@3.4.31(typescript@5.4.5))
       electron:
-        specifier: 30.0.8
-        version: 30.0.8
+        specifier: 31.1.0
+        version: 31.1.0
       electron-builder:
         specifier: ^24.13.3
         version: 24.13.3(electron-builder-squirrel-windows@24.13.3(dmg-builder@24.13.3))
@@ -1984,8 +1984,8 @@ packages:
   electron-updater@6.1.8:
     resolution: {integrity: sha512-hhOTfaFAd6wRHAfUaBhnAOYc+ymSGCWJLtFkw4xJqOvtpHmIdNHnXDV9m1MHC+A6q08Abx4Ykgyz/R5DGKNAMQ==}
 
-  electron@30.0.8:
-    resolution: {integrity: sha512-ivzXJJ/9gdb4oOw+5SDuaZpSInz8C+Z021dKZfFLMltKbDa4sSqt5cRBiUg7J36Z2kdus+Jai0bdHWutYE9wAA==}
+  electron@31.1.0:
+    resolution: {integrity: sha512-TBOwqLxSxnx6+pH6GMri7R3JPH2AkuGJHfWZS0p1HsmN+Qr1T9b0IRJnnehSd/3NZAmAre4ft9Ljec7zjyKFJA==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -6732,7 +6732,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  electron@30.0.8:
+  electron@31.1.0:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 20.12.7
