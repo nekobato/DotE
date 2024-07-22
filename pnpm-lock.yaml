@@ -26,10 +26,10 @@ importers:
         version: 4.1.1(vue@3.4.31(typescript@5.4.5))
       '@vitejs/plugin-vue':
         specifier: ^5.0.5
-        version: 5.0.5(vite@5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))
+        version: 5.0.5(vite@5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))
       '@vitejs/plugin-vue-jsx':
         specifier: ^4.0.0
-        version: 4.0.0(vite@5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))
+        version: 4.0.0(vite@5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))
       '@vueuse/core':
         specifier: ^10.9.0
         version: 10.9.0(vue@3.4.31(typescript@5.4.5))
@@ -85,8 +85,8 @@ importers:
         specifier: ^5.4.5
         version: 5.4.5
       vite:
-        specifier: ^5.3.3
-        version: 5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
+        specifier: ^5.3.4
+        version: 5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
       vite-plugin-electron:
         specifier: ^0.28.7
         version: 0.28.7(vite-plugin-electron-renderer@0.14.5)
@@ -4504,8 +4504,8 @@ packages:
   vite-plugin-resolve@2.5.1:
     resolution: {integrity: sha512-9dD0Yq5JT1RxHQGZOyhC7e/JlhyhMCftCpQ8TPzQa7KEB/3ERnoCPinH3VJk/0C8qHsA+l41bIcHh5BcHBTmAw==}
 
-  vite@5.3.3:
-    resolution: {integrity: sha512-NPQdeCU0Dv2z5fu+ULotpuq5yfCS1BzKUIPhNbP3YBfAMGJXbt2nS+sbTFu+qchaqWTD+H3JK++nRwr6XIcp6A==}
+  vite@5.3.4:
+    resolution: {integrity: sha512-Cw+7zL3ZG9/NZBB8C+8QbQZmR54GwqIz+WMI4b3JgdYJvX+ny9AjJXqkGQlDXSXRP9rP0B4tbciRMOVEKulVOA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
     peerDependencies:
@@ -5871,19 +5871,19 @@ snapshots:
       '@types/node': 20.12.7
     optional: true
 
-  '@vitejs/plugin-vue-jsx@4.0.0(vite@5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))':
+  '@vitejs/plugin-vue-jsx@4.0.0(vite@5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))':
     dependencies:
       '@babel/core': 7.24.9
       '@babel/plugin-transform-typescript': 7.24.8(@babel/core@7.24.9)
       '@vue/babel-plugin-jsx': 1.2.2(@babel/core@7.24.9)
-      vite: 5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
+      vite: 5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
       vue: 3.4.31(typescript@5.4.5)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-vue@5.0.5(vite@5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))':
+  '@vitejs/plugin-vue@5.0.5(vite@5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))':
     dependencies:
-      vite: 5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
+      vite: 5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
       vue: 3.4.31(typescript@5.4.5)
 
   '@volar/language-core@2.4.0-alpha.16':
@@ -9601,7 +9601,7 @@ snapshots:
     dependencies:
       lib-esm: 0.4.2
 
-  vite@5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0):
+  vite@5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.4.39
@@ -9619,7 +9619,7 @@ snapshots:
       '@shikijs/core': 1.10.3
       '@shikijs/transformers': 1.10.3
       '@types/markdown-it': 14.1.1
-      '@vitejs/plugin-vue': 5.0.5(vite@5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))
+      '@vitejs/plugin-vue': 5.0.5(vite@5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0))(vue@3.4.31(typescript@5.4.5))
       '@vue/devtools-api': 7.3.6
       '@vue/shared': 3.4.31
       '@vueuse/core': 10.11.0(vue@3.4.31(typescript@5.4.5))
@@ -9628,7 +9628,7 @@ snapshots:
       mark.js: 8.11.1
       minisearch: 7.0.0
       shiki: 1.10.3
-      vite: 5.3.3(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
+      vite: 5.3.4(@types/node@20.12.7)(sass@1.77.2)(sugarss@2.0.0)
       vue: 3.4.31(typescript@5.4.5)
     optionalDependencies:
       postcss: 8.4.38
