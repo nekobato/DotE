@@ -42,7 +42,7 @@
     "electron": "31.1.0",
     "electron-builder": "^24.13.3",
     "electron-icon-builder": "^2.0.1",
-    "element-plus": "^2.7.6",
+    "element-plus": "^2.8.0",
     "mfm-js": "^0.24.0",
     "misskey-js": "^2024.5.0",
     "nanoid": "^5.0.7",
