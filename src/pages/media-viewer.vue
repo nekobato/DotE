@@ -42,7 +42,13 @@ const imageSize = computed(() => {
   const width = window.innerWidth * 0.7;
   const height = window.innerHeight * 0.7;
   const { width: imageWidth, height: imageHeight } = currentMedia.value.size;
-  if (imageWidth > width || imageHeight > height) {
+  console.log(imageWidth, imageHeight, width, height);
+  if (!imageWidth || !imageHeight) {
+    return {
+      width,
+      height,
+    };
+  } else if (imageWidth > width || imageHeight > height) {
     const ratio = Math.min(width / imageWidth, height / imageHeight);
     return {
       width: imageWidth * ratio,
@@ -117,6 +123,7 @@ onBeforeUnmount(() => {
         autoplay
         controls
         @canplay="onReady"
+        @click.stop
       />
       <img
         v-if="currentMedia?.type === 'image'"
