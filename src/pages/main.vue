@@ -7,14 +7,14 @@ import { misskeyCreateReaction, misskeyDeleteReaction, misskeyChannels } from "@
 import { useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
 import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
-import { watchDeep } from "@vueuse/core";
-import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
-import { RouterView, useRouter } from "vue-router";
+import { nextTick, onBeforeMount, onBeforeUnmount, watch } from "vue";
+import { RouterView, useRouter, useRoute } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
 import { MastodonToot } from "@/types/mastodon";
 
 const router = useRouter();
+const route = useRoute();
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
@@ -188,18 +188,14 @@ const initStream = () => {
   });
 };
 
-const currentTimelineSetting = computed(() => {
-  return {
-    userId: timelineStore.current?.userId,
-    channel: timelineStore.current?.channel,
-    options: timelineStore.current?.options,
-  };
-});
-
-watchDeep(currentTimelineSetting, () => {
-  // 設定更新 & 起動時
-  initStream();
-});
+watch(
+  () => route.name,
+  () => {
+    if (route.name === "MainTimeline") {
+      initStream();
+    }
+  },
+);
 
 onBeforeMount(async () => {
   await store.init();

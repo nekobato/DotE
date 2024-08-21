@@ -60,6 +60,12 @@ export const useTimelineStore = defineStore("timeline", () => {
         message: `${currentInstance.value?.name}のタイムラインを取得できませんでした`,
       });
     });
+    if (data.error) {
+      store.$state.errors.push({
+        message: `${currentInstance.value?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
+      });
+      return;
+    }
     if (current.value.channel === "misskey:notifications" || current.value.channel === "mastodon:notifications") {
       setNotifications(data);
     } else {
