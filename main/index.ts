@@ -89,11 +89,7 @@ const setMainWindowMode = async (mode: string) => {
 };
 
 const start = () => {
-  const menu = Menu.buildFromTemplate(
-    menuTemplate({
-      mainWindow,
-    }),
-  );
+  const menu = Menu.buildFromTemplate(menuTemplate());
   Menu.setApplicationMenu(menu);
   setGlobalShortcut();
 

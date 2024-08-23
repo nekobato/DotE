@@ -192,6 +192,7 @@ watch(
   () => route.name,
   () => {
     if (route.name === "MainTimeline") {
+      console.log("initStream");
       initStream();
     }
   },
@@ -203,6 +204,7 @@ onBeforeMount(async () => {
 
   if (timelineStore.isTimelineAvailable) {
     router.push("/main/timeline");
+    initStream();
   } else {
     router.push("/main/settings");
   }

@@ -2,8 +2,7 @@ import electron, { app, dialog } from "electron";
 
 type MenuTemplate = (electron.MenuItemConstructorOptions | electron.MenuItem)[];
 
-const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | null }): MenuTemplate => [
-  // @ts-ignore: appMenu is not defined in d.ts
+const menuTemplate = (): MenuTemplate => [
   {
     label: "DotE",
     submenu: [
@@ -23,18 +22,27 @@ const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | nul
         type: "separator",
       },
       {
-        id: "reload",
-        label: "Reload Timeline",
-        click: () => {
-          mainWindow?.webContents.reload();
-        },
+        role: "services",
       },
       {
         type: "separator",
       },
       {
-        id: "quit",
-        label: "Quit DotE",
+        label: "Close DotE",
+        role: "hide",
+        accelerator: "CommandOrControl+W",
+      },
+      {
+        label: "Hide DotE",
+        role: "hide",
+      },
+      {
+        role: "hideOthers",
+      },
+      {
+        role: "unhide",
+      },
+      {
         role: "quit",
       },
     ],
@@ -43,10 +51,17 @@ const menuTemplate = ({ mainWindow }: { mainWindow: electron.BrowserWindow | nul
     label: "Edit",
     role: "editMenu",
   },
-  // @ts-ignore: viewMenu is not defined in d.ts
   {
     label: "View",
-    role: "viewMenu",
+    // Customized ViewMenu for excluding toggleDevTools
+    submenu: [
+      { role: "reload" },
+      { role: "forceReload" },
+      { type: "separator" },
+      { role: "resetZoom" },
+      { role: "zoomIn" },
+      { role: "zoomOut" },
+    ],
   },
 ];
 
