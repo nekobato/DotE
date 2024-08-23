@@ -115,6 +115,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="media-viewer" @click="closeWindow">
     <div class="media-container" v-show="!isLoading">
+      <img
+        v-if="currentMedia?.type === 'image'"
+        :src="currentMedia.url"
+        :width="imageSize.width"
+        :height="imageSize.height"
+        @load="onReady"
+      />
       <video
         v-if="currentMedia?.type === 'video'"
         :src="currentMedia.url"
@@ -124,13 +131,6 @@ onBeforeUnmount(() => {
         controls
         @canplay="onReady"
         @click.stop
-      />
-      <img
-        v-if="currentMedia?.type === 'image'"
-        :src="currentMedia.url"
-        :width="imageSize.width"
-        :height="imageSize.height"
-        @load="onReady"
       />
       <audio v-if="currentMedia?.type === 'audio'" :src="currentMedia.url" @load="onReady" controls @click.stop />
     </div>
@@ -161,6 +161,8 @@ onBeforeUnmount(() => {
 img,
 video,
 audio {
+  position: relative;
+  z-index: 1;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -175,6 +177,7 @@ audio {
 }
 .controller {
   position: absolute;
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
