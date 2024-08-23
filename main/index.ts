@@ -148,6 +148,7 @@ const start = () => {
         postWindow?.hide();
         break;
       case "post:reaction":
+      case "post:repost":
         postWindow?.webContents.send(event, data);
         postWindow?.center();
         postWindow?.show();

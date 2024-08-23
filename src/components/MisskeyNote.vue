@@ -40,7 +40,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction"]);
+const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction", "repost"]);
 
 const postType = computed(() => {
   if (props.post.renote) {
@@ -111,6 +111,10 @@ const openReactionWindow = () => {
   emit("newReaction", props.post.id);
 };
 
+const openRepostWindow = () => {
+  emit("repost", props.post.id);
+};
+
 const onClickReaction = (postId: string, reaction: string) => {
   emit("reaction", { postId, reaction });
 };
@@ -174,10 +178,13 @@ onBeforeUnmount(() => {
     </div>
     <div class="dote-post-actions">
       <button class="dote-post-action" @click="refreshPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
+        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-fill" />
       </button>
       <button class="dote-post-action" @click="openReactionWindow">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
+      </button>
+      <button class="dote-post-action" @click="openRepostWindow">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
       </button>
       <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />

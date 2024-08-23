@@ -576,7 +576,7 @@ export default defineComponent({
     border-radius: 2px;
   }
 
-  code: {
+  code {
     display: block;
     width: 100%;
   }

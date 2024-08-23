@@ -25,6 +25,12 @@ window.ipc?.on("post:reaction", (_, payload) => {
   router.push("/post/reaction");
 });
 
+window.ipc?.on("post:repost", (_, payload) => {
+  pagedata.value = payload;
+  console.log(payload);
+  router.push("/post/repost");
+});
+
 window.ipc?.on("post:close", () => {
   pagedata.value = {};
   router.replace("/post");

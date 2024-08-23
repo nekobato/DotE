@@ -90,6 +90,14 @@ const openNewReaction = (noteId: string) => {
   });
 };
 
+const openRepostWindow = (noteId: string) => {
+  ipcSend("post:repost", {
+    instanceUrl: timelineStore.currentInstance?.url,
+    token: timelineStore.currentUser?.token,
+    noteId,
+  });
+};
+
 const refreshPost = (noteId: string) => {
   timelineStore.misskeyUpdatePost({ postId: noteId });
 };
@@ -148,6 +156,7 @@ onMounted(() => {
           @reaction="onReaction"
           @newReaction="openNewReaction"
           @refreshPost="refreshPost"
+          @repost="openRepostWindow"
         />
         <MisskeyNotification
           v-if="timelineStore.current.channel === 'misskey:notifications'"
