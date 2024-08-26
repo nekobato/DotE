@@ -239,7 +239,6 @@ onMounted(() => {
     <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:user-1-line" class="nn-icon size-small" />
-        <span class="label">アカウント</span>
       </div>
       <div class="actions for-select">
         <ElSelect v-model="props.timeline.userId" size="small" @change="onChangeUser">
@@ -255,7 +254,6 @@ onMounted(() => {
     <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:list-check-3-line" class="nn-icon size-small" />
-        <span class="label">タイムライン</span>
       </div>
       <div class="actions for-select">
         <ElSelect v-model="props.timeline.channel" size="small" @change="onChangeStream">

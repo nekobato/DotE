@@ -119,7 +119,7 @@ const settings = () => {
   display: flex;
   flex: 1 0 auto;
   align-items: center;
-  height: 24px;
+  height: 40px;
   overflow: hidden;
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);

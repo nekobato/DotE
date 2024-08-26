@@ -29,15 +29,13 @@ input {
 
 .dote-field-group-title {
   display: block;
-  padding: 8px 16px 4px;
+  padding: 8px 16px 0px;
   color: #bababa;
   font-weight: bold;
-  font-size: 0.8rem;
-  border-top: 1px solid var(--dote-border-color);
+  font-size: 1rem;
 
-  &.no-border {
-    margin-top: 0;
-    border-top: none;
+  & + * {
+    margin-top: 16px;
   }
 }
 

@@ -6,7 +6,7 @@ import MisskeyNote from "@/components/MisskeyNote.vue";
 import MisskeyNotification from "@/components/MisskeyNotification.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
-import WindowHeader from "@/components/WindowHeader.vue";
+import HeaderTimeline from "@/components/HeaderTimeline.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
 import { useStore } from "@/store";
@@ -122,7 +122,7 @@ onMounted(() => {
 
 <template>
   <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
-    <WindowHeader windowType="main" v-show="!isHazeMode" class="header" />
+    <HeaderTimeline v-show="!isHazeMode" class="header" />
     <div class="dote-timeline-container" v-if="store.errors.length">
       <div class="dote-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
@@ -234,7 +234,6 @@ body::-webkit-scrollbar {
   position: relative;
   width: 100%;
   height: 100%;
-  padding-top: 8px;
   overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -252,7 +251,7 @@ body::-webkit-scrollbar {
 }
 .scroll-to-top {
   position: fixed;
-  top: 32px;
+  top: 48px;
   right: 0;
   left: 0;
   display: inline-flex;

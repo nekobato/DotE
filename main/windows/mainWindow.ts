@@ -13,17 +13,19 @@ export function createMainWindow() {
     width: settings.windowSize.width || 360,
     height: settings.windowSize.height || screen.getPrimaryDisplay().workAreaSize.height - 24, // size of Mac tray size
     minWidth: 360,
-    minHeight: 240,
+    minHeight: 360,
     resizable: true,
     webPreferences: {
       preload: preload,
     },
-    frame: false,
+    frame: true,
     transparent: true,
     hasShadow: false,
     skipTaskbar: false,
-    roundedCorners: false,
     show: true,
+    titleBarStyle: "hidden",
+    titleBarOverlay: true,
+    trafficLightPosition: { x: 8, y: 12 },
     icon: join("build", `app_icon.png`),
   });
 
