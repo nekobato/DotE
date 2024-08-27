@@ -154,6 +154,24 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
+  const changeActiveTimeline = async (index: number) => {
+    if (store.timelines[index].available) return;
+    store.timelines.forEach(async (timeline, i) => {
+      if (i === index) {
+        await updateTimeline({
+          ...timeline,
+          available: true,
+        });
+      } else {
+        await updateTimeline({
+          ...timeline,
+          available: false,
+        });
+      }
+    });
+    await store.initTimelines();
+  };
+
   const addNewPost = (post: DotEPost) => {
     // abort if no posts
     if (!store.timelines[currentIndex.value]?.posts) return;
@@ -408,6 +426,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     fetchDiffPosts,
     updateTimeline,
     createTimeline,
+    changeActiveTimeline,
     addNewPost,
     updatePost,
     removePost,

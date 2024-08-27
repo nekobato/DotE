@@ -16,7 +16,7 @@ const appLogoImagePathMap = {
 };
 
 const store = useStore();
-const { currentInstance, currentUser, current } = useTimelineStore();
+const { currentInstance, currentUser, current, changeActiveTimeline } = useTimelineStore();
 const { findUser } = useUsersStore();
 const { findInstanceByUserId } = useInstanceStore();
 
@@ -44,7 +44,6 @@ const currentTimelineImages = computed(() => {
 });
 
 const timelineWithImages = computed(() => {
-  console.log("### timelines", store.$state.timelines);
   return store.$state.timelines.map((timeline) => {
     const instance = findInstanceByUserId(timeline.userId);
     return {
@@ -79,15 +78,22 @@ const settings = () => {
   router.push("/main/settings");
 };
 
-const changeTimeline = (_: any) => {
+const changeTimeline = async (index: number) => {
+  await changeActiveTimeline(index);
   isDetailVisible.value = false;
+  location.reload();
 };
 </script>
 
 <template>
   <div class="header">
     <div class="summary" :class="{ detailed: isDetailVisible }">
-      <div class="timeline-images open-button" @click="toggleMenu" ref="toggleButtonRef">
+      <div
+        class="timeline-images open-button"
+        :class="{ open: isDetailVisible }"
+        @click="toggleMenu"
+        ref="toggleButtonRef"
+      >
         <img class="image app" :src="currentTimelineImages.app" alt="app" />
         <img class="image instance" :src="currentTimelineImages.instance" alt="instance" />
         <img class="image user" :src="currentTimelineImages.account" alt="account" />
@@ -110,7 +116,7 @@ const changeTimeline = (_: any) => {
         </button>
       </div>
       <div class="timeline-list">
-        <div class="timeline-item" v-for="timeline in timelineWithImages" @click="changeTimeline">
+        <div class="timeline-item" v-for="(timeline, index) in timelineWithImages" @click="changeTimeline(index)">
           <div
             class="timeline-images"
             :class="{
@@ -161,6 +167,10 @@ const changeTimeline = (_: any) => {
 
   &.open-button {
     cursor: pointer;
+
+    &.open * {
+      visibility: hidden;
+    }
   }
 
   .image {
