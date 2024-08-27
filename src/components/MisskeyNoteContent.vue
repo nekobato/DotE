@@ -173,36 +173,6 @@ const isTextHide = computed(() => {
 </style>
 
 <style lang="scss" scoped>
-.note-content {
-  &.renote {
-    height: 0;
-  }
-  &.quoted {
-    .username {
-      margin-left: 16px;
-    }
-  }
-  &.quoted:not(.no-parent) {
-    margin-top: 4px;
-    padding-top: 4px;
-    /* dashed boarder */
-    background-image: linear-gradient(
-      to right,
-      var(--dote-color-white-t2),
-      var(--dote-color-white-t2) 4px,
-      transparent 4px,
-      transparent 6px
-    );
-    background-repeat: repeat-x;
-    background-size: 8px 1px;
-  }
-}
-.post-type-mark {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-  color: #adadad;
-}
 .username {
   display: flex;
   align-items: center;
@@ -219,6 +189,35 @@ const isTextHide = computed(() => {
   cursor: pointer;
 }
 
+.note-content {
+  &.renote {
+    height: 0;
+  }
+  &.quoted:not(.no-parent) {
+    margin-top: 4px;
+    padding-top: 4px;
+    /* dashed boarder */
+    background-image: linear-gradient(
+      to right,
+      var(--dote-color-white-t2),
+      var(--dote-color-white-t2) 4px,
+      transparent 4px,
+      transparent 6px
+    );
+    background-repeat: repeat-x;
+    background-size: 8px 1px;
+  }
+  &.quoted .username {
+    margin-left: 16px;
+  }
+}
+.post-type-mark {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  color: #adadad;
+}
+
 .dote-avatar {
   flex-shrink: 0;
   width: 32px;
@@ -233,7 +232,6 @@ const isTextHide = computed(() => {
     top: 28px;
     width: 20px;
     height: 20px;
-    z-index: 1;
   }
 
   &.origin-user {
@@ -242,7 +240,7 @@ const isTextHide = computed(() => {
     left: 0;
     width: 20px;
     height: 20px;
-    margin-left: 0px;
+    margin-left: 0;
   }
 
   & + * {
@@ -314,12 +312,12 @@ const isTextHide = computed(() => {
   }
 }
 .line-1 {
-  -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 .line-2 {
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .line-3 {
-  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 </style>

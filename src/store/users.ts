@@ -137,6 +137,11 @@ export const useUsersStore = defineStore("users", () => {
     return result;
   };
 
+  const findUser = (userId: string) => {
+    const user = store.$state.users.find((user) => user.id === userId);
+    return user;
+  };
+
   const findInstance = (instanceId?: string) => {
     const instance = store.$state.instances.find((instance) => {
       return instance.id === instanceId;
@@ -144,5 +149,5 @@ export const useUsersStore = defineStore("users", () => {
     return instance;
   };
 
-  return { users, isEmpty, deleteUser, createUser, checkAndUpdateUsers, postMisskeyAuth, findInstance };
+  return { users, isEmpty, deleteUser, createUser, checkAndUpdateUsers, postMisskeyAuth, findUser, findInstance };
 });

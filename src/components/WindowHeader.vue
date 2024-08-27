@@ -85,32 +85,6 @@ const settings = () => {
     >
       <Icon icon="mingcute:ghost-line" class="nn-icon size-xsmall" />
     </button>
-    <div class="rest"></div>
-    <button
-      class="nn-button type-ghost post"
-      @click="post"
-      v-if="props.windowType === 'main'"
-      :title="buttonTitle('post')"
-    >
-      <Icon icon="mingcute:pencil-line" class="nn-icon size-xsmall" />
-    </button>
-    <div class="rest"></div>
-    <button
-      class="nn-button type-ghost refresh"
-      v-if="props.windowType === 'main'"
-      @click="reload"
-      :title="buttonTitle('reload')"
-    >
-      <Icon icon="mingcute:refresh-1-line" class="nn-icon size-xsmall" />
-    </button>
-    <button
-      class="nn-button type-ghost settings"
-      @click="settings"
-      v-if="props.windowType === 'main'"
-      :title="buttonTitle('settings')"
-    >
-      <Icon icon="mingcute:settings-3-line" class="nn-icon size-xsmall" />
-    </button>
   </div>
 </template>
 
@@ -123,20 +97,12 @@ const settings = () => {
   overflow: hidden;
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);
-  border-radius: 4px;
-}
-.rest {
-  flex: 1;
-  -webkit-app-region: drag;
-  width: 100%;
-  height: 100%;
 }
 .nn-button {
-  &.settings {
-    margin: 0 0 0 auto;
-  }
-  &.post {
-    width: 64px;
+  width: 160px;
+  height: 24px;
+  min-height: auto;
+  &.exit {
     margin: 0 auto;
   }
 }

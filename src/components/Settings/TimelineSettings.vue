@@ -5,7 +5,6 @@ import TimelineForm from "./TimelineForm.vue";
 import { Timeline } from "@shared/types/store";
 import { Icon } from "@iconify/vue";
 import { defaultChannelNameFromType } from "@/utils/dote";
-import { ElCheckbox } from "element-plus";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -31,7 +30,6 @@ const addTimeline = async () => {
     <h2 class="dote-field-group-title">タイムライン</h2>
     <div v-for="timeline in store.timelines" :key="timeline.id">
       <div class="timeline-item">
-        <ElCheckbox v-model="timeline.available" @change="onUpdateTimeline(timeline)" />
         <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
       </div>
     </div>

@@ -6,7 +6,7 @@ import MisskeyNote from "@/components/MisskeyNote.vue";
 import MisskeyNotification from "@/components/MisskeyNotification.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
-import HeaderTimeline from "@/components/HeaderTimeline.vue";
+import Header from "@/components/Header.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
 import { useStore } from "@/store";
@@ -122,7 +122,7 @@ onMounted(() => {
 
 <template>
   <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
-    <HeaderTimeline v-show="!isHazeMode" class="header" />
+    <Header v-show="!isHazeMode" class="header" />
     <div class="dote-timeline-container" v-if="store.errors.length">
       <div class="dote-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />

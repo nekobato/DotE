@@ -29,11 +29,9 @@ const timelineStore = useTimelineStore();
 .settings {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 8px;
 }
 .dote-scroller {
   display: flex;
@@ -43,7 +41,6 @@ const timelineStore = useTimelineStore();
   overflow: auto;
   background: var(--color-background);
   border: 1px solid var(--dote-border-color);
-  border-radius: 8px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
