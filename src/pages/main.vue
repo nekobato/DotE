@@ -21,7 +21,6 @@ const settingsStore = useSettingsStore();
 
 const misskeyStream = useMisskeyStream({
   onChannel: (event, data) => {
-    console.info("onChannel", event, data);
     switch (event) {
       case "note":
         timelineStore.addNewPost(data.body);
@@ -32,7 +31,6 @@ const misskeyStream = useMisskeyStream({
     }
   },
   onNoteUpdated: (event, data) => {
-    console.info("onNoteUpdated", data);
     switch (event) {
       case "reacted":
         console.info("reacted", data);
@@ -47,11 +45,9 @@ const misskeyStream = useMisskeyStream({
     }
   },
   onEmojiAdded: (_, data) => {
-    console.info("onEmojiAdded", data);
     timelineStore.misskeyAddEmoji(data.body.emoji);
   },
   onReconnect: () => {
-    console.info("onReconnect");
     timelineStore.fetchDiffPosts();
   },
 });
@@ -64,19 +60,15 @@ const misskeyPolling = useMisskeyPolling({
 
 const mastodonStream = useMastodonStream({
   onUpdate: (toot) => {
-    console.info("onUpdate", toot);
     timelineStore.addNewPost(toot);
   },
   onStatusUpdate: (toot: MastodonToot) => {
-    console.info("onStatusUpdated", toot);
     timelineStore.updatePost(toot);
   },
   onDelete: (id) => {
-    console.info("onDelete", id);
     timelineStore.removePost(id);
   },
   onReconnect: () => {
-    console.info("onReconnect");
     timelineStore.fetchDiffPosts();
   },
 });

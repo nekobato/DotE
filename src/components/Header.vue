@@ -9,6 +9,7 @@ import { useInstanceStore } from "@/store/instance";
 import { onClickOutside } from "@vueuse/core";
 import ChannelIcon from "./ChannelIcon.vue";
 import { useStore } from "@/store";
+import { nextTick } from "vue";
 
 const appLogoImagePathMap = {
   misskey: "/images/icons/misskey.png",
@@ -16,7 +17,7 @@ const appLogoImagePathMap = {
 };
 
 const store = useStore();
-const { currentInstance, currentUser, current, changeActiveTimeline } = useTimelineStore();
+const timelineStore = useTimelineStore();
 const { findUser } = useUsersStore();
 const { findInstanceByUserId } = useInstanceStore();
 
@@ -36,10 +37,10 @@ onClickOutside(
 
 const currentTimelineImages = computed(() => {
   return {
-    app: currentInstance ? appLogoImagePathMap[currentInstance.type] : "",
-    instance: currentInstance?.iconUrl,
-    account: currentUser?.avatarUrl,
-    channel: current?.channel,
+    app: timelineStore.currentInstance ? appLogoImagePathMap[timelineStore.currentInstance.type] : "",
+    instance: timelineStore.currentInstance?.iconUrl,
+    account: timelineStore.currentUser?.avatarUrl,
+    channel: timelineStore.current?.channel,
   };
 });
 
@@ -63,25 +64,31 @@ const toggleMenu = () => {
 };
 
 const haze = () => {
+  toggleMenu();
   ipcSend("set-mode", { mode: "haze" });
 };
 
 const post = () => {
+  toggleMenu();
   ipcSend("post:create");
 };
 
 const reload = () => {
+  toggleMenu();
   ipcSend("main:reload");
 };
 
 const settings = () => {
+  toggleMenu();
   router.push("/main/settings");
 };
 
 const changeTimeline = async (index: number) => {
-  await changeActiveTimeline(index);
-  isDetailVisible.value = false;
-  location.reload();
+  await timelineStore.changeActiveTimeline(index);
+  toggleMenu();
+  nextTick(() => {
+    timelineStore.fetchInitialPosts();
+  });
 };
 </script>
 
@@ -120,10 +127,10 @@ const changeTimeline = async (index: number) => {
           <div
             class="timeline-images"
             :class="{
-              current: timeline.id === current?.id,
+              current: timeline.id === timelineStore.current?.id,
             }"
           >
-            <img class="image app" :class="currentInstance?.type" :src="timeline.images.app" alt="app" />
+            <img class="image app" :src="timeline.images.app" alt="app" />
             <img class="image instance" :src="timeline.images.instance" alt="instance" />
             <img class="image user" :src="timeline.images.account" alt="account" />
             <ChannelIcon :channel="timeline.images.channel" />

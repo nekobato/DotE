@@ -11,7 +11,6 @@
   height: 100%;
   overflow: hidden;
   background-color: var(--dote-color-white-t1);
-  border-radius: 8px;
 
   &::after {
     position: absolute;

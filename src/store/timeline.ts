@@ -14,21 +14,21 @@ export const useTimelineStore = defineStore("timeline", () => {
   const timelines = computed(() => store.$state.timelines);
 
   const currentUser = computed(() => {
-    return store.users.find((user) => user.id === current?.value?.userId);
+    return store.$state.users.find((user) => user.id === current?.value?.userId);
   });
 
   const currentInstance = computed(() => {
-    return store.instances.find((instance) => instance.id === currentUser?.value?.instanceId);
+    return store.$state.instances.find((instance) => instance.id === currentUser?.value?.instanceId);
   });
 
   const setPosts = (posts: DotEPost[]) => {
     if (store.$state.timelines[currentIndex.value]) {
       store.$state.timelines[currentIndex.value].posts = posts;
 
-      if (store.settings.maxPostCount < store.timelines[currentIndex.value].posts.length) {
-        store.timelines[currentIndex.value].posts = store.timelines[currentIndex.value].posts.slice(
+      if (store.$state.settings.maxPostCount < store.$state.timelines[currentIndex.value].posts.length) {
+        store.$state.timelines[currentIndex.value].posts = store.$state.timelines[currentIndex.value].posts.slice(
           0,
-          store.settings.maxPostCount,
+          store.$state.settings.maxPostCount,
         );
       }
     }
@@ -157,14 +157,15 @@ export const useTimelineStore = defineStore("timeline", () => {
   const changeActiveTimeline = async (index: number) => {
     if (store.timelines[index].available) return;
     store.timelines.forEach(async (timeline, i) => {
+      const { posts, notifications, ...timelineForStore } = timeline;
       if (i === index) {
-        await updateTimeline({
-          ...timeline,
+        await ipcInvoke("db:set-timeline", {
+          ...timelineForStore,
           available: true,
         });
       } else {
-        await updateTimeline({
-          ...timeline,
+        await ipcInvoke("db:set-timeline", {
+          ...timelineForStore,
           available: false,
         });
       }

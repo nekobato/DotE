@@ -278,7 +278,4 @@ body::-webkit-scrollbar {
     }
   }
 }
-.timeline-loading {
-  margin-top: 16px;
-}
 </style>

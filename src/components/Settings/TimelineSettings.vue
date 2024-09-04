@@ -28,9 +28,11 @@ const addTimeline = async () => {
 <template>
   <div class="account-settings dote-post-list" v-if="store.$state.users.length">
     <h2 class="dote-field-group-title">タイムライン</h2>
-    <div v-for="timeline in store.timelines" :key="timeline.id">
-      <div class="timeline-item">
-        <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
+    <div class="timeline-list">
+      <div v-for="timeline in store.timelines" :key="timeline.id">
+        <div class="timeline-item">
+          <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
+        </div>
       </div>
     </div>
     <button class="nn-button size-small add-button" @click="addTimeline">
@@ -42,6 +44,12 @@ const addTimeline = async () => {
 <style lang="scss" scoped>
 .account-settings {
   width: 100%;
+}
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 16px;
 }
 .add-button {
   display: block;
