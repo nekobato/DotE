@@ -43,8 +43,8 @@ importers:
         specifier: ^2.0.1
         version: 2.0.1
       element-plus:
-        specifier: ^2.7.6
-        version: 2.7.6(vue@3.4.33(typescript@5.4.5))
+        specifier: ^2.8.2
+        version: 2.8.2(vue@3.4.33(typescript@5.4.5))
       mfm-js:
         specifier: ^0.24.0
         version: 0.24.0
@@ -1974,8 +1974,8 @@ packages:
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
-  element-plus@2.7.6:
-    resolution: {integrity: sha512-36sw1K23hYjgeooR10U6CiCaCp2wvOqwoFurADZVlekeQ9v5U1FhJCFGEXO6i/kZBBMwsE1c9fxjLs9LENw2Rg==}
+  element-plus@2.8.2:
+    resolution: {integrity: sha512-pqoQlaUmzUFCjjTHyxGO7Cd0CizsQpIaad1ozV9PCaYjh2T4MIMnjfifqiYs2lWoZ/8GVwrRG1WTCfnZEjwfcg==}
     peerDependencies:
       vue: ^3.2.0
 
@@ -5743,7 +5743,7 @@ snapshots:
       '@types/web-bluetooth': 0.0.16
       '@vueuse/metadata': 9.13.0
       '@vueuse/shared': 9.13.0(vue@3.4.33(typescript@5.4.5))
-      vue-demi: 0.14.7(vue@3.4.33(typescript@5.4.5))
+      vue-demi: 0.14.8(vue@3.4.33(typescript@5.4.5))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
@@ -5782,7 +5782,7 @@ snapshots:
 
   '@vueuse/shared@9.13.0(vue@3.4.33(typescript@5.4.5))':
     dependencies:
-      vue-demi: 0.14.7(vue@3.4.33(typescript@5.4.5))
+      vue-demi: 0.14.8(vue@3.4.33(typescript@5.4.5))
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
@@ -6673,7 +6673,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  element-plus@2.7.6(vue@3.4.33(typescript@5.4.5)):
+  element-plus@2.8.2(vue@3.4.33(typescript@5.4.5)):
     dependencies:
       '@ctrl/tinycolor': 3.6.1
       '@element-plus/icons-vue': 2.3.1(vue@3.4.33(typescript@5.4.5))
