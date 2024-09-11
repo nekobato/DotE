@@ -168,7 +168,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   position: relative;
   width: 100%;
   margin: 0;
-  padding: 4px 8px;
+  padding: 8px;
   background-color: transparent;
 
   &.indent-1 {

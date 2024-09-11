@@ -24,6 +24,10 @@ const props = defineProps({
     type: Boolean as PropType<boolean>,
     default: true,
   },
+  showActions: {
+    type: Boolean as PropType<boolean>,
+    default: true,
+  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
@@ -124,7 +128,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
       </button>
     </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost">
+      <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
       </button>
       <button class="dote-post-action" @click="openPost">
@@ -139,7 +143,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
   position: relative;
   width: 100%;
   margin: 0;
-  padding: 4px 8px;
+  padding: 8px;
   background-color: transparent;
 
   &.indent-1 {

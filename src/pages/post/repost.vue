@@ -1,17 +1,33 @@
 <script setup lang="ts">
 import DoteAlert from "@/components/common/DoteAlert.vue";
+import DoteButton from "@/components/common/DoteButton.vue";
 import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
+import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import type { Instance, Timeline, User } from "@shared/types/store";
+import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
+import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
-import { onMounted, reactive, ref } from "vue";
-import DoteButton from "@/components/common/DoteButton.vue";
+import { onMounted, PropType, reactive, ref } from "vue";
+import MisskeyNote from "@/components/MisskeyNote.vue";
+
+type PageProps = {
+  post: MisskeyNoteType | MastodonTootType;
+  emojis: MisskeyEntities.EmojiSimple[];
+};
+
+const props = defineProps({
+  data: {
+    type: Object as PropType<PageProps>,
+    required: true,
+  },
+});
 
 const state = reactive({
   user: undefined as User | undefined,
   timeline: undefined as Timeline | undefined,
   instance: undefined as Instance | undefined,
+  settings: undefined as Settings | undefined,
   post: {
     isSending: false,
     error: "",
@@ -84,7 +100,6 @@ const post = async () => {
 };
 
 const onInput = (value: string) => {
-  console.log(value);
   if (value[value.length - 1] === ":") {
   }
 };
@@ -93,9 +108,12 @@ onMounted(async () => {
   const users = await ipcInvoke("db:get-users");
   const timelines = await ipcInvoke("db:get-timeline-all");
   const instances = await ipcInvoke("db:get-instance-all");
+  state.settings = await ipcInvoke("settings:all");
   state.timeline = timelines.find((timeline: any) => timeline.available);
   state.user = users.find((user: any) => user.id === state.timeline?.userId);
   state.instance = instances.find((instance: any) => instance.id === state.user?.instanceId);
+
+  console.log(state);
 });
 
 document.addEventListener("keydown", (e) => {
@@ -129,12 +147,27 @@ document.addEventListener("keydown", (e) => {
         </DoteAlert>
       </div>
     </div>
-  </div>
-  <div class="emoji-picker-container">
-    <div class="emoji-picker">
-      <div class="emoji-picker-body">
-        <EmojiPicker />
+    <div class="emoji-picker-container">
+      <div class="emoji-picker">
+        <div class="emoji-picker-body">
+          <EmojiPicker />
+        </div>
       </div>
+    </div>
+    <div class="post-container">
+      <MisskeyNote
+        v-if="state.instance?.type === 'misskey' && state.timeline?.channel !== 'misskey:notifications'"
+        class="post-item"
+        :post="props.data.post as MisskeyNoteType"
+        :postStyle="state.settings?.postStyle"
+        :emojis="props.data.emojis"
+        :currentInstanceUrl="state.instance?.url"
+        :hideCw="false"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+        theme="default"
+      />
     </div>
   </div>
 </template>

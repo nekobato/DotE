@@ -6,7 +6,7 @@ import MisskeyNote from "@/components/MisskeyNote.vue";
 import MisskeyNotification from "@/components/MisskeyNotification.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
-import Header from "@/components/Header.vue";
+import TimelineHeader from "@/components/TimelineHeader.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
 import { useStore } from "@/store";
@@ -90,12 +90,11 @@ const openNewReaction = (noteId: string) => {
   });
 };
 
-const openRepostWindow = (noteId: string) => {
-  ipcSend("post:repost", {
-    instanceUrl: timelineStore.currentInstance?.url,
-    token: timelineStore.currentUser?.token,
-    noteId,
-  });
+const openRepostWindow = (data: {
+  post: MisskeyNoteType | MastodonTootType;
+  emojis: MisskeyEntities.EmojiSimple[];
+}) => {
+  ipcSend("post:repost", data);
 };
 
 const refreshPost = (noteId: string) => {
@@ -122,7 +121,7 @@ onMounted(() => {
 
 <template>
   <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
-    <Header v-show="!isHazeMode" class="header" />
+    <TimelineHeader v-show="!isHazeMode" class="header" />
     <div class="dote-timeline-container" v-if="store.errors.length">
       <div class="dote-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />

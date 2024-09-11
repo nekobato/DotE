@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import WindowHeader from "@/components/WindowHeader.vue";
+import Header from "@/components/Header.vue";
 import Layout from "@/components/layouts/WithHeader.vue";
 import { ipcSend } from "@/utils/ipc";
 import { ref } from "vue";
@@ -47,7 +47,7 @@ document.addEventListener("keydown", (e) => {
 
 <template>
   <Layout>
-    <WindowHeader windowType="post" />
+    <Header windowType="post" />
     <RouterView :data="pagedata" @close="" />
   </Layout>
 </template>

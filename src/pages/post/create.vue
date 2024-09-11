@@ -84,7 +84,6 @@ const post = async () => {
 };
 
 const onInput = (value: string) => {
-  console.log(value);
   if (value[value.length - 1] === ":") {
   }
 };

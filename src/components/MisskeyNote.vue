@@ -34,6 +34,10 @@ const props = defineProps({
     type: Boolean as PropType<boolean>,
     default: true,
   },
+  showActions: {
+    type: Boolean as PropType<boolean>,
+    default: true,
+  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
@@ -112,7 +116,7 @@ const openReactionWindow = () => {
 };
 
 const openRepostWindow = () => {
-  emit("repost", props.post.id);
+  emit("repost", { post: props.post, emojis: props.emojis });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
@@ -177,13 +181,13 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost">
+      <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-fill" />
       </button>
-      <button class="dote-post-action" @click="openReactionWindow">
+      <button class="dote-post-action" @click="openReactionWindow" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
       </button>
-      <button class="dote-post-action" @click="openRepostWindow">
+      <button class="dote-post-action" @click="openRepostWindow" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
       </button>
       <button class="dote-post-action" @click="openPost">
@@ -198,7 +202,7 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   margin: 0;
-  padding: 4px 8px;
+  padding: 8px;
   background-color: transparent;
 
   &.indent-1 {

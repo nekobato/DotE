@@ -3,7 +3,7 @@ import AccountSettings from "@/components/Settings/AccountSettings.vue";
 import ApplicationInformation from "@/components/Settings/ApplicationInformation.vue";
 import ApplicationSettings from "@/components/Settings/ApplicationSettings.vue";
 import TimelineSettings from "@/components/Settings/TimelineSettings.vue";
-import WindowHeader from "@/components/WindowHeader.vue";
+import Header from "@/components/Header.vue";
 import { useTimelineStore } from "@/store/timeline";
 import { ElDivider } from "element-plus";
 
@@ -12,7 +12,7 @@ const timelineStore = useTimelineStore();
 
 <template>
   <div class="settings">
-    <WindowHeader windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
+    <Header windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
     <div class="dote-scroller">
       <AccountSettings />
       <ElDivider class="divider" />

@@ -27,7 +27,7 @@ export function createPostWindow() {
 
   if (process.env.NODE_ENV === "development") {
     win.loadURL(pageRoot.development + "#" + pageName);
-    // win.webContents.openDevTools();
+    win.webContents.openDevTools();
   } else {
     win.loadFile(join(pageRoot.production), { hash: pageName });
   }
