@@ -10,6 +10,7 @@ import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { onMounted, PropType, reactive, ref } from "vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
+import { computed } from "vue";
 
 type PageProps = {
   post: MisskeyNoteType | MastodonTootType;
@@ -35,6 +36,34 @@ const state = reactive({
 });
 const text = ref("");
 const textCw = ref("");
+
+const mastodonToot = computed(() => {
+  if (state.instance?.type === "mastodon") {
+    return {
+      account: {
+        name: state.user?.name,
+        host: state.instance?.url,
+        avatarUrl: state.user?.avatarUrl,
+      },
+      reblog: props.data.post as MastodonTootType["reblog"],
+    } as unknown as MastodonTootType;
+  }
+});
+
+const misskeyNote = computed(() => {
+  if (state.instance?.type === "misskey") {
+    const post = props.data.post as MisskeyNoteType;
+    return {
+      user: {
+        name: state.user?.name,
+        host: state.instance?.url,
+        avatarUrl: state.user?.avatarUrl,
+      },
+      renote: post.renote && !post.text ? post.renote : post,
+    } as MisskeyNoteType;
+  }
+  return null;
+});
 
 const postToMisskey = async () => {
   const res = await ipcInvoke("api", {
@@ -82,7 +111,7 @@ const postToMastodon = async () => {
   }
 };
 
-const post = async () => {
+const submit = async () => {
   state.post.isSending = true;
   if (text) {
     switch (state.instance?.type) {
@@ -91,8 +120,6 @@ const post = async () => {
         break;
       case "mastodon":
         await postToMastodon();
-        break;
-      default:
         break;
     }
   }
@@ -119,7 +146,7 @@ onMounted(async () => {
 document.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" && e.shiftKey) || (e.key === "Enter" && e.metaKey)) {
     e.preventDefault();
-    post();
+    submit();
   }
 });
 </script>
@@ -131,7 +158,7 @@ document.addEventListener("keydown", (e) => {
       <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>
       <DoteButton
         class="post-action size-small"
-        @click="post"
+        @click="submit"
         :disabled="text.length === 0 || state.post.isSending"
         :loading="state.post.isSending"
       >
@@ -154,12 +181,11 @@ document.addEventListener("keydown", (e) => {
         </div>
       </div>
     </div>
-    <div class="post-container">
+    <div class="post-container" v-if="data.post">
       <MisskeyNote
-        v-if="state.instance?.type === 'misskey' && state.timeline?.channel !== 'misskey:notifications'"
+        v-if="misskeyNote"
         class="post-item"
-        :post="props.data.post as MisskeyNoteType"
-        :postStyle="state.settings?.postStyle"
+        :post="misskeyNote"
         :emojis="props.data.emojis"
         :currentInstanceUrl="state.instance?.url"
         :hideCw="false"
@@ -245,6 +271,24 @@ document.addEventListener("keydown", (e) => {
     .select {
       width: 120px;
     }
+  }
+}
+.post-container {
+  margin-top: 16px;
+  padding-top: 16px;
+  /* dashed boarder */
+  background-image: linear-gradient(
+    to right,
+    var(--dote-color-white-t2),
+    var(--dote-color-white-t2) 4px,
+    transparent 4px,
+    transparent 6px
+  );
+  background-repeat: repeat-x;
+  background-size: 8px 1px;
+
+  .post-item {
+    padding: 0;
   }
 }
 </style>

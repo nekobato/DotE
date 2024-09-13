@@ -47,6 +47,8 @@ const props = defineProps({
   },
 });
 
+console.log(props.note);
+
 const emit = defineEmits(["openUserPage"]);
 
 const noteEmojis = computed(() => {
@@ -230,6 +232,7 @@ const isTextHide = computed(() => {
   &.mini {
     position: relative;
     top: 28px;
+    z-index: 1;
     width: 20px;
     height: 20px;
   }
