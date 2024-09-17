@@ -27,8 +27,7 @@ window.ipc?.on("post:reaction", (_, payload) => {
 
 window.ipc?.on("post:repost", (_, payload) => {
   pagedata.value = payload;
-  console.log(payload);
-  router.push("/post/repost");
+  router.push("/post/create");
 });
 
 window.ipc?.on("post:close", () => {

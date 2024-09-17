@@ -33,11 +33,6 @@ const routes = [
         name: "PostReaction",
         component: () => import("./pages/post/reaction.vue"),
       },
-      {
-        path: "/post/repost",
-        name: "PostRepost",
-        component: () => import("./pages/post/repost.vue"),
-      },
     ],
   },
   {

@@ -52,7 +52,7 @@ console.log(props.note);
 const emit = defineEmits(["openUserPage"]);
 
 const noteEmojis = computed(() => {
-  const remoteEmojis = emojisObject2Array(props.note.reactionEmojis);
+  const remoteEmojis = emojisObject2Array(props.note.reactionEmojis || {});
   const localEmojis = props.emojis || [];
   return [...remoteEmojis, ...localEmojis];
 });

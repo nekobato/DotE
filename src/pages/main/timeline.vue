@@ -214,7 +214,7 @@ body::-webkit-scrollbar {
 <style lang="scss" scoped>
 .header {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 .page-container {
   display: flex;
@@ -229,6 +229,7 @@ body::-webkit-scrollbar {
 }
 .timeline-container {
   position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
@@ -251,6 +252,7 @@ body::-webkit-scrollbar {
   top: 48px;
   right: 0;
   left: 0;
+  z-index: 1;
   display: inline-flex;
   width: 80px;
   margin: 0 auto;

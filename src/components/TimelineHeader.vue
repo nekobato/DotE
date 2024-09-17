@@ -151,7 +151,6 @@ const changeTimeline = async (index: number) => {
 <style lang="scss" scoped>
 .header {
   position: relative;
-  z-index: 1000;
   height: 40px;
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);
@@ -194,7 +193,6 @@ const changeTimeline = async (index: number) => {
 }
 .summary {
   position: relative;
-  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -215,13 +213,11 @@ const changeTimeline = async (index: number) => {
   position: absolute;
   top: 39px;
   left: 0;
-  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  /* height: 200px; */
   background-color: var(--dote-background-color);
   border-bottom: 1px solid var(--dote-border-color);
   box-shadow:
