@@ -101,10 +101,20 @@ const changeTimeline = async (index: number) => {
         @click="toggleMenu"
         ref="toggleButtonRef"
       >
-        <img class="image app" :src="currentTimelineImages.app" alt="app" />
-        <img class="image instance" :src="currentTimelineImages.instance" alt="instance" />
-        <img class="image user" :src="currentTimelineImages.account" alt="account" />
-        <ChannelIcon :channel="currentTimelineImages.channel" />
+        <img class="image app" v-if="currentTimelineImages.app" :src="currentTimelineImages.app" alt="app" />
+        <img
+          class="image instance"
+          v-if="currentTimelineImages.instance"
+          :src="currentTimelineImages.instance"
+          alt="instance"
+        />
+        <img
+          class="image user"
+          v-if="currentTimelineImages.account"
+          :src="currentTimelineImages.account"
+          alt="account"
+        />
+        <ChannelIcon v-if="currentTimelineImages.channel" :channel="currentTimelineImages.channel" />
       </div>
     </div>
     <div class="detail" v-if="isDetailVisible" ref="detailRef">
@@ -130,10 +140,15 @@ const changeTimeline = async (index: number) => {
               current: timeline.id === timelineStore.current?.id,
             }"
           >
-            <img class="image app" :src="timeline.images.app" alt="app" />
-            <img class="image instance" :src="timeline.images.instance" alt="instance" />
-            <img class="image user" :src="timeline.images.account" alt="account" />
-            <ChannelIcon :channel="timeline.images.channel" />
+            <img class="image app" v-if="timeline.images.app" :src="timeline.images.app" alt="app" />
+            <img
+              class="image instance"
+              v-if="timeline.images.instance"
+              :src="timeline.images.instance"
+              alt="instance"
+            />
+            <img class="image user" v-if="timeline.images.account" :src="timeline.images.account" alt="account" />
+            <ChannelIcon v-if="timeline.images.channel" :channel="timeline.images.channel" />
           </div>
           <div class="timeline-title">
             <div class="account">
