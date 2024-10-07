@@ -63,6 +63,7 @@ const misskeyNote = computed(() => {
   if (state.instance?.type === "misskey") {
     const renotePost = props.data.post as MisskeyNoteType;
     return {
+      text: text.value,
       user: {
         name: state.user?.name,
         host: state.instance?.url,
@@ -76,7 +77,7 @@ const misskeyNote = computed(() => {
 
 const submitType = computed(() => {
   if (state.instance?.type === "misskey") {
-    if (misskeyNote.value) {
+    if (misskeyNote.value?.renote) {
       return text.value ? "quote" : "renote";
     }
     return "note";
