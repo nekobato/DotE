@@ -1,5 +1,7 @@
 import * as path from "path";
 
+export const isDevelopment = process.env.NODE_ENV === "development";
+
 process.env.ROOT = path.join(__dirname, "..");
 process.env.DIST = path.join(process.env.ROOT, "dist-electron");
 process.env.VITE_PUBLIC = process.env.VITE_DEV_SERVER_URL

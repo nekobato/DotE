@@ -23,6 +23,9 @@ export function createPostWindow() {
     skipTaskbar: false,
     alwaysOnTop: false,
     fullscreenable: false,
+    titleBarStyle: "hidden",
+    titleBarOverlay: true,
+    trafficLightPosition: { x: 8, y: 12 },
   });
 
   if (process.env.NODE_ENV === "development") {

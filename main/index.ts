@@ -122,6 +122,7 @@ const start = () => {
           height: workAreaSize.height,
         });
         mediaViewerWindow?.center();
+        console.log("media-viewer:open", data);
         mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.show();
         mediaViewerWindow?.focus();

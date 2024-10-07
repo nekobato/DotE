@@ -132,7 +132,14 @@ onBeforeUnmount(() => {
         @canplay="onReady"
         @click.stop
       />
-      <audio v-if="currentMedia?.type === 'audio'" :src="currentMedia.url" @load="onReady" controls @click.stop />
+      <audio
+        class="audio-player"
+        v-if="currentMedia?.type === 'audio'"
+        :src="currentMedia.url"
+        @loadedmetadata="onReady"
+        controls
+        @click.stop
+      />
     </div>
     <Loading class="loading" v-if="isLoading" />
     <div class="controller">
@@ -223,5 +230,8 @@ audio {
     width: 500px;
     margin: auto;
   }
+}
+.audio-player {
+  width: 480px;
 }
 </style>
