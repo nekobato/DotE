@@ -49,8 +49,8 @@ importers:
         specifier: ^0.24.0
         version: 0.24.0
       misskey-js:
-        specifier: ^2024.5.0
-        version: 2024.5.0
+        specifier: ^2024.9.0
+        version: 2024.9.0
       nanoid:
         specifier: ^5.0.7
         version: 5.0.7
@@ -3043,8 +3043,8 @@ packages:
     resolution: {integrity: sha512-bAxsR8BVfj60DWXHE3u30oHzfl4G7khkSuPW+qvpd7jFRHm7dLxOjUk1EHACJ/hxLY8phGJ0YhYHZo7jil7Qdg==}
     engines: {node: '>= 8'}
 
-  misskey-js@2024.5.0:
-    resolution: {integrity: sha512-Bm5tAGIKsPzIH51MCBMbmtggxC/BsIBLv2vYAfQV0LQd9/UEu5ujOsH5p7U+UN5toCTwj50uYxa5Zj9mTbV9eg==}
+  misskey-js@2024.9.0:
+    resolution: {integrity: sha512-oNqz6qSi9Q8TYyYaVkgfMIAJ0Fik9OvsphRCdyqo7CVc6wLX3XdRTDBCUgWaBh9J5CZTWD5sYOwfLfbQH20T+g==}
 
   mitt@3.0.1:
     resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
@@ -7782,7 +7782,7 @@ snapshots:
       minipass: 3.3.6
       yallist: 4.0.0
 
-  misskey-js@2024.5.0:
+  misskey-js@2024.9.0:
     dependencies:
       eventemitter3: 5.0.1
       reconnecting-websocket: 4.4.0
