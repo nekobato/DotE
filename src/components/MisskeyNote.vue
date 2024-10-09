@@ -7,7 +7,6 @@ import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
-import { text2Speech } from "@/utils/text2Speech";
 
 const props = defineProps({
   post: {
