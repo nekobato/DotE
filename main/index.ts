@@ -1,14 +1,4 @@
-import electron, {
-  app,
-  BrowserWindow,
-  dialog,
-  globalShortcut,
-  ipcMain,
-  Menu,
-  powerMonitor,
-  protocol,
-  screen,
-} from "electron";
+import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, powerMonitor, protocol } from "electron";
 import { createMainWindow } from "./windows/mainWindow";
 import { createPostWindow } from "./windows/postWindow";
 import { createMediaViewerWindow } from "./windows/mediaViewerWindow";
@@ -146,7 +136,8 @@ const start = () => {
         break;
       case "post:close":
         postWindow?.webContents.send(event, data);
-        postWindow?.hide();
+        postWindow?.close();
+        postWindow = null;
         break;
       case "post:reaction":
       case "post:repost":
@@ -216,7 +207,6 @@ const start = () => {
   });
 
   mainWindow.on("closed", () => {
-    mainWindow = null;
     app.quit();
   });
 
@@ -228,8 +218,12 @@ const start = () => {
   console.log("initialized");
 };
 
-app.on("will-quit", () => {
+app.on("before-quit", () => {
   globalShortcut.unregisterAll();
+  postWindow?.removeAllListeners();
+  mainWindow = null;
+  mediaViewerWindow = null;
+  postWindow = null;
 });
 
 app.on("activate", async () => {
