@@ -6,7 +6,6 @@ import { MastodonInstanceApiResponse } from "@/types/mastodon";
 
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
-  const instanceStore = useInstanceStore();
 
   const createInstance = async (url: string, type: "misskey" | "mastodon") => {
     switch (type) {
@@ -18,7 +17,7 @@ export const useInstanceStore = defineStore("instance", () => {
   };
 
   const createMisskeyInstance = async (instanceUrl: string) => {
-    const meta = await instanceStore.getMisskeyInstanceMeta(instanceUrl);
+    const meta = await getMisskeyInstanceMeta(instanceUrl);
     if (!meta) return;
     const result = await ipcInvoke("db:upsert-instance", {
       type: "misskey",

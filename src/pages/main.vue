@@ -7,24 +7,25 @@ import { misskeyCreateReaction, misskeyDeleteReaction, misskeyChannels } from "@
 import { useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
 import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
-import { watchDeep } from "@vueuse/core";
-import { computed, nextTick, onBeforeMount, onBeforeUnmount } from "vue";
-import { RouterView, useRouter } from "vue-router";
+import { nextTick, onBeforeMount, onBeforeUnmount, watch } from "vue";
+import { RouterView, useRouter, useRoute } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
 import { MastodonToot } from "@/types/mastodon";
+import { text2Speech } from "@/utils/text2Speech";
 
 const router = useRouter();
+const route = useRoute();
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
 
 const misskeyStream = useMisskeyStream({
   onChannel: (event, data) => {
-    console.info("onChannel", event, data);
     switch (event) {
       case "note":
         timelineStore.addNewPost(data.body);
+        text2Speech(data.body.user.user || data.body.user.username, data.body.text || data.body.renote.text);
         break;
       default:
         console.info("unhandled note", data);
@@ -32,7 +33,6 @@ const misskeyStream = useMisskeyStream({
     }
   },
   onNoteUpdated: (event, data) => {
-    console.info("onNoteUpdated", data);
     switch (event) {
       case "reacted":
         console.info("reacted", data);
@@ -47,11 +47,9 @@ const misskeyStream = useMisskeyStream({
     }
   },
   onEmojiAdded: (_, data) => {
-    console.info("onEmojiAdded", data);
     timelineStore.misskeyAddEmoji(data.body.emoji);
   },
   onReconnect: () => {
-    console.info("onReconnect");
     timelineStore.fetchDiffPosts();
   },
 });
@@ -64,19 +62,15 @@ const misskeyPolling = useMisskeyPolling({
 
 const mastodonStream = useMastodonStream({
   onUpdate: (toot) => {
-    console.info("onUpdate", toot);
     timelineStore.addNewPost(toot);
   },
   onStatusUpdate: (toot: MastodonToot) => {
-    console.info("onStatusUpdated", toot);
     timelineStore.updatePost(toot);
   },
   onDelete: (id) => {
-    console.info("onDelete", id);
     timelineStore.removePost(id);
   },
   onReconnect: () => {
-    console.info("onReconnect");
     timelineStore.fetchDiffPosts();
   },
 });
@@ -188,18 +182,15 @@ const initStream = () => {
   });
 };
 
-const currentTimelineSetting = computed(() => {
-  return {
-    userId: timelineStore.current?.userId,
-    channel: timelineStore.current?.channel,
-    options: timelineStore.current?.options,
-  };
-});
-
-watchDeep(currentTimelineSetting, () => {
-  // 設定更新 & 起動時
-  initStream();
-});
+watch(
+  () => route.name,
+  () => {
+    if (route.name === "MainTimeline") {
+      console.log("initStream");
+      initStream();
+    }
+  },
+);
 
 onBeforeMount(async () => {
   await store.init();
@@ -207,6 +198,7 @@ onBeforeMount(async () => {
 
   if (timelineStore.isTimelineAvailable) {
     router.push("/main/timeline");
+    initStream();
   } else {
     router.push("/main/settings");
   }

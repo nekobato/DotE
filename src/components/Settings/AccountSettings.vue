@@ -215,7 +215,7 @@ const getInstanceIconFromUser = (user: User) => {
 
 <template>
   <div class="account-settings dote-post-list">
-    <h2 class="dote-field-group-title no-border">アカウント</h2>
+    <h2 class="dote-field-group-title">アカウント</h2>
     <div class="accounts-container" v-for="user in store.users" :key="user.id">
       <div class="dote-field-row">
         <ElAvatar shape="square" :size="40" :src="getInstanceIconFromUser(user)" class="avatar" />
@@ -252,8 +252,7 @@ const getInstanceIconFromUser = (user: User) => {
     <div class="dote-field-row as-thread indent-1" :class="{ active: newAccount.progress !== 'default' }">
       <div class="actions">
         <button class="nn-button size-small action" v-if="newAccount.progress === 'default'" @click="resetStep">
-          <Icon icon="ion:plus" class="nn-icon" />
-          アカウント追加
+          <Icon icon="mingcute:add-fill" class="nn-icon" />
         </button>
         <button class="nn-button size-small action" v-if="newAccount.progress !== 'default'" @click="resetStatues">
           <Icon icon="ion:close" class="nn-icon" />
@@ -308,6 +307,7 @@ const getInstanceIconFromUser = (user: User) => {
 <style lang="scss" scoped>
 .account-settings {
   width: 100%;
+  padding: 8px 0 0;
 }
 .avatar {
   background-color: #fff;

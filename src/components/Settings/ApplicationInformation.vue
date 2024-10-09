@@ -18,6 +18,7 @@ import { information } from "@/store/information";
 <style lang="scss" scoped>
 .information {
   width: 100%;
+  padding-bottom: 24px;
 }
 
 .content {

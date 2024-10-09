@@ -86,6 +86,14 @@ export type Settings = {
   shortcuts: {
     toggleTimeline: string;
   };
+  text2Speech: {
+    enabled: boolean;
+    rate: number;
+    pitch: number;
+    volume: number;
+    voice: string;
+    hookUrl: string;
+  };
   misskey: {
     hideCw: boolean;
     showReactions: boolean;

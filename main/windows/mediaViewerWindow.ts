@@ -1,6 +1,6 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
-import { pageRoot, preload } from "../static";
+import { isDevelopment, pageRoot, preload } from "../static";
 
 const pageName = "/media-viewer";
 
@@ -10,6 +10,7 @@ export function createMediaViewerWindow() {
     resizable: true,
     webPreferences: {
       preload: preload,
+      devTools: isDevelopment,
     },
     frame: false,
     transparent: true,

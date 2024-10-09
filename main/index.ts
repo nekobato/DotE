@@ -89,11 +89,7 @@ const setMainWindowMode = async (mode: string) => {
 };
 
 const start = () => {
-  const menu = Menu.buildFromTemplate(
-    menuTemplate({
-      mainWindow,
-    }),
-  );
+  const menu = Menu.buildFromTemplate(menuTemplate());
   Menu.setApplicationMenu(menu);
   setGlobalShortcut();
 
@@ -126,6 +122,7 @@ const start = () => {
           height: workAreaSize.height,
         });
         mediaViewerWindow?.center();
+        console.log("media-viewer:open", data);
         mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.show();
         mediaViewerWindow?.focus();
@@ -152,6 +149,7 @@ const start = () => {
         postWindow?.hide();
         break;
       case "post:reaction":
+      case "post:repost":
         postWindow?.webContents.send(event, data);
         postWindow?.center();
         postWindow?.show();

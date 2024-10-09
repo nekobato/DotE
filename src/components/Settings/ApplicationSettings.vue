@@ -69,6 +69,10 @@ const onChangeHideCw = async (value: string | number | boolean) => {
 const onChangeShowReaction = async (value: string | number | boolean) => {
   await settingsStore.setMisskeyShowReactions(!!value);
 };
+
+const onChangeText2Speech = async (value: string | number | boolean) => {
+  await settingsStore.setText2SpeechEnabled(!!value);
+};
 </script>
 
 <template>
@@ -119,6 +123,18 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
         </ElSelect>
       </div>
     </div>
+
+    <div class="dote-field-row indent-1">
+      <div class="content">
+        <span class="title">投稿が追加された時に読み上げる</span>
+      </div>
+      <div class="form-actions">
+        <ElSwitch :model-value="store.settings.text2Speech.enabled" @change="onChangeText2Speech" />
+      </div>
+    </div>
+
+    <!-- Misskey -->
+
     <h2 class="dote-field-group-title">Misskey</h2>
     <div class="dote-field-row indent-1">
       <div class="content">

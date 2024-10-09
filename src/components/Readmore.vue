@@ -73,7 +73,6 @@ const readmore = async () => {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin: 8px 0 16px;
 }
 
 .readmore-button {
@@ -84,7 +83,8 @@ const readmore = async () => {
   height: 56px;
   color: var(--dote-text-color);
   background-color: var(--dote-background-color);
-  border-radius: 8px;
+  border: none;
+  border-radius: 0;
   transition: background-color 0.2s;
 }
 </style>

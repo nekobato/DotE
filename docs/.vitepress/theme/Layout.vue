@@ -17,8 +17,8 @@ const { site, frontmatter } = useData();
 
 <style scoped>
 .contents {
-  background: var(--color-background);
   min-height: 100%;
   padding: 40px;
+  background: var(--color-background);
 }
 </style>

@@ -23,14 +23,22 @@ export function createPostWindow() {
     skipTaskbar: false,
     alwaysOnTop: false,
     fullscreenable: false,
+    titleBarStyle: "hidden",
+    titleBarOverlay: true,
+    trafficLightPosition: { x: 8, y: 12 },
   });
 
   if (process.env.NODE_ENV === "development") {
     win.loadURL(pageRoot.development + "#" + pageName);
-    // win.webContents.openDevTools();
+    win.webContents.openDevTools();
   } else {
     win.loadFile(join(pageRoot.production), { hash: pageName });
   }
+
+  win.on("close", (e) => {
+    e.preventDefault();
+    win.hide();
+  });
 
   return win;
 }

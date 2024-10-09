@@ -23,7 +23,6 @@ const props = defineProps({
   width: 100%;
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);
-  border-radius: 8px;
 }
 
 .loading {

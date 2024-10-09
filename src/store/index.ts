@@ -24,8 +24,10 @@ export const methodOfChannel = {
   "mastodon:notifications": "mastodon:getNotifications",
 };
 
+export type DotEPost = MisskeyNote | MastodonToot;
+
 export type TimelineStore = Timeline & {
-  posts: MisskeyNote[] | MastodonToot[];
+  posts: DotEPost[];
   notifications: MisskeyEntities.Notification[] | MastodonNotification[];
 };
 
@@ -50,6 +52,14 @@ export const useStore = defineStore({
       maxPostCount: 500,
       postStyle: "all",
       shortcuts: {} as Settings["shortcuts"],
+      text2Speech: {
+        enabled: false,
+        rate: 1,
+        pitch: 1,
+        volume: 1,
+        voice: "Kyoko",
+        hookUrl: "",
+      },
     } as Settings,
     errors: [] as ErrorItem[],
   }),

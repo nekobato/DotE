@@ -7,6 +7,7 @@ import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
+import { text2Speech } from "@/utils/text2Speech";
 
 const props = defineProps({
   post: {
@@ -34,13 +35,17 @@ const props = defineProps({
     type: Boolean as PropType<boolean>,
     default: true,
   },
+  showActions: {
+    type: Boolean as PropType<boolean>,
+    default: true,
+  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
   },
 });
 
-const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction"]);
+const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction", "repost"]);
 
 const postType = computed(() => {
   if (props.post.renote) {
@@ -65,7 +70,7 @@ const renoteType = computed(() => {
 });
 
 const postAtttachments = computed(() => {
-  return parseMisskeyAttachments(props.post);
+  return parseMisskeyAttachments(props.post, props.currentInstanceUrl);
 });
 
 const reactions = computed(() => {
@@ -109,6 +114,10 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 
 const openReactionWindow = () => {
   emit("newReaction", props.post.id);
+};
+
+const openRepostWindow = () => {
+  emit("repost", { post: props.post, emojis: props.emojis });
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
@@ -173,11 +182,14 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
+      <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-fill" />
       </button>
-      <button class="dote-post-action" @click="openReactionWindow">
+      <button class="dote-post-action" @click="openReactionWindow" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
+      </button>
+      <button class="dote-post-action" @click="openRepostWindow" v-if="props.showActions">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
       </button>
       <button class="dote-post-action" @click="openPost">
         <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
@@ -191,7 +203,7 @@ onBeforeUnmount(() => {
   position: relative;
   width: 100%;
   margin: 0;
-  padding: 4px 8px;
+  padding: 8px;
   background-color: transparent;
 
   &.indent-1 {

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import WindowHeader from "@/components/WindowHeader.vue";
+import Header from "@/components/Header.vue";
 import Layout from "@/components/layouts/WithHeader.vue";
 import { ipcSend } from "@/utils/ipc";
 import { ref } from "vue";
@@ -25,6 +25,11 @@ window.ipc?.on("post:reaction", (_, payload) => {
   router.push("/post/reaction");
 });
 
+window.ipc?.on("post:repost", (_, payload) => {
+  pagedata.value = payload;
+  router.push("/post/create");
+});
+
 window.ipc?.on("post:close", () => {
   pagedata.value = {};
   router.replace("/post");
@@ -41,7 +46,7 @@ document.addEventListener("keydown", (e) => {
 
 <template>
   <Layout>
-    <WindowHeader windowType="post" />
+    <Header windowType="post" />
     <RouterView :data="pagedata" @close="" />
   </Layout>
 </template>

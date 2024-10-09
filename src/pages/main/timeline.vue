@@ -6,7 +6,7 @@ import MisskeyNote from "@/components/MisskeyNote.vue";
 import MisskeyNotification from "@/components/MisskeyNotification.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
-import WindowHeader from "@/components/WindowHeader.vue";
+import TimelineHeader from "@/components/TimelineHeader.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
 import { useStore } from "@/store";
@@ -90,6 +90,13 @@ const openNewReaction = (noteId: string) => {
   });
 };
 
+const openRepostWindow = (data: {
+  post: MisskeyNoteType | MastodonTootType;
+  emojis: MisskeyEntities.EmojiSimple[];
+}) => {
+  ipcSend("post:repost", data);
+};
+
 const refreshPost = (noteId: string) => {
   timelineStore.misskeyUpdatePost({ postId: noteId });
 };
@@ -114,7 +121,7 @@ onMounted(() => {
 
 <template>
   <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
-    <WindowHeader windowType="main" v-show="!isHazeMode" class="header" />
+    <TimelineHeader v-show="!isHazeMode" class="header" />
     <div class="dote-timeline-container" v-if="store.errors.length">
       <div class="dote-post-list">
         <ErrorPost class="post-item" v-for="(error, index) in store.errors" :error="{ ...error, index }" />
@@ -137,7 +144,6 @@ onMounted(() => {
           class="post-item"
           v-for="post in timelineStore.current.posts"
           :post="post as MisskeyNoteType"
-          :postStyle="store.settings.postStyle"
           :emojis="emojis"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           :hideCw="store.settings.misskey.hideCw"
@@ -148,13 +154,13 @@ onMounted(() => {
           @reaction="onReaction"
           @newReaction="openNewReaction"
           @refreshPost="refreshPost"
+          @repost="openRepostWindow"
         />
         <MisskeyNotification
           v-if="timelineStore.current.channel === 'misskey:notifications'"
           class="post-item"
           v-for="notification in timelineStore.current.notifications as MisskeyEntities.Notification[]"
           :notification="notification"
-          :postStyle="store.settings.postStyle"
           :emojis="emojis"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           :hideCw="store.settings.misskey.hideCw"
@@ -208,7 +214,7 @@ body::-webkit-scrollbar {
 <style lang="scss" scoped>
 .header {
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 .page-container {
   display: flex;
@@ -223,9 +229,9 @@ body::-webkit-scrollbar {
 }
 .timeline-container {
   position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  padding-top: 8px;
   overflow-x: hidden;
   overflow-y: auto;
   scroll-behavior: smooth;
@@ -243,9 +249,10 @@ body::-webkit-scrollbar {
 }
 .scroll-to-top {
   position: fixed;
-  top: 32px;
+  top: 48px;
   right: 0;
   left: 0;
+  z-index: 1;
   display: inline-flex;
   width: 80px;
   margin: 0 auto;
@@ -269,8 +276,5 @@ body::-webkit-scrollbar {
       color: var(--dote-color-black-t5);
     }
   }
-}
-.timeline-loading {
-  margin-top: 16px;
 }
 </style>

@@ -255,7 +255,7 @@ onMounted(() => {
     <div class="dote-field-row indent-1">
       <div class="content">
         <Icon icon="mingcute:list-check-3-line" class="nn-icon size-small" />
-        <span class="label">タイムライン</span>
+        <span class="label">チャンネル</span>
       </div>
       <div class="actions for-select">
         <ElSelect v-model="props.timeline.channel" size="small" @change="onChangeStream">
@@ -358,8 +358,10 @@ onMounted(() => {
 .accounts-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   width: 100%;
+  padding: 8px 0;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
 }
 .content {
   display: inline-flex;

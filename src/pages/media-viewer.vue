@@ -42,7 +42,13 @@ const imageSize = computed(() => {
   const width = window.innerWidth * 0.7;
   const height = window.innerHeight * 0.7;
   const { width: imageWidth, height: imageHeight } = currentMedia.value.size;
-  if (imageWidth > width || imageHeight > height) {
+  console.log(imageWidth, imageHeight, width, height);
+  if (!imageWidth || !imageHeight) {
+    return {
+      width,
+      height,
+    };
+  } else if (imageWidth > width || imageHeight > height) {
     const ratio = Math.min(width / imageWidth, height / imageHeight);
     return {
       width: imageWidth * ratio,
@@ -109,6 +115,13 @@ onBeforeUnmount(() => {
 <template>
   <div class="media-viewer" @click="closeWindow">
     <div class="media-container" v-show="!isLoading">
+      <img
+        v-if="currentMedia?.type === 'image'"
+        :src="currentMedia.url"
+        :width="imageSize.width"
+        :height="imageSize.height"
+        @load="onReady"
+      />
       <video
         v-if="currentMedia?.type === 'video'"
         :src="currentMedia.url"
@@ -117,15 +130,16 @@ onBeforeUnmount(() => {
         autoplay
         controls
         @canplay="onReady"
+        @click.stop
       />
-      <img
-        v-if="currentMedia?.type === 'image'"
+      <audio
+        class="audio-player"
+        v-if="currentMedia?.type === 'audio'"
         :src="currentMedia.url"
-        :width="imageSize.width"
-        :height="imageSize.height"
-        @load="onReady"
+        @loadedmetadata="onReady"
+        controls
+        @click.stop
       />
-      <audio v-if="currentMedia?.type === 'audio'" :src="currentMedia.url" @load="onReady" controls @click.stop />
     </div>
     <Loading class="loading" v-if="isLoading" />
     <div class="controller">
@@ -154,6 +168,8 @@ onBeforeUnmount(() => {
 img,
 video,
 audio {
+  position: relative;
+  z-index: 1;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -168,6 +184,7 @@ audio {
 }
 .controller {
   position: absolute;
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,5 +230,8 @@ audio {
     width: 500px;
     margin: auto;
   }
+}
+.audio-player {
+  width: 480px;
 }
 </style>

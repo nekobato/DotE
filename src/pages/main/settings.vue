@@ -3,19 +3,23 @@ import AccountSettings from "@/components/Settings/AccountSettings.vue";
 import ApplicationInformation from "@/components/Settings/ApplicationInformation.vue";
 import ApplicationSettings from "@/components/Settings/ApplicationSettings.vue";
 import TimelineSettings from "@/components/Settings/TimelineSettings.vue";
-import WindowHeader from "@/components/WindowHeader.vue";
+import Header from "@/components/Header.vue";
 import { useTimelineStore } from "@/store/timeline";
+import { ElDivider } from "element-plus";
 
 const timelineStore = useTimelineStore();
 </script>
 
 <template>
   <div class="settings">
-    <WindowHeader windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
+    <Header windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
     <div class="dote-scroller">
       <AccountSettings />
+      <ElDivider class="divider" />
       <TimelineSettings />
+      <ElDivider class="divider" />
       <ApplicationSettings />
+      <ElDivider class="divider" />
       <ApplicationInformation />
     </div>
   </div>
@@ -25,11 +29,9 @@ const timelineStore = useTimelineStore();
 .settings {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-radius: 8px;
 }
 .dote-scroller {
   display: flex;
@@ -39,8 +41,10 @@ const timelineStore = useTimelineStore();
   overflow: auto;
   background: var(--color-background);
   border: 1px solid var(--dote-border-color);
-  border-radius: 8px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+}
+.divider {
+  margin: 16px 0;
 }
 </style>

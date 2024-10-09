@@ -28,7 +28,7 @@ const props = defineProps({
   display: flex;
   align-items: center;
   width: 100%;
-  padding: 4px 8px;
+  padding: 8px;
   overflow: hidden;
   color: var(--dote-color-white);
   background-color: var(--dote-color-white);
