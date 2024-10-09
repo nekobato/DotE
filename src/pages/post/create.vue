@@ -103,6 +103,9 @@ const canSubmit = computed(() => {
 });
 
 const postToMisskey = async () => {
+  const targetNote = props.data.post as MisskeyNoteType | null;
+  const renoteId = targetNote?.renoteId && !targetNote.text ? targetNote.renoteId : targetNote?.id;
+
   const res = await ipcInvoke("api", {
     method: "misskey:createNote",
     instanceUrl: state.instance?.url,
@@ -110,7 +113,7 @@ const postToMisskey = async () => {
     i: state.user?.token,
     // visibility: "public",
     // visibleUserIds: [],
-    text: text.value,
+    text: text.value || null,
     cw: textCw.value || null,
     // localOnly: false,
     // noExtractMentions: false,
@@ -119,7 +122,7 @@ const postToMisskey = async () => {
     // noExtractLinks: false,
     // poll: null,
     // replyId: null,
-    renoteId: props.data.post?.id || null,
+    renoteId: renoteId || null,
     // fileIds: [],
   });
   if (res.createdNote) {
