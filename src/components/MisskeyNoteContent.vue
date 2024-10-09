@@ -47,8 +47,6 @@ const props = defineProps({
   },
 });
 
-console.log(props.note);
-
 const emit = defineEmits(["openUserPage"]);
 
 const noteEmojis = computed(() => {

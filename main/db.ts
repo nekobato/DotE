@@ -26,6 +26,14 @@ export const storeDefaults: StoreSchema = {
     shortcuts: {
       toggleTimeline: "Ctrl+Alt+x",
     },
+    text2Speech: {
+      enabled: false,
+      rate: 1,
+      pitch: 1,
+      volume: 1,
+      voice: "Kyoko",
+      hookUrl: "",
+    },
     misskey: {
       hideCw: false,
       showReactions: true,
@@ -336,6 +344,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.misskey.hideCw", value);
     case "misskey.showReactions":
       return store.set("settings.misskey.showReactions", value);
+    case "text2Speech.enabled":
+      return store.set("settings.text2Speech.enabled", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }

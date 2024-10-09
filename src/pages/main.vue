@@ -12,6 +12,7 @@ import { RouterView, useRouter, useRoute } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
 import { MastodonToot } from "@/types/mastodon";
+import { text2Speech } from "@/utils/text2Speech";
 
 const router = useRouter();
 const route = useRoute();
@@ -24,6 +25,7 @@ const misskeyStream = useMisskeyStream({
     switch (event) {
       case "note":
         timelineStore.addNewPost(data.body);
+        text2Speech(data.body.user.user || data.body.user.username, data.body.text || data.body.renote.text);
         break;
       default:
         console.info("unhandled note", data);

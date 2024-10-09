@@ -32,7 +32,12 @@ const exit = () => {
 </script>
 
 <template>
-  <div class="window-header"></div>
+  <div class="window-header">
+    <button class="nn-button type-ghost exit" @click="exit" :disabled="!props.canBack">
+      <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'post'" />
+      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'settings'" />
+    </button>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -45,5 +50,14 @@ const exit = () => {
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);
   -webkit-app-region: drag;
+}
+.nn-button {
+  width: 160px;
+  height: 24px;
+  min-height: auto;
+  -webkit-app-region: no-drag;
+  &.exit {
+    margin: 0 auto;
+  }
 }
 </style>

@@ -41,6 +41,11 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "misskey.showReactions", value: value });
   };
 
+  const setText2SpeechEnabled = async (value: boolean) => {
+    store.$state.settings.text2Speech.enabled = value;
+    return await ipcInvoke("settings:set", { key: "text2Speech.enabled", value: value });
+  };
+
   return {
     setOpacity,
     setMode,
@@ -49,5 +54,6 @@ export const useSettingsStore = defineStore("settings", () => {
     setShortcutKey,
     setMisskeyHideCw,
     setMisskeyShowReactions,
+    setText2SpeechEnabled,
   };
 });
