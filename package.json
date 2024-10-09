@@ -44,7 +44,7 @@
     "@vitejs/plugin-vue": "^5.1.4",
     "element-plus": "^2.8.4",
     "mfm-js": "^0.24.0",
-    "misskey-js": "^2024.8.0",
+    "misskey-js": "^2024.10.0",
     "nanoid": "^5.0.7",
     "pinia": "^2.2.2",
     "postcss-html": "^1.7.0",
