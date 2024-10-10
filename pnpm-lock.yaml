@@ -89,10 +89,10 @@ importers:
         version: 5.4.2(@types/node@20.12.7)(sass@1.77.8)(sugarss@2.0.0)
       vite-plugin-electron:
         specifier: ^0.28.7
-        version: 0.28.7(vite-plugin-electron-renderer@0.14.5)
+        version: 0.28.7(vite-plugin-electron-renderer@0.14.6)
       vite-plugin-electron-renderer:
-        specifier: ^0.14.5
-        version: 0.14.5
+        specifier: ^0.14.6
+        version: 0.14.6
       vite-plugin-resolve:
         specifier: ^2.5.2
         version: 2.5.2
@@ -4545,8 +4545,8 @@ packages:
   vfile@3.0.1:
     resolution: {integrity: sha512-y7Y3gH9BsUSdD4KzHsuMaCzRjglXN0W2EcMf0gpvu6+SbsGhMje7xDc8AEoeXy6mIwCKMI6BkjMsRjzQbhMEjQ==}
 
-  vite-plugin-electron-renderer@0.14.5:
-    resolution: {integrity: sha512-EQ7ORuPp8vFPCqfuGnVo7d36fXS0IFH4/RUlKb1drseix3TQEPcgwEuFADdXBxRgqMp70njz/1m0kdf5lEsm8w==}
+  vite-plugin-electron-renderer@0.14.6:
+    resolution: {integrity: sha512-oqkWFa7kQIkvHXG7+Mnl1RTroA4sP0yesKatmAy0gjZC4VwUqlvF9IvOpHd1fpLWsqYX/eZlVxlhULNtaQ78Jw==}
 
   vite-plugin-electron@0.28.7:
     resolution: {integrity: sha512-wsiFUY9AN/HBwn6Jc+i7ehNQISAzUzy6p7NvgJJB1jKCNvZ7PyYlZloH0m3LWFkC+/dFDRGwW89kyAafRRPsLA==}
@@ -9861,11 +9861,11 @@ snapshots:
       unist-util-stringify-position: 1.1.2
       vfile-message: 1.1.1
 
-  vite-plugin-electron-renderer@0.14.5: {}
+  vite-plugin-electron-renderer@0.14.6: {}
 
-  vite-plugin-electron@0.28.7(vite-plugin-electron-renderer@0.14.5):
+  vite-plugin-electron@0.28.7(vite-plugin-electron-renderer@0.14.6):
     optionalDependencies:
-      vite-plugin-electron-renderer: 0.14.5
+      vite-plugin-electron-renderer: 0.14.6
 
   vite-plugin-resolve@2.5.2:
     dependencies:
