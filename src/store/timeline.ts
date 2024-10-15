@@ -188,9 +188,21 @@ export const useTimelineStore = defineStore("timeline", () => {
   const updatePost = <T extends DotEPost>(post: T) => {
     const currentPosts = store.timelines[currentIndex.value].posts as T[];
     if (!currentPosts) return;
-    const postIndex = currentPosts.findIndex((p) => p.id === post.id);
-    if (postIndex === -1) return;
-    currentPosts.splice(postIndex, 1, post);
+    currentPosts.forEach((p, i) => {
+      if (p.id === post.id) {
+        currentPosts[i] = post;
+      }
+
+      // Misskey
+      if ("renote" in p && p.renote.id === post.id) {
+        p.renote = post as MisskeyNote;
+      }
+
+      // Mastodon
+      if ("reblog" in p && p.reblog?.id === post.id) {
+        p.reblog = post as MastodonToot;
+      }
+    });
   };
 
   const removePost = (postId: string) => {
@@ -228,14 +240,17 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const misskeyAddEmoji = async ({ postId, name }: { postId: string; name: string }) => {
-    const post = store.timelines[currentIndex.value].posts.find((post) => post.id === postId) as MisskeyNote;
-    const reactions = post?.renote ? post.renote.reactions : post?.reactions;
-    if (!reactions) return;
-    if (Object.keys(reactions).includes(name)) {
-      reactions[name] += 1;
-    } else {
-      reactions[name] = 1;
-    }
+    // update emoji count for all target posts
+    (store.timelines[currentIndex.value].posts as MisskeyNote[]).forEach((post) => {
+      if (post.id === postId) {
+        const reactions = post.renote ? post.renote.reactions : post.reactions;
+        if (Object.keys(reactions).includes(name)) {
+          reactions[name] += 1;
+        } else {
+          reactions[name] = 1;
+        }
+      }
+    });
   };
 
   const misskeyCreateReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
@@ -273,7 +288,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const misskeyUpdatePost = async ({ postId }: { postId: string }) => {
+  const misskeyRefetchPost = async ({ postId }: { postId: string }) => {
     if (!store.timelines[currentIndex.value] || !currentUser.value) return;
 
     const res = await ipcInvoke("api", {
@@ -286,22 +301,23 @@ export const useTimelineStore = defineStore("timeline", () => {
         message: `${postId}の取得失敗`,
       });
     });
-    const postIndex = current.value?.posts.findIndex((p) => p.id === postId);
-    if (!postIndex) return;
-
-    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
+    updatePost(res);
   };
 
   const misskeyAddReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     // TODO: reactionがremote serverだった場合
-    const post = store.timelines[currentIndex.value].posts.find((p) => p.id === postId) as MisskeyNote;
-    if (!post) return;
-    const reactions = post.renote ? post.renote.reactions : post.reactions;
-    if (Object.keys(reactions).includes(reaction)) {
-      reactions[reaction] += 1;
-    } else {
-      reactions[reaction] = 1;
-    }
+    store.timelines[currentIndex.value].posts.forEach((post) => {
+      const targetPost = post as MisskeyNote;
+      if (targetPost.id === postId || (targetPost.renote && targetPost.renote.id === postId)) {
+        const reactions =
+          targetPost.renote && targetPost.renote.id === postId ? targetPost.renote.reactions : targetPost.reactions;
+        if (Object.keys(reactions).includes(reaction)) {
+          reactions[reaction] += 1;
+        } else {
+          reactions[reaction] = 1;
+        }
+      }
+    });
   };
 
   const misskeyGetFollowedChannels = () => {
@@ -390,7 +406,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const mastodonUpdatePost = async ({ id }: { id: string }) => {
+  const mastodonRefetchPost = async ({ id }: { id: string }) => {
     if (!store.timelines[currentIndex.value] || !currentUser.value) return;
 
     const res = await ipcInvoke("api", {
@@ -403,10 +419,8 @@ export const useTimelineStore = defineStore("timeline", () => {
         message: `${id}の取得失敗`,
       });
     });
-    const postIndex = current.value?.posts.findIndex((p) => p.id === id);
-    if (!postIndex) return;
 
-    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
+    updatePost(res);
   };
 
   const isTimelineAvailable = computed(() => {
@@ -438,12 +452,12 @@ export const useTimelineStore = defineStore("timeline", () => {
     misskeyAddReaction,
     misskeyCreateReaction,
     misskeyDeleteReaction,
-    misskeyUpdatePost,
+    misskeyRefetchPost,
     misskeyGetFollowedChannels,
     misskeyGetMyAntennas,
     misskeyGetUserLists,
     mastodonGetList,
     mastodonToggleFavourite,
-    mastodonUpdatePost,
+    mastodonRefetchPost,
   };
 });
