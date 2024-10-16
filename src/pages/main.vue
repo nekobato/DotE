@@ -88,6 +88,10 @@ window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: stri
 
   // 既にreactionがある場合は削除してから追加
   if (post.myReaction) {
+    if (post.myReaction === data.reaction) {
+      await misskeyDeleteReaction(data.postId);
+      return;
+    }
     await misskeyDeleteReaction(data.postId);
   }
   await misskeyCreateReaction(data.postId, data.reaction);
