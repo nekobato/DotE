@@ -137,7 +137,6 @@ const start = () => {
       case "post:close":
         postWindow?.webContents.send(event, data);
         postWindow?.close();
-        postWindow = null;
         break;
       case "post:reaction":
       case "post:repost":
