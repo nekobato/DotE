@@ -100,7 +100,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
         <div class="dote-post-content">
           <img
             class="dote-avatar"
-            :class="{ mini: postType === 'reblog' }"
+            :class="{ mini: postType === 'reblog', 'line-1': props.lineStyle === 'line-1' }"
             :src="props.post.account.avatar || ''"
             alt=""
             @click="openUserPage(post.account)"
@@ -291,6 +291,16 @@ const openUserPage = (user: MastodonToot["account"]) => {
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.24);
     border-radius: 50%;
+    &.line-1 {
+      width: 20px;
+      height: 20px;
+
+      &.mini {
+        top: 24px;
+        width: 16px;
+        height: 16px;
+      }
+    }
     &.mini {
       position: relative;
       top: 28px;
@@ -338,7 +348,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     overflow: hidden;
     color: #efefef;
     font-size: 0.6rem;
-    line-height: 0.8rem;
+    line-height: 1rem;
   }
 
   .line-all {

@@ -128,7 +128,7 @@ const isTextHide = computed(() => {
       <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
       <img
         class="dote-avatar"
-        :class="{ mini: props.type === 'renote' }"
+        :class="{ mini: props.type === 'renote', 'line-1': props.lineStyle === 'line-1' }"
         :src="props.note.user.avatarUrl || ''"
         alt=""
         @click="openUserPage(props.note.user)"
@@ -227,6 +227,16 @@ const isTextHide = computed(() => {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
+  &.line-1 {
+    width: 20px;
+    height: 20px;
+
+    &.mini {
+      top: 24px;
+      width: 16px;
+      height: 16px;
+    }
+  }
   &.mini {
     position: relative;
     top: 28px;
@@ -288,7 +298,7 @@ const isTextHide = computed(() => {
   overflow: hidden;
   color: #efefef;
   font-size: 0.6rem;
-  line-height: 0.8rem;
+  line-height: 1rem;
 }
 
 .line-all {

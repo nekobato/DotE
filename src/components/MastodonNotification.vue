@@ -272,7 +272,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     overflow: hidden;
     color: #efefef;
     font-size: 0.6rem;
-    line-height: 0.8rem;
+    line-height: 1rem;
   }
 
   .notification-text-container {

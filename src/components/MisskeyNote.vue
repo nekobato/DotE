@@ -160,10 +160,10 @@ onBeforeUnmount(() => {
         @openUserPage="openUserPage"
       />
     </div>
-    <PostAttachmentsContainer class="attachments" v-if="postAtttachments">
+    <PostAttachmentsContainer v-if="postAtttachments?.length" class="attachments">
       <PostAttachments :attachments="postAtttachments" />
     </PostAttachmentsContainer>
-    <div class="reactions" v-if="props.showReactions">
+    <div class="reactions" v-if="props.showReactions && reactions.length">
       <button
         class="reaction"
         v-for="reaction in reactions"
