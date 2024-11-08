@@ -307,6 +307,10 @@ const isTextHide = computed(() => {
   .text {
     display: block;
   }
+
+  .read-all {
+    margin-top: 4px;
+  }
 }
 .line-1,
 .line-2,
@@ -329,8 +333,17 @@ const isTextHide = computed(() => {
 }
 .line-2 {
   -webkit-line-clamp: 2;
+  .read-all {
+    margin-top: 4px;
+  }
 }
 .line-3 {
   -webkit-line-clamp: 3;
+  .read-all {
+    margin-top: 4px;
+  }
+}
+.read-all {
+  font-size: 0.5rem;
 }
 </style>
