@@ -33,6 +33,9 @@ importers:
       '@vueuse/core':
         specifier: ^11.0.1
         version: 11.0.3(vue@3.4.38(typescript@5.6.3))
+      bowser:
+        specifier: ^2.11.0
+        version: 2.11.0
       electron:
         specifier: 32.0.1
         version: 32.0.1
@@ -1515,6 +1518,10 @@ packages:
 
   boolean@3.2.0:
     resolution: {integrity: sha512-d0II/GO9uf9lfUHH2BQsjxzRJZBdsjgsBiW4BvhWk/3qoKwQFjIDVN19PfX8F2D/r9PCMTtLWjYVCFrpeYUzsw==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
+
+  bowser@2.11.0:
+    resolution: {integrity: sha512-AlcaJBi/pqqJBIQ8U9Mcpc9i8Aqxn88Skv5d+xBX006BY5u8N3mGLHa5Lgppa7L/HfwgwLgZ6NYs+Ag6uUmJRA==}
 
   brace-expansion@1.1.11:
     resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
@@ -6474,6 +6481,8 @@ snapshots:
 
   boolean@3.2.0:
     optional: true
+
+  bowser@2.11.0: {}
 
   brace-expansion@1.1.11:
     dependencies:
