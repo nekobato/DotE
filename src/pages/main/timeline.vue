@@ -60,7 +60,7 @@ const emojis = computed(() => {
 
 const ads = computed(() => {
   return timelineStore.currentInstance?.type === "misskey" &&
-    !isHazeMode &&
+    !isHazeMode.value &&
     timelineStore.currentInstance?.misskey?.meta.ads.length > 0 &&
     timelineStore.current?.posts.length
     ? timelineStore.currentInstance?.misskey?.meta.ads
@@ -98,7 +98,7 @@ const openRepostWindow = (data: {
 };
 
 const refreshPost = (noteId: string) => {
-  timelineStore.misskeyUpdatePost({ postId: noteId });
+  timelineStore.misskeyRefetchPost({ postId: noteId });
 };
 
 timelineStore.$onAction((action) => {
@@ -178,7 +178,7 @@ onMounted(() => {
           :post="toot as MastodonTootType"
           :instanceUrl="timelineStore.currentInstance?.url"
           :lineStyle="store.settings.postStyle"
-          @refreshPost="timelineStore.mastodonUpdatePost"
+          @refreshPost="timelineStore.mastodonRefetchPost"
           @favourite="timelineStore.mastodonToggleFavourite"
         />
         <MastodonNotification

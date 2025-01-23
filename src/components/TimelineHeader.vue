@@ -166,9 +166,13 @@ const changeTimeline = async (index: number) => {
 <style lang="scss" scoped>
 .header {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 40px;
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);
+  -webkit-app-region: drag;
 }
 .timeline-images {
   display: inline-flex;
@@ -216,6 +220,7 @@ const changeTimeline = async (index: number) => {
   box-shadow:
     rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
     rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+  -webkit-app-region: no-drag;
 
   &.detailed {
     box-shadow: none;
@@ -238,6 +243,7 @@ const changeTimeline = async (index: number) => {
   box-shadow:
     rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
     rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+  -webkit-app-region: no-drag;
 }
 .action-group {
   position: relative;
