@@ -1,6 +1,6 @@
 import * as misskeyRequest from "./misskey";
-
 import * as mastodonRequest from "./mastodon";
+import * as blueskyRequest from "./bluesky";
 
 export const apiRequest = {
   ["misskey:checkMiAuth"]: misskeyRequest.misskeyCheckMiAuth,
@@ -41,4 +41,8 @@ export const apiRequest = {
   ["mastodon:favourite"]: mastodonRequest.mastodonFavourite,
   ["mastodon:unFavourite"]: mastodonRequest.mastodonUnFavourite,
   ["mastodon:getList"]: mastodonRequest.mastodonGetList,
+
+  ["bluesky:createSession"]: blueskyRequest.blueskyCreateSession,
+  ["bluesky:refreshToken"]: blueskyRequest.blueskyRefreshToken,
+  ["bluesky:getAuthorFeed"]: blueskyRequest.blueskyGetAuthorFeed,
 };

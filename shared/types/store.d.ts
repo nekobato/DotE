@@ -71,6 +71,7 @@ export type User = {
   instanceId: string; // uuid
   name: string;
   token: string;
+  refreshToken: string;
   avatarUrl: string;
 };
 

@@ -1,5 +1,5 @@
 import { safeStorage } from "electron";
-import Store from "electron-store";
+import Store, { Schema } from "electron-store";
 import { nanoid } from "nanoid/non-secure";
 import type { Instance, Timeline, User, Settings } from "../shared/types/store";
 
@@ -41,7 +41,7 @@ export const storeDefaults: StoreSchema = {
   },
 };
 
-const schema: Store.Schema<StoreSchema> = {
+const schema: Schema<StoreSchema> = {
   timelines: {
     type: "array",
     items: {
@@ -89,6 +89,7 @@ const schema: Store.Schema<StoreSchema> = {
         instanceId: { type: "string" },
         name: { type: "string" },
         token: { type: "string" },
+        refreshToken: { type: "string" },
         avatarUrl: { type: "string" },
       },
       required: ["id", "instanceId", "name", "token", "avatarUrl"],
