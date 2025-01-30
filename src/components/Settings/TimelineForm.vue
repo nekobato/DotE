@@ -129,6 +129,7 @@ const streamOptions = (
       return misskeyStreamOptions;
     case "mastodon":
       return mastodonStreamOptions;
+    case "bluesky":
     default:
       return [];
   }

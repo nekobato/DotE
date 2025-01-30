@@ -3,11 +3,12 @@ import { defineStore } from "pinia";
 import { useStore } from ".";
 import type { MisskeyEntities } from "@shared/types/misskey";
 import { MastodonInstanceApiResponse } from "@/types/mastodon";
+import { InstanceType } from "@shared/types/store";
 
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
 
-  const createInstance = async (url: string, type: "misskey" | "mastodon") => {
+  const createInstance = async (url: string, type: InstanceType) => {
     switch (type) {
       case "misskey":
         return await createMisskeyInstance(url);

@@ -1,7 +1,7 @@
 import { safeStorage } from "electron";
 import Store, { Schema } from "electron-store";
 import { nanoid } from "nanoid/non-secure";
-import type { Instance, Timeline, User, Settings } from "../shared/types/store";
+import type { Instance, Timeline, User, Settings, InstanceType } from "../shared/types/store";
 
 export type StoreSchema = {
   timelines: Timeline[];
@@ -185,7 +185,7 @@ export const getInstanceAll = () => {
 
 export const upsertInstance = (instance: {
   id?: string;
-  type: "misskey" | "mastodon";
+  type: InstanceType;
   name: string;
   url: string;
   iconUrl: string;

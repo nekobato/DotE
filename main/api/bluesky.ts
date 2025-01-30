@@ -24,6 +24,7 @@ export const blueskyCreateSession = async ({
       password,
     }),
   }).then((res: Response) => {
+    console.log(res.status);
     return res.json();
   });
 };
@@ -40,7 +41,7 @@ export const blueskyRefreshToken = async ({
   handle: string;
   did: string;
 }> => {
-  return fetch(new URL("/xrpc/com.atproto.server.refreshToken", instanceUrl).toString(), {
+  return fetch(new URL("/xrpc/com.atproto.server.refreshSession", instanceUrl).toString(), {
     method: "POST",
     headers: {
       ...baseHeader,
@@ -78,7 +79,7 @@ export const blueskyGetProfile = async ({
   pinnedPosts: any[];
 }> => {
   return fetch(new URL("/xrpc/app.bsky.actor.getProfile", instanceUrl).toString(), {
-    method: "POST",
+    method: "GET",
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${accessJwt}`,
@@ -113,7 +114,7 @@ export const blueskyGetAuthorFeed = async ({
   }[];
 }> => {
   return fetch(new URL("/xrpc/app.bsky.feed.getAuthorFeed", instanceUrl).toString(), {
-    method: "POST",
+    method: "GET",
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${accessJwt}`,

@@ -1,6 +1,6 @@
 import { ipcInvoke } from "@/utils/ipc";
 import { MisskeyEntities } from "@shared/types/misskey";
-import type { Instance, User } from "@shared/types/store";
+import type { Instance, User, InstanceType } from "@shared/types/store";
 import { defineStore } from "pinia";
 import { useStore } from ".";
 import { useInstanceStore } from "./instance";
@@ -9,7 +9,7 @@ import { defaultChannelNameFromType } from "@/utils/dote";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
-  instanceType: "misskey" | "mastodon";
+  instanceType: InstanceType;
   options?: {
     [key: string]: any;
   };

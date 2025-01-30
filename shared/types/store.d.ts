@@ -1,5 +1,7 @@
 import { MisskeyEntities } from "misskey-js";
 
+export type InstanceType = "misskey" | "mastodon" | "bluesky";
+
 export type MisskeyChannelName =
   | "misskey:homeTimeline"
   | "misskey:localTimeline"
@@ -63,15 +65,19 @@ export type InstanceMastodon = InsranceBase & {
   };
 };
 
-export type Instance = InstanceMisskey | InstanceMastodon;
-export type InstanceStore = InstanceMisskeyStore | InstanceMastodon;
+export type InstanceBluesky = InsranceBase & {
+  type: "bluesky";
+};
+
+export type Instance = InstanceMisskey | InstanceMastodon | InstanceBluesky;
+export type InstanceStore = InstanceMisskeyStore | InstanceMastodon | InstanceBluesky;
 
 export type User = {
   id: string; // uuid
   instanceId: string; // uuid
   name: string;
   token: string;
-  refreshToken: string;
+  refreshToken?: string;
   avatarUrl: string;
 };
 
