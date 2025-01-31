@@ -77,8 +77,14 @@ export type User = {
   instanceId: string; // uuid
   name: string;
   token: string;
-  refreshToken?: string;
   avatarUrl: string;
+  blueskySession?: {
+    refreshJwt: string;
+    accessJwt: string;
+    handle: string;
+    did: string;
+    active: boolean;
+  };
 };
 
 export type Settings = {

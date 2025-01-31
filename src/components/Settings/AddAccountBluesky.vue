@@ -1,55 +1,64 @@
 <script setup lang="ts">
+import { NewUser } from "@/store/users";
 import { ipcInvoke } from "@/utils/ipc";
+import { AppBskyActorGetProfile, ComAtprotoServerCreateSession } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import { ElInput } from "element-plus";
 import { ref } from "vue";
 
-const instanceUrl = ref("");
-const identifier = ref("");
-const password = ref("");
-const accessJwt = ref("");
-const refreshJwt = ref("");
-const handle = ref("");
+const instanceUrl = ref("bsky.social");
+const identifier = ref("nekobato.net");
+const password = ref("nKYZ3kY5H6YtiFd");
+const session = ref<ComAtprotoServerCreateSession.OutputSchema | null>(null);
 
-const emit = defineEmits(["createUser", "close"]);
+const emit = defineEmits<{
+  createUser: [user: NewUser];
+}>();
 
 const createSession = async () => {
   instanceUrl.value = /^https?:\/\//.test(instanceUrl.value) ? instanceUrl.value : "https://" + instanceUrl.value;
 
-  const res = await ipcInvoke("api", {
-    method: "bluesky:createSession",
+  const res: ComAtprotoServerCreateSession.OutputSchema = await ipcInvoke("api", {
+    method: "bluesky:login",
     instanceUrl: instanceUrl.value,
     identifier: identifier.value,
     password: password.value,
   });
 
-  accessJwt.value = res.accessJwt;
-  refreshJwt.value = res.refreshJwt;
-  handle.value = res.handle;
+  session.value = res;
 
   await fetchProfile();
 };
 
 const fetchProfile = async () => {
-  const res = await ipcInvoke("api", {
+  if (!session.value) return;
+
+  const res: AppBskyActorGetProfile.OutputSchema = await ipcInvoke("api", {
     method: "bluesky:getProfile",
     instanceUrl: instanceUrl.value,
-    accessJwt: accessJwt.value,
+    session: session.value,
   });
 
   emit("createUser", {
     name: res.handle,
-    avatarUrl: res.avatar,
-    token: accessJwt.value,
+    avatarUrl: res.avatar || "",
     instanceUrl: instanceUrl.value,
     instanceType: "bluesky",
+    token: "",
+    blueskySession: {
+      refreshJwt: session.value.refreshJwt,
+      accessJwt: session.value.accessJwt,
+      did: res.did,
+      handle: res.handle,
+      active: true,
+    },
   });
 };
 </script>
 
 <template>
   <div>
-    <div class="dote-field-row as-thread indent-1 active" v-if="!accessJwt">
+    <div class="dote-field-row as-thread indent-1 active">
       <div class="content">
         <div class="nn-form-item">
           <ElInput class="account-input" v-model="instanceUrl" placeholder="https://..." size="small" />

@@ -42,7 +42,7 @@ export const apiRequest = {
   ["mastodon:unFavourite"]: mastodonRequest.mastodonUnFavourite,
   ["mastodon:getList"]: mastodonRequest.mastodonGetList,
 
-  ["bluesky:createSession"]: blueskyRequest.blueskyCreateSession,
-  ["bluesky:refreshToken"]: blueskyRequest.blueskyRefreshToken,
+  ["bluesky:login"]: blueskyRequest.blueskyLogin,
+  ["bluesky:getProfile"]: blueskyRequest.blueskyGetProfile,
   ["bluesky:getAuthorFeed"]: blueskyRequest.blueskyGetAuthorFeed,
 };

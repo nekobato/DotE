@@ -49,6 +49,7 @@ export const useUsersStore = defineStore("users", () => {
       avatarUrl: newUser.avatarUrl || "",
       token: newUser.token,
       instanceId: instance.id,
+      ...(newUser.blueskySession && { blueskySession: newUser.blueskySession }),
     });
 
     await store.initUsers();
