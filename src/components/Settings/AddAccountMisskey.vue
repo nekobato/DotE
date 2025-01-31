@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
+import { NewUser } from "@/store/users";
 import { doteMisskeyPermissionString } from "@/utils/dote";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
@@ -10,7 +11,10 @@ import { ref } from "vue";
 
 const store = useStore();
 
-const emit = defineEmits(["createUser", "close"]);
+const emit = defineEmits<{
+  complete: [user: NewUser];
+  close: [];
+}>();
 
 const instanceUrl = ref("");
 const sessionId = ref("");
@@ -35,7 +39,7 @@ const checkMiAuth = async () => {
     });
   });
 
-  emit("createUser", {
+  emit("complete", {
     name: check.user.name,
     avatarUrl: check.user.avatarUrl,
     token: check.token,

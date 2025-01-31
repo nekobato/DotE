@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { NewUser } from "@/store/users";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { ElInput } from "element-plus";
@@ -12,7 +13,10 @@ const clientSecret = ref("");
 const authCode = ref("");
 const accessToken = ref("");
 
-const emit = defineEmits(["createUser", "close"]);
+const emit = defineEmits<{
+  complete: [user: NewUser];
+  close: [];
+}>();
 
 const getMastodonAuthUrl = (instanceUrl: string, clientId: string, clientSecret: string) => {
   const url = new URL("/oauth/authorize", instanceUrl);
@@ -66,7 +70,7 @@ const fetchAndSetMastodonMyself = async (token: string) => {
     token,
   });
 
-  emit("createUser", {
+  emit("complete", {
     name: res.username,
     avatarUrl: res.avatar,
     token: token,

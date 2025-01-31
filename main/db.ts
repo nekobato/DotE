@@ -188,14 +188,13 @@ export const upsertInstance = (instance: {
   type: InstanceType;
   name: string;
   url: string;
-  iconUrl: string;
+  iconUrl?: string;
 }) => {
   const { id, type, name, url, iconUrl } = instance;
 
   if (!type) throw new Error("type is required");
   if (!name) throw new Error("name is required");
   if (!url) throw new Error("url is required");
-  if (!iconUrl) throw new Error("iconUrl is required");
 
   if (id) {
     store.set(

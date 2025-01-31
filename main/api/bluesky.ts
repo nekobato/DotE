@@ -24,10 +24,13 @@ export const blueskyLogin = async ({
 export const blueskyGetProfile = async ({ instanceUrl, session }: { instanceUrl: string; session: AtpSessionData }) => {
   const agent = new AtpAgent({
     service: instanceUrl,
-    session,
   });
 
-  const res = await agent.getProfile();
+  await agent.resumeSession(session);
+
+  const res = await agent.getProfile({
+    actor: session.did,
+  });
 
   return res.data;
 };

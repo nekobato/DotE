@@ -7,12 +7,12 @@ import { ElInput } from "element-plus";
 import { ref } from "vue";
 
 const instanceUrl = ref("bsky.social");
-const identifier = ref("nekobato.net");
-const password = ref("nKYZ3kY5H6YtiFd");
+const identifier = ref("");
+const password = ref("");
 const session = ref<ComAtprotoServerCreateSession.OutputSchema | null>(null);
 
 const emit = defineEmits<{
-  createUser: [user: NewUser];
+  complete: [user: NewUser];
 }>();
 
 const createSession = async () => {
@@ -39,7 +39,7 @@ const fetchProfile = async () => {
     session: session.value,
   });
 
-  emit("createUser", {
+  emit("complete", {
     name: res.handle,
     avatarUrl: res.avatar || "",
     instanceUrl: instanceUrl.value,

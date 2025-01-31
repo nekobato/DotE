@@ -14,6 +14,8 @@ export const useInstanceStore = defineStore("instance", () => {
         return await createMisskeyInstance(url);
       case "mastodon":
         return await createMastodonInstance(url);
+      case "bluesky":
+        return await createBlueskyInstance(url);
     }
   };
 
@@ -40,6 +42,16 @@ export const useInstanceStore = defineStore("instance", () => {
       url: "https://" + meta.domain,
       name: meta.title || "",
       iconUrl: meta.thumbnail.url || "",
+    });
+    return result;
+  };
+
+  const createBlueskyInstance = async (instanceUrl: string) => {
+    const result = await ipcInvoke("db:upsert-instance", {
+      type: "bluesky",
+      url: instanceUrl,
+      name: instanceUrl.replace("https://", ""),
+      iconUrl: "",
     });
     return result;
   };
