@@ -9,6 +9,7 @@ import type { User } from "@shared/types/store";
 import AddAccountMisskey from "./AddAccountMisskey.vue";
 import AddAccountMastodon from "./AddAccountMastodon.vue";
 import AddAccountBluesky from "./AddAccountBluesky.vue";
+import InstanceIcon from "../InstanceIcon.vue";
 
 const store = useStore();
 const usersStore = useUsersStore();
@@ -45,9 +46,8 @@ const resetStatues = () => {
   state.value.actions.delete.id = null;
 };
 
-const getInstanceIconFromUser = (user: User) => {
-  const instance = store.instances?.find((i) => i.id === user.instanceId);
-  return instance?.iconUrl || "";
+const getInstanceFromUser = (user: User) => {
+  return store.instances?.find((i) => i.id === user.instanceId);
 };
 
 const startAddAccount = () => {
@@ -72,7 +72,7 @@ const closeAddAccount = () => {
     <h2 class="dote-field-group-title">アカウント</h2>
     <div class="accounts-container" v-for="user in store.users" :key="user.id">
       <div class="dote-field-row">
-        <ElAvatar shape="square" :size="40" :src="getInstanceIconFromUser(user)" class="avatar" />
+        <InstanceIcon :instance="getInstanceFromUser(user)" />
         <ElAvatar :src="user.avatarUrl || ''" class="avatar" />
         <div class="content">
           <span class="nickname">{{ user.name }}</span>
@@ -139,9 +139,6 @@ const closeAddAccount = () => {
 .account-settings {
   width: 100%;
   padding: 8px 0 0;
-}
-.avatar {
-  background-color: #fff;
 }
 .account {
   display: flex;
