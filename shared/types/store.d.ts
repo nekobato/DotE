@@ -22,7 +22,9 @@ export type MastodonChannelName =
   | "mastodon:list"
   | "mastodon:notifications";
 
-export type ChannelName = MisskeyChannelName | MastodonChannelName;
+export type BlueskyChannelName = "bluesky:homeTimeline";
+
+export type ChannelName = MisskeyChannelName | MastodonChannelName | BlueskyChannelName;
 
 export type Timeline = {
   id: string; // uuid

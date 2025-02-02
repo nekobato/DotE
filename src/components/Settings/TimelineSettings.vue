@@ -23,6 +23,10 @@ const addTimeline = async () => {
     available: false,
   });
 };
+
+const onDeleteTimeline = async (timeline: Timeline) => {
+  await timelineStore.deleteTimeline(timeline.id);
+};
 </script>
 
 <template>
@@ -31,7 +35,7 @@ const addTimeline = async () => {
     <div class="timeline-list">
       <div v-for="timeline in store.timelines" :key="timeline.id">
         <div class="timeline-item">
-          <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
+          <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" @deleteTimeline="onDeleteTimeline" />
         </div>
       </div>
     </div>
