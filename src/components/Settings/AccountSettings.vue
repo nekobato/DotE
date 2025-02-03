@@ -59,6 +59,7 @@ const exitAddAccount = () => {
 };
 
 const createAccount = (user: NewUser) => {
+  newAccountInstanceType.value = undefined;
   usersStore.createUser(user);
 };
 

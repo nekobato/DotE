@@ -4,7 +4,7 @@ import { useTimelineStore } from "@/store/timeline";
 import { Icon } from "@iconify/vue";
 import { computed, onMounted, ref, watch } from "vue";
 import type { MisskeyChannel, MisskeyEntities } from "@shared/types/misskey";
-import type { ChannelName, Timeline } from "@shared/types/store";
+import type { ChannelName, InstanceType, Timeline } from "@shared/types/store";
 import { ElInput, ElSelect, ElOption } from "element-plus";
 import { useInstanceStore } from "@/store/instance";
 import { MastodonListItem } from "@/types/mastodon";
@@ -97,6 +97,16 @@ const mastodonStreamOptions: {
   },
 ];
 
+const blueskyStreamOptions: {
+  label: string;
+  value: ChannelName;
+}[] = [
+  {
+    label: "ホーム",
+    value: "bluesky:homeTimeline",
+  },
+];
+
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);
 const myMisskeyAntennas = ref<MisskeyEntities.Antenna[]>([]);
 const myMisskeyUserLists = ref<MisskeyEntities.UserList[]>([]);
@@ -130,6 +140,7 @@ const streamOptions = (
     case "mastodon":
       return mastodonStreamOptions;
     case "bluesky":
+      return blueskyStreamOptions;
     default:
       return [];
   }
@@ -143,9 +154,21 @@ const clearOptionValues = () => {
   searchQuery.value = "";
 };
 
+const getDefeaultChannel = (instanceType: InstanceType) => {
+  switch (instanceType) {
+    case "misskey":
+      return "misskey:homeTimeline";
+    case "mastodon":
+      return "mastodon:homeTimeline";
+    case "bluesky":
+      return "bluesky:homeTimeline";
+  }
+};
+
 const onChangeUser = async (userId: string) => {
-  const defaultChannel =
-    instanceStore.findInstanceByUserId(userId)?.type === "misskey" ? "misskey:homeTimeline" : "mastodon:homeTimeline";
+  const instance = instanceStore.findInstanceByUserId(userId);
+  if (!instance) return;
+  const defaultChannel = getDefeaultChannel(instance.type);
   emit("updateTimeline", {
     ...props.timeline,
     userId,

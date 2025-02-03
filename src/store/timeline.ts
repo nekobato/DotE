@@ -54,6 +54,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       query: current?.value.options?.query, // option
       tag: current?.value.options?.tag, // option
       token: currentUser.value.token,
+      session: currentUser.value.blueskySession,
       limit: 40,
     }).catch(() => {
       store.$state.errors.push({
@@ -87,6 +88,7 @@ export const useTimelineStore = defineStore("timeline", () => {
           query: current?.value.options?.query, // option
           tag: current?.value.options?.tag, // option
           sinceId: store.timelines[currentIndex.value]?.posts[0]?.id,
+          session: currentUser.value.blueskySession,
           limit: 40,
         });
         if (!data || data.length === 0) return;
@@ -151,6 +153,13 @@ export const useTimelineStore = defineStore("timeline", () => {
       });
     }
 
+    await store.initTimelines();
+  };
+
+  const deleteTimeline = async (timelineId: string) => {
+    await ipcInvoke("db:delete-timeline", {
+      id: timelineId,
+    });
     await store.initTimelines();
   };
 
@@ -418,6 +427,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   return {
     timelines,
+    deleteTimeline,
     deleteTimelineByUserId,
     current,
     isTimelineAvailable,

@@ -30,7 +30,6 @@ export const useUsersStore = defineStore("users", () => {
   };
 
   const createUser = async (newUser: NewUser) => {
-    console.log("createUser", newUser);
     let instance: Instance | undefined = instanceStore.findInstance(newUser.instanceUrl);
     // Instanceが無ければ作成
     if (!instance) {

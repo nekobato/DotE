@@ -37,27 +37,19 @@ const props = defineProps({
 
 const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction", "repost"]);
 
-const postType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quote";
-    } else {
-      return "renote";
-    }
-  } else if (props.post.replyId) {
-    return "reply";
-  } else {
-    return "note";
-  }
-});
-
-const renoteType = computed(() => {
-  if (props.post.text) {
-    return "quoted";
-  } else {
-    return "renoted";
-  }
-});
+// const postType = computed(() => {
+//   if (props.post) {
+//     if (props.post.text) {
+//       return "quote";
+//     } else {
+//       return "repost";
+//     }
+//   } else if (props.post) {
+//     return "reply";
+//   } else {
+//     return "note";
+//   }
+// });
 
 const postAtttachments = computed(() => {
   return parseMisskeyAttachments(props.post, props.currentInstanceUrl);
@@ -109,9 +101,9 @@ onBeforeUnmount(() => {
 <template>
   <div class="dote-post">
     <div class="post-data-group">
-      <div class="post-content" :class="[postType]">
+      <div class="post-content" :class="[]">
         <div class="dote-post-info">
-          <span class="username" @click="openUserPage(post.account)">{{
+          <span class="username" @click="openUserPage(post.author.)">{{
             post.account.display_name || post.account.username
           }}</span>
           <div class="renoted-by" v-if="postType === 'repost'">

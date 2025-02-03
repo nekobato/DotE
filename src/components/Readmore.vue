@@ -26,7 +26,6 @@ const canReadmore = computed(() => {
 });
 
 const readmore = async () => {
-  console.log("readmore", timelineStore.current);
   if (
     !postsOrNotifications.value ||
     !timelineStore.current?.channel ||
@@ -46,6 +45,7 @@ const readmore = async () => {
     tag: timelineStore.current?.options?.tag, // option
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
+    session: timelineStore.currentUser?.blueskySession,
     limit: 20,
     untilId: postsOrNotifications.value[postsOrNotifications.value.length - 1].id,
   });

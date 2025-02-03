@@ -23,7 +23,7 @@ export const methodOfChannel = {
   "mastodon:hashtag": "mastodon:getTimelineHashtag",
   "mastodon:list": "mastodon:getTimelineList",
   "mastodon:notifications": "mastodon:getNotifications",
-  "bluesky:homeTimeline": "bluesky:getTimelineHome",
+  "bluesky:homeTimeline": "bluesky:getAuthorFeed",
 };
 
 export type DotEPost = MisskeyNote | MastodonToot | AppBskyFeedDefs.PostView;
@@ -136,6 +136,9 @@ export const useStore = defineStore({
               metaResult = await instanceStore.getMastodonInstanceMeta(instance.url);
               instance.mastodon.meta = metaResult;
               break;
+            case "bluesky":
+              // Nothing to do
+              return;
           }
 
           if (!metaResult) {

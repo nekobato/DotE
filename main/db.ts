@@ -266,6 +266,7 @@ export const upsertUser = (user: {
   name: string;
   token: string;
   avatarUrl: string;
+  blueskySession?: string;
 }) => {
   const encryptedToken = safeStorage.encryptString(user.token).toString("base64");
   if (user.id) {
@@ -290,6 +291,7 @@ export const upsertUser = (user: {
       ...currentUser,
       ...newUserData,
       token: encryptedToken,
+      ...(user.blueskySession ? { blueskySession: user.blueskySession } : {}),
     };
   } else {
     const newUser = {
@@ -298,6 +300,7 @@ export const upsertUser = (user: {
       name: user.name,
       token: encryptedToken,
       avatarUrl: user.avatarUrl,
+      ...(user.blueskySession ? { blueskySession: user.blueskySession } : {}),
     };
     store.set("users", [...store.get("users"), newUser]);
     return newUser;
