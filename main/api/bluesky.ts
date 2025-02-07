@@ -49,9 +49,7 @@ export const blueskyGetAuthorFeed = async ({
 
   await agent.resumeSession(session);
 
-  const res = await agent.getAuthorFeed({
-    actor: session.did,
-  });
+  const res = await agent.getTimeline();
 
   return res.data;
 };
