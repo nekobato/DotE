@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
+import { AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
+import { Record } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote } from "@shared/types/misskey";
-import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
-import MisskeyNoteContent from "./MisskeyNoteContent.vue";
-import PostAttachments from "./PostAttachments.vue";
+import { computed, ComputedRef, onBeforeUnmount, onMounted, type PropType } from "vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
-import { AppBskyFeedDefs } from "@atproto/api";
+import PostAttachments from "./PostAttachments.vue";
+import { Attachment } from "@shared/types/post";
 
 const props = defineProps({
   post: {
-    type: Object as PropType<AppBskyFeedDefs.PostView>,
+    type: Object as PropType<AppBskyFeedDefs.FeedViewPost>,
     required: true,
   },
   lineStyle: {
@@ -37,22 +37,50 @@ const props = defineProps({
 
 const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction", "repost"]);
 
-// const postType = computed(() => {
-//   if (props.post) {
-//     if (props.post.text) {
-//       return "quote";
-//     } else {
-//       return "repost";
-//     }
-//   } else if (props.post) {
-//     return "reply";
-//   } else {
-//     return "note";
-//   }
-// });
+const postType = computed(() => {
+  if (props.post.post.embed?.record) {
+    if (props.post.text) {
+      return "quote";
+    } else {
+      return "repost";
+    }
+  } else if (props.post.reply) {
+    return "reply";
+  } else {
+    return "post";
+  }
+});
 
-const postAtttachments = computed(() => {
-  return parseMisskeyAttachments(props.post, props.currentInstanceUrl);
+const record = computed(() => {
+  return props.post.post.record as AppBskyFeedPost.Record;
+});
+
+const postAtttachments: ComputedRef<Attachment[]> = computed(() => {
+  let attachments: Attachment[] = [];
+  const embed = props.post.post.embed;
+  // images
+  if ((embed?.$type as string).startsWith("app.bsky.embed.images")) {
+    attachments.push(
+      ...(embed as any).images.map((image: any) => ({
+        type: "image",
+        url: image.fullsize,
+        thumbnailUrl: image.thumb,
+        size: {
+          width: image.aspectRatio.width,
+          height: image.aspectRatio.height,
+        },
+      })),
+    );
+  }
+
+  // URL
+  if ((embed?.$type as string).startsWith("app.bsky.embed.external")) {
+    attachments.push({
+      type: "url",
+      url: (embed?.external as any).uri,
+    });
+  }
+  return attachments;
 });
 
 const refreshPost = () => {
@@ -63,12 +91,13 @@ const openPost = () => {
   ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.currentInstanceUrl).toString() });
 };
 
-const openUserPage = (user: MisskeyNote["user"]) => {
-  const instanceUrl = user.host || props.currentInstanceUrl;
+const openUserPage = () => {
   ipcSend("open-url", {
     url: new URL(
-      `/@${user.username}`,
-      instanceUrl?.startsWith("https://") ? instanceUrl : `https://${instanceUrl}`,
+      `/profile/${props.post.post.author.handle}`,
+      props.currentInstanceUrl?.startsWith("https://")
+        ? props.currentInstanceUrl
+        : `https://${props.currentInstanceUrl}`,
     ).toString(),
   });
 };
@@ -78,12 +107,12 @@ const openReactionWindow = () => {
 };
 
 const openRepostWindow = () => {
-  emit("repost", { post: props.post, emojis: props.emojis });
+  emit("repost", { post: props.post });
 };
 
-const onClickReaction = (postId: string, reaction: string) => {
-  emit("reaction", { postId, reaction });
-};
+// const onClickReaction = (postId: string, reaction: string) => {
+//   emit("reaction", { postId, reaction });
+// };
 
 onMounted(() => {
   ipcSend("stream:sub-note", {
@@ -103,35 +132,35 @@ onBeforeUnmount(() => {
     <div class="post-data-group">
       <div class="post-content" :class="[]">
         <div class="dote-post-info">
-          <span class="username" @click="openUserPage(post.author.)">{{
-            post.account.display_name || post.account.username
+          <span class="username" @click="openUserPage">{{
+            post.post.author.displayName || post.post.author.handle
           }}</span>
-          <div class="renoted-by" v-if="postType === 'repost'">
+          <!-- <div class="renoted-by" v-if="postType === 'repost'">
             <Icon icon="mingcute:refresh-3-line" />
             <span class="username origin" @click="openUserPage(props.post.account)">{{
               props.post.account.display_name
             }}</span>
-          </div>
+          </div> -->
         </div>
         <div class="dote-post-content">
           <img
             class="dote-avatar"
-            :class="{ mini: postType === 'reblog' }"
-            :src="props.post.account.avatar || ''"
+            :class="{ mini: postType === 'repost' }"
+            :src="props.post.post.author.avatar || ''"
             alt=""
-            @click="openUserPage(post.account)"
+            @click="openUserPage()"
           />
           <div class="text-container" :class="[lineStyle]">
-            <span class="text" v-html="parseMastodonText(post.content, post.emojis)" />
+            <span class="text" v-html="record.text" />
           </div>
         </div>
       </div>
     </div>
-    <PostAttachmentsContainer class="attachments" v-if="postAtttachments">
+    <PostAttachmentsContainer class="attachments" v-if="post.post.embed">
       <PostAttachments :attachments="postAtttachments" />
     </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">
-      <button
+      <!-- <button
         class="reaction"
         :class="{
           reacted: props.post.favourited,
@@ -141,7 +170,7 @@ onBeforeUnmount(() => {
       >
         <Icon class="star-icon" icon="mingcute:star-fill" />
         <span class="count">{{ props.post.favourites_count }}</span>
-      </button>
+      </button> -->
     </div>
     <div class="dote-post-actions">
       <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
@@ -175,6 +204,92 @@ onBeforeUnmount(() => {
   & + .dote-post {
     border-top: 1px solid var(--dote-color-white-t1);
   }
+}
+
+.username {
+  display: flex;
+  align-items: center;
+  height: 12px;
+  color: var(--dote-color-white-t5);
+  font-weight: bold;
+  font-size: var(--font-size-10);
+  line-height: var(--font-size-10);
+  white-space: nowrap;
+}
+
+.dote-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  margin: 0 0 auto 0;
+  object-fit: cover;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  &.mini {
+    position: relative;
+    top: 28px;
+    z-index: 1;
+    width: 20px;
+    height: 20px;
+  }
+
+  &.origin-user {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    width: 20px;
+    height: 20px;
+    margin-left: 0;
+  }
+
+  & + * {
+    margin-left: 8px;
+  }
+}
+
+.dote-post-content {
+  position: relative;
+  display: flex;
+  width: 100%;
+
+  > .dote-avatar {
+    flex-shrink: 0;
+  }
+}
+
+.dote-post-info {
+  display: flex;
+  align-items: flex-start;
+  .acted-by {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    opacity: 0.6;
+    > svg {
+      height: var(--font-size-12);
+    }
+    > .username {
+      margin-left: 4px;
+    }
+  }
+
+  & + .dote-post-content {
+    margin-top: 4px;
+  }
+}
+
+.dote-post-info .renote > .dote-post-body > .dote-avatar {
+  width: 20px;
+  height: 20px;
+}
+
+.text-container {
+  min-height: calc(0.8rem * 2);
+  overflow: hidden;
+  color: #efefef;
+  font-size: 0.6rem;
+  line-height: 0.8rem;
 }
 
 .attachments {
@@ -275,5 +390,36 @@ onBeforeUnmount(() => {
     height: 16px;
     color: var(--dote-color-white);
   }
+}
+
+.line-all {
+  display: block;
+  .cw,
+  .text {
+    display: block;
+  }
+}
+.line-1,
+.line-2,
+.line-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  .cw,
+  .text {
+    display: inline;
+  }
+
+  .cw + * {
+    margin-left: 8px;
+  }
+}
+.line-1 {
+  line-clamp: 1;
+}
+.line-2 {
+  line-clamp: 2;
+}
+.line-3 {
+  line-clamp: 3;
 }
 </style>

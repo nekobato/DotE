@@ -20,6 +20,9 @@ import { Icon } from "@iconify/vue";
 import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import { computed, nextTick, reactive, ref } from "vue";
 import { onMounted } from "vue";
+import BlueskyPost from "@/components/BlueskyPost.vue";
+import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
+import { AppBskyFeedDefs } from "@atproto/api";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -188,6 +191,13 @@ onMounted(() => {
           :type="notification.type"
           :by="notification.account"
           :post="notification.status"
+          :lineStyle="store.settings.postStyle"
+        />
+        <BlueskyPost
+          v-if="timelineStore.currentInstance?.type === 'bluesky'"
+          v-for="post in timelineStore.current.posts as AppBskyFeedDefs.PostView"
+          :key="post.id"
+          :post="post"
           :lineStyle="store.settings.postStyle"
         />
       </PostList>

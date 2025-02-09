@@ -187,7 +187,6 @@ watch(
   () => {
     if (route.name === "MainTimeline") {
       console.log("initStream");
-      initStream();
     }
   },
 );

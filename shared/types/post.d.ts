@@ -24,4 +24,12 @@ export type Attachment =
       type: "poll";
       voted: boolean;
       url?: string;
+    }
+  | {
+      type: "audio";
+      url: string;
+    }
+  | {
+      type: "url";
+      url: string;
     };

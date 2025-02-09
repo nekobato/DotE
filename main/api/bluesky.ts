@@ -1,5 +1,18 @@
 import { AtpAgent, type AtpSessionData } from "@atproto/api";
 
+const refreshToken = async (agent: AtpAgent) => {
+  try {
+    await agent.sessionManager.refreshSession();
+  } catch (e) {
+    console.log("Failed to refresh session. Logging in...");
+    throw new Error("Failed to refresh session");
+  }
+
+  await agent.resumeSession(agent.session!);
+
+  return agent.session;
+};
+
 export const blueskyLogin = async ({
   instanceUrl,
   identifier,
@@ -35,7 +48,7 @@ export const blueskyGetProfile = async ({ instanceUrl, session }: { instanceUrl:
   return res.data;
 };
 
-export const blueskyGetAuthorFeed = async ({
+export const blueskyGetTimeline = async ({
   instanceUrl,
   session,
 }: {
@@ -47,9 +60,13 @@ export const blueskyGetAuthorFeed = async ({
     session,
   });
 
-  await agent.resumeSession(session);
+  try {
+    await agent.resumeSession(session);
+  } catch (e) {
+    console.log("Failed to resume session. Refreshing session...");
+    agent.sessionManager.session = await refreshToken(agent);
+  }
 
   const res = await agent.getTimeline();
-
-  return res.data;
+  return res.data.feed;
 };
