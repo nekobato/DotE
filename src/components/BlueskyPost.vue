@@ -3,7 +3,7 @@ import { ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
 import { Record } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 import { Icon } from "@iconify/vue";
-import { computed, ComputedRef, onBeforeUnmount, onMounted, type PropType } from "vue";
+import { computed, ComputedRef, type PropType } from "vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostAttachments from "./PostAttachments.vue";
 import { Attachment } from "@shared/types/post";
@@ -35,7 +35,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction", "repost"]);
+const emit = defineEmits(["refreshPost", "reaction", "newReaction", "repost"]);
 
 const postType = computed(() => {
   if (props.post.post.embed?.record) {
@@ -83,48 +83,29 @@ const postAtttachments: ComputedRef<Attachment[]> = computed(() => {
   return attachments;
 });
 
-const refreshPost = () => {
-  emit("refreshPost", props.post.id);
-};
-
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.currentInstanceUrl).toString() });
+  const postId = props.post.post.uri.split("/").pop();
+  // https://[instanceUrl]/profile/[author.handle]/post/[post.id]
+  // TODO: どうやってWebUIのURLを取得するの
+  console.log(`/profile/${props.post.post.author.handle}/post/${postId}`, "https://bsky.app");
+  ipcSend("open-url", {
+    url: new URL(`/profile/${props.post.post.author.handle}/post/${postId}`, props.currentInstanceUrl).toString(),
+  });
 };
 
 const openUserPage = () => {
   ipcSend("open-url", {
-    url: new URL(
-      `/profile/${props.post.post.author.handle}`,
-      props.currentInstanceUrl?.startsWith("https://")
-        ? props.currentInstanceUrl
-        : `https://${props.currentInstanceUrl}`,
-    ).toString(),
+    url: new URL(`/profile/${props.post.post.author.handle}`, props.currentInstanceUrl).toString(),
   });
-};
-
-const openReactionWindow = () => {
-  emit("newReaction", props.post.id);
 };
 
 const openRepostWindow = () => {
   emit("repost", { post: props.post });
 };
 
-// const onClickReaction = (postId: string, reaction: string) => {
-//   emit("reaction", { postId, reaction });
-// };
-
-onMounted(() => {
-  ipcSend("stream:sub-note", {
-    postId: props.post.id,
-  });
-});
-
-onBeforeUnmount(() => {
-  ipcSend("stream:unsub-note", {
-    postId: props.post.id,
-  });
-});
+const toggleFavourite = () => {
+  emit("reaction", { post: props.post });
+};
 </script>
 
 <template>
@@ -148,7 +129,7 @@ onBeforeUnmount(() => {
             :class="{ mini: postType === 'repost' }"
             :src="props.post.post.author.avatar || ''"
             alt=""
-            @click="openUserPage()"
+            @click="openUserPage"
           />
           <div class="text-container" :class="[lineStyle]">
             <span class="text" v-html="record.text" />
@@ -160,25 +141,19 @@ onBeforeUnmount(() => {
       <PostAttachments :attachments="postAtttachments" />
     </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">
-      <!-- <button
+      <button
         class="reaction"
         :class="{
-          reacted: props.post.favourited,
+          reacted: false,
         }"
         @click="toggleFavourite"
-        :title="`Favourites: ${props.post.favourites_count}`"
+        :title="`Favourites: ${props.post.post.likeCount}`"
       >
         <Icon class="star-icon" icon="mingcute:star-fill" />
-        <span class="count">{{ props.post.favourites_count }}</span>
-      </button> -->
+        <span class="count">{{ props.post.post.likeCount }}</span>
+      </button>
     </div>
     <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-fill" />
-      </button>
-      <button class="dote-post-action" @click="openReactionWindow" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
-      </button>
       <button class="dote-post-action" @click="openRepostWindow" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
       </button>

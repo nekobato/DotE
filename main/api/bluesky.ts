@@ -1,17 +1,5 @@
 import { AtpAgent, type AtpSessionData } from "@atproto/api";
-
-const refreshToken = async (agent: AtpAgent) => {
-  try {
-    await agent.sessionManager.refreshSession();
-  } catch (e) {
-    console.log("Failed to refresh session. Logging in...");
-    throw new Error("Failed to refresh session");
-  }
-
-  await agent.resumeSession(agent.session!);
-
-  return agent.session;
-};
+import { getUserAll, store, upsertUser } from "../db";
 
 export const blueskyLogin = async ({
   instanceUrl,
@@ -60,13 +48,79 @@ export const blueskyGetTimeline = async ({
     session,
   });
 
-  try {
-    await agent.resumeSession(session);
-  } catch (e) {
-    console.log("Failed to resume session. Refreshing session...");
-    agent.sessionManager.session = await refreshToken(agent);
+  if (!validateJwtExp(session.accessJwt)) {
+    const { accessJwt, refreshJwt } = await refreshSession(instanceUrl, session.refreshJwt);
+    if (accessJwt && refreshJwt) {
+      agent.sessionManager.session = { ...session, accessJwt, refreshJwt };
+      const user = getUserAll().find((user) => user.blueskySession?.did === session.did);
+      if (user) {
+        user.blueskySession = { ...session, accessJwt, refreshJwt };
+        upsertUser(user);
+      }
+    } else {
+      throw new Error("Failed to refresh session.");
+    }
   }
+
+  await agent.resumeSession(session);
 
   const res = await agent.getTimeline();
   return res.data.feed;
 };
+
+async function refreshSession(
+  instanceUrl: string,
+  refreshJwt: string,
+): Promise<{
+  accessJwt: string | null;
+  refreshJwt: string | null;
+  message: string | null;
+}> {
+  const url = `${instanceUrl}/xrpc/com.atproto.server.refreshSession`;
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${refreshJwt}`,
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    const data: AtpSessionData = await response.json();
+
+    return {
+      accessJwt: data.accessJwt,
+      refreshJwt: data.refreshJwt,
+      message: null,
+    };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "不明なエラー [refreshSession]";
+    console.error(error);
+    return {
+      accessJwt: null,
+      refreshJwt: null,
+      message: error,
+    };
+  }
+}
+
+function validateJwtExp(jwt: string): boolean {
+  // 1h
+  const expMarginMinute = 60;
+  try {
+    const decodedToken = JSON.parse(atob(jwt.split(".")[1]));
+    const expirationTime = decodedToken.exp * 1000;
+    const currentTime = Date.now();
+
+    return expirationTime - currentTime > expMarginMinute * 60 * 1000;
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "不明なエラー [validateJwtExp]";
+    console.error(error);
+    return false;
+  }
+}

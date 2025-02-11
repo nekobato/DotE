@@ -14,6 +14,7 @@ import { nextTick } from "vue";
 const appLogoImagePathMap = {
   misskey: "/images/icons/misskey.png",
   mastodon: "/images/icons/mastodon.png",
+  bluesky: "/images/icons/bluesky.png",
 };
 
 const store = useStore();

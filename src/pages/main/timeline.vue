@@ -195,10 +195,13 @@ onMounted(() => {
         />
         <BlueskyPost
           v-if="timelineStore.currentInstance?.type === 'bluesky'"
-          v-for="post in timelineStore.current.posts as AppBskyFeedDefs.PostView"
-          :key="post.id"
+          v-for="post in timelineStore.current.posts as AppBskyFeedDefs.FeedViewPost[]"
+          :key="post.post.cid"
           :post="post"
           :lineStyle="store.settings.postStyle"
+          :currentInstanceUrl="timelineStore.currentInstance?.url"
+          @refreshPost="timelineStore.blueskyUpdatePost"
+          @reaction="onReaction"
         />
       </PostList>
       <MisskeyAdCarousel v-if="ads.length" :items="ads" />

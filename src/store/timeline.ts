@@ -418,6 +418,25 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
+  const blueskyUpdatePost = async ({ id }: { id: string }) => {
+    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
+
+    const res = await ipcInvoke("api", {
+      method: "bluesky:getPost",
+      instanceUrl: currentInstance.value?.url,
+      session: currentUser.value.blueskySession,
+      id: id,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${id}の取得失敗`,
+      });
+    });
+    const postIndex = current.value?.posts.findIndex((p) => p.id === id);
+    if (!postIndex) return;
+
+    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
+  };
+
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
@@ -455,5 +474,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     mastodonGetList,
     mastodonToggleFavourite,
     mastodonUpdatePost,
+    blueskyUpdatePost,
   };
 });

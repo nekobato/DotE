@@ -91,6 +91,7 @@ const schema: Schema<StoreSchema> = {
         token: { type: "string" },
         refreshToken: { type: "string" },
         avatarUrl: { type: "string" },
+        blueskySession: { type: "object" },
       },
       required: ["id", "instanceId", "name", "token", "avatarUrl"],
     },
@@ -251,12 +252,19 @@ export const deleteUser = (id: string) => {
 
 export const getUserAll = () => {
   return store.get("users").map((user) => {
-    console.log("users", user.name);
-    const decryptedToken = safeStorage.decryptString(Buffer.from(user.token, "base64"));
-    return {
-      ...user,
-      token: decryptedToken,
-    };
+    user.token = safeStorage.decryptString(Buffer.from(user.token, "base64"));
+
+    if (user.blueskySession) {
+      const decryptedAccessToken = safeStorage.decryptString(Buffer.from(user.blueskySession.accessJwt, "base64"));
+      const decryptedRefreshToken = safeStorage.decryptString(Buffer.from(user.blueskySession.refreshJwt, "base64"));
+      user.blueskySession = {
+        ...user.blueskySession,
+        accessJwt: decryptedAccessToken,
+        refreshJwt: decryptedRefreshToken,
+      };
+    }
+
+    return user;
   });
 };
 
@@ -266,9 +274,20 @@ export const upsertUser = (user: {
   name: string;
   token: string;
   avatarUrl: string;
-  blueskySession?: string;
+  blueskySession?: { did: string; accessJwt: string; refreshJwt: string };
 }) => {
   const encryptedToken = safeStorage.encryptString(user.token).toString("base64");
+
+  if (user.blueskySession) {
+    const encryptedAccessToken = safeStorage.encryptString(user.blueskySession.accessJwt).toString("base64");
+    const encryptedRefreshToken = safeStorage.encryptString(user.blueskySession.refreshJwt).toString("base64");
+    user.blueskySession = {
+      ...user.blueskySession,
+      accessJwt: encryptedAccessToken,
+      refreshJwt: encryptedRefreshToken,
+    };
+  }
+
   if (user.id) {
     const currentUser = store.get("users").find((user) => user.instanceId === user.instanceId);
     if (!currentUser) throw new Error("User is not found");
