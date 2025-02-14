@@ -6,6 +6,7 @@ import { DotEPost, TimelineStore, methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
 import { MastodonNotification, MastodonToot } from "@/types/mastodon";
 import { defaultChannelNameFromType } from "@/utils/dote";
+import { AppBskyFeedDefs } from "@atproto/api";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -437,6 +438,57 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
+  const blueskyLikePost = async ({ uri, cid }: { uri: string; cid: string }) => {
+    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
+
+    const res = await ipcInvoke("api", {
+      method: "bluesky:like",
+      instanceUrl: currentInstance.value?.url,
+      session: currentUser.value.blueskySession,
+      uri,
+      cid,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${cid}のいいね失敗`,
+      });
+    });
+
+    console.log("like", res);
+
+    const posts = store.timelines[currentIndex.value].posts as AppBskyFeedDefs.FeedViewPost[];
+
+    const postIndex = posts.findIndex((p) => p.post.uri === uri);
+    if (!postIndex || !posts[postIndex].post.viewer) return;
+
+    posts[postIndex].post.viewer.like = res.uri;
+
+    console.log("like", posts[postIndex].post);
+  };
+
+  const blueskyDeleteLike = async ({ uri }: { uri: string }) => {
+    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
+
+    await ipcInvoke("api", {
+      method: "bluesky:deleteLike",
+      instanceUrl: currentInstance.value?.url,
+      session: currentUser.value.blueskySession,
+      uri: uri,
+    }).catch(() => {
+      store.$state.errors.push({
+        message: `${uri}のいいね削除失敗`,
+      });
+    });
+
+    const posts = store.timelines[currentIndex.value].posts as AppBskyFeedDefs.FeedViewPost[];
+
+    const postIndex = posts.findIndex((p) => p.post.viewer?.like === uri);
+    if (!postIndex || !posts[postIndex].post.viewer) return;
+
+    posts[postIndex].post.viewer.like = undefined;
+
+    console.log("delete like", posts[postIndex].post);
+  };
+
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
@@ -475,5 +527,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     mastodonToggleFavourite,
     mastodonUpdatePost,
     blueskyUpdatePost,
+    blueskyLikePost,
+    blueskyDeleteLike,
   };
 });

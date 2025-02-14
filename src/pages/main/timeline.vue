@@ -201,7 +201,8 @@ onMounted(() => {
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           @refreshPost="timelineStore.blueskyUpdatePost"
-          @reaction="onReaction"
+          @like="timelineStore.blueskyLikePost"
+          @deleteLike="timelineStore.blueskyDeleteLike"
         />
       </PostList>
       <MisskeyAdCarousel v-if="ads.length" :items="ads" />

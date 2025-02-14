@@ -1,5 +1,5 @@
 import { AtpAgent, type AtpSessionData } from "@atproto/api";
-import { getUserAll, store, upsertUser } from "../db";
+import { getUserAll, upsertUser } from "../db";
 
 export const blueskyLogin = async ({
   instanceUrl,
@@ -123,4 +123,48 @@ function validateJwtExp(jwt: string): boolean {
     console.error(error);
     return false;
   }
+}
+
+export async function blueskyLike({
+  instanceUrl,
+  session,
+  uri,
+  cid,
+}: {
+  instanceUrl: string;
+  session: AtpSessionData;
+  uri: string;
+  cid: string;
+}) {
+  const agent = new AtpAgent({
+    service: instanceUrl,
+    session,
+  });
+
+  await agent.resumeSession(session);
+
+  const res = await agent.like(uri, cid);
+
+  return res;
+}
+
+export async function blueskyDeleteLike({
+  instanceUrl,
+  session,
+  uri,
+}: {
+  instanceUrl: string;
+  session: AtpSessionData;
+  uri: string;
+}) {
+  const agent = new AtpAgent({
+    service: instanceUrl,
+    session,
+  });
+
+  await agent.resumeSession(session);
+
+  await agent.deleteLike(uri);
+
+  return;
 }

@@ -8,6 +8,8 @@ import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostAttachments from "./PostAttachments.vue";
 import { Attachment } from "@shared/types/post";
 
+const bskyUrl = "https://bsky.app";
+
 const props = defineProps({
   post: {
     type: Object as PropType<AppBskyFeedDefs.FeedViewPost>,
@@ -35,7 +37,11 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["refreshPost", "reaction", "newReaction", "repost"]);
+const emit = defineEmits<{
+  repost: [{ post: AppBskyFeedDefs.FeedViewPost }];
+  like: [{ uri: string; cid: string }];
+  deleteLike: [{ uri: string }];
+}>();
 
 const postType = computed(() => {
   if (props.post.post.embed?.record) {
@@ -53,6 +59,10 @@ const postType = computed(() => {
 
 const record = computed(() => {
   return props.post.post.record as AppBskyFeedPost.Record;
+});
+
+const isLiked = computed(() => {
+  return props.post.post.viewer?.like ? true : false;
 });
 
 const postAtttachments: ComputedRef<Attachment[]> = computed(() => {
@@ -87,15 +97,14 @@ const openPost = () => {
   const postId = props.post.post.uri.split("/").pop();
   // https://[instanceUrl]/profile/[author.handle]/post/[post.id]
   // TODO: どうやってWebUIのURLを取得するの
-  console.log(`/profile/${props.post.post.author.handle}/post/${postId}`, "https://bsky.app");
   ipcSend("open-url", {
-    url: new URL(`/profile/${props.post.post.author.handle}/post/${postId}`, props.currentInstanceUrl).toString(),
+    url: new URL(`/profile/${props.post.post.author.handle}/post/${postId}`, bskyUrl).toString(),
   });
 };
 
 const openUserPage = () => {
   ipcSend("open-url", {
-    url: new URL(`/profile/${props.post.post.author.handle}`, props.currentInstanceUrl).toString(),
+    url: new URL(`/profile/${props.post.post.author.handle}`, bskyUrl).toString(),
   });
 };
 
@@ -103,8 +112,22 @@ const openRepostWindow = () => {
   emit("repost", { post: props.post });
 };
 
-const toggleFavourite = () => {
-  emit("reaction", { post: props.post });
+const toggleLike = () => {
+  if (props.post.post.viewer?.like) {
+    deleteLike();
+  } else {
+    like();
+  }
+};
+
+const like = () => {
+  emit("like", { uri: props.post.post.uri, cid: props.post.post.cid });
+};
+
+const deleteLike = () => {
+  if (props.post.post.viewer?.like) {
+    emit("deleteLike", { uri: props.post.post.viewer.like });
+  }
 };
 </script>
 
@@ -144,9 +167,9 @@ const toggleFavourite = () => {
       <button
         class="reaction"
         :class="{
-          reacted: false,
+          reacted: isLiked,
         }"
-        @click="toggleFavourite"
+        @click="toggleLike"
         :title="`Favourites: ${props.post.post.likeCount}`"
       >
         <Icon class="star-icon" icon="mingcute:star-fill" />
