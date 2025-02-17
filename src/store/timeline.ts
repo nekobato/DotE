@@ -124,7 +124,6 @@ export const useTimelineStore = defineStore("timeline", () => {
         await ipcInvoke("db:delete-timeline", {
           id: timeline.id,
         });
-        console.log("deleted timeline", timeline.userId, userId);
       }
     });
     // 更新してみる
@@ -375,7 +374,6 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const mastodonToggleFavourite = async ({ id, favourited }: { id: string; favourited: boolean }) => {
-    console.log("favourited", favourited);
     if (currentUser.value) {
       await ipcInvoke("api", {
         method: favourited ? "mastodon:unFavourite" : "mastodon:favourite",
@@ -453,16 +451,12 @@ export const useTimelineStore = defineStore("timeline", () => {
       });
     });
 
-    console.log("like", res);
-
     const posts = store.timelines[currentIndex.value].posts as AppBskyFeedDefs.FeedViewPost[];
 
     const postIndex = posts.findIndex((p) => p.post.uri === uri);
     if (!postIndex || !posts[postIndex].post.viewer) return;
 
     posts[postIndex].post.viewer.like = res.uri;
-
-    console.log("like", posts[postIndex].post);
   };
 
   const blueskyDeleteLike = async ({ uri }: { uri: string }) => {
@@ -485,8 +479,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     if (!postIndex || !posts[postIndex].post.viewer) return;
 
     posts[postIndex].post.viewer.like = undefined;
-
-    console.log("delete like", posts[postIndex].post);
   };
 
   const isTimelineAvailable = computed(() => {

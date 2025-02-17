@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
-import { AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
+import { AppBskyEmbedRecord, AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
 import { Record } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 import { Icon } from "@iconify/vue";
 import { computed, ComputedRef, type PropType } from "vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostAttachments from "./PostAttachments.vue";
 import { Attachment } from "@shared/types/post";
+import BlueskyPostContent from "./BlueskyPostContent.vue";
+import { BlueskyPostType } from "@/types/bluesky";
 
 const bskyUrl = "https://bsky.app";
 
@@ -43,22 +45,29 @@ const emit = defineEmits<{
   deleteLike: [{ uri: string }];
 }>();
 
-const postType = computed(() => {
-  if (props.post.post.embed?.record) {
-    if (props.post.text) {
-      return "quote";
+const record = computed(() => {
+  return props.post.post.record as AppBskyFeedPost.Record;
+});
+
+const postType = computed<BlueskyPostType[]>(() => {
+  const embedRecord = props.post.post.embed?.record as AppBskyEmbedRecord.View["record"];
+
+  if (embedRecord && (embedRecord.value as any)?.$type === "app.bsky.feed.post") {
+    if (record.value.text) {
+      return ["quote", "quoted"];
     } else {
-      return "repost";
+      return ["repost", "reposted"];
     }
   } else if (props.post.reply) {
-    return "reply";
+    return ["reply", "replied"];
   } else {
-    return "post";
+    return ["post"];
   }
 });
 
-const record = computed(() => {
-  return props.post.post.record as AppBskyFeedPost.Record;
+const originAuthor = computed(() => {
+  const embedRecord = props.post.post.embed?.record as AppBskyEmbedRecord.ViewRecord;
+  return embedRecord?.author;
 });
 
 const isLiked = computed(() => {
@@ -135,29 +144,26 @@ const deleteLike = () => {
   <div class="dote-post">
     <div class="post-data-group">
       <div class="post-content" :class="[]">
-        <div class="dote-post-info">
-          <span class="username" @click="openUserPage">{{
-            post.post.author.displayName || post.post.author.handle
-          }}</span>
-          <!-- <div class="renoted-by" v-if="postType === 'repost'">
-            <Icon icon="mingcute:refresh-3-line" />
-            <span class="username origin" @click="openUserPage(props.post.account)">{{
-              props.post.account.display_name
-            }}</span>
-          </div> -->
-        </div>
-        <div class="dote-post-content">
-          <img
-            class="dote-avatar"
-            :class="{ mini: postType === 'repost' }"
-            :src="props.post.post.author.avatar || ''"
-            alt=""
-            @click="openUserPage"
-          />
-          <div class="text-container" :class="[lineStyle]">
-            <span class="text" v-html="record.text" />
-          </div>
-        </div>
+        <BlueskyPostContent
+          :type="postType[0]"
+          :author="props.post.post.author"
+          :originAuthor="originAuthor"
+          :record="record"
+          :lineStyle="props.lineStyle"
+          :currentInstanceUrl="props.currentInstanceUrl"
+          @openUserPage="openUserPage"
+        />
+        <BlueskyPostContent
+          v-if="post.post.embed?.record"
+          :type="postType[1]"
+          :author="props.post.post.author"
+          :originAuthor="originAuthor"
+          :record="record"
+          :embedRecord="record.embed?.record as AppBskyEmbedRecord.View"
+          :lineStyle="props.lineStyle"
+          :currentInstanceUrl="props.currentInstanceUrl"
+          @openUserPage="openUserPage"
+        />
       </div>
     </div>
     <PostAttachmentsContainer class="attachments" v-if="post.post.embed">
@@ -388,36 +394,5 @@ const deleteLike = () => {
     height: 16px;
     color: var(--dote-color-white);
   }
-}
-
-.line-all {
-  display: block;
-  .cw,
-  .text {
-    display: block;
-  }
-}
-.line-1,
-.line-2,
-.line-3 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  .cw,
-  .text {
-    display: inline;
-  }
-
-  .cw + * {
-    margin-left: 8px;
-  }
-}
-.line-1 {
-  line-clamp: 1;
-}
-.line-2 {
-  line-clamp: 2;
-}
-.line-3 {
-  line-clamp: 3;
 }
 </style>
