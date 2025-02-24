@@ -6,7 +6,7 @@ import { DotEPost, TimelineStore, methodOfChannel, useStore } from ".";
 import type { Timeline } from "@shared/types/store";
 import { MastodonNotification, MastodonToot } from "@/types/mastodon";
 import { defaultChannelNameFromType } from "@/utils/dote";
-import { AppBskyFeedDefs } from "@atproto/api";
+import { useBlueskyStore } from "./bluesky";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -21,6 +21,8 @@ export const useTimelineStore = defineStore("timeline", () => {
   const currentInstance = computed(() => {
     return store.$state.instances.find((instance) => instance.id === currentUser?.value?.instanceId);
   });
+
+  const blueskyStore = useBlueskyStore();
 
   const setPosts = (posts: DotEPost[]) => {
     if (store.$state.timelines[currentIndex.value]) {
@@ -41,7 +43,13 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
+  // missky, mastodon, bluesky
   const fetchInitialPosts = async () => {
+    if (currentInstance.value?.type === "bluesky") {
+      await blueskyStore.fetchPosts();
+      return;
+    }
+
     if (!current.value || !currentUser.value || !currentInstance.value) {
       throw new Error("ユーザーが見つかりませんでした");
     }
@@ -62,12 +70,14 @@ export const useTimelineStore = defineStore("timeline", () => {
         message: `${currentInstance.value?.name}のタイムラインを取得できませんでした`,
       });
     });
+
     if (data.error) {
       store.$state.errors.push({
         message: `${currentInstance.value?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
       });
       return;
     }
+
     if (current.value.channel === "misskey:notifications" || current.value.channel === "mastodon:notifications") {
       setNotifications(data);
     } else {
@@ -75,6 +85,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
+  // misskey, mastotodon
   const fetchDiffPosts = async () => {
     if (store.timelines[currentIndex.value]?.posts?.length === 0) return;
     if (current.value && currentUser.value && currentInstance.value) {
@@ -417,70 +428,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
   };
 
-  const blueskyUpdatePost = async ({ id }: { id: string }) => {
-    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
-
-    const res = await ipcInvoke("api", {
-      method: "bluesky:getPost",
-      instanceUrl: currentInstance.value?.url,
-      session: currentUser.value.blueskySession,
-      id: id,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${id}の取得失敗`,
-      });
-    });
-    const postIndex = current.value?.posts.findIndex((p) => p.id === id);
-    if (!postIndex) return;
-
-    store.timelines[currentIndex.value].posts.splice(postIndex, 1, res);
-  };
-
-  const blueskyLikePost = async ({ uri, cid }: { uri: string; cid: string }) => {
-    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
-
-    const res = await ipcInvoke("api", {
-      method: "bluesky:like",
-      instanceUrl: currentInstance.value?.url,
-      session: currentUser.value.blueskySession,
-      uri,
-      cid,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${cid}のいいね失敗`,
-      });
-    });
-
-    const posts = store.timelines[currentIndex.value].posts as AppBskyFeedDefs.FeedViewPost[];
-
-    const postIndex = posts.findIndex((p) => p.post.uri === uri);
-    if (!postIndex || !posts[postIndex].post.viewer) return;
-
-    posts[postIndex].post.viewer.like = res.uri;
-  };
-
-  const blueskyDeleteLike = async ({ uri }: { uri: string }) => {
-    if (!store.timelines[currentIndex.value] || !currentUser.value) return;
-
-    await ipcInvoke("api", {
-      method: "bluesky:deleteLike",
-      instanceUrl: currentInstance.value?.url,
-      session: currentUser.value.blueskySession,
-      uri: uri,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${uri}のいいね削除失敗`,
-      });
-    });
-
-    const posts = store.timelines[currentIndex.value].posts as AppBskyFeedDefs.FeedViewPost[];
-
-    const postIndex = posts.findIndex((p) => p.post.viewer?.like === uri);
-    if (!postIndex || !posts[postIndex].post.viewer) return;
-
-    posts[postIndex].post.viewer.like = undefined;
-  };
-
   const isTimelineAvailable = computed(() => {
     if (!current.value) return false;
     if (!current.value?.userId || !current.value?.channel || !current.value?.available) return false;
@@ -493,6 +440,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     deleteTimeline,
     deleteTimelineByUserId,
     current,
+    currentIndex,
     isTimelineAvailable,
     currentUser,
     currentInstance,
@@ -518,8 +466,5 @@ export const useTimelineStore = defineStore("timeline", () => {
     mastodonGetList,
     mastodonToggleFavourite,
     mastodonUpdatePost,
-    blueskyUpdatePost,
-    blueskyLikePost,
-    blueskyDeleteLike,
   };
 });

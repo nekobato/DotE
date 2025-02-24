@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ipcSend } from "@/utils/ipc";
 import { AppBskyEmbedRecord, AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
-import { Record } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 import { Icon } from "@iconify/vue";
 import { computed, ComputedRef, type PropType } from "vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";

@@ -39,9 +39,13 @@ export const blueskyGetProfile = async ({ instanceUrl, session }: { instanceUrl:
 export const blueskyGetTimeline = async ({
   instanceUrl,
   session,
+  untilId,
+  limit = 30,
 }: {
   instanceUrl: string;
   session: AtpSessionData;
+  untilId?: string;
+  limit?: number;
 }) => {
   const agent = new AtpAgent({
     service: instanceUrl,
@@ -65,7 +69,11 @@ export const blueskyGetTimeline = async ({
   await agent.resumeSession(session);
 
   const res = await agent.getTimeline();
-  return res.data.feed;
+  agent.getTimeline({
+    cursor: untilId,
+    limit,
+  });
+  return res.data;
 };
 
 async function refreshSession(

@@ -5,8 +5,11 @@ import { Icon } from "@iconify/vue";
 import { computed, ref } from "vue";
 import DoteLoading from "./common/DoteLoading.vue";
 import { methodOfChannel } from "@/store";
+import { useBlueskyStore } from "@/store/bluesky";
+import { ChannelName } from "@shared/types/store";
 
 const timelineStore = useTimelineStore();
+const blueskyStore = useBlueskyStore();
 
 const loading = ref(false);
 
@@ -25,19 +28,9 @@ const canReadmore = computed(() => {
   );
 });
 
-const readmore = async () => {
-  if (
-    !postsOrNotifications.value ||
-    !timelineStore.current?.channel ||
-    postsOrNotifications.value.length === 0 ||
-    loading.value
-  ) {
-    return;
-  }
-
-  loading.value = true;
+const fetchOlderPosts = async (channel: ChannelName) => {
   const additionalNotes = await ipcInvoke("api", {
-    method: methodOfChannel[timelineStore.current?.channel],
+    method: methodOfChannel[channel],
     channelId: timelineStore.current?.options.channelId, // option
     antennaId: timelineStore.current?.options?.antennaId, // option
     listId: timelineStore.current?.options?.listId, // option
@@ -57,6 +50,24 @@ const readmore = async () => {
       timelineStore.addMorePosts(additionalNotes);
     }
   }
+};
+
+const readmore = async () => {
+  if (!timelineStore.current?.channel || loading.value) {
+    return;
+  }
+
+  loading.value = true;
+
+  switch (timelineStore.currentInstance?.type) {
+    case "bluesky":
+      await blueskyStore.fetchOlderPosts(timelineStore.current.channel);
+      break;
+    default:
+      await fetchOlderPosts(timelineStore.current.channel);
+      break;
+  }
+
   loading.value = false;
 };
 </script>

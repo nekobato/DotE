@@ -21,11 +21,12 @@ import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/ty
 import { computed, nextTick, reactive, ref } from "vue";
 import { onMounted } from "vue";
 import BlueskyPost from "@/components/BlueskyPost.vue";
-import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import { AppBskyFeedDefs } from "@atproto/api";
+import { useBlueskyStore } from "@/store/bluesky";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
+const blueskyqStore = useBlueskyStore();
 const timelineContainer = ref<HTMLDivElement | null>(null);
 const scrollPosition = ref(0);
 
@@ -200,9 +201,8 @@ onMounted(() => {
           :post="post"
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
-          @refreshPost="timelineStore.blueskyUpdatePost"
-          @like="timelineStore.blueskyLikePost"
-          @deleteLike="timelineStore.blueskyDeleteLike"
+          @like="blueskyqStore.like"
+          @deleteLike="blueskyqStore.deleteLike"
         />
       </PostList>
       <MisskeyAdCarousel v-if="ads.length" :items="ads" />

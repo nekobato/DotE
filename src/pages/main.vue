@@ -83,7 +83,9 @@ window.ipc?.on("set-mode", (_, { mode, reflect }) => {
 });
 
 window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
-  const post = timelineStore.current?.posts.find((post) => post.id === data.postId) as MisskeyNote;
+  const posts = timelineStore.current?.posts as MisskeyNote[];
+  if (!posts) return;
+  const post = posts.find((post) => post.id === data.postId);
   if (!post) return;
 
   // 既にreactionがある場合は削除してから追加
