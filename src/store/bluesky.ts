@@ -6,45 +6,58 @@ import { AppBskyFeedDefs } from "@atproto/api";
 import { ChannelName } from "@shared/types/store";
 import { computed } from "vue";
 
-export const useBlueskyStore = defineStore("users", () => {
+export const useBlueskyStore = defineStore("bluesky", () => {
   const store = useStore();
-  const timelineStore = useTimelineStore();
+  let timelineStore: ReturnType<typeof useTimelineStore>;
+
+  // 初期化時に循環参照を避けるため、遅延初期化
+  const getTimelineStore = () => {
+    if (!timelineStore) {
+      timelineStore = useTimelineStore();
+    }
+    return timelineStore;
+  };
 
   const currentPosts = computed<AppBskyFeedDefs.FeedViewPost[]>(() => {
-    return store.timelines[timelineStore.currentIndex]?.posts || [];
+    const timeline = getTimelineStore();
+    return store.timelines[timeline.currentIndex]?.posts || [];
   });
 
   const setPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
-    if (timelineStore.current) {
-      store.$state.timelines[timelineStore.currentIndex].posts = posts;
+    const timeline = getTimelineStore();
+    if (timeline.current) {
+      store.$state.timelines[timeline.currentIndex].posts = posts;
     }
   };
 
   const pushPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
-    if (timelineStore.current) {
-      store.$state.timelines[timelineStore.currentIndex].posts.push(...posts);
+    const timeline = getTimelineStore();
+    if (timeline.current) {
+      store.$state.timelines[timeline.currentIndex].posts.push(...posts);
     }
   };
 
   const unshiftPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
-    if (timelineStore.current) {
-      store.$state.timelines[timelineStore.currentIndex].posts.unshift(...posts);
+    const timeline = getTimelineStore();
+    if (timeline.current) {
+      store.$state.timelines[timeline.currentIndex].posts.unshift(...posts);
     }
   };
 
   const fetchPosts = async () => {
-    if (!timelineStore.current || !timelineStore.currentUser || !timelineStore.currentInstance) {
+    const timeline = getTimelineStore();
+    if (!timeline.current || !timeline.currentUser || !timeline.currentInstance) {
       throw new Error("ユーザーが見つかりませんでした");
     }
 
     const data = await ipcInvoke("api", {
-      method: methodOfChannel[timelineStore.current?.channel],
-      instanceUrl: timelineStore.currentInstance?.url,
-      session: timelineStore.currentUser.blueskySession,
+      method: methodOfChannel[timeline.current.channel],
+      instanceUrl: timeline.currentInstance.url,
+      session: timeline.currentUser.blueskySession,
       limit: 40,
     }).catch(() => {
       store.$state.errors.push({
-        message: `${timelineStore.currentInstance?.name}のタイムラインを取得できませんでした`,
+        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`,
       });
     });
 
@@ -53,48 +66,51 @@ export const useBlueskyStore = defineStore("users", () => {
       setCursor(data.cursor);
     } else {
       store.$state.errors.push({
-        message: `${timelineStore.currentInstance?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
+        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
       });
       return;
     }
   };
 
   const fetchOlderPosts = async (channel: ChannelName) => {
+    const timeline = getTimelineStore();
     const data: {
       feed: AppBskyFeedDefs.FeedViewPost[];
       cursor: string;
     } = await ipcInvoke("api", {
       method: methodOfChannel[channel],
-      instanceUrl: timelineStore.currentInstance?.url,
-      session: timelineStore.currentUser?.blueskySession,
+      instanceUrl: timeline.currentInstance?.url,
+      session: timeline.currentUser?.blueskySession,
       limit: 20,
-      cursor: timelineStore.current?.bluesky?.cursor,
+      cursor: timeline.current?.bluesky?.cursor,
     }).catch(() => {
       store.$state.errors.push({
-        message: `${timelineStore.currentInstance?.name}の古いタイムラインを取得できませんでした`,
+        message: `${timeline.currentInstance?.name}の古いタイムラインを取得できませんでした`,
       });
     });
 
     if (data) {
-      timelineStore.addMorePosts(data.feed);
+      timeline.addMorePosts(data.feed);
     }
   };
 
   const setCursor = (cursor: string) => {
-    if (store.$state.timelines[timelineStore.currentIndex]) {
-      store.$state.timelines[timelineStore.currentIndex].bluesky = {
+    const timeline = getTimelineStore();
+    if (store.$state.timelines[timeline.currentIndex]) {
+      store.$state.timelines[timeline.currentIndex].bluesky = {
         cursor: cursor,
       };
     }
   };
 
   const like = async ({ uri, cid }: { uri: string; cid: string }) => {
-    if (!store.timelines[timelineStore.currentIndex] || !timelineStore.currentUser) return;
+    const timeline = getTimelineStore();
+    if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
 
     const res = await ipcInvoke("api", {
       method: "bluesky:like",
-      instanceUrl: timelineStore.currentInstance?.url,
-      session: timelineStore.currentUser.blueskySession,
+      instanceUrl: timeline.currentInstance?.url,
+      session: timeline.currentUser.blueskySession,
       uri,
       cid,
     }).catch(() => {
@@ -106,16 +122,17 @@ export const useBlueskyStore = defineStore("users", () => {
     const postIndex = currentPosts.value.findIndex((p) => p.post.uri === uri);
     if (postIndex === -1 || !currentPosts.value[postIndex].post.viewer) return;
 
-    store.$state.timelines[timelineStore.currentIndex].posts[postIndex].post.viewer.like = res.uri;
+    store.$state.timelines[timeline.currentIndex].posts[postIndex].post.viewer.like = res.uri;
   };
 
   const deleteLike = async ({ uri }: { uri: string }) => {
-    if (!store.timelines[timelineStore.currentIndex] || !timelineStore.currentUser) return;
+    const timeline = getTimelineStore();
+    if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
 
     await ipcInvoke("api", {
       method: "bluesky:deleteLike",
-      instanceUrl: timelineStore.currentInstance?.url,
-      session: timelineStore.currentUser.blueskySession,
+      instanceUrl: timeline.currentInstance?.url,
+      session: timeline.currentUser.blueskySession,
       uri: uri,
     }).catch(() => {
       store.$state.errors.push({

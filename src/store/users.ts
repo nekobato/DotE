@@ -17,19 +17,39 @@ export type NewUser = Omit<User, "id" | "instanceId"> & {
 
 export const useUsersStore = defineStore("users", () => {
   const store = useStore();
-  const instanceStore = useInstanceStore();
-  const timelineStore = useTimelineStore();
+
+  let timelineStore: ReturnType<typeof useTimelineStore>;
+  let instanceStore: ReturnType<typeof useInstanceStore>;
+
+  // 初期化時に循環参照を避けるため、遅延初期化
+  const getTimelineStore = () => {
+    if (!timelineStore) {
+      timelineStore = useTimelineStore();
+    }
+    return timelineStore;
+  };
+
+  const getInstanceStore = () => {
+    if (!instanceStore) {
+      instanceStore = useInstanceStore();
+    }
+    return instanceStore;
+  };
 
   const users = store.$state.users;
   const isEmpty = store.$state.users.length === 0;
 
   const deleteUser = async (id: string) => {
+    const timelineStore = getTimelineStore();
     await ipcInvoke("db:delete-user", { id });
     await store.initUsers();
     await timelineStore.deleteTimelineByUserId(id);
   };
 
   const createUser = async (newUser: NewUser) => {
+    const instanceStore = getInstanceStore();
+    const timelineStore = getTimelineStore();
+
     let instance: Instance | undefined = instanceStore.findInstance(newUser.instanceUrl);
     // Instanceが無ければ作成
     if (!instance) {
@@ -70,6 +90,8 @@ export const useUsersStore = defineStore("users", () => {
   };
 
   const checkAndUpdateUser = async (user: User) => {
+    const instanceStore = getInstanceStore();
+
     const instance = instanceStore.findInstance(user.instanceId);
     if (!instance) {
       store.$state.errors.push({
@@ -125,7 +147,7 @@ export const useUsersStore = defineStore("users", () => {
     }
   };
 
-  const postMisskeyAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: String }) => {
+  const postMisskeyAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
     const result: MisskeyEntities.User = await ipcInvoke("api", {
       method: "misskey:checkMiAuth",
       instanceUrl: instanceUrl,

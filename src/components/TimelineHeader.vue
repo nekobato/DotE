@@ -19,8 +19,8 @@ const appLogoImagePathMap = {
 
 const store = useStore();
 const timelineStore = useTimelineStore();
-const { findUser } = useUsersStore();
-const { findInstanceByUserId } = useInstanceStore();
+const usersStore = useUsersStore();
+const instanceStore = useInstanceStore();
 
 const isDetailVisible = ref(false);
 const detailRef = ref(null);
@@ -46,14 +46,15 @@ const currentTimelineImages = computed(() => {
 });
 
 const timelineWithImages = computed(() => {
+  console.log(usersStore);
   return store.$state.timelines.map((timeline) => {
-    const instance = findInstanceByUserId(timeline.userId);
+    const instance = instanceStore.findInstanceByUserId(timeline.userId);
     return {
       ...timeline,
       images: {
         app: instance ? appLogoImagePathMap[instance.type] : "",
         instance: instance?.iconUrl,
-        account: findUser(timeline.userId)?.avatarUrl,
+        account: usersStore.findUser(timeline.userId)?.avatarUrl,
         channel: timeline.channel,
       },
     };
@@ -153,8 +154,10 @@ const changeTimeline = async (index: number) => {
           </div>
           <div class="timeline-title">
             <div class="account">
-              <span class="nickname">{{ findUser(timeline.userId)?.name }}</span>
-              <span class="instance">@{{ findInstanceByUserId(timeline.userId)?.url?.replace("https://", "") }}</span>
+              <span class="nickname">{{ usersStore.findUser(timeline.userId)?.name }}</span>
+              <span class="instance"
+                >@{{ instanceStore.findInstanceByUserId(timeline.userId)?.url?.replace("https://", "") }}</span
+              >
             </div>
             <div class="stream">グローバル</div>
           </div>
