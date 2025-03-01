@@ -1,5 +1,4 @@
 import type { Post } from "@shared/types/post";
-import { useTimelineStore } from "@/store/timeline";
 import type { MisskeyNote } from "@shared/types/misskey";
 import { MisskeyChannelName } from "@shared/types/store";
 import { MisskeyStreamChannel } from "./misskeyStream";
@@ -81,41 +80,6 @@ export const parseMisskeyText = (text: string | null, emojis: { name: string; ur
 export const isMyReaction = (reaction: string, myReaction?: string) => {
   if (!myReaction) return false;
   return reaction === myReaction;
-};
-
-export const misskeyCreateReaction = async (postId: string, reaction: string) => {
-  const timelineStore = useTimelineStore();
-  await timelineStore.misskeyCreateReaction({
-    postId,
-    reaction,
-  });
-  // Update reaction on Local
-  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId) as MisskeyNote;
-  if (targetPost) {
-    targetPost.myReaction = reaction;
-    if (targetPost.reactions[reaction]) {
-      targetPost.reactions[reaction] += 1;
-    } else {
-      targetPost.reactions[reaction] = 1;
-    }
-  }
-};
-
-export const misskeyDeleteReaction = async (postId: string) => {
-  const timelineStore = useTimelineStore();
-  await timelineStore.misskeyDeleteReaction({
-    postId,
-  });
-  // Delete reaction on Local
-  const targetPost = timelineStore.current?.posts.find((post) => post.id === postId) as MisskeyNote;
-  if (targetPost && targetPost.myReaction) {
-    if (targetPost.reactions[targetPost.myReaction] === 1) {
-      delete targetPost.reactions[targetPost.myReaction];
-    } else {
-      targetPost.reactions[targetPost.myReaction] -= 1;
-    }
-    targetPost.myReaction = undefined;
-  }
 };
 
 export const emojisObject2Array = (emojis: { [name: string]: string }): { name: string; url: string }[] => {

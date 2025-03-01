@@ -112,12 +112,15 @@ export const useTimelineStore = defineStore("timeline", () => {
         });
       }
     });
+
     // 更新してみる
     await store.initTimelines();
+
     // UserもTimelineも無いなら終わり
     if (store.$state.users.length === 0) {
       return;
     }
+
     // UserはいるけどTimelineが無いならTimelineを作る
     if (store.$state.timelines.length === 0) {
       const instance = store.instances.find((instance) => instance.id === store.users[0].instanceId);
@@ -153,17 +156,11 @@ export const useTimelineStore = defineStore("timeline", () => {
     if (store.timelines[index].available) return;
     store.timelines.forEach(async (timeline, i) => {
       const { posts, notifications, ...timelineForStore } = timeline;
-      if (i === index) {
-        await ipcInvoke("db:set-timeline", {
-          ...timelineForStore,
-          available: true,
-        });
-      } else {
-        await ipcInvoke("db:set-timeline", {
-          ...timelineForStore,
-          available: false,
-        });
-      }
+
+      await ipcInvoke("db:set-timeline", {
+        ...timelineForStore,
+        available: i === index,
+      });
     });
     await store.initTimelines();
   };

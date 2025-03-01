@@ -32,7 +32,19 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   const createReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     const timeline = getTimelineStore();
+
     if (timeline.currentUser) {
+      // Update reaction on Local
+      const targetPost = (timelineStore.current?.posts as MisskeyNote[]).find(
+        (post) => post.id === postId,
+      ) as MisskeyNote;
+
+      if (targetPost) {
+        targetPost.myReaction = reaction;
+        const reactionCount = targetPost.reactions[reaction] || 0;
+        targetPost.reactions[reaction] = reactionCount + 1;
+      }
+
       await ipcInvoke("api", {
         method: "misskey:createReaction",
         instanceUrl: timeline.currentInstance?.url,
@@ -51,7 +63,22 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   const deleteReaction = async ({ postId }: { postId: string }) => {
     const timeline = getTimelineStore();
+
     if (timeline.currentUser) {
+      const targetPost = (timelineStore.current?.posts as MisskeyNote[]).find(
+        (post) => post.id === postId,
+      ) as MisskeyNote;
+
+      if (targetPost && targetPost.myReaction) {
+        const reaction = targetPost.myReaction;
+        if (targetPost.reactions[reaction] === 1) {
+          delete targetPost.reactions[reaction];
+        } else {
+          targetPost.reactions[reaction] -= 1;
+        }
+        targetPost.myReaction = undefined;
+      }
+
       await ipcInvoke("api", {
         method: "misskey:deleteReaction",
         instanceUrl: timeline.currentInstance?.url,

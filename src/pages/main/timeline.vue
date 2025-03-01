@@ -23,10 +23,14 @@ import { onMounted } from "vue";
 import BlueskyPost from "@/components/BlueskyPost.vue";
 import { AppBskyFeedDefs } from "@atproto/api";
 import { useBlueskyStore } from "@/store/bluesky";
+import { useMisskeyStore } from "@/store/misskey";
+import { useMastodonStore } from "@/store/mastodon";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
-const blueskyqStore = useBlueskyStore();
+const misskeyStore = useMisskeyStore();
+const mastodonStore = useMastodonStore();
+const blueskyStore = useBlueskyStore();
 const timelineContainer = ref<HTMLDivElement | null>(null);
 const scrollPosition = ref(0);
 
@@ -102,7 +106,7 @@ const openRepostWindow = (data: {
 };
 
 const refreshPost = (noteId: string) => {
-  timelineStore.misskeyUpdatePost({ postId: noteId });
+  misskeyStore.updatePost({ postId: noteId });
 };
 
 timelineStore.$onAction((action) => {
@@ -182,8 +186,8 @@ onMounted(() => {
           :post="toot as MastodonTootType"
           :instanceUrl="timelineStore.currentInstance?.url"
           :lineStyle="store.settings.postStyle"
-          @refreshPost="timelineStore.mastodonUpdatePost"
-          @favourite="timelineStore.mastodonToggleFavourite"
+          @refreshPost="mastodonStore.updatePost"
+          @favourite="mastodonStore.toggleFavourite"
         />
         <MastodonNotification
           v-if="timelineStore.current.channel === 'mastodon:notifications'"
@@ -201,8 +205,8 @@ onMounted(() => {
           :post="post"
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
-          @like="blueskyqStore.like"
-          @deleteLike="blueskyqStore.deleteLike"
+          @like="blueskyStore.like"
+          @deleteLike="blueskyStore.deleteLike"
         />
       </PostList>
       <MisskeyAdCarousel v-if="ads.length" :items="ads" />
