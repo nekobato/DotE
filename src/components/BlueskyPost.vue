@@ -49,31 +49,27 @@ const record = computed(() => {
 });
 
 const postType = computed<BlueskyPostType[]>(() => {
-  const embedRecord = props.post.post.embed?.record as AppBskyEmbedRecord.View["record"];
+  if (!!props.post.reply) return ["reply"];
+  if (!!props.post.reason) return ["repost"];
 
-  if (embedRecord && (embedRecord.value as any)?.$type === "app.bsky.feed.post") {
-    if (record.value.text) {
-      return ["quote", "quoted"];
-    } else {
-      return ["repost", "reposted"];
-    }
-  } else if (props.post.reply) {
-    return ["reply", "replied"];
-  } else {
-    return ["post"];
+  if ((props.post.post.embed as any)?.$type === "app.bsky.embed.record#view") {
+    return ["quote", "quoted"];
   }
+
+  return ["post"];
 });
 
 const originAuthor = computed(() => {
+  if (postType.value[0] !== "repost") return undefined;
   const embedRecord = props.post.post.embed?.record as AppBskyEmbedRecord.ViewRecord;
   return embedRecord?.author;
 });
 
 const isLiked = computed(() => {
-  return props.post.post.viewer?.like ? true : false;
+  return !!props.post.post.viewer?.like;
 });
 
-const postAtttachments: ComputedRef<Attachment[]> = computed(() => {
+const postAttachments: ComputedRef<Attachment[]> = computed(() => {
   let attachments: Attachment[] = [];
   const embed = props.post.post.embed;
   // images
@@ -84,8 +80,8 @@ const postAtttachments: ComputedRef<Attachment[]> = computed(() => {
         url: image.fullsize,
         thumbnailUrl: image.thumb,
         size: {
-          width: image.aspectRatio.width,
-          height: image.aspectRatio.height,
+          width: image.aspectRatio?.width || "auto",
+          height: image.aspectRatio?.height || "auto",
         },
       })),
     );
@@ -153,12 +149,10 @@ const deleteLike = () => {
           @openUserPage="openUserPage"
         />
         <BlueskyPostContent
-          v-if="post.post.embed?.record"
+          v-if="!!postType[1]"
           :type="postType[1]"
           :author="props.post.post.author"
-          :originAuthor="originAuthor"
-          :record="record"
-          :embedRecord="record.embed?.record as AppBskyEmbedRecord.View"
+          :embedRecord="props.post.post.embed?.record as AppBskyEmbedRecord.View"
           :lineStyle="props.lineStyle"
           :currentInstanceUrl="props.currentInstanceUrl"
           @openUserPage="openUserPage"
@@ -166,7 +160,7 @@ const deleteLike = () => {
       </div>
     </div>
     <PostAttachmentsContainer class="attachments" v-if="post.post.embed">
-      <PostAttachments :attachments="postAtttachments" />
+      <PostAttachments :attachments="postAttachments" />
     </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">
       <button

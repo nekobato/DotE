@@ -30,7 +30,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     }
   };
 
-  const createReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+  const createReaction = async (postId: string, reaction: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
@@ -61,7 +61,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     }
   };
 
-  const deleteReaction = async ({ postId }: { postId: string }) => {
+  const deleteReaction = async (postId: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {

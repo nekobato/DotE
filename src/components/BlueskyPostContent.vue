@@ -2,7 +2,6 @@
 import { BlueskyPostType } from "@/types/bluesky";
 import { ipcSend } from "@/utils/ipc";
 import { AppBskyEmbedRecord, AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
-import { Record } from "@atproto/api/dist/client/types/app/bsky/feed/post";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 
@@ -43,12 +42,8 @@ const props = defineProps({
   },
 });
 
-const embedText = computed(() => {
-  return (props.embedRecord?.value as AppBskyFeedPost.Record)?.text;
-});
-
 const text = computed(() => {
-  return props.record?.text || embedText;
+  return (props.embedRecord?.value as AppBskyFeedPost.Record)?.text || props.record?.text;
 });
 
 const openUserPage = () => {
@@ -74,10 +69,12 @@ const openUserPage = () => {
       </div>
     </div>
     <div class="dote-post-content">
+      <img class="dote-avatar" :src="author.avatar || ''" alt="" @click="openUserPage" />
       <img
-        class="dote-avatar"
+        class="dote-avatar origin-user"
         :class="{ mini: props.type === 'repost' }"
-        :src="author.avatar || ''"
+        v-if="props.originAuthor"
+        :src="props.originAuthor?.avatar || ''"
         alt=""
         @click="openUserPage"
       />
@@ -138,6 +135,32 @@ const openUserPage = () => {
 
   > .dote-avatar {
     flex-shrink: 0;
+  }
+}
+
+.post-content {
+  &.renote {
+    height: 0;
+  }
+  &.quoted:not(.no-parent) {
+    margin-top: 4px;
+    padding-top: 4px;
+    /* dashed boarder */
+    background-image: linear-gradient(
+      to right,
+      var(--dote-color-white-t2),
+      var(--dote-color-white-t2) 4px,
+      transparent 4px,
+      transparent 6px
+    );
+    background-repeat: repeat-x;
+    background-size: 8px 1px;
+  }
+  &.quoted {
+    .username,
+    .dote-avatar {
+      margin-left: 16px;
+    }
   }
 }
 

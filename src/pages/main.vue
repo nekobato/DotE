@@ -3,7 +3,7 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
-import { misskeyCreateReaction, misskeyDeleteReaction, misskeyChannels } from "@/utils/misskey";
+import { misskeyChannels } from "@/utils/misskey";
 import { useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
 import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
@@ -13,12 +13,14 @@ import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
 import { MastodonToot } from "@/types/mastodon";
 import { text2Speech } from "@/utils/text2Speech";
+import { useMisskeyStore } from "@/store/misskey";
 
 const router = useRouter();
 const route = useRoute();
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
+const misskeyStore = useMisskeyStore();
 
 const misskeyStream = useMisskeyStream({
   onChannel: (event, data) => {
@@ -32,22 +34,19 @@ const misskeyStream = useMisskeyStream({
         break;
     }
   },
-  onNoteUpdated: (event, data) => {
+  onNoteUpdated: async (event, data) => {
     switch (event) {
       case "reacted":
         console.info("reacted", data);
-        timelineStore.misskeyAddReaction({
-          postId: data.id,
-          reaction: data.body.reaction,
-        });
+        await misskeyStore.createReaction(data.id, data.body.reaction);
         break;
       default:
         console.info("unhandled noteUpdated", data);
         break;
     }
   },
-  onEmojiAdded: (_, data) => {
-    timelineStore.misskeyAddEmoji(data.body.emoji);
+  onEmojiAdded: async (_, data) => {
+    await misskeyStore.addEmoji(data.body.emoji);
   },
   onReconnect: () => {
     timelineStore.fetchDiffPosts();
@@ -90,9 +89,9 @@ window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: stri
 
   // 既にreactionがある場合は削除してから追加
   if (post.myReaction) {
-    await misskeyDeleteReaction(data.postId);
+    await misskeyStore.deleteReaction(data.postId);
   }
-  await misskeyCreateReaction(data.postId, data.reaction);
+  await misskeyStore.createReaction(data.postId, data.reaction);
 });
 
 window.ipc?.on("stream:sub-note", (_, data: { postId: string }) => {
