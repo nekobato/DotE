@@ -64,7 +64,7 @@ const openMisskeyAuthLink = () => {
 <template>
   <div>
     <!-- Input Instance URL -->
-    <div class="dote-field-row as-thread indent-1 active" v-if="!sessionId.value">
+    <div class="dote-field-row as-thread indent-1 active" v-if="!sessionId">
       <div class="content">
         <div class="nn-form-item">
           <ElInput class="account-input" v-model="instanceUrl" placeholder="https://..." size="small" />
@@ -79,7 +79,7 @@ const openMisskeyAuthLink = () => {
     </div>
 
     <!-- Confirm Auth -->
-    <div class="dote-field-row as-thread indent-1 active" v-if="sessionId.value">
+    <div class="dote-field-row as-thread indent-1 active" v-if="sessionId">
       <div class="content">
         <span v-if="instanceType === 'misskey'">認証できた？</span>
       </div>

@@ -32,8 +32,11 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const pushPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
+    const filteredPosts = posts.filter((post) => {
+      return !store.$state.timelines[timeline.currentIndex].posts.some((p) => p.post.uri === post.post.uri);
+    });
     if (timeline.current) {
-      store.$state.timelines[timeline.currentIndex].posts.push(...posts);
+      store.$state.timelines[timeline.currentIndex].posts.push(...filteredPosts);
     }
   };
 
@@ -74,6 +77,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const fetchOlderPosts = async (channel: ChannelName) => {
     const timeline = getTimelineStore();
+    console.log(timeline.current?.bluesky?.cursor);
     const data: {
       feed: AppBskyFeedDefs.FeedViewPost[];
       cursor: string;
@@ -90,7 +94,8 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     });
 
     if (data) {
-      timeline.addMorePosts(data.feed);
+      pushPosts(data.feed);
+      setCursor(data.cursor);
     }
   };
 
@@ -98,7 +103,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     const timeline = getTimelineStore();
     if (store.$state.timelines[timeline.currentIndex]) {
       store.$state.timelines[timeline.currentIndex].bluesky = {
-        cursor: cursor,
+        cursor,
       };
     }
   };
@@ -119,10 +124,12 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       });
     });
 
-    const postIndex = currentPosts.value.findIndex((p) => p.post.uri === uri);
-    if (postIndex === -1 || !currentPosts.value[postIndex].post.viewer) return;
+    const targetPost = currentPosts.value.find((p) => p.post.uri === uri);
 
-    store.$state.timelines[timeline.currentIndex].posts[postIndex].post.viewer.like = res.uri;
+    if (!targetPost || !targetPost.post.viewer || !targetPost.post.likeCount) return;
+
+    targetPost.post.viewer.like = res.uri;
+    targetPost.post.likeCount++;
   };
 
   const deleteLike = async ({ uri }: { uri: string }) => {
@@ -140,10 +147,12 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       });
     });
 
-    const postIndex = currentPosts.value.findIndex((p) => p.post.viewer?.like === uri);
-    if (postIndex === -1 || !currentPosts.value[postIndex].post.viewer) return;
+    const targetPost = currentPosts.value.find((p) => p.post.viewer?.like === uri);
 
-    currentPosts.value[postIndex].post.viewer.like = undefined;
+    if (!targetPost || !targetPost.post.viewer || !targetPost.post.likeCount) return;
+
+    targetPost.post.viewer.like = undefined;
+    targetPost.post.likeCount--;
   };
 
   return {
