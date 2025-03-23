@@ -76,6 +76,67 @@ export const blueskyGetTimeline = async ({
   return res.data;
 };
 
+export const blueskyCreatePost = async ({
+  instanceUrl,
+  session,
+  text,
+  replyTo,
+  quote,
+}: {
+  instanceUrl: string;
+  session: AtpSessionData;
+  text: string;
+  replyTo?: { uri: string; cid: string };
+  quote?: { uri: string; cid: string };
+}) => {
+  const agent = new AtpAgent({
+    service: instanceUrl,
+  });
+
+  if (!validateJwtExp(session.accessJwt)) {
+    const { accessJwt, refreshJwt } = await refreshSession(instanceUrl, session.refreshJwt);
+    if (accessJwt && refreshJwt) {
+      agent.sessionManager.session = { ...session, accessJwt, refreshJwt };
+      const user = getUserAll().find((user) => user.blueskySession?.did === session.did);
+      if (user) {
+        user.blueskySession = { ...session, accessJwt, refreshJwt };
+        upsertUser(user);
+      }
+    } else {
+      throw new Error("Failed to refresh session.");
+    }
+  }
+
+  await agent.resumeSession(session);
+
+  const record: any = {
+    text,
+    createdAt: new Date().toISOString(),
+  };
+
+  // Add reply reference if provided
+  if (replyTo) {
+    record.reply = {
+      root: { uri: replyTo.uri, cid: replyTo.cid },
+      parent: { uri: replyTo.uri, cid: replyTo.cid },
+    };
+  }
+
+  // Add quote reference if provided
+  if (quote) {
+    record.embed = {
+      $type: "app.bsky.embed.record",
+      record: {
+        uri: quote.uri,
+        cid: quote.cid,
+      },
+    };
+  }
+
+  const res = await agent.post(record);
+  return res.data;
+};
+
 async function refreshSession(
   instanceUrl: string,
   refreshJwt: string,
