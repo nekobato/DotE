@@ -1,8 +1,9 @@
 import { ref } from "vue";
 
-export type MisskeyPollingChannel = "search";
-
-export const useMisskeyPolling = ({ poll }: { poll: () => void }) => {
+/**
+ * 汎用的なポーリング機能を提供するフック
+ */
+export const usePolling = ({ poll }: { poll: () => void }) => {
   const pollingState = ref<"idle" | "polling" | "error">("idle");
   const pollingInterval = ref<number>(0);
 
@@ -25,4 +26,20 @@ export const useMisskeyPolling = ({ poll }: { poll: () => void }) => {
     startPolling,
     stopPolling,
   };
+};
+
+export type MisskeyPollingChannel = "search";
+
+/**
+ * Misskey用のポーリング機能
+ */
+export const useMisskeyPolling = ({ poll }: { poll: () => void }) => {
+  return usePolling({ poll });
+};
+
+/**
+ * Bluesky用のポーリング機能
+ */
+export const useBlueskyPolling = ({ poll }: { poll: () => void }) => {
+  return usePolling({ poll });
 };

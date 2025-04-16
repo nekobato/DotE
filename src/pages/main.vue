@@ -4,9 +4,10 @@ import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
 import { misskeyChannels } from "@/utils/misskey";
-import { useMisskeyPolling } from "@/utils/polling";
+import { useBlueskyPolling, useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
-import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
+import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
+import { blueskyChannels } from "@/utils/bluesky";
 import { nextTick, onBeforeMount, onBeforeUnmount, watch } from "vue";
 import { RouterView, useRouter, useRoute } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
@@ -56,6 +57,12 @@ const misskeyStream = useMisskeyStream({
 const misskeyPolling = useMisskeyPolling({
   poll: () => {
     timelineStore.fetchDiffPosts();
+  },
+});
+
+const blueskyPolling = useBlueskyPolling({
+  poll: () => {
+    timelineStore.fetchInitialPosts();
   },
 });
 
@@ -112,6 +119,7 @@ const initStream = () => {
   misskeyStream.disconnect();
   misskeyPolling.stopPolling();
   mastodonStream.disconnect();
+  blueskyPolling.stopPolling();
 
   if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
     if (current.channel === "mastodon:list" && !current.options?.listId) {
@@ -178,6 +186,11 @@ const initStream = () => {
     }
   }
 
+  if (blueskyChannels.includes(current.channel as BlueskyChannelName)) {
+    // Blueskyはストリーミングに対応していないため、ポーリングを使用
+    blueskyPolling.startPolling(timelineStore.current.updateInterval);
+  }
+
   nextTick(() => {
     timelineStore.fetchInitialPosts();
   });
@@ -208,6 +221,7 @@ onBeforeUnmount(() => {
   misskeyStream.disconnect();
   misskeyPolling.stopPolling();
   mastodonStream.disconnect();
+  blueskyPolling.stopPolling();
 });
 </script>
 <template>

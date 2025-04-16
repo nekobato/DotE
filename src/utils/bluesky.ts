@@ -1,7 +1,7 @@
-import { BlueskyChannelName, MisskeyChannelName } from "@shared/types/store";
+import { BlueskyChannelName } from "@shared/types/store";
 
 export const blueskyChannelsMap: Record<BlueskyChannelName, string> = {
   "bluesky:homeTimeline": "ホーム",
 };
 
-export const blueskyChannels: MisskeyChannelName[] = Object.keys(blueskyChannelsMap) as MisskeyChannelName[];
+export const blueskyChannels: BlueskyChannelName[] = Object.keys(blueskyChannelsMap) as BlueskyChannelName[];
