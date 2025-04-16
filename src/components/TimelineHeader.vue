@@ -10,6 +10,10 @@ import { onClickOutside } from "@vueuse/core";
 import ChannelIcon from "./ChannelIcon.vue";
 import { useStore } from "@/store";
 import { nextTick } from "vue";
+import { mastodonChannelsMap } from "@/utils/mastodon";
+import { misskeyChannelsMap } from "@/utils/misskey";
+import { blueskyChannelsMap } from "@/utils/bluesky";
+import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
 
 const appLogoImagePathMap = {
   misskey: "/images/icons/misskey.png",
@@ -92,6 +96,12 @@ const changeTimeline = async (index: number) => {
     timelineStore.fetchInitialPosts();
   });
 };
+
+const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | BlueskyChannelName) => {
+  const allChannelNameMap = { ...mastodonChannelsMap, ...misskeyChannelsMap, ...blueskyChannelsMap };
+
+  return allChannelNameMap[channel] || channel;
+};
 </script>
 
 <template>
@@ -159,7 +169,7 @@ const changeTimeline = async (index: number) => {
                 >@{{ instanceStore.findInstanceByUserId(timeline.userId)?.url?.replace("https://", "") }}</span
               >
             </div>
-            <div class="stream">グローバル</div>
+            <div class="stream">{{ getChannelLabel(timeline.channel) }}</div>
           </div>
         </div>
       </div>

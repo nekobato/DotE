@@ -156,6 +156,7 @@ export const useStore = defineStore({
     },
     async initTimelines() {
       const timelines = await ipcInvoke("db:get-timeline-all");
+
       this.$state.timelines = timelines.map((timeline) => {
         return {
           ...timeline,

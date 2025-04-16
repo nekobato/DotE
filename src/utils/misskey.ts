@@ -3,17 +3,20 @@ import type { MisskeyNote } from "@shared/types/misskey";
 import { MisskeyChannelName } from "@shared/types/store";
 import { MisskeyStreamChannel } from "./misskeyStream";
 
-export const misskeyChannels: MisskeyChannelName[] = [
-  "misskey:homeTimeline",
-  "misskey:localTimeline",
-  "misskey:socialTimeline",
-  "misskey:globalTimeline",
-  "misskey:userList",
-  "misskey:hashtag",
-  "misskey:antenna",
-  "misskey:channel",
-  "misskey:search",
-];
+export const misskeyChannelsMap: Record<MisskeyChannelName, string> = {
+  "misskey:homeTimeline": "ホーム",
+  "misskey:localTimeline": "ローカル",
+  "misskey:socialTimeline": "ソーシャル",
+  "misskey:globalTimeline": "公共",
+  "misskey:userList": "リスト",
+  "misskey:hashtag": "ハッシュタグ",
+  "misskey:antenna": "アンテナ",
+  "misskey:channel": "チャンネル",
+  "misskey:search": "検索",
+  "misskey:notifications": "通知",
+};
+
+export const misskeyChannels = Object.keys(misskeyChannelsMap) as MisskeyChannelName[];
 
 export const misskeyStreamChannels: MisskeyStreamChannel[] = [
   "homeTimeline",

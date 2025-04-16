@@ -14,9 +14,8 @@ const onUpdateTimeline = async (timeline: Timeline) => {
 };
 
 const addTimeline = async () => {
-  if (!store.users.length || !timelineStore.currentInstance || !timelineStore.currentUser?.id) return;
   await timelineStore.createTimeline({
-    userId: timelineStore.currentUser?.id,
+    userId: timelineStore.timelines[0].userId,
     channel: defaultChannelNameFromType(timelineStore.currentInstance?.type),
     options: {},
     updateInterval: 60 * 1000, // 60 sec

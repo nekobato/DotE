@@ -172,10 +172,17 @@ export const setTimeline = (data: Timeline) => {
 export const deleteTimeline = (id: string) => {
   if (!id) throw new Error("id is required");
 
-  return store.set(
+  store.set(
     "timelines",
     store.get("timelines").filter((timeline) => timeline.id !== id),
   );
+
+  const newTimelines = store.get("timelines");
+
+  // すべてのTimelineがavailableならば最初のTimelineをavailableにする
+  if (!newTimelines.some((timeline) => timeline.available)) {
+    store.set("timelines", [...newTimelines, { ...newTimelines[0], available: true }]);
+  }
 };
 
 // Instance
