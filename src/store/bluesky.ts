@@ -5,6 +5,7 @@ import { ipcInvoke } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
 import { ChannelName } from "@shared/types/store";
 import { computed } from "vue";
+import { BlueskyPost } from "@/types/bluesky";
 
 export const useBlueskyStore = defineStore("bluesky", () => {
   const store = useStore();
@@ -33,7 +34,8 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   const pushPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
     const filteredPosts = posts.filter((post) => {
-      return !store.$state.timelines[timeline.currentIndex].posts.some((p) => p.post.uri === post.post.uri);
+      const posts = store.$state.timelines[timeline.currentIndex].posts as BlueskyPost[];
+      return !posts.some((p) => p.post.uri === post.post.uri);
     });
     if (timeline.current) {
       store.$state.timelines[timeline.currentIndex].posts.push(...filteredPosts);
