@@ -27,6 +27,7 @@ const channelNameToIconMap = {
   "mastodon:hashtag": "mingcute:hashtag-line",
   "mastodon:list": "mingcute:list-check-line",
   "mastodon:notifications": "mingcute:notification-line",
+  "bluesky:homeTimeline": "mingcute:home-3-line",
 };
 </script>
 <template>

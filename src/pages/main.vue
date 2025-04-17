@@ -3,22 +3,25 @@ import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
-import { misskeyCreateReaction, misskeyDeleteReaction, misskeyChannels } from "@/utils/misskey";
-import { useMisskeyPolling } from "@/utils/polling";
+import { misskeyChannels } from "@/utils/misskey";
+import { useBlueskyPolling, useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
-import { MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
+import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
+import { blueskyChannels } from "@/utils/bluesky";
 import { nextTick, onBeforeMount, onBeforeUnmount, watch } from "vue";
 import { RouterView, useRouter, useRoute } from "vue-router";
 import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
 import { MastodonToot } from "@/types/mastodon";
 import { text2Speech } from "@/utils/text2Speech";
+import { useMisskeyStore } from "@/store/misskey";
 
 const router = useRouter();
 const route = useRoute();
 const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
+const misskeyStore = useMisskeyStore();
 
 const misskeyStream = useMisskeyStream({
   onChannel: (event, data) => {
@@ -32,22 +35,19 @@ const misskeyStream = useMisskeyStream({
         break;
     }
   },
-  onNoteUpdated: (event, data) => {
+  onNoteUpdated: async (event, data) => {
     switch (event) {
       case "reacted":
         console.info("reacted", data);
-        timelineStore.misskeyAddReaction({
-          postId: data.id,
-          reaction: data.body.reaction,
-        });
+        await misskeyStore.createReaction(data.id, data.body.reaction);
         break;
       default:
         console.info("unhandled noteUpdated", data);
         break;
     }
   },
-  onEmojiAdded: (_, data) => {
-    timelineStore.misskeyAddEmoji(data.body.emoji);
+  onEmojiAdded: async (_, data) => {
+    await misskeyStore.addEmoji(data.body.emoji);
   },
   onReconnect: () => {
     timelineStore.fetchDiffPosts();
@@ -57,6 +57,12 @@ const misskeyStream = useMisskeyStream({
 const misskeyPolling = useMisskeyPolling({
   poll: () => {
     timelineStore.fetchDiffPosts();
+  },
+});
+
+const blueskyPolling = useBlueskyPolling({
+  poll: () => {
+    timelineStore.fetchInitialPosts();
   },
 });
 
@@ -83,18 +89,20 @@ window.ipc?.on("set-mode", (_, { mode, reflect }) => {
 });
 
 window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
-  const post = timelineStore.current?.posts.find((post) => post.id === data.postId) as MisskeyNote;
+  const posts = timelineStore.current?.posts as MisskeyNote[];
+  if (!posts) return;
+  const post = posts.find((post) => post.id === data.postId);
   if (!post) return;
 
   // 既にreactionがある場合は削除してから追加
   if (post.myReaction) {
     if (post.myReaction === data.reaction) {
-      await misskeyDeleteReaction(data.postId);
       return;
     }
-    await misskeyDeleteReaction(data.postId);
+
+    await misskeyStore.deleteReaction(data.postId);
   }
-  await misskeyCreateReaction(data.postId, data.reaction);
+  await misskeyStore.createReaction(data.postId, data.reaction);
 });
 
 window.ipc?.on("stream:sub-note", (_, data: { postId: string }) => {
@@ -115,6 +123,7 @@ const initStream = () => {
   misskeyStream.disconnect();
   misskeyPolling.stopPolling();
   mastodonStream.disconnect();
+  blueskyPolling.stopPolling();
 
   if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
     if (current.channel === "mastodon:list" && !current.options?.listId) {
@@ -181,6 +190,11 @@ const initStream = () => {
     }
   }
 
+  if (blueskyChannels.includes(current.channel as BlueskyChannelName)) {
+    // Blueskyはストリーミングに対応していないため、ポーリングを使用
+    blueskyPolling.startPolling(timelineStore.current.updateInterval);
+  }
+
   nextTick(() => {
     timelineStore.fetchInitialPosts();
   });
@@ -191,7 +205,6 @@ watch(
   () => {
     if (route.name === "MainTimeline") {
       console.log("initStream");
-      initStream();
     }
   },
 );
@@ -212,6 +225,7 @@ onBeforeUnmount(() => {
   misskeyStream.disconnect();
   misskeyPolling.stopPolling();
   mastodonStream.disconnect();
+  blueskyPolling.stopPolling();
 });
 </script>
 <template>

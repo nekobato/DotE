@@ -1,13 +1,15 @@
 import { MastodonChannelName } from "@shared/types/store";
 
-export const mastodonChannels: MastodonChannelName[] = [
-  "mastodon:homeTimeline",
-  "mastodon:localTimeline",
-  "mastodon:publicTimeline",
-  "mastodon:hashtag",
-  "mastodon:list",
-  "mastodon:notifications",
-];
+export const mastodonChannelsMap: Record<MastodonChannelName, string> = {
+  "mastodon:homeTimeline": "ホーム",
+  "mastodon:localTimeline": "ローカル",
+  "mastodon:publicTimeline": "公共",
+  "mastodon:hashtag": "ハッシュタグ",
+  "mastodon:list": "リスト",
+  "mastodon:notifications": "通知",
+};
+
+export const mastodonChannels: MastodonChannelName[] = Object.keys(mastodonChannelsMap) as MastodonChannelName[];
 
 export const parseMastodonText = (text: string | null, emojis: { shortcode: string; url: string }[]): string => {
   return (

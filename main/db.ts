@@ -1,7 +1,7 @@
 import { safeStorage } from "electron";
-import Store from "electron-store";
+import Store, { Schema } from "electron-store";
 import { nanoid } from "nanoid/non-secure";
-import type { Instance, Timeline, User, Settings } from "../shared/types/store";
+import type { Instance, Timeline, User, Settings, InstanceType } from "../shared/types/store";
 
 export type StoreSchema = {
   timelines: Timeline[];
@@ -41,7 +41,7 @@ export const storeDefaults: StoreSchema = {
   },
 };
 
-const schema: Store.Schema<StoreSchema> = {
+const schema: Schema<StoreSchema> = {
   timelines: {
     type: "array",
     items: {
@@ -89,7 +89,9 @@ const schema: Store.Schema<StoreSchema> = {
         instanceId: { type: "string" },
         name: { type: "string" },
         token: { type: "string" },
+        refreshToken: { type: "string" },
         avatarUrl: { type: "string" },
+        blueskySession: { type: "object" },
       },
       required: ["id", "instanceId", "name", "token", "avatarUrl"],
     },
@@ -170,10 +172,17 @@ export const setTimeline = (data: Timeline) => {
 export const deleteTimeline = (id: string) => {
   if (!id) throw new Error("id is required");
 
-  return store.set(
+  store.set(
     "timelines",
     store.get("timelines").filter((timeline) => timeline.id !== id),
   );
+
+  const newTimelines = store.get("timelines");
+
+  // すべてのTimelineがavailableならば最初のTimelineをavailableにする
+  if (!newTimelines.some((timeline) => timeline.available)) {
+    store.set("timelines", [...newTimelines, { ...newTimelines[0], available: true }]);
+  }
 };
 
 // Instance
@@ -184,17 +193,16 @@ export const getInstanceAll = () => {
 
 export const upsertInstance = (instance: {
   id?: string;
-  type: "misskey" | "mastodon";
+  type: InstanceType;
   name: string;
   url: string;
-  iconUrl: string;
+  iconUrl?: string;
 }) => {
   const { id, type, name, url, iconUrl } = instance;
 
   if (!type) throw new Error("type is required");
   if (!name) throw new Error("name is required");
   if (!url) throw new Error("url is required");
-  if (!iconUrl) throw new Error("iconUrl is required");
 
   if (id) {
     store.set(
@@ -251,12 +259,19 @@ export const deleteUser = (id: string) => {
 
 export const getUserAll = () => {
   return store.get("users").map((user) => {
-    console.log("users", user.name);
-    const decryptedToken = safeStorage.decryptString(Buffer.from(user.token, "base64"));
-    return {
-      ...user,
-      token: decryptedToken,
-    };
+    user.token = safeStorage.decryptString(Buffer.from(user.token, "base64"));
+
+    if (user.blueskySession) {
+      const decryptedAccessToken = safeStorage.decryptString(Buffer.from(user.blueskySession.accessJwt, "base64"));
+      const decryptedRefreshToken = safeStorage.decryptString(Buffer.from(user.blueskySession.refreshJwt, "base64"));
+      user.blueskySession = {
+        ...user.blueskySession,
+        accessJwt: decryptedAccessToken,
+        refreshJwt: decryptedRefreshToken,
+      };
+    }
+
+    return user;
   });
 };
 
@@ -266,8 +281,20 @@ export const upsertUser = (user: {
   name: string;
   token: string;
   avatarUrl: string;
+  blueskySession?: { did: string; accessJwt: string; refreshJwt: string };
 }) => {
   const encryptedToken = safeStorage.encryptString(user.token).toString("base64");
+
+  if (user.blueskySession) {
+    const encryptedAccessToken = safeStorage.encryptString(user.blueskySession.accessJwt).toString("base64");
+    const encryptedRefreshToken = safeStorage.encryptString(user.blueskySession.refreshJwt).toString("base64");
+    user.blueskySession = {
+      ...user.blueskySession,
+      accessJwt: encryptedAccessToken,
+      refreshJwt: encryptedRefreshToken,
+    };
+  }
+
   if (user.id) {
     const currentUser = store.get("users").find((user) => user.instanceId === user.instanceId);
     if (!currentUser) throw new Error("User is not found");
@@ -290,6 +317,7 @@ export const upsertUser = (user: {
       ...currentUser,
       ...newUserData,
       token: encryptedToken,
+      ...(user.blueskySession ? { blueskySession: user.blueskySession } : {}),
     };
   } else {
     const newUser = {
@@ -298,6 +326,7 @@ export const upsertUser = (user: {
       name: user.name,
       token: encryptedToken,
       avatarUrl: user.avatarUrl,
+      ...(user.blueskySession ? { blueskySession: user.blueskySession } : {}),
     };
     store.set("users", [...store.get("users"), newUser]);
     return newUser;
