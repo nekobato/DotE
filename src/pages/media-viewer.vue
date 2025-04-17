@@ -42,7 +42,6 @@ const imageSize = computed(() => {
   const width = window.innerWidth * 0.7;
   const height = window.innerHeight * 0.7;
   const { width: imageWidth, height: imageHeight } = currentMedia.value.size;
-  console.log(imageWidth, imageHeight, width, height);
   if (!imageWidth || !imageHeight) {
     return {
       width,

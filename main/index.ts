@@ -112,7 +112,6 @@ const start = () => {
           height: workAreaSize.height,
         });
         mediaViewerWindow?.center();
-        console.log("media-viewer:open", data);
         mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.show();
         mediaViewerWindow?.focus();
@@ -126,7 +125,6 @@ const start = () => {
         mainWindow?.webContents.reload();
         break;
       case "main:reaction":
-        console.log(data);
         mainWindow?.webContents.send(event, data);
         break;
       case "post:create":
@@ -214,7 +212,6 @@ const start = () => {
   });
 
   initialize();
-  console.log("initialized");
 };
 
 app.on("before-quit", () => {
@@ -238,7 +235,6 @@ app.on("activate", async () => {
 
 app.on("window-all-closed", () => {
   if (isMac) {
-    console.log("quit");
     app.quit();
   }
 });

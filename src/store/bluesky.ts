@@ -79,7 +79,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const fetchOlderPosts = async (channel: ChannelName) => {
     const timeline = getTimelineStore();
-    console.log(timeline.current?.bluesky?.cursor);
+
     const data: {
       feed: AppBskyFeedDefs.FeedViewPost[];
       cursor: string;
