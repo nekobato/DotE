@@ -68,7 +68,7 @@ const emojis = computed(() => {
 
 const ads = computed(() => {
   return timelineStore.currentInstance?.type === "misskey" &&
-    !isHazeMode &&
+    !isHazeMode.value &&
     timelineStore.currentInstance?.misskey?.meta.ads.length > 0 &&
     timelineStore.current?.posts.length
     ? timelineStore.currentInstance?.misskey?.meta.ads

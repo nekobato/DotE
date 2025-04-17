@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import DoteAlert from "@/components/common/DoteAlert.vue";
 import DoteButton from "@/components/common/DoteButton.vue";
-import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
@@ -285,13 +284,6 @@ document.addEventListener("keydown", (e) => {
         <DoteAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
         </DoteAlert>
-      </div>
-    </div>
-    <div class="emoji-picker-container">
-      <div class="emoji-picker">
-        <div class="emoji-picker-body">
-          <EmojiPicker />
-        </div>
       </div>
     </div>
     <div class="post-container">
