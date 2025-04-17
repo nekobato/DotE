@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
-import { useUsersStore } from "@/store/users";
+import { NewUser, useUsersStore } from "@/store/users";
 import { useTimelineStore } from "@/store/timeline";
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
-import { ElAvatar, ElRadioButton, ElRadioGroup, ElInput } from "element-plus";
+import { ElAvatar, ElRadioButton, ElRadioGroup } from "element-plus";
 import type { User } from "@shared/types/store";
-import { doteMisskeyPermissionString } from "@/utils/dote";
+import AddAccountMisskey from "./AddAccountMisskey.vue";
+import AddAccountMastodon from "./AddAccountMastodon.vue";
+import AddAccountBluesky from "./AddAccountBluesky.vue";
+import InstanceIcon from "../InstanceIcon.vue";
 
 const store = useStore();
 const usersStore = useUsersStore();
@@ -22,168 +23,7 @@ const state = ref({
   },
 });
 
-const newAccountDefault = {
-  instanceType: "misskey",
-  instanceUrl: "",
-  progress: "default" as "default" | "step1:instance" | "step2:confirm",
-  misskey: {
-    sessionId: "",
-  },
-  mastodon: {
-    clientName: "",
-    clientId: "",
-    clientSecret: "",
-    authCode: "",
-    accessToken: "",
-  },
-};
-
-const newAccount = ref(newAccountDefault);
-
-const getMisskeyAuthUrl = (instanceUrl: string, sessionId: string) => {
-  const url = new URL(`/miauth/${sessionId}`, instanceUrl);
-  url.search = new URLSearchParams({
-    name: "dote",
-    permission: doteMisskeyPermissionString(),
-  }).toString();
-  return url.toString();
-};
-
-const getMastodonAuthUrl = (instanceUrl: string, clientId: string, clientSecret: string) => {
-  const url = new URL("/oauth/authorize", instanceUrl);
-  url.search = new URLSearchParams({
-    client_id: clientId,
-    client_secret: clientSecret,
-    response_type: "code",
-    redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
-    scope: "read write follow",
-  }).toString();
-  return url.toString();
-};
-
-const resetStep = () => {
-  resetStatues();
-  newAccount.value.progress = "step1:instance";
-};
-
-const checkMiAuth = async () => {
-  const misskey = newAccount.value.misskey;
-  const check = await ipcInvoke("api", {
-    method: "misskey:checkMiAuth",
-    instanceUrl: newAccount.value.instanceUrl,
-    sessionId: misskey.sessionId,
-  }).catch(() => {
-    store.$state.errors.push({
-      message: `${newAccount.value.instanceUrl}の認証失敗`,
-    });
-  });
-
-  await usersStore.createUser({
-    name: check.user.name,
-    avatarUrl: check.user.avatarUrl,
-    token: check.token,
-    instanceUrl: newAccount.value.instanceUrl,
-    instanceType: "misskey",
-  });
-  newAccount.value.progress = "default";
-
-  // 色々リセットするのが面倒なのでリロード
-  setTimeout(() => {
-    window.ipc.send("main:reload");
-  }, 100);
-};
-
-const registerMastodonApp = async () => {
-  const clientName = `dote-${nanoid()}`;
-  const res = await ipcInvoke("api", {
-    method: "mastodon:registerApp",
-    instanceUrl: newAccount.value.instanceUrl,
-    clientName: clientName,
-  });
-  newAccount.value.mastodon = {
-    ...newAccount.value.mastodon,
-    clientName,
-    clientId: res.client_id,
-    clientSecret: res.client_secret,
-  };
-};
-
-const checkMastodonAuth = async () => {
-  const res = await ipcInvoke("api", {
-    method: "mastodon:getAccessToken",
-    instanceUrl: newAccount.value.instanceUrl,
-    clientId: newAccount.value.mastodon.clientId,
-    clientSecret: newAccount.value.mastodon.clientSecret,
-    code: newAccount.value.mastodon.authCode,
-  });
-  newAccount.value.mastodon.accessToken = res.access_token;
-  await fetchAndSetMastodonMyself(res.access_token);
-  newAccount.value.progress = "default";
-
-  // 色々リセットするのが面倒なのでリロード
-  setTimeout(() => {
-    window.ipc.send("main:reload");
-  }, 100);
-};
-
-const fetchAndSetMastodonMyself = async (token: string) => {
-  const res = await ipcInvoke("api", {
-    method: "mastodon:getAccount",
-    instanceUrl: newAccount.value.instanceUrl,
-    token,
-  });
-  await usersStore.createUser({
-    name: res.username,
-    avatarUrl: res.avatar,
-    token: token,
-    instanceUrl: newAccount.value.instanceUrl,
-    instanceType: "mastodon",
-    options: {
-      clientName: newAccount.value.mastodon.clientName,
-    },
-  });
-};
-
-const auth = () => {
-  if (newAccount.value.instanceType === "misskey") {
-    openMisskeyAuthLink();
-  } else {
-    openMastodonAuthLink();
-  }
-};
-
-const authCompleted = () => {
-  if (newAccount.value.instanceType === "misskey") {
-    checkMiAuth();
-  } else {
-    checkMastodonAuth();
-  }
-};
-
-const openMisskeyAuthLink = () => {
-  newAccount.value.misskey.sessionId = nanoid();
-  newAccount.value.instanceUrl = /^https?:\/\//.test(newAccount.value.instanceUrl)
-    ? newAccount.value.instanceUrl
-    : "https://" + newAccount.value.instanceUrl;
-  const url = getMisskeyAuthUrl(newAccount.value.instanceUrl, newAccount.value.misskey.sessionId);
-  ipcSend("open-url", { url });
-  newAccount.value.progress = "step2:confirm";
-};
-
-const openMastodonAuthLink = async () => {
-  newAccount.value.instanceUrl = /^https?:\/\//.test(newAccount.value.instanceUrl)
-    ? newAccount.value.instanceUrl
-    : "https://" + newAccount.value.instanceUrl;
-  await registerMastodonApp();
-  const url = getMastodonAuthUrl(
-    newAccount.value.instanceUrl,
-    newAccount.value.mastodon.clientId,
-    newAccount.value.mastodon.clientSecret,
-  );
-  ipcSend("open-url", { url });
-
-  newAccount.value.progress = "step2:confirm";
-};
+const newAccountInstanceType = ref<"misskey" | "mastodon" | "bluesky">();
 
 const startDeleteAccount = (id: string) => {
   resetStatues();
@@ -204,12 +44,27 @@ const confirmDeleteAccount = async () => {
 
 const resetStatues = () => {
   state.value.actions.delete.id = null;
-  newAccount.value = newAccountDefault;
 };
 
-const getInstanceIconFromUser = (user: User) => {
-  const instance = store.instances?.find((i) => i.id === user.instanceId);
-  return instance?.iconUrl || "";
+const getInstanceFromUser = (user: User) => {
+  return store.instances?.find((i) => i.id === user.instanceId);
+};
+
+const startAddAccount = () => {
+  newAccountInstanceType.value = "misskey";
+};
+
+const exitAddAccount = () => {
+  newAccountInstanceType.value = undefined;
+};
+
+const createAccount = (user: NewUser) => {
+  newAccountInstanceType.value = undefined;
+  usersStore.createUser(user);
+};
+
+const closeAddAccount = () => {
+  newAccountInstanceType.value = undefined;
 };
 </script>
 
@@ -218,7 +73,7 @@ const getInstanceIconFromUser = (user: User) => {
     <h2 class="dote-field-group-title">アカウント</h2>
     <div class="accounts-container" v-for="user in store.users" :key="user.id">
       <div class="dote-field-row">
-        <ElAvatar shape="square" :size="40" :src="getInstanceIconFromUser(user)" class="avatar" />
+        <InstanceIcon :instance="getInstanceFromUser(user)" />
         <ElAvatar :src="user.avatarUrl || ''" class="avatar" />
         <div class="content">
           <span class="nickname">{{ user.name }}</span>
@@ -249,58 +104,35 @@ const getInstanceIconFromUser = (user: User) => {
       </div>
     </div>
     <!-- new accounts -->
-    <div class="dote-field-row as-thread indent-1" :class="{ active: newAccount.progress !== 'default' }">
+    <div class="dote-field-row as-thread indent-1" :class="{ active: newAccountInstanceType }">
+      <div class="content" v-if="newAccountInstanceType">
+        <h3>新規アカウント</h3>
+      </div>
       <div class="actions">
-        <button class="nn-button size-small action" v-if="newAccount.progress === 'default'" @click="resetStep">
+        <button class="nn-button size-small action" v-if="!newAccountInstanceType" @click="startAddAccount">
           <Icon icon="mingcute:add-fill" class="nn-icon" />
         </button>
-        <button class="nn-button size-small action" v-if="newAccount.progress !== 'default'" @click="resetStatues">
+        <button class="nn-button size-small action" v-if="newAccountInstanceType" @click="exitAddAccount">
           <Icon icon="ion:close" class="nn-icon" />
         </button>
       </div>
     </div>
-    <div class="dote-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step1:instance'">
+    <div class="dote-field-row as-thread indent-1 active" v-if="newAccountInstanceType">
       <div class="content">
-        <ElRadioGroup
-          class="account-input"
-          v-model="newAccount.instanceType"
-          size="small"
-          :disabled="newAccount.progress !== 'step1:instance'"
-        >
+        <ElRadioGroup v-model="newAccountInstanceType" size="small">
           <ElRadioButton class="radio-button" key="misskey" value="misskey">Misskey</ElRadioButton>
           <ElRadioButton class="radio-button" key="mastodon" value="mastodon">Mastodon</ElRadioButton>
+          <ElRadioButton class="radio-button" key="bluesky" value="bluesky">Bluesky</ElRadioButton>
         </ElRadioGroup>
       </div>
     </div>
-    <div class="dote-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step1:instance'">
-      <div class="content">
-        <div class="nn-form-item">
-          <ElInput class="account-input" v-model="newAccount.instanceUrl" placeholder="https://..." size="small" />
-        </div>
-      </div>
-      <div class="actions">
-        <button class="nn-button size-small action" @click="auth" :disabled="!newAccount.instanceUrl">
-          認証
-          <Icon icon="ion:open" class="nn-icon size-small" />
-        </button>
-      </div>
-    </div>
-    <div class="dote-field-row as-thread indent-1 active" v-if="newAccount.progress === 'step2:confirm'">
-      <div class="content">
-        <span v-if="newAccount.instanceType === 'misskey'">認証できた？</span>
-        <ElInput
-          class="token-input"
-          v-model="newAccount.mastodon.authCode"
-          placeholder="認証コード"
-          size="small"
-          v-if="newAccount.instanceType === 'mastodon'"
-        />
-      </div>
-      <div class="actions">
-        <button class="nn-button size-small action" @click="resetStep">戻る</button>
-        <button class="nn-button size-small action" @click="authCompleted">認証した</button>
-      </div>
-    </div>
+    <AddAccountMisskey v-if="newAccountInstanceType === 'misskey'" @complete="createAccount" @close="closeAddAccount" />
+    <AddAccountMastodon
+      v-if="newAccountInstanceType === 'mastodon'"
+      @complete="createAccount"
+      @close="closeAddAccount"
+    />
+    <AddAccountBluesky v-if="newAccountInstanceType === 'bluesky'" @complete="createAccount" @close="closeAddAccount" />
   </div>
 </template>
 
@@ -308,9 +140,6 @@ const getInstanceIconFromUser = (user: User) => {
 .account-settings {
   width: 100%;
   padding: 8px 0 0;
-}
-.avatar {
-  background-color: #fff;
 }
 .account {
   display: flex;

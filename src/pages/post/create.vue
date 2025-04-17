@@ -10,10 +10,13 @@ import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { onMounted, PropType, reactive, ref } from "vue";
 import MisskeyNote from "@/components/MisskeyNote.vue";
+import BlueskyPost from "@/components/BlueskyPost.vue";
 import { computed } from "vue";
+import { AppBskyFeedDefs } from "@atproto/api";
+import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 
 type PageProps = {
-  post?: MisskeyNoteType | MastodonTootType;
+  post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
   emojis: MisskeyEntities.EmojiSimple[];
 };
 
@@ -24,6 +27,7 @@ const submitTextMap = {
   toot: "Toot",
   boost: "Boost",
   post: "Post",
+  repost: "Repost",
 };
 
 const props = defineProps({
@@ -75,6 +79,45 @@ const misskeyNote = computed(() => {
   return null;
 });
 
+const blueskyPost = computed(() => {
+  if (state.instance?.type === "bluesky" && state.user) {
+    const quotePost = props.data.post as BlueskyPostType;
+    const mockPost: AppBskyFeedDefs.FeedViewPost = {
+      post: {
+        uri: "",
+        cid: "",
+        author: {
+          did: state.user.blueskySession?.did || "",
+          handle: state.user.name || "",
+          displayName: state.user.name || "",
+          avatar: state.user.avatarUrl,
+        },
+        record: {
+          text: text.value,
+          createdAt: new Date().toISOString(),
+          $type: "app.bsky.feed.post",
+        },
+        likeCount: 0,
+        repostCount: 0,
+        indexedAt: new Date().toISOString(),
+        viewer: {},
+      },
+      reason: null,
+    };
+
+    // Add embed if we're quoting a post
+    if (quotePost) {
+      mockPost.post.embed = {
+        $type: "app.bsky.embed.record#view",
+        record: quotePost,
+      };
+    }
+
+    return mockPost;
+  }
+  return null;
+});
+
 const submitType = computed(() => {
   if (state.instance?.type === "misskey") {
     if (misskeyNote.value?.renote) {
@@ -88,6 +131,12 @@ const submitType = computed(() => {
     }
     return "toot";
   }
+  if (state.instance?.type === "bluesky") {
+    if (props.data.post) {
+      return text.value ? "quote" : "repost";
+    }
+    return "post";
+  }
   return "post";
 });
 
@@ -96,7 +145,7 @@ const canSubmit = computed(() => {
     return false;
   }
 
-  if (submitType.value === "note" || submitType.value === "toot") {
+  if (submitType.value === "note" || submitType.value === "toot" || submitType.value === "post") {
     return text.value.length > 0;
   }
   return true;
@@ -150,19 +199,49 @@ const postToMastodon = async () => {
   }
 };
 
+const postToBluesky = async () => {
+  const targetPost = props.data.post as BlueskyPostType | null;
+  const quoteRef = targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
+
+  const res = await ipcInvoke("api", {
+    method: "bluesky:createPost",
+    instanceUrl: state.instance?.url,
+    session: state.user?.blueskySession,
+    text: text.value,
+    quote: quoteRef,
+  });
+
+  if (res && res.uri) {
+    text.value = "";
+    ipcSend("post:close");
+  }
+};
+
 const submit = async () => {
   state.post.isSending = true;
-  if (text) {
-    switch (state.instance?.type) {
-      case "misskey":
-        await postToMisskey();
-        break;
-      case "mastodon":
-        await postToMastodon();
-        break;
+  try {
+    if (text) {
+      switch (state.instance?.type) {
+        case "misskey":
+          await postToMisskey();
+          break;
+        case "mastodon":
+          await postToMastodon();
+          break;
+        case "bluesky":
+          await postToBluesky();
+          break;
+      }
     }
+  } catch (error) {
+    if (error instanceof Error) {
+      state.post.error = error.message;
+    } else {
+      state.post.error = "投稿中にエラーが発生しました";
+    }
+  } finally {
+    state.post.isSending = false;
   }
-  state.post.isSending = false;
 };
 
 const onInput = (value: string) => {
@@ -223,6 +302,16 @@ document.addEventListener("keydown", (e) => {
         :emojis="props.data.emojis || []"
         :currentInstanceUrl="state.instance?.url"
         :hideCw="false"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+        theme="default"
+      />
+      <BlueskyPost
+        v-if="blueskyPost"
+        class="post-item"
+        :post="blueskyPost"
+        :currentInstanceUrl="state.instance?.url"
         :showReactions="false"
         :showActions="false"
         lineStyle="all"

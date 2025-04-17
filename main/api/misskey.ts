@@ -1,6 +1,5 @@
 const fetch = require("electron-fetch").default;
 import { Response } from "electron-fetch";
-// import fetch from "electron-fetch";
 import { baseHeader } from "./request";
 
 export const misskeyCheckMiAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
