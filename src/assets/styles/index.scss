@@ -1,18 +1,18 @@
-@import "variables.scss";
+@use "variables.scss";
 
-@import "reset.scss";
-@import "spacing.scss";
+@use "reset.scss";
+@use "spacing.scss";
 
-@import "button.scss";
-@import "dialog.scss";
-@import "form.scss";
-@import "heading.scss";
-@import "icon.scss";
-@import "table.scss";
-@import "text.scss";
-@import "tooltip.scss";
+@use "button.scss";
+@use "dialog.scss";
+@use "form.scss";
+@use "heading.scss";
+@use "icon.scss";
+@use "table.scss";
+@use "text.scss";
+@use "tooltip.scss";
 
-@import "app.scss";
+@use "app.scss";
 
 /* themes */
-@import "theme/default.scss";
+@use "theme/default.scss";
