@@ -3,16 +3,19 @@ import { defineStore } from "pinia";
 import { useStore } from ".";
 import type { MisskeyEntities } from "@shared/types/misskey";
 import { MastodonInstanceApiResponse } from "@/types/mastodon";
+import { InstanceType } from "@shared/types/store";
 
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
 
-  const createInstance = async (url: string, type: "misskey" | "mastodon") => {
+  const createInstance = async (url: string, type: InstanceType) => {
     switch (type) {
       case "misskey":
         return await createMisskeyInstance(url);
       case "mastodon":
         return await createMastodonInstance(url);
+      case "bluesky":
+        return await createBlueskyInstance(url);
     }
   };
 
@@ -39,6 +42,16 @@ export const useInstanceStore = defineStore("instance", () => {
       url: "https://" + meta.domain,
       name: meta.title || "",
       iconUrl: meta.thumbnail.url || "",
+    });
+    return result;
+  };
+
+  const createBlueskyInstance = async (instanceUrl: string) => {
+    const result = await ipcInvoke("db:upsert-instance", {
+      type: "bluesky",
+      url: instanceUrl,
+      name: instanceUrl.replace("https://", ""),
+      iconUrl: "",
     });
     return result;
   };

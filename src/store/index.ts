@@ -4,6 +4,7 @@ import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import type { InstanceStore, Settings, Timeline, User } from "@shared/types/store";
 import { defineStore } from "pinia";
 import { useInstanceStore } from "./instance";
+import { BlueskyPost } from "@/types/bluesky";
 
 export const methodOfChannel = {
   "misskey:homeTimeline": "misskey:getTimelineHome",
@@ -22,13 +23,17 @@ export const methodOfChannel = {
   "mastodon:hashtag": "mastodon:getTimelineHashtag",
   "mastodon:list": "mastodon:getTimelineList",
   "mastodon:notifications": "mastodon:getNotifications",
+  "bluesky:homeTimeline": "bluesky:getTimeline",
 };
 
-export type DotEPost = MisskeyNote | MastodonToot;
+export type DotEPost = MisskeyNote | MastodonToot | BlueskyPost;
 
 export type TimelineStore = Timeline & {
   posts: DotEPost[];
   notifications: MisskeyEntities.Notification[] | MastodonNotification[];
+  bluesky?: {
+    cursor?: string;
+  };
 };
 
 export type ErrorItem = {
@@ -134,6 +139,9 @@ export const useStore = defineStore({
               metaResult = await instanceStore.getMastodonInstanceMeta(instance.url);
               instance.mastodon.meta = metaResult;
               break;
+            case "bluesky":
+              // Nothing to do
+              return;
           }
 
           if (!metaResult) {
@@ -148,6 +156,7 @@ export const useStore = defineStore({
     },
     async initTimelines() {
       const timelines = await ipcInvoke("db:get-timeline-all");
+
       this.$state.timelines = timelines.map((timeline) => {
         return {
           ...timeline,

@@ -14,14 +14,17 @@ const onUpdateTimeline = async (timeline: Timeline) => {
 };
 
 const addTimeline = async () => {
-  if (!store.users.length || !timelineStore.currentInstance || !timelineStore.currentUser?.id) return;
   await timelineStore.createTimeline({
-    userId: timelineStore.currentUser?.id,
+    userId: timelineStore.timelines[0].userId,
     channel: defaultChannelNameFromType(timelineStore.currentInstance?.type),
     options: {},
     updateInterval: 60 * 1000, // 60 sec
     available: false,
   });
+};
+
+const onDeleteTimeline = async (timeline: Timeline) => {
+  await timelineStore.deleteTimeline(timeline.id);
 };
 </script>
 
@@ -31,7 +34,7 @@ const addTimeline = async () => {
     <div class="timeline-list">
       <div v-for="timeline in store.timelines" :key="timeline.id">
         <div class="timeline-item">
-          <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" />
+          <TimelineForm :timeline="timeline" @updateTimeline="onUpdateTimeline" @deleteTimeline="onDeleteTimeline" />
         </div>
       </div>
     </div>

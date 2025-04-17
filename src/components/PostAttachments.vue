@@ -44,22 +44,16 @@ const attachmentAction = (attachment: Attachment, index: number) => {
     <Icon icon="mingcute:film-line" class="nn-icon size-small video" v-if="attachment.type === 'video'" />
     <Icon
       icon="mingcute:check-circle-line"
-      class="nn-icon size-small video"
+      class="nn-icon size-small poll"
       v-if="attachment.type === 'poll' && attachment.voted"
     />
     <Icon
       icon="mingcute:check-circle-fill"
-      class="nn-icon size-small video"
+      class="nn-icon size-small poll"
       v-if="attachment.type === 'poll' && !attachment.voted"
     />
-    <img
-      class="image"
-      :src="attachment.thumbnailUrl"
-      alt=""
-      @click="attachmentAction(attachment, index)"
-      :tabindex="0"
-      v-if="attachment.type === 'image'"
-    />
+    <img class="image" :src="attachment.thumbnailUrl" alt="" :tabindex="0" v-if="attachment.type === 'image'" />
+    <Icon icon="mingcute:link-line" class="nn-icon size-small url" v-if="attachment.type === 'url'" />
     <div class="sensitive-filter" v-if="attachment.type === 'image' && attachment.isSensitive">
       <Icon icon="octicon:alert-16" class="nn-icon size-small attention" />
     </div>
@@ -80,7 +74,8 @@ const attachmentAction = (attachment: Attachment, index: number) => {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
   cursor: pointer;
-  &.video {
+  &.video,
+  &.poll {
     border: 1px solid var(--dote-color-white-t3);
   }
   &.active {
