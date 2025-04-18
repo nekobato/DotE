@@ -30,7 +30,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     }
   };
 
-  const createReaction = async (postId: string, reaction: string) => {
+  const createMyReaction = async (postId: string, reaction: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
@@ -61,7 +61,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     }
   };
 
-  const deleteReaction = async (postId: string) => {
+  const deleteMyReaction = async (postId: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
@@ -261,8 +261,8 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   return {
     addEmoji,
-    createReaction,
-    deleteReaction,
+    createMyReaction,
+    deleteMyReaction,
     updatePost,
     addReaction,
     removeReaction,

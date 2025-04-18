@@ -100,14 +100,14 @@ export function useStream() {
       if (targetPost.myReaction) {
         // 同じリアクションの場合はリアクションを削除するということ
         if (targetPost.myReaction === data.reaction) {
-          return await misskeyStore.deleteReaction(targetPost.id);
+          return await misskeyStore.deleteMyReaction(targetPost.id);
         }
 
         // 違うリアクションの場合は、まず削除してから新しいリアクションを追加する
-        await misskeyStore.deleteReaction(targetPost.id);
+        await misskeyStore.deleteMyReaction(targetPost.id);
       }
 
-      await misskeyStore.createReaction(targetPost.id, data.reaction);
+      await misskeyStore.createMyReaction(targetPost.id, data.reaction);
     });
   };
 
