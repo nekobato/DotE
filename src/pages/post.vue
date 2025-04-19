@@ -21,7 +21,6 @@ window.ipc?.on("post:detail", (_, payload) => {
 
 window.ipc?.on("post:reaction", (_, payload) => {
   pagedata.value = payload;
-  console.log(payload);
   router.push("/post/reaction");
 });
 

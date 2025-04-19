@@ -50,7 +50,6 @@ const focusShortcutInput = () => {
 };
 
 const onKeyDownOnShortcut = (key: keyof Settings["shortcuts"]) => {
-  console.log("onKeyDownOnShortcut", key);
   return async (e: KeyboardEvent) => {
     const shortcut = keyboardEventToElectronAccelerator(e);
 

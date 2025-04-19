@@ -5,7 +5,7 @@ export type MisskeyNote = entities.Note & {
   reactionEmojis: {
     [key: string]: string;
   };
-  renote?: MisskeyNote["renote"] & {
+  renote?: entities.Note["renote"] & {
     reactionEmojis: {
       [key: string]: string;
     };

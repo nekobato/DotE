@@ -50,7 +50,6 @@ const currentTimelineImages = computed(() => {
 });
 
 const timelineWithImages = computed(() => {
-  console.log(usersStore);
   return store.$state.timelines.map((timeline) => {
     const instance = instanceStore.findInstanceByUserId(timeline.userId);
     return {

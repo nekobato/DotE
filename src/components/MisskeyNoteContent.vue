@@ -301,6 +301,10 @@ const isTextHide = computed(() => {
   line-height: 1rem;
 }
 
+.read-all {
+  font-size: 0.5rem;
+}
+
 .line-all {
   display: block;
   .cw,
@@ -329,21 +333,18 @@ const isTextHide = computed(() => {
 .line-1 {
   min-height: 0.8rem;
   white-space: nowrap;
-  -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 .line-2 {
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
   .read-all {
     margin-top: 4px;
   }
 }
 .line-3 {
-  -webkit-line-clamp: 3;
+  line-clamp: 3;
   .read-all {
     margin-top: 4px;
   }
-}
-.read-all {
-  font-size: 0.5rem;
 }
 </style>
