@@ -225,12 +225,12 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 .line-1 {
   min-height: 0.8rem;
   white-space: nowrap;
-  -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 .line-2 {
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .line-3 {
-  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 </style>

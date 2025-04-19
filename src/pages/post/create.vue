@@ -101,7 +101,6 @@ const blueskyPost = computed(() => {
         indexedAt: new Date().toISOString(),
         viewer: {},
       },
-      reason: null,
     };
 
     // Add embed if we're quoting a post

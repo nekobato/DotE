@@ -150,7 +150,7 @@ onBeforeUnmount(() => {
       />
       <MisskeyNoteContent
         v-if="props.post.renote"
-        :note="props.post.renote"
+        :note="props.post.renote as MisskeyNote"
         :originNote="props.post"
         :type="renoteType"
         :lineStyle="props.lineStyle"
@@ -169,7 +169,7 @@ onBeforeUnmount(() => {
         v-for="reaction in reactions"
         :class="{
           remote: reaction.isRemote,
-          reacted: isMyReaction(reaction.name, props.post.myReaction || props.post.renote?.myReaction),
+          reacted: isMyReaction(reaction.name, props.post.renote?.myReaction || props.post.myReaction || undefined),
         }"
         @click="onClickReaction(props.post.id, reaction.name)"
         :title="reaction.name.replace(/:/g, '')"

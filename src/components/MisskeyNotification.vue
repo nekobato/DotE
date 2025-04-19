@@ -45,7 +45,7 @@ const postAtttachments = computed(() => {
     : props.notification.note.renote?.files?.length
       ? props.notification.note.renote.files
       : [];
-  return files?.length ? parseMisskeyAttachments(props.notification.note, props.currentInstanceUrl) : [];
+  return files?.length ? parseMisskeyAttachments(props.notification.note as MisskeyNote, props.currentInstanceUrl) : [];
 });
 
 const reactions = computed(() => {
@@ -128,7 +128,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
     <div class="post-data-group">
       <MisskeyNoteContent
         v-if="note"
-        :note="note"
+        :note="note as MisskeyNote"
         :originUser="user"
         :type="props.notification.type === 'renote' ? 'renoted' : props.notification.type"
         :lineStyle="props.lineStyle"
