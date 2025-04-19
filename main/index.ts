@@ -89,7 +89,6 @@ const start = () => {
 
   ipcMain.on("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.log(event);
     switch (event) {
       case "set-mode":
         setMainWindowMode(data.mode);
