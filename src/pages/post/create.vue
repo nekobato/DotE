@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import DoteAlert from "@/components/common/DoteAlert.vue";
 import DoteButton from "@/components/common/DoteButton.vue";
+import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
+import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
-import { onMounted, PropType, reactive, ref } from "vue";
-import MisskeyNote from "@/components/MisskeyNote.vue";
-import BlueskyPost from "@/components/BlueskyPost.vue";
-import { computed } from "vue";
-import { AppBskyFeedDefs } from "@atproto/api";
-import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
+import { computed, onMounted, PropType, reactive, ref } from "vue";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;

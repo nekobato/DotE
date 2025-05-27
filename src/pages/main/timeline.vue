@@ -6,7 +6,7 @@ import { computed, nextTick, reactive, ref, onMounted } from "vue";
 import { AppBskyFeedDefs } from "@atproto/api";
 
 // コンポーネント - 共通
-import ErrorPost from "@/components/ErrorPost.vue";
+import ErrorPost from "@/components/PostItem/ErrorPost.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
 import TimelineHeader from "@/components/TimelineHeader.vue";
@@ -14,11 +14,11 @@ import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
 import ScrollToTop from "@/components/ScrollToTop.vue";
 
 // コンポーネント - プラットフォーム固有
-import BlueskyPost from "@/components/BlueskyPost.vue";
-import MastodonNotification from "@/components/MastodonNotification.vue";
-import MastodonToot from "@/components/MastodonToot.vue";
-import MisskeyNote from "@/components/MisskeyNote.vue";
-import MisskeyNotification from "@/components/MisskeyNotification.vue";
+import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import MastodonNotification from "@/components/PostItem/MastodonNotification.vue";
+import MastodonToot from "@/components/PostItem/MastodonToot.vue";
+import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
+import MisskeyNotification from "@/components/PostItem/MisskeyNotification.vue";
 import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 
 // Store関連

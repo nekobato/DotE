@@ -3,7 +3,7 @@ import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import { computed, ref, type PropType } from "vue";
-import Mfm from "./misskey/Mfm.vue";
+import Mfm from "../misskey/Mfm.vue";
 
 const props = defineProps({
   note: {

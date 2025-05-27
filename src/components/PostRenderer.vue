@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import MisskeyNote from "@/components/MisskeyNote.vue";
-import MisskeyNotification from "@/components/MisskeyNotification.vue";
-import MastodonToot from "@/components/MastodonToot.vue";
-import MastodonNotification from "@/components/MastodonNotification.vue";
-import BlueskyPost from "@/components/BlueskyPost.vue";
+import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
+import MisskeyNotification from "@/components/PostItem/MisskeyNotification.vue";
+import MastodonToot from "@/components/PostItem/MastodonToot.vue";
+import MastodonNotification from "@/components/PostItem/MastodonNotification.vue";
+import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
 
 interface Props {
   platform?: string;
