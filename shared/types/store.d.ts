@@ -89,6 +89,8 @@ export type User = {
   };
 };
 
+export type LineStyle = "all" | "line-1" | "line-2" | "line-3";
+
 export type Settings = {
   opacity: number;
   mode: "show" | "haze" | "hide" | "settings" | "tutorial";
@@ -97,7 +99,7 @@ export type Settings = {
     height: number;
   };
   maxPostCount: number;
-  postStyle: "all" | "line-1" | "line-2" | "line-3";
+  postStyle: LineStyle;
   shortcuts: {
     toggleTimeline: string;
   };
