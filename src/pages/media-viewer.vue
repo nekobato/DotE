@@ -3,7 +3,7 @@ import { ipcSend } from "@/utils/ipc";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import Loading from "@/components/common/DoteLoading.vue";
 import { Icon } from "@iconify/vue";
-import PostAttachments from "@/components/PostAttachments.vue";
+import PostAttachments from "@/components/PostItem/PostAttachments.vue";
 
 type Media = {
   type: "image" | "video" | "audio";

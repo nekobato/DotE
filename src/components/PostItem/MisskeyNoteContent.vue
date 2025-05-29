@@ -1,90 +1,33 @@
 <script setup lang="ts">
-import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
-import { computed, ref, type PropType } from "vue";
-import Mfm from "./misskey/Mfm.vue";
+import type { MisskeyNoteContentProps } from "@shared/types/misskey";
+import { computed, toRef } from "vue";
+import { useMisskeyNoteContent } from "@/composables/useMisskeyNoteContent";
+import Mfm from "../misskey/Mfm.vue";
 
-const props = defineProps({
-  note: {
-    type: Object as PropType<MisskeyNote>,
-    required: true,
-  },
-  originNote: {
-    type: Object as PropType<MisskeyNote>,
-    required: false,
-  },
-  originUser: {
-    type: Object as PropType<MisskeyNote["user"]>,
-    required: false,
-  },
-  type: {
-    type: String as PropType<MisskeyEntities.Notification["type"] | "renoted" | "quoted">,
-    required: true,
-  },
-  lineStyle: {
-    type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
-    required: true,
-  },
-  currentInstanceUrl: {
-    type: String as PropType<string>,
-    required: false,
-  },
-  emojis: {
-    type: Array as PropType<{ name: string; url: string }[]>,
-    default: {},
-    required: true,
-  },
-  hideCw: {
-    type: Boolean as PropType<boolean>,
-    default: false,
-    required: true,
-  },
-  noParent: {
-    type: Boolean as PropType<boolean>,
-    default: false,
-    required: false,
-  },
+const props = withDefaults(defineProps<MisskeyNoteContentProps>(), {
+  emojis: () => [],
+  noParent: false,
 });
 
-const emit = defineEmits(["openUserPage"]);
+const emit = defineEmits<{
+  openUserPage: [user: MisskeyNoteContentProps["note"]["user"]];
+}>();
 
-const noteEmojis = computed(() => {
-  const remoteEmojis = emojisObject2Array(props.note.reactionEmojis || {});
-  const localEmojis = props.emojis || [];
-  return [...remoteEmojis, ...localEmojis];
-});
+// Composables
+const noteRef = toRef(props, "note");
+const emojisRef = toRef(props, "emojis");
+const originNoteRef = toRef(props, "originNote");
+const originUserRef = toRef(props, "originUser");
 
-const originUser = computed(() => {
-  return props.originNote ? props.originNote.user : props.originUser;
-});
-
-const originUsername = computed(() => {
-  return getUsername(originUser.value);
-});
-
-const host = computed(() => {
-  return props.note.user.host ? "https://" + props.note.user.host : props.currentInstanceUrl;
-});
+const { noteEmojis, resolvedOriginUser, originUsername, host, getUsername, readAll, isTextHide } =
+  useMisskeyNoteContent(noteRef, emojisRef, originNoteRef, originUserRef, props.currentInstanceUrl, props.hideCw);
 
 const isContentVisible = computed(() => {
   return props.type !== "renote";
 });
 
-const getUsername = (user?: MisskeyNote["user"]) => {
-  if (!user) return "";
-  if (user.name) {
-    if (noteEmojis.value) {
-      return parseMisskeyText(user.name, noteEmojis.value);
-    } else {
-      return user.name;
-    }
-  } else {
-    return user.username;
-  }
-};
-
-const openUserPage = (user: MisskeyNote["user"]) => {
+const openUserPage = (user: MisskeyNoteContentProps["note"]["user"]) => {
   emit("openUserPage", user);
 };
 
@@ -100,28 +43,23 @@ const lineClass = computed(() => {
       return "line-3";
   }
 });
-
-const canReadAll = ref(false);
-
-const readAll = () => {
-  canReadAll.value = true;
-};
-
-const isTextHide = computed(() => {
-  return props.note?.cw && props.hideCw && !canReadAll.value;
-});
 </script>
 
 <template>
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
     <div class="dote-post-info" v-if="isContentVisible">
       <span class="username" v-html="getUsername(props.note.user)" @click="openUserPage(props.note.user)" />
-      <div class="acted-by" v-if="originUser">
+      <div class="acted-by" v-if="resolvedOriginUser">
         <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'renoted'" />
         <Icon icon="mingcute:left-fill" v-if="props.type === 'mention'" />
         <Icon icon="mingcute:star-fill" v-if="props.type === 'reaction'" />
         <Icon icon="mingcute:chart-horizontal-line" v-if="props.type === 'pollEnded'" />
-        <span class="username origin" v-if="originUser" v-html="originUsername" @click="openUserPage(originUser)" />
+        <span
+          class="username origin"
+          v-if="resolvedOriginUser"
+          v-html="originUsername"
+          @click="openUserPage(resolvedOriginUser)"
+        />
       </div>
     </div>
     <div class="dote-post-content">
@@ -135,10 +73,10 @@ const isTextHide = computed(() => {
       />
       <img
         class="dote-avatar origin-user"
-        v-if="props.originUser"
-        :src="props.originUser?.avatarUrl || ''"
+        v-if="resolvedOriginUser"
+        :src="resolvedOriginUser?.avatarUrl || ''"
         alt=""
-        @click="openUserPage(props.originUser)"
+        @click="openUserPage(resolvedOriginUser)"
       />
       <div class="text-container" :class="[lineClass]" v-if="isContentVisible">
         <Mfm

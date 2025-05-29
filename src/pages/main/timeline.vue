@@ -1,46 +1,64 @@
 <script setup lang="ts">
-import ErrorPost from "@/components/ErrorPost.vue";
-import MastodonNotification from "@/components/MastodonNotification.vue";
-import MastodonToot from "@/components/MastodonToot.vue";
-import MisskeyNote from "@/components/MisskeyNote.vue";
-import MisskeyNotification from "@/components/MisskeyNotification.vue";
+// Vue関連
+import { computed, nextTick, reactive, ref, onMounted } from "vue";
+
+// 外部ライブラリ
+import { AppBskyFeedDefs } from "@atproto/api";
+
+// コンポーネント - 共通
+import ErrorPost from "@/components/PostItem/ErrorPost.vue";
 import PostList from "@/components/PostList.vue";
 import ReadMore from "@/components/Readmore.vue";
 import TimelineHeader from "@/components/TimelineHeader.vue";
-import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
 import DoteKiraKiraLoading from "@/components/common/DoteKirakiraLoading.vue";
+import ScrollToTop from "@/components/ScrollToTop.vue";
+
+// コンポーネント - プラットフォーム固有
+import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import MastodonNotification from "@/components/PostItem/MastodonNotification.vue";
+import MastodonToot from "@/components/PostItem/MastodonToot.vue";
+import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
+import MisskeyNotification from "@/components/PostItem/MisskeyNotification.vue";
+import MisskeyAdCarousel from "@/components/misskey/MisskeyAdCarousel.vue";
+
+// Store関連
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
+import { useBlueskyStore } from "@/store/bluesky";
+import { useMastodonStore } from "@/store/mastodon";
+
+// 型定義
 import type {
   MastodonNotification as MastodonNotificationType,
   MastodonToot as MastodonTootType,
 } from "@/types/mastodon";
-import { ipcSend } from "@/utils/ipc";
-import { Icon } from "@iconify/vue";
 import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
-import { computed, nextTick, reactive, ref } from "vue";
-import { onMounted } from "vue";
-import BlueskyPost from "@/components/BlueskyPost.vue";
-import { AppBskyFeedDefs } from "@atproto/api";
-import { useBlueskyStore } from "@/store/bluesky";
-import { useMisskeyStore } from "@/store/misskey";
-import { useMastodonStore } from "@/store/mastodon";
+
+// ユーティリティ
+import { ipcSend } from "@/utils/ipc";
+
+// Composables
+import { useTimelineState } from "@/composables/useTimelineState";
+import { usePostActions } from "@/composables/usePostActions";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
-const misskeyStore = useMisskeyStore();
 const mastodonStore = useMastodonStore();
 const blueskyStore = useBlueskyStore();
+
+// Composables
+const { scrollPosition, hazeSettings, scrollState, platformData } = useTimelineState();
+const { onReaction, openNewReaction, openRepostWindow, refreshPost } = usePostActions();
+
 const timelineContainer = ref<HTMLDivElement | null>(null);
-const scrollPosition = ref(0);
 
-const hazeOpacity = computed(() => {
-  return (store.settings.mode === "haze" ? store.settings.opacity || 0 : 100) / 100;
-});
-
-const isHazeMode = computed(() => {
-  return store.settings.mode === "haze";
-});
+// Computed values from composables
+const hazeOpacity = computed(() => hazeSettings.value.opacity);
+const isHazeMode = computed(() => hazeSettings.value.isEnabled);
+const canScrollToTop = computed(() => scrollState.value.canScrollToTop);
+const canReadMore = computed(() => scrollState.value.canReadMore);
+const emojis = computed(() => platformData.value.emojis);
+const ads = computed(() => platformData.value.ads);
 
 const state = reactive({
   isAdding: false,
@@ -51,62 +69,11 @@ const onScroll = () => {
   scrollPosition.value = timelineContainer.value?.scrollTop || 0;
 };
 
-const canScrollToTop = computed(() => {
-  return store.settings.mode === "show" && scrollPosition.value > 0;
-});
-
-const canReadMore = computed(() => {
-  return (
-    (timelineStore.current?.posts.length && timelineStore.current?.posts.length > 0) ||
-    (timelineStore.current?.notifications.length && timelineStore.current?.notifications.length > 0)
-  );
-});
-
-const emojis = computed(() => {
-  return timelineStore.currentInstance?.type === "misskey" ? timelineStore.currentInstance?.misskey?.emojis : [];
-});
-
-const ads = computed(() => {
-  return timelineStore.currentInstance?.type === "misskey" &&
-    !isHazeMode.value &&
-    timelineStore.currentInstance?.misskey?.meta.ads.length > 0 &&
-    timelineStore.current?.posts.length
-    ? timelineStore.currentInstance?.misskey?.meta.ads
-    : [];
-});
-
 const scrollToTop = () => {
   timelineContainer.value?.scrollTo({
     top: 0,
     behavior: "smooth",
   });
-};
-
-const onReaction = ({ postId, reaction }: { postId: string; reaction: string }) => {
-  ipcSend("main:reaction", {
-    postId: postId,
-    reaction,
-  });
-};
-
-const openNewReaction = (noteId: string) => {
-  ipcSend("post:reaction", {
-    instanceUrl: timelineStore.currentInstance?.url,
-    token: timelineStore.currentUser?.token,
-    noteId: noteId,
-    emojis: emojis.value,
-  });
-};
-
-const openRepostWindow = (data: {
-  post: MisskeyNoteType | MastodonTootType;
-  emojis: MisskeyEntities.EmojiSimple[];
-}) => {
-  ipcSend("post:repost", data);
-};
-
-const refreshPost = (noteId: string) => {
-  misskeyStore.updatePost({ postId: noteId });
 };
 
 timelineStore.$onAction((action) => {
@@ -216,11 +183,7 @@ onMounted(() => {
       />
       <ReadMore v-if="!isHazeMode && canReadMore" />
     </div>
-    <div class="scroll-to-top" :class="{ visible: canScrollToTop }">
-      <button @click="scrollToTop" class="nn-button size-small">
-        <Icon icon="mingcute:arrow-to-up-fill" class="nn-icon size-small" />
-      </button>
-    </div>
+    <ScrollToTop :visible="canScrollToTop" @scrollToTop="scrollToTop" />
   </div>
 </template>
 
@@ -264,35 +227,5 @@ body::-webkit-scrollbar {
 }
 .dote-post-list {
   padding-top: 4px;
-}
-.scroll-to-top {
-  position: fixed;
-  top: 48px;
-  right: 0;
-  left: 0;
-  z-index: 1;
-  display: inline-flex;
-  width: 80px;
-  margin: 0 auto;
-  background-color: var(--dote-color-white-t4);
-  border-radius: 4px;
-  transform: translateY(-56px);
-  opacity: 0.2;
-  transition:
-    transform 0.1s ease-in-out,
-    opacity 0.1s ease-in-out;
-
-  &.visible {
-    transform: translateY(0);
-    opacity: 1;
-  }
-
-  .nn-button {
-    width: 100%;
-
-    .nn-icon {
-      color: var(--dote-color-black-t5);
-    }
-  }
 }
 </style>
