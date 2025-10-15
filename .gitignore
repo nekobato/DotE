@@ -32,3 +32,4 @@ dist-electron
 .output
 .nuxt
 electron-builder.env
+AGENTS.md
