@@ -1,21 +1,21 @@
-import { ref, computed } from "vue";
-import { nanoid } from "nanoid/non-secure";
+import { computed, ref } from "vue";
+import { useWebSocket } from "@vueuse/core";
 import { ChannelName, MastodonChannelName } from "@shared/types/store";
 import { MastodonToot } from "@/types/mastodon";
 
 export type MastodonStreamChannel =
   | "public"
-  | "public:media" // 使ってない
+  | "public:media"
   | "public:local"
-  | "public:local:media" // 使ってない
+  | "public:local:media"
   | "public:remote"
-  | "public:remote:media" // 使ってない
-  | "hashtag" // 使ってない
+  | "public:remote:media"
+  | "hashtag"
   | "hashtag:local"
-  | "user" // 使ってない
+  | "user"
   | "user:notification"
   | "list"
-  | "direct"; // 使ってない
+  | "direct";
 
 export const channelToMastodonStreaName = (channel: ChannelName): MastodonStreamChannel => {
   switch (channel) {
@@ -37,14 +37,13 @@ export const channelToMastodonStreaName = (channel: ChannelName): MastodonStream
 };
 
 export const webSocketState = {
-  CONNECTING: 0,
-  OPEN: 1,
-  CLOSING: 2,
-  CLOSED: 3,
-};
+  CONNECTING: "CONNECTING",
+  OPEN: "OPEN",
+  CLOSING: "CLOSING",
+  CLOSED: "CLOSED",
+} as const;
 
-// https://docs.joinmastodon.org/methods/streaming/
-export const connectToMastodonStream = (
+const buildMastodonStreamUrl = (
   host: string,
   params: {
     access_token: string;
@@ -62,17 +61,15 @@ export const connectToMastodonStream = (
   if (params.tag) {
     wsParams.append("tag", params.tag);
   }
-  return new WebSocket(`wss://${host}/api/v1/streaming?${wsParams.toString()}`);
+  return `wss://${host}/api/v1/streaming?${wsParams.toString()}`;
 };
 
-export const disconnectWebSocket = (ws: WebSocket | null) => {
-  if (!ws) return;
-  ws.close();
-  ws.onopen = null;
-  ws.onerror = null;
-  ws.onclose = null;
-  ws.onmessage = null;
-  ws = null;
+type ConnectOptions = {
+  host: string;
+  token: string;
+  channel: MastodonChannelName;
+  tag?: string;
+  listId?: string;
 };
 
 export const useMastodonStream = ({
@@ -86,117 +83,84 @@ export const useMastodonStream = ({
   onDelete: (id: string) => void;
   onReconnect: () => void;
 }) => {
-  let ws: WebSocket;
-  const shouldConnect = ref(false);
-  const wsNoteSubScriptionQueue: string[] = [];
-  const webSocketId = ref<string | null>(null);
-  const eventTime = {
-    lastOpen: 0,
-    lastClose: 0,
-  };
+  const shouldReconnect = ref(false);
+  const reconnecting = ref(false);
+  const url = ref<string>();
 
-  const onConnected = () => {
-    console.log("ws:connected");
-    if (wsNoteSubScriptionQueue.length) {
-      wsNoteSubScriptionQueue.forEach((postId) => {
-        ws?.send(
-          JSON.stringify({
-            type: "subNote",
-            body: { id: postId },
-          }),
-        );
-      });
-      wsNoteSubScriptionQueue.length = 0;
-    }
-  };
+  const { status, open, close } = useWebSocket(url, {
+    immediate: false,
+    autoConnect: false,
+    autoReconnect: {
+      retries: () => shouldReconnect.value,
+      delay: 1000,
+    },
+    onConnected() {
+      if (reconnecting.value) {
+        reconnecting.value = false;
+        onReconnect();
+      }
+    },
+    onDisconnected() {
+      if (shouldReconnect.value) {
+        reconnecting.value = true;
+      } else {
+        reconnecting.value = false;
+      }
+    },
+    onError(_, error) {
+      console.error("ws:error", error);
+    },
+    onMessage(_, event) {
+      try {
+        const data = JSON.parse(event.data);
+        switch (data.event) {
+          case "connected":
+            console.log("ws:connected");
+            break;
+          case "update":
+            onUpdate(JSON.parse(data.payload));
+            break;
+          case "status.update":
+            onStatusUpdate(JSON.parse(data.payload));
+            break;
+          case "delete":
+            console.info("delete", data.payload);
+            onDelete(data.payload);
+            break;
+          default:
+            console.info("unhandled stream message", data);
+            break;
+        }
+      } catch (error) {
+        console.error("ws:message parse error", error);
+      }
+    },
+  });
 
-  const connect = ({
-    host,
-    token,
-    channel,
-    tag,
-    listId,
-  }: {
-    host: string;
-    token: string;
-    channel: MastodonChannelName;
-    tag?: string;
-    listId?: string;
-  }) => {
+  const connect = ({ host, token, channel, tag, listId }: ConnectOptions) => {
     if (channel === "mastodon:list" && !listId) return;
     if (channel === "mastodon:hashtag" && !tag) return;
 
     const streamName = channelToMastodonStreaName(channel);
 
-    shouldConnect.value = true;
-    webSocketId.value = nanoid();
-    ws = connectToMastodonStream(host, {
+    shouldReconnect.value = true;
+    reconnecting.value = false;
+    url.value = buildMastodonStreamUrl(host, {
       access_token: token,
       stream: streamName,
       list: listId,
       tag,
     });
-
-    ws.onopen = () => {
-      console.info("ws:open");
-      eventTime.lastOpen = Date.now();
-
-      if (eventTime.lastClose) {
-        onReconnect();
-      }
-    };
-
-    ws.onerror = () => {
-      console.error("ws:error");
-    };
-
-    ws.onclose = () => {
-      console.info("ws:close");
-      eventTime.lastClose = Date.now();
-      if (shouldConnect.value) {
-        setTimeout(() => {
-          connect({ host, token, channel });
-        }, 1000);
-      }
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.event) {
-        case "connected":
-          onConnected();
-          break;
-        case "update":
-          try {
-            onUpdate(JSON.parse(data.payload));
-          } catch (e) {
-            console.error(e);
-          }
-          break;
-        case "status.update":
-          try {
-            onStatusUpdate(JSON.parse(data.payload));
-          } catch (e) {
-            console.error(e);
-          }
-          break;
-        case "delete":
-          console.info("delete", data.payload);
-          onDelete(data.payload);
-          break;
-        default:
-          console.info("unhandled stream message", data);
-          break;
-      }
-    };
+    open();
   };
 
   const disconnect = () => {
-    shouldConnect.value = false;
-    disconnectWebSocket(ws);
+    shouldReconnect.value = false;
+    reconnecting.value = false;
+    close();
   };
 
-  const state = computed(() => ws?.readyState);
+  const state = computed(() => status.value);
 
   return { connect, disconnect, state };
 };
