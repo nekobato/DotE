@@ -21,11 +21,11 @@ const props = defineProps({
     required: false,
   },
   record: {
-    type: Object as PropType<AppBskyFeedPost.Record>,
+    type: Object as PropType<AppBskyFeedPost.Record | undefined>,
     required: false,
   },
-  embedRecord: {
-    type: Object as PropType<AppBskyEmbedRecord.View>,
+  quotedRecord: {
+    type: Object as PropType<AppBskyEmbedRecord.ViewRecord | undefined>,
     required: false,
   },
   lineStyle: {
@@ -43,12 +43,28 @@ const props = defineProps({
 });
 
 const text = computed(() => {
-  return (props.embedRecord?.value as AppBskyFeedPost.Record)?.text || props.record?.text;
+  if (props.quotedRecord) {
+    const quotedValue = props.quotedRecord.value;
+    if (AppBskyFeedPost.isRecord(quotedValue)) {
+      return quotedValue.text;
+    }
+  }
+  if (props.record) {
+    return props.record.text;
+  }
+  return "";
 });
 
 const openUserPage = () => {
   ipcSend("open-url", {
     url: new URL(`/profile/${props.author.handle}`, bskyUrl).toString(),
+  });
+};
+
+const openOriginPage = () => {
+  if (!props.originAuthor) return;
+  ipcSend("open-url", {
+    url: new URL(`/profile/${props.originAuthor.handle}`, bskyUrl).toString(),
   });
 };
 </script>
@@ -58,13 +74,13 @@ const openUserPage = () => {
     <div class="dote-post-info">
       <span class="username" @click="openUserPage">{{ props.author.displayName || props.author.handle }}</span>
       <div class="acted-by" v-if="originAuthor">
-        <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'reposted'" />
+        <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'repost' || props.type === 'reposted'" />
         <Icon icon="mingcute:left-fill" v-if="props.type === 'reply'" />
         <span
           class="username origin"
           v-if="originAuthor"
           v-html="originAuthor.displayName || originAuthor.handle"
-          @click="openUserPage()"
+          @click="openOriginPage"
         />
       </div>
     </div>
@@ -76,7 +92,7 @@ const openUserPage = () => {
         v-if="props.originAuthor"
         :src="props.originAuthor?.avatar || ''"
         alt=""
-        @click="openUserPage"
+        @click="openOriginPage"
       />
       <div class="text-container" :class="[lineStyle]">
         <span class="text" v-html="text" />

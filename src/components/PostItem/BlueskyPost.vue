@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import {
+  deriveBlueskyPostKind,
+  extractBlueskyAttachments,
+  extractPrimaryRecord,
+  extractQuotedRecord,
+  extractReposter,
+} from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
-import { AppBskyEmbedRecord, AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
+import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
-import { computed, ComputedRef, type PropType } from "vue";
+import { computed, type PropType } from "vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostAttachments from "./PostAttachments.vue";
 import { Attachment } from "@shared/types/post";
@@ -44,58 +51,29 @@ const emit = defineEmits<{
   deleteLike: [{ uri: string }];
 }>();
 
-const record = computed(() => {
-  return props.post.post.record as AppBskyFeedPost.Record;
-});
+const record = computed(() => extractPrimaryRecord(props.post));
 
-const postType = computed<BlueskyPostType[]>(() => {
-  if (!!props.post.reply) return ["reply"];
-  if (!!props.post.reason) return ["repost"];
+const postType = computed<BlueskyPostType[]>(() => deriveBlueskyPostKind(props.post));
 
-  if ((props.post.post.embed as any)?.$type === "app.bsky.embed.record#view") {
-    return ["quote", "quoted"];
-  }
+const repostedBy = computed(() => extractReposter(props.post));
 
-  return ["post"];
-});
+const quotedRecord = computed(() => extractQuotedRecord(props.post));
 
 const originAuthor = computed(() => {
-  if (postType.value[0] !== "repost") return undefined;
-  const embedRecord = props.post.post.embed?.record as AppBskyEmbedRecord.ViewRecord;
-  return embedRecord?.author;
+  if (postType.value[0] === "repost") {
+    return repostedBy.value;
+  }
+  if (postType.value[0] === "quote") {
+    return quotedRecord.value?.author;
+  }
+  return undefined;
 });
 
 const isLiked = computed(() => {
   return !!props.post.post.viewer?.like;
 });
 
-const postAttachments: ComputedRef<Attachment[]> = computed(() => {
-  let attachments: Attachment[] = [];
-  const embed = props.post.post.embed;
-  // images
-  if ((embed?.$type as string).startsWith("app.bsky.embed.images")) {
-    attachments.push(
-      ...(embed as any).images.map((image: any) => ({
-        type: "image",
-        url: image.fullsize,
-        thumbnailUrl: image.thumb,
-        size: {
-          width: image.aspectRatio?.width || "auto",
-          height: image.aspectRatio?.height || "auto",
-        },
-      })),
-    );
-  }
-
-  // URL
-  if ((embed?.$type as string).startsWith("app.bsky.embed.external")) {
-    attachments.push({
-      type: "url",
-      url: (embed?.external as any).uri,
-    });
-  }
-  return attachments;
-});
+const postAttachments = computed<Attachment[]>(() => extractBlueskyAttachments(props.post));
 
 const openPost = () => {
   const postId = props.post.post.uri.split("/").pop();
@@ -144,22 +122,24 @@ const deleteLike = () => {
           :author="props.post.post.author"
           :originAuthor="originAuthor"
           :record="record"
+          :quotedRecord="quotedRecord"
           :lineStyle="props.lineStyle"
           :currentInstanceUrl="props.currentInstanceUrl"
           @openUserPage="openUserPage"
         />
         <BlueskyPostContent
-          v-if="!!postType[1]"
+          v-if="postType[1] && quotedRecord"
           :type="postType[1]"
           :author="props.post.post.author"
-          :embedRecord="props.post.post.embed?.record as AppBskyEmbedRecord.View"
+          :originAuthor="quotedRecord?.author"
+          :quotedRecord="quotedRecord"
           :lineStyle="props.lineStyle"
           :currentInstanceUrl="props.currentInstanceUrl"
           @openUserPage="openUserPage"
         />
       </div>
     </div>
-    <PostAttachmentsContainer class="attachments" v-if="post.post.embed">
+    <PostAttachmentsContainer class="attachments" v-if="postAttachments.length">
       <PostAttachments :attachments="postAttachments" />
     </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">

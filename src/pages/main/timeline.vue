@@ -48,7 +48,8 @@ const blueskyStore = useBlueskyStore();
 
 // Composables
 const { scrollPosition, hazeSettings, scrollState, platformData } = useTimelineState();
-const { onReaction, openNewReaction, openRepostWindow, refreshPost } = usePostActions();
+const { onReaction, openNewReaction, openRepostWindowEvent, refreshPost } = usePostActions();
+const openRepostWindow = openRepostWindowEvent;
 
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
