@@ -12,6 +12,7 @@ import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/ty
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { computed, onMounted, PropType, reactive, ref } from "vue";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
@@ -47,6 +48,15 @@ const state = reactive({
 });
 const text = ref("");
 const textCw = ref("");
+
+const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+  if (!result.ok) {
+    state.post.error = message;
+    console.error(message, result.error);
+    return undefined;
+  }
+  return result.data;
+};
 
 const mastodonToot = computed(() => {
   if (state.instance?.type === "mastodon" && props.data.post) {
@@ -152,7 +162,7 @@ const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const renoteId = targetNote?.renoteId && !targetNote.text ? targetNote.renoteId : targetNote?.id;
 
-  const res = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "misskey:createNote",
     instanceUrl: state.instance?.url,
     token: state.user?.token,
@@ -171,7 +181,8 @@ const postToMisskey = async () => {
     renoteId: renoteId || null,
     // fileIds: [],
   });
-  if (res.createdNote) {
+  const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} への投稿に失敗しました`);
+  if (res?.createdNote) {
     text.value = "";
     textCw.value = "";
     ipcSend("post:close");
@@ -179,7 +190,7 @@ const postToMisskey = async () => {
 };
 
 const postToMastodon = async () => {
-  const res = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "mastodon:postStatus",
     instanceUrl: state.instance?.url,
     token: state.user?.token,
@@ -190,7 +201,8 @@ const postToMastodon = async () => {
     // spoilerText: null,
     // visibility: "public",
   });
-  if (res.id) {
+  const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} への投稿に失敗しました`);
+  if (res?.id) {
     text.value = "";
     ipcSend("post:close");
   }
@@ -199,16 +211,20 @@ const postToMastodon = async () => {
 const postToBluesky = async () => {
   const targetPost = props.data.post as BlueskyPostType | null;
   const quoteRef = targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
+  const did = state.user?.blueskySession?.did;
+  if (!did) {
+    throw new Error("Blueskyアカウントの認証情報が見つかりませんでした");
+  }
 
-  const res = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "bluesky:createPost",
-    instanceUrl: state.instance?.url,
-    session: state.user?.blueskySession,
+    did,
     text: text.value,
     quote: quoteRef,
   });
 
-  if (res && res.uri) {
+  const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
+  if (res && (res as any).uri) {
     text.value = "";
     ipcSend("post:close");
   }

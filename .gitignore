@@ -33,3 +33,4 @@ dist-electron
 .nuxt
 electron-builder.env
 AGENTS.md
+prompts/

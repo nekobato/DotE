@@ -4,9 +4,17 @@ import { useStore } from ".";
 import type { MisskeyEntities } from "@shared/types/misskey";
 import { MastodonInstanceApiResponse } from "@/types/mastodon";
 import { InstanceType } from "@shared/types/store";
+import type { ApiErrorPayload } from "@shared/types/ipc";
 
 export const useInstanceStore = defineStore("instance", () => {
   const store = useStore();
+
+  const handleApiError = (error: ApiErrorPayload, fallback: string) => {
+    store.$state.errors.push({
+      message: fallback,
+    });
+    console.error(fallback, error);
+  };
 
   const createInstance = async (url: string, type: InstanceType) => {
     switch (type) {
@@ -20,8 +28,12 @@ export const useInstanceStore = defineStore("instance", () => {
   };
 
   const createMisskeyInstance = async (instanceUrl: string) => {
-    const meta = await getMisskeyInstanceMeta(instanceUrl);
-    if (!meta) return;
+    const metaResult = await getMisskeyInstanceMeta(instanceUrl);
+    if (!metaResult.ok) {
+      handleApiError(metaResult.error, `${instanceUrl} の Misskey メタ情報取得に失敗しました`);
+      return;
+    }
+    const meta = metaResult.data;
     const result = await ipcInvoke("db:upsert-instance", {
       type: "misskey",
       url: meta.uri,
@@ -32,11 +44,15 @@ export const useInstanceStore = defineStore("instance", () => {
   };
 
   const createMastodonInstance = async (instanceUrl: string) => {
-    const meta: MastodonInstanceApiResponse | undefined = await ipcInvoke("api", {
+    const metaResult = await ipcInvoke("api", {
       method: "mastodon:getInstance",
       instanceUrl,
     });
-    if (!meta) return;
+    if (!metaResult.ok) {
+      handleApiError(metaResult.error, `${instanceUrl} の Mastodon メタ情報取得に失敗しました`);
+      return;
+    }
+    const meta = metaResult.data as MastodonInstanceApiResponse;
     const result = await ipcInvoke("db:upsert-instance", {
       type: "mastodon",
       url: "https://" + meta.domain,
@@ -71,19 +87,25 @@ export const useInstanceStore = defineStore("instance", () => {
   };
 
   const getMisskeyInstanceMeta = async (instanceUrl: string) => {
-    const result: MisskeyEntities.MetaResponse | null = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "misskey:getMeta",
       instanceUrl,
     });
-    return result;
+    if (!result.ok) {
+      return { ok: false as const, error: result.error };
+    }
+    return { ok: true as const, data: result.data as MisskeyEntities.MetaResponse };
   };
 
   const getMastodonInstanceMeta = async (instanceUrl: string) => {
-    const result: MastodonInstanceApiResponse | null = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "mastodon:getInstance",
       instanceUrl,
     });
-    return result;
+    if (!result.ok) {
+      return { ok: false as const, error: result.error };
+    }
+    return { ok: true as const, data: result.data as MastodonInstanceApiResponse };
   };
 
   return { createInstance, findInstance, findInstanceByUserId, getMisskeyInstanceMeta, getMastodonInstanceMeta };

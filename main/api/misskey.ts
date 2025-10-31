@@ -1,33 +1,46 @@
-const fetch = require("electron-fetch").default;
-import { Response } from "electron-fetch";
 import { baseHeader } from "./request";
+import { requestJson } from "./helpers";
 
 export const misskeyCheckMiAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
-  return fetch(new URL(`/api/miauth/${sessionId}/check`, instanceUrl).toString(), {
+  const url = new URL(`/api/miauth/${sessionId}/check`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({ sessionId }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const missekyGetI = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
-  return fetch(new URL(`/api/i`, instanceUrl).toString(), {
+  const url = new URL(`/api/i`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({ i: token }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const misskeyGetEmojis = async ({ instanceUrl }: { instanceUrl: string }) => {
-  return fetch(new URL("/api/emojis", instanceUrl).toString(), {
-    headers: baseHeader,
-  }).then((res: Response) => {
-    return res.json();
-  });
+  const url = new URL("/api/emojis", instanceUrl).toString();
+  console.info("[api][misskey:getEmojis] request:start", { url });
+  const startedAt = Date.now();
+  try {
+    const response = await requestJson(url, {
+      headers: baseHeader,
+    });
+    console.info("[api][misskey:getEmojis] request:done", {
+      url,
+      emojiCount: Array.isArray((response as any)?.emojis) ? (response as any).emojis.length : undefined,
+      durationMs: Date.now() - startedAt,
+    });
+    return response;
+  } catch (error) {
+    console.error("[api][misskey:getEmojis] request:failed", {
+      url,
+      durationMs: Date.now() - startedAt,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
 };
 
 export const misskeyGetTimelineHome = async ({
@@ -43,7 +56,8 @@ export const misskeyGetTimelineHome = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/notes/timeline`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/timeline`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -52,8 +66,6 @@ export const misskeyGetTimelineHome = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -70,7 +82,8 @@ export const misskeyGetTimelineLocal = async ({
   untilId?: string;
   limit: number;
 }) => {
-  return fetch(new URL(`/api/notes/local-timeline`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/local-timeline`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -79,8 +92,6 @@ export const misskeyGetTimelineLocal = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -97,7 +108,8 @@ export const misskeyGetTimelineGlobal = async ({
   untilId?: string;
   limit: number;
 }) => {
-  return fetch(new URL(`/api/notes/global-timeline`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/global-timeline`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -106,8 +118,6 @@ export const misskeyGetTimelineGlobal = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -126,7 +136,8 @@ export const misskeyGetTimelineChannel = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/channels/timeline`, instanceUrl).toString(), {
+  const url = new URL(`/api/channels/timeline`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -136,8 +147,6 @@ export const misskeyGetTimelineChannel = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -156,7 +165,8 @@ export const misskeyGetTimelineUserList = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/notes/user-list-timeline`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/user-list-timeline`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -166,8 +176,6 @@ export const misskeyGetTimelineUserList = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -186,7 +194,8 @@ export const misskeyGetTimelineHashtag = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/notes/search-by-tag`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/search-by-tag`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -196,8 +205,6 @@ export const misskeyGetTimelineHashtag = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -216,7 +223,8 @@ export const misskeyGetTimelineAntenna = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/antennas/notes`, instanceUrl).toString(), {
+  const url = new URL(`/api/antennas/notes`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -226,8 +234,6 @@ export const misskeyGetTimelineAntenna = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -246,7 +252,8 @@ export const misskeyGetTimelineSearch = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/notes/search`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/search`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -256,8 +263,6 @@ export const misskeyGetTimelineSearch = async ({
       untilId,
       limit,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -274,7 +279,8 @@ export const misskeyGetNotifications = async ({
   sinceId?: string;
   untilId?: string;
 }) => {
-  return fetch(new URL(`/api/i/notifications`, instanceUrl).toString(), {
+  const url = new URL(`/api/i/notifications`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -283,8 +289,6 @@ export const misskeyGetNotifications = async ({
       sinceId,
       untilId,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -299,7 +303,8 @@ export const misskeyCreateReaction = async ({
   noteId: string;
   reaction: string;
 }) => {
-  return fetch(new URL(`/api/notes/reactions/create`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/reactions/create`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -307,8 +312,6 @@ export const misskeyCreateReaction = async ({
       noteId,
       reaction,
     }),
-  }).then((res: Response) => {
-    return res.text();
   });
 };
 
@@ -321,15 +324,14 @@ export const misskeyDeleteReaction = async ({
   token: string;
   noteId: string;
 }) => {
-  return fetch(new URL(`/api/notes/reactions/delete`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/reactions/delete`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
       i: token,
       noteId,
     }),
-  }).then((res: Response) => {
-    return res.text();
   });
 };
 
@@ -354,7 +356,8 @@ export const misskeyCreateNote = async ({
   poll?: any;
   files?: any;
 }) => {
-  return fetch(new URL(`/api/notes/create`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/create`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -367,8 +370,6 @@ export const misskeyCreateNote = async ({
       poll,
       files,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -381,15 +382,14 @@ export const misskeyGetNoteReactions = async ({
   token: string;
   noteId: string;
 }) => {
-  return fetch(new URL(`/api/notes/reactions`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/reactions`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
       i: token,
       noteId,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -402,25 +402,23 @@ export const misskeyGetNote = async ({
   token: string;
   noteId: string;
 }) => {
-  return fetch(new URL(`/api/notes/show`, instanceUrl).toString(), {
+  const url = new URL(`/api/notes/show`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
       i: token,
       noteId,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const misskeyGetMeta = async ({ instanceUrl }: { instanceUrl: string }) => {
-  return fetch(new URL(`/api/meta`, instanceUrl).toString(), {
+  const url = new URL(`/api/meta`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({}),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -435,7 +433,8 @@ export const misskeyGetFollowedChannels = async ({
   limit?: number;
   sinceId?: string;
 }) => {
-  return fetch(new URL(`/api/channels/followed`, instanceUrl).toString(), {
+  const url = new URL(`/api/channels/followed`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -443,20 +442,17 @@ export const misskeyGetFollowedChannels = async ({
       sinceId,
       limit: limit || 100,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const misskeyGetMyAntennas = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
-  return fetch(new URL(`/api/antennas/list`, instanceUrl).toString(), {
+  const url = new URL(`/api/antennas/list`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
       i: token,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -468,21 +464,19 @@ export const misskeyGetUserLists = async ({
   token: string;
   userId: string;
 }) => {
-  return fetch(new URL(`/api/users/lists/list`, instanceUrl).toString(), {
+  const url = new URL(`/api/users/lists/list`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
       i: token,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const misskeyGetAnnouncements = async ({ instanceUrl }: { instanceUrl: string }) => {
-  return fetch(new URL(`/api/announcements`, instanceUrl).toString(), {
+  const url = new URL(`/api/announcements`, instanceUrl).toString();
+  return requestJson(url, {
     headers: baseHeader,
-  }).then((res: Response) => {
-    return res.json();
   });
 };

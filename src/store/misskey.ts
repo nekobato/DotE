@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
-import { DotEPost, methodOfChannel, useStore } from ".";
+import { DotEPost, methodOfChannel, useStore, type TimelineStore } from ".";
 import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import { MisskeyNote } from "@shared/types/misskey";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 export const useMisskeyStore = defineStore("misskey", () => {
   const store = useStore();
@@ -16,46 +17,121 @@ export const useMisskeyStore = defineStore("misskey", () => {
     return timelineStore;
   };
 
-  const addEmoji = async ({ postId, name }: { postId: string; name: string }) => {
-    const timeline = getTimelineStore();
-    const post = store.timelines[timeline.currentIndex]?.posts.find(
-      (post: DotEPost) => post.id === postId,
-    ) as MisskeyNote;
-    const reactions = post?.renote ? post.renote.reactions : post?.reactions;
-    if (!reactions) return;
-    if (Object.keys(reactions).includes(name)) {
-      reactions[name] += 1;
-    } else {
-      reactions[name] = 1;
+  const reportApiError = (result: ApiInvokeResult<unknown>, message: string) => {
+    if (result.ok) return;
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+  };
+
+  const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+    if (!result.ok) {
+      reportApiError(result, message);
+      return undefined;
     }
+    return result.data;
+  };
+
+  const isMisskeyNotePost = (post: DotEPost): post is MisskeyNote => {
+    return (post as MisskeyNote).reactionEmojis !== undefined;
+  };
+
+  const forEachMisskeyNote = (callback: (note: MisskeyNote) => void) => {
+    const visited = new WeakSet<MisskeyNote>();
+    const traverse = (note?: MisskeyNote) => {
+      if (!note || visited.has(note)) return;
+      visited.add(note);
+      callback(note);
+      const renote = note.renote as MisskeyNote | undefined;
+      if (renote) {
+        traverse(renote);
+      }
+    };
+
+    store.timelines.forEach((timeline: TimelineStore) => {
+      timeline.posts.forEach((post: DotEPost) => {
+        if (!isMisskeyNotePost(post)) return;
+        traverse(post);
+      });
+    });
+  };
+
+  const updateNotesById = (noteId: string, updater: (note: MisskeyNote) => void) => {
+    forEachMisskeyNote((note) => {
+      if (note.id === noteId) {
+        updater(note);
+      }
+    });
+  };
+
+  const findNoteById = (noteId: string): MisskeyNote | undefined => {
+    let found: MisskeyNote | undefined;
+    forEachMisskeyNote((note) => {
+      if (!found && note.id === noteId) {
+        found = note;
+      }
+    });
+    return found;
+  };
+
+  const incrementReaction = (note: MisskeyNote, reaction: string, value = 1) => {
+    const current = note.reactions[reaction] ?? 0;
+    note.reactions[reaction] = current + value;
+  };
+
+  const decrementReaction = (note: MisskeyNote, reaction: string) => {
+    const current = note.reactions[reaction];
+    if (!current) return;
+    if (current <= 1) {
+      delete note.reactions[reaction];
+    } else {
+      note.reactions[reaction] = current - 1;
+    }
+  };
+
+  const addEmoji = async ({ postId, name }: { postId: string; name: string }) => {
+    updateNotesById(postId, (note) => {
+      incrementReaction(note, name);
+    });
   };
 
   const createMyReaction = async (postId: string, reaction: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
-      // Update reaction on Local
-      let post = (timelineStore.current?.posts as MisskeyNote[]).find((post) => post.id === postId) as MisskeyNote;
+      const sourceNote = findNoteById(postId);
+      const targetNote = (sourceNote?.renote as MisskeyNote | undefined) ?? sourceNote;
+      if (!targetNote) return;
 
-      const targetPost = post.renote || post;
+      const previousReaction = targetNote.myReaction;
 
-      if (targetPost) {
-        targetPost.myReaction = reaction;
-        const reactionCount = targetPost.reactions[reaction] || 0;
-        targetPost.reactions[reaction] = reactionCount + 1;
+      if (previousReaction === reaction) {
+        return;
       }
 
-      await ipcInvoke("api", {
+      if (previousReaction && previousReaction !== reaction) {
+        updateNotesById(targetNote.id, (note) => {
+          decrementReaction(note, previousReaction);
+          note.myReaction = undefined;
+        });
+      }
+
+      updateNotesById(targetNote.id, (note) => {
+        note.myReaction = reaction;
+        incrementReaction(note, reaction);
+      });
+
+      const result = await ipcInvoke("api", {
         method: "misskey:createReaction",
         instanceUrl: timeline.currentInstance?.url,
         token: timeline.currentUser.token,
-        noteId: targetPost.id,
+        noteId: targetNote.id,
         reaction: reaction,
-      }).catch(() => {
-        store.$state.errors.push({
-          message: `${targetPost.id}へのリアクション失敗`,
-        });
       });
+      if (!result.ok) {
+        reportApiError(result, `${targetNote.id}へのリアクション失敗`);
+      }
     } else {
       throw new Error("user not found");
     }
@@ -65,30 +141,26 @@ export const useMisskeyStore = defineStore("misskey", () => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
-      let post = (timelineStore.current?.posts as MisskeyNote[]).find((post) => post.id === postId) as MisskeyNote;
+      const sourceNote = findNoteById(postId);
+      const targetNote = (sourceNote?.renote as MisskeyNote | undefined) ?? sourceNote;
+      if (!targetNote || !targetNote.myReaction) return;
 
-      const targetPost = post.renote || post;
+      const myReaction = targetNote.myReaction;
 
-      if (targetPost && targetPost.myReaction) {
-        const reaction = targetPost.myReaction;
-        if (targetPost.reactions[reaction] === 1) {
-          delete targetPost.reactions[reaction];
-        } else {
-          targetPost.reactions[reaction] -= 1;
-        }
-        targetPost.myReaction = undefined;
-      }
+      updateNotesById(targetNote.id, (note) => {
+        decrementReaction(note, myReaction);
+        note.myReaction = undefined;
+      });
 
-      await ipcInvoke("api", {
+      const result = await ipcInvoke("api", {
         method: "misskey:deleteReaction",
         instanceUrl: timeline.currentInstance?.url,
         token: timeline.currentUser.token,
-        noteId: targetPost.id,
-      }).catch(() => {
-        store.$state.errors.push({
-          message: `${targetPost.id}のリアクション削除失敗`,
-        });
+        noteId: targetNote.id,
       });
+      if (!result.ok) {
+        reportApiError(result, `${targetNote.id}のリアクション削除失敗`);
+      }
     } else {
       throw new Error("user not found");
     }
@@ -98,16 +170,14 @@ export const useMisskeyStore = defineStore("misskey", () => {
     const timeline = getTimelineStore();
     if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
 
-    const res = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "misskey:getNote",
       instanceUrl: timeline.currentInstance?.url,
       token: timeline.currentUser.token,
       noteId: postId,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${postId}の取得失敗`,
-      });
     });
+    const res = unwrapApiResult(result, `${postId}の取得失敗`);
+    if (!res) return;
     const postIndex = timeline.current?.posts.findIndex((p: DotEPost) => p.id === postId);
     if (!postIndex) return;
 
@@ -115,79 +185,52 @@ export const useMisskeyStore = defineStore("misskey", () => {
   };
 
   const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
-    const timeline = getTimelineStore();
-    // TODO: reactionがremote serverだった場合
-    const post = store.timelines[timeline.currentIndex]?.posts.find((p: DotEPost) => p.id === postId) as MisskeyNote;
-    if (!post) return;
-    const reactions = post.renote ? post.renote.reactions : post.reactions;
-    if (Object.keys(reactions).includes(reaction)) {
-      reactions[reaction] += 1;
-    } else {
-      reactions[reaction] = 1;
-    }
+    updateNotesById(postId, (note) => {
+      incrementReaction(note, reaction);
+    });
   };
 
   const removeReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
-    const timeline = getTimelineStore();
-    const post = store.timelines[timeline.currentIndex]?.posts.find((p: DotEPost) => p.id === postId) as MisskeyNote;
-    if (!post) return;
-    const reactions = post.renote ? post.renote.reactions : post.reactions;
-    if (reactions[reaction]) {
-      if (reactions[reaction] === 1) {
-        delete reactions[reaction];
-      } else {
-        reactions[reaction] -= 1;
-      }
-    }
+    updateNotesById(postId, (note) => {
+      decrementReaction(note, reaction);
+    });
   };
 
-  const getFollowedChannels = () => {
+  const getFollowedChannels = async () => {
     const timeline = getTimelineStore();
-    if (!timeline.currentUser) return;
-    const myChannels = ipcInvoke("api", {
+    if (!timeline.currentUser) return [];
+    const result = await ipcInvoke("api", {
       method: "misskey:getFollowedChannels",
       instanceUrl: timeline.currentInstance?.url,
       token: timeline.currentUser.token,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: "チャンネルの取得に失敗しました",
-      });
-      console.error("チャンネルの取得に失敗しました");
     });
-    return myChannels;
+    const channels = unwrapApiResult(result, "チャンネルの取得に失敗しました");
+    return channels ?? [];
   };
 
-  const getMyAntennas = () => {
+  const getMyAntennas = async () => {
     const timeline = getTimelineStore();
-    if (!timeline.currentUser) return;
-    const myAntennas = ipcInvoke("api", {
+    if (!timeline.currentUser) return [];
+    const result = await ipcInvoke("api", {
       method: "misskey:getMyAntennas",
       instanceUrl: timeline.currentInstance?.url,
       token: timeline.currentUser.token,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: "アンテナの取得に失敗しました",
-      });
-      console.error("アンテナの取得に失敗しました");
     });
-    return myAntennas;
+    const antennas = unwrapApiResult(result, "アンテナの取得に失敗しました");
+    return antennas ?? [];
   };
 
-  const getUserLists = () => {
+  const getUserLists = async () => {
     const timeline = getTimelineStore();
-    if (!timeline.currentUser) return;
-    const userLists = ipcInvoke("api", {
+    if (!timeline.currentUser) return [];
+    const result = await ipcInvoke("api", {
       method: "misskey:getUserLists",
       instanceUrl: timeline.currentInstance?.url,
       token: timeline.currentUser.token,
       userId: timeline.currentUser.id,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: "リストの取得に失敗しました",
-      });
-      console.error("リストの取得に失敗しました");
     });
-    return userLists;
+    const lists = unwrapApiResult(result, "リストの取得に失敗しました");
+    return lists ?? [];
   };
 
   const fetchPosts = async () => {
@@ -196,7 +239,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
       throw new Error("ユーザーが見つかりませんでした");
     }
 
-    const data = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: methodOfChannel[timeline.current.channel],
       instanceUrl: timeline.currentInstance.url,
       channelId: timeline.current.options?.channelId, // option
@@ -206,18 +249,10 @@ export const useMisskeyStore = defineStore("misskey", () => {
       tag: timeline.current.options?.tag, // option
       token: timeline.currentUser.token,
       limit: 40,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`,
-      });
     });
 
-    if (data.error) {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
-      });
-      return;
-    }
+    const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
+    if (!data) return;
 
     if (timeline.current.channel === "misskey:notifications") {
       timeline.setNotifications(data);
@@ -231,7 +266,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     if (store.timelines[timeline.currentIndex]?.posts?.length === 0) return;
     if (timeline.current && timeline.currentUser && timeline.currentInstance) {
       try {
-        const data = await ipcInvoke("api", {
+        const result = await ipcInvoke("api", {
           method: methodOfChannel[timeline.current.channel],
           instanceUrl: timeline.currentInstance.url,
           token: timeline.currentUser.token,
@@ -243,7 +278,11 @@ export const useMisskeyStore = defineStore("misskey", () => {
           sinceId: store.timelines[timeline.currentIndex]?.posts[0]?.id,
           limit: 40,
         });
-        if (!data || data.length === 0) return;
+        const data = unwrapApiResult(
+          result,
+          `${timeline.currentInstance?.name}の追加タイムラインを取得できませんでした`,
+        );
+        if (!Array.isArray(data) || data.length === 0) return;
         const filteredPosts = data.filter(
           (post: DotEPost) => !store.timelines[timeline.currentIndex]?.posts?.some((p: DotEPost) => p.id === post.id),
         );

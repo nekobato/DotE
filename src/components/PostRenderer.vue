@@ -5,6 +5,7 @@ import MisskeyNotification from "@/components/PostItem/MisskeyNotification.vue";
 import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MastodonNotification from "@/components/PostItem/MastodonNotification.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import type { AppBskyFeedDefs } from "@atproto/api";
 
 interface Props {
   platform?: string;
@@ -54,6 +55,11 @@ const shouldShowMastodonNotifications = computed(() => {
 
 const shouldShowBlueskyPosts = computed(() => {
   return props.platform === "bluesky";
+});
+
+const blueskyPosts = computed<AppBskyFeedDefs.FeedViewPost[]>(() => {
+  if (!shouldShowBlueskyPosts.value) return [];
+  return (props.posts as AppBskyFeedDefs.FeedViewPost[]) || [];
 });
 </script>
 
@@ -117,7 +123,7 @@ const shouldShowBlueskyPosts = computed(() => {
   <!-- Bluesky Posts -->
   <BlueskyPost
     v-if="shouldShowBlueskyPosts"
-    v-for="post in posts"
+    v-for="post in blueskyPosts"
     :key="post.post.cid"
     :post="post"
     :lineStyle="config.lineStyle"

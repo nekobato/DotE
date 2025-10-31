@@ -81,10 +81,13 @@ export type User = {
   token: string;
   avatarUrl: string;
   blueskySession?: {
-    refreshJwt: string;
-    accessJwt: string;
-    handle: string;
     did: string;
+    handle: string;
+    pdsUrl: string;
+    authorizationServer: string;
+    scope: string;
+    tokenType: "DPoP";
+    expiresAt?: string;
     active: boolean;
   };
 };
@@ -114,5 +117,12 @@ export type Settings = {
   misskey: {
     hideCw: boolean;
     showReactions: boolean;
+  };
+  bluesky: {
+    oauth: {
+      clientId: string;
+      redirectUri: string;
+      scope: string;
+    };
   };
 };

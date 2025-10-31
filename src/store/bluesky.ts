@@ -6,6 +6,7 @@ import { AppBskyFeedDefs } from "@atproto/api";
 import { ChannelName } from "@shared/types/store";
 import { computed } from "vue";
 import { BlueskyPost } from "@/types/bluesky";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 export const useBlueskyStore = defineStore("bluesky", () => {
   const store = useStore();
@@ -17,6 +18,22 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       timelineStore = useTimelineStore();
     }
     return timelineStore;
+  };
+
+  const reportApiError = (result: ApiInvokeResult<unknown>, message: string) => {
+    if (result.ok) return;
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+  };
+
+  const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+    if (!result.ok) {
+      reportApiError(result, message);
+      return undefined;
+    }
+    return result.data;
   };
 
   const currentPosts = computed<AppBskyFeedDefs.FeedViewPost[]>(() => {
@@ -55,50 +72,37 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       throw new Error("ユーザーが見つかりませんでした");
     }
 
-    const data = await ipcInvoke("api", {
-      method: methodOfChannel[timeline.current.channel],
-      instanceUrl: timeline.currentInstance.url,
-      session: timeline.currentUser.blueskySession,
-      limit: 40,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`,
-      });
-    });
-
-    if (data?.feed) {
-      setPosts(data.feed);
-      setCursor(data.cursor);
-    } else {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
-      });
-      return;
+    if (!timeline.currentUser.blueskySession) {
+      throw new Error("Blueskyセッション情報が見つかりませんでした");
     }
+
+    const result = await ipcInvoke("api", {
+      method: methodOfChannel[timeline.current.channel],
+      did: timeline.currentUser.blueskySession.did,
+      limit: 40,
+    });
+    const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
+    if (!data || !data.feed) return;
+    setPosts(data.feed);
+    setCursor(data.cursor);
   };
 
   const fetchOlderPosts = async (channel: ChannelName) => {
     const timeline = getTimelineStore();
 
-    const data: {
-      feed: AppBskyFeedDefs.FeedViewPost[];
-      cursor: string;
-    } = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: methodOfChannel[channel],
-      instanceUrl: timeline.currentInstance?.url,
-      session: timeline.currentUser?.blueskySession,
+      did: timeline.currentUser?.blueskySession?.did,
       limit: 20,
       cursor: timeline.current?.bluesky?.cursor,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}の古いタイムラインを取得できませんでした`,
-      });
     });
-
-    if (data) {
-      pushPosts(data.feed);
-      setCursor(data.cursor);
-    }
+    const data = unwrapApiResult(
+      result,
+      `${timeline.currentInstance?.name}の古いタイムラインを取得できませんでした`,
+    );
+    if (!data) return;
+    pushPosts(data.feed);
+    setCursor(data.cursor);
   };
 
   const setCursor = (cursor: string) => {
@@ -112,19 +116,16 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const like = async ({ uri, cid }: { uri: string; cid: string }) => {
     const timeline = getTimelineStore();
-    if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
+    if (!store.timelines[timeline.currentIndex] || !timeline.currentUser?.blueskySession) return;
 
-    const res = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "bluesky:like",
-      instanceUrl: timeline.currentInstance?.url,
-      session: timeline.currentUser.blueskySession,
+      did: timeline.currentUser.blueskySession.did,
       uri,
       cid,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${cid}のいいね失敗`,
-      });
     });
+    const res = unwrapApiResult(result, `${cid}のいいね失敗`);
+    if (!res) return;
 
     const targetPost = currentPosts.value.find((p) => p.post.uri === uri);
 
@@ -136,18 +137,17 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const deleteLike = async ({ uri }: { uri: string }) => {
     const timeline = getTimelineStore();
-    if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
+    if (!store.timelines[timeline.currentIndex] || !timeline.currentUser?.blueskySession) return;
 
-    await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "bluesky:deleteLike",
-      instanceUrl: timeline.currentInstance?.url,
-      session: timeline.currentUser.blueskySession,
+      did: timeline.currentUser.blueskySession.did,
       uri: uri,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${uri}のいいね削除失敗`,
-      });
     });
+    if (!result.ok) {
+      reportApiError(result, `${uri}のいいね削除失敗`);
+      return;
+    }
 
     const targetPost = currentPosts.value.find((p) => p.post.viewer?.like === uri);
 

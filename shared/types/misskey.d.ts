@@ -1,4 +1,4 @@
-import { entities } from "misskey-js";
+import { api, entities } from "misskey-js";
 import * as mfm from "mfm-js";
 import { LineStyle } from "@shared/types/store";
 

@@ -1,239 +1,105 @@
-import { AtpAgent, type AtpSessionData } from "@atproto/api";
-import { getUserAll, upsertUser } from "../db";
+import { Agent } from "@atproto/api";
+import type { OAuthSession } from "@atproto/oauth-client";
+import { createBlueskyAgent } from "../oauth/agent";
+import { getBlueskyOAuthClient } from "../oauth/client";
 
-export const blueskyLogin = async ({
-  instanceUrl,
-  identifier,
-  password,
-}: {
-  instanceUrl: string;
-  identifier: string;
-  password: string;
-}) => {
-  const agent = new AtpAgent({
-    service: instanceUrl,
-  });
-
-  const res = await agent.login({
-    identifier,
-    password,
-  });
-
-  return res.data;
+const restoreSession = async (did: string, refresh: boolean | "auto" = "auto"): Promise<OAuthSession> => {
+  if (!did) throw new Error("Bluesky DID is required");
+  const client = await getBlueskyOAuthClient();
+  return client.restore(did, refresh);
 };
 
-export const blueskyGetProfile = async ({ instanceUrl, session }: { instanceUrl: string; session: AtpSessionData }) => {
-  const agent = new AtpAgent({
-    service: instanceUrl,
+const withAgent = async <T>(did: string, fn: (agent: Agent, session: OAuthSession) => Promise<T>): Promise<T> => {
+  const session = await restoreSession(did);
+  const agent = createBlueskyAgent(session);
+  return fn(agent, session);
+};
+
+export const blueskyGetProfile = async ({ did }: { did: string }) => {
+  return withAgent(did, async (agent) => {
+    const res = await agent.getProfile({ actor: did });
+    return res.data;
   });
-
-  await agent.resumeSession(session);
-
-  const res = await agent.getProfile({
-    actor: session.did,
-  });
-
-  return res.data;
 };
 
 export const blueskyGetTimeline = async ({
-  instanceUrl,
-  session,
+  did,
   cursor,
   limit = 30,
 }: {
-  instanceUrl: string;
-  session: AtpSessionData;
+  did: string;
   cursor?: string;
   limit?: number;
 }) => {
-  const agent = new AtpAgent({
-    service: instanceUrl,
-    session,
+  return withAgent(did, async (agent) => {
+    const res = await agent.getTimeline({ cursor, limit });
+    return res.data;
   });
-
-  if (!validateJwtExp(session.accessJwt)) {
-    const { accessJwt, refreshJwt } = await refreshSession(instanceUrl, session.refreshJwt);
-    if (accessJwt && refreshJwt) {
-      agent.sessionManager.session = { ...session, accessJwt, refreshJwt };
-      const user = getUserAll().find((user) => user.blueskySession?.did === session.did);
-      if (user) {
-        user.blueskySession = { ...session, accessJwt, refreshJwt };
-        upsertUser(user);
-      }
-    } else {
-      throw new Error("Failed to refresh session.");
-    }
-  }
-
-  await agent.resumeSession(session);
-
-  const res = await agent.getTimeline({
-    cursor,
-    limit,
-  });
-
-  return res.data;
 };
 
 export const blueskyCreatePost = async ({
-  instanceUrl,
-  session,
+  did,
   text,
   replyTo,
   quote,
 }: {
-  instanceUrl: string;
-  session: AtpSessionData;
+  did: string;
   text: string;
   replyTo?: { uri: string; cid: string };
   quote?: { uri: string; cid: string };
 }) => {
-  const agent = new AtpAgent({
-    service: instanceUrl,
-  });
+  return withAgent(did, async (agent) => {
+    const record: Record<string, unknown> = {
+      text,
+      createdAt: new Date().toISOString(),
+    };
 
-  if (!validateJwtExp(session.accessJwt)) {
-    const { accessJwt, refreshJwt } = await refreshSession(instanceUrl, session.refreshJwt);
-    if (accessJwt && refreshJwt) {
-      agent.sessionManager.session = { ...session, accessJwt, refreshJwt };
-      const user = getUserAll().find((user) => user.blueskySession?.did === session.did);
-      if (user) {
-        user.blueskySession = { ...session, accessJwt, refreshJwt };
-        upsertUser(user);
-      }
-    } else {
-      throw new Error("Failed to refresh session.");
+    if (replyTo) {
+      record.reply = {
+        root: { uri: replyTo.uri, cid: replyTo.cid },
+        parent: { uri: replyTo.uri, cid: replyTo.cid },
+      };
     }
-  }
 
-  await agent.resumeSession(session);
+    if (quote) {
+      record.embed = {
+        $type: "app.bsky.embed.record",
+        record: {
+          uri: quote.uri,
+          cid: quote.cid,
+        },
+      };
+    }
 
-  const record: any = {
-    text,
-    createdAt: new Date().toISOString(),
-  };
-
-  // Add reply reference if provided
-  if (replyTo) {
-    record.reply = {
-      root: { uri: replyTo.uri, cid: replyTo.cid },
-      parent: { uri: replyTo.uri, cid: replyTo.cid },
-    };
-  }
-
-  // Add quote reference if provided
-  if (quote) {
-    record.embed = {
-      $type: "app.bsky.embed.record",
-      record: {
-        uri: quote.uri,
-        cid: quote.cid,
-      },
-    };
-  }
-
-  const res = await agent.post(record);
-  return res.data;
+    const res = await agent.post(record);
+    return res;
+  });
 };
 
-async function refreshSession(
-  instanceUrl: string,
-  refreshJwt: string,
-): Promise<{
-  accessJwt: string | null;
-  refreshJwt: string | null;
-  message: string | null;
-}> {
-  const url = `${instanceUrl}/xrpc/com.atproto.server.refreshSession`;
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${refreshJwt}`,
-        Accept: "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
-
-    const data: AtpSessionData = await response.json();
-
-    return {
-      accessJwt: data.accessJwt,
-      refreshJwt: data.refreshJwt,
-      message: null,
-    };
-  } catch (e) {
-    const error = e instanceof Error ? e.message : "不明なエラー [refreshSession]";
-    console.error(error);
-    return {
-      accessJwt: null,
-      refreshJwt: null,
-      message: error,
-    };
-  }
-}
-
-function validateJwtExp(jwt: string): boolean {
-  // 1h
-  const expMarginMinute = 60;
-  try {
-    const decodedToken = JSON.parse(atob(jwt.split(".")[1]));
-    const expirationTime = decodedToken.exp * 1000;
-    const currentTime = Date.now();
-
-    return expirationTime - currentTime > expMarginMinute * 60 * 1000;
-  } catch (e) {
-    const error = e instanceof Error ? e.message : "不明なエラー [validateJwtExp]";
-    console.error(error);
-    return false;
-  }
-}
-
-export async function blueskyLike({
-  instanceUrl,
-  session,
+export const blueskyLike = async ({
+  did,
   uri,
   cid,
 }: {
-  instanceUrl: string;
-  session: AtpSessionData;
+  did: string;
   uri: string;
   cid: string;
-}) {
-  const agent = new AtpAgent({
-    service: instanceUrl,
-    session,
+}) => {
+  return withAgent(did, async (agent) => {
+    const res = await agent.like(uri, cid);
+    return res;
   });
+};
 
-  await agent.resumeSession(session);
-
-  const res = await agent.like(uri, cid);
-
-  return res;
-}
-
-export async function blueskyDeleteLike({
-  instanceUrl,
-  session,
+export const blueskyDeleteLike = async ({
+  did,
   uri,
 }: {
-  instanceUrl: string;
-  session: AtpSessionData;
+  did: string;
   uri: string;
-}) {
-  const agent = new AtpAgent({
-    service: instanceUrl,
-    session,
+}) => {
+  return withAgent(did, async (agent) => {
+    await agent.deleteLike(uri);
+    return;
   });
-
-  await agent.resumeSession(session);
-
-  await agent.deleteLike(uri);
-
-  return;
-}
+};

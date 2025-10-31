@@ -1,6 +1,6 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
-import { pageRoot, preload } from "../static";
+import { isDevelopment, pageRoot, preload } from "../static";
 
 const pageName = "/post";
 
@@ -28,9 +28,9 @@ export function createPostWindow() {
     trafficLightPosition: { x: 8, y: 12 },
   });
 
-  if (process.env.NODE_ENV === "development") {
+  if (isDevelopment) {
     win.loadURL(pageRoot.development + "#" + pageName);
-    win.webContents.openDevTools();
+    win.webContents.openDevTools({ mode: "detach" });
   } else {
     win.loadFile(join(pageRoot.production), { hash: pageName });
   }

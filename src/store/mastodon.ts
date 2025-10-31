@@ -3,6 +3,7 @@ import { DotEPost, methodOfChannel, useStore } from ".";
 import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import { MastodonToot } from "@/types/mastodon";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 export const useMastodonStore = defineStore("mastodon", () => {
   const store = useStore();
@@ -16,34 +17,47 @@ export const useMastodonStore = defineStore("mastodon", () => {
     return timelineStore;
   };
 
+  const reportApiError = (result: ApiInvokeResult<unknown>, message: string) => {
+    if (result.ok) return;
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+  };
+
+  const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+    if (!result.ok) {
+      reportApiError(result, message);
+      return undefined;
+    }
+    return result.data;
+  };
+
   const getList = async () => {
     const timeline = getTimelineStore();
-    if (!timeline.currentUser) return;
-    const res = await ipcInvoke("api", {
+    if (!timeline.currentUser) return [];
+    const result = await ipcInvoke("api", {
       method: "mastodon:getList",
       instanceUrl: timeline.currentInstance?.url,
       token: timeline.currentUser.token,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `リストの取得失敗`,
-      });
     });
-    return res;
+    const lists = unwrapApiResult(result, "リストの取得失敗");
+    return lists ?? [];
   };
 
   const toggleFavourite = async ({ id, favourited }: { id: string; favourited: boolean }) => {
     const timeline = getTimelineStore();
     if (timeline.currentUser) {
-      await ipcInvoke("api", {
+      const result = await ipcInvoke("api", {
         method: favourited ? "mastodon:unFavourite" : "mastodon:favourite",
         instanceUrl: timeline.currentInstance?.url,
         token: timeline.currentUser.token,
         id: id,
-      }).catch(() => {
-        return store.$state.errors.push({
-          message: `${id}の${favourited ? "お気に入り解除" : "お気に入り"}失敗`,
-        });
       });
+      if (!result.ok) {
+        reportApiError(result, `${id}の${favourited ? "お気に入り解除" : "お気に入り"}失敗`);
+        return;
+      }
       const toot = store.$state.timelines[timeline.currentIndex].posts.find(
         (post: DotEPost) => post.id === id,
       ) as MastodonToot;
@@ -63,16 +77,14 @@ export const useMastodonStore = defineStore("mastodon", () => {
     const timeline = getTimelineStore();
     if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
 
-    const res = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "mastodon:getStatus",
       instanceUrl: timeline.currentInstance?.url,
       token: timeline.currentUser.token,
       id: id,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${id}の取得失敗`,
-      });
     });
+    const res = unwrapApiResult(result, `${id}の取得失敗`);
+    if (!res) return;
     const postIndex = timeline.current?.posts.findIndex((p: DotEPost) => p.id === id);
     if (!postIndex) return;
 
@@ -85,7 +97,7 @@ export const useMastodonStore = defineStore("mastodon", () => {
       throw new Error("ユーザーが見つかりませんでした");
     }
 
-    const data = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: methodOfChannel[timeline.current.channel],
       instanceUrl: timeline.currentInstance.url,
       channelId: timeline.current.options?.channelId, // option
@@ -93,18 +105,10 @@ export const useMastodonStore = defineStore("mastodon", () => {
       tag: timeline.current.options?.tag, // option
       token: timeline.currentUser.token,
       limit: 40,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`,
-      });
     });
 
-    if (data.error) {
-      store.$state.errors.push({
-        message: `${timeline.currentInstance?.name}のタイムラインを取得できませんでした (${data.error?.message})`,
-      });
-      return;
-    }
+    const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
+    if (!data) return;
 
     if (timeline.current.channel === "mastodon:notifications") {
       timeline.setNotifications(data);
@@ -118,7 +122,7 @@ export const useMastodonStore = defineStore("mastodon", () => {
     if (store.timelines[timeline.currentIndex]?.posts?.length === 0) return;
     if (timeline.current && timeline.currentUser && timeline.currentInstance) {
       try {
-        const data = await ipcInvoke("api", {
+        const result = await ipcInvoke("api", {
           method: methodOfChannel[timeline.current.channel],
           instanceUrl: timeline.currentInstance.url,
           token: timeline.currentUser.token,
@@ -128,7 +132,11 @@ export const useMastodonStore = defineStore("mastodon", () => {
           sinceId: store.timelines[timeline.currentIndex]?.posts[0]?.id,
           limit: 40,
         });
-        if (!data || data.length === 0) return;
+        const data = unwrapApiResult(
+          result,
+          `${timeline.currentInstance?.name}の追加タイムラインを取得できませんでした`,
+        );
+        if (!Array.isArray(data) || data.length === 0) return;
         const filteredPosts = data.filter(
           (post: DotEPost) => !store.timelines[timeline.currentIndex]?.posts?.some((p: DotEPost) => p.id === post.id),
         );

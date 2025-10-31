@@ -23,7 +23,7 @@ export function createMediaViewerWindow() {
 
   win.visibleOnAllWorkspaces = true;
 
-  if (process.env.NODE_ENV === "development") {
+  if (isDevelopment) {
     win.loadURL(pageRoot.development + "#" + pageName);
     // win.webContents.openDevTools();
   } else {

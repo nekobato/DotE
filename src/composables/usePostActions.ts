@@ -28,20 +28,32 @@ export function usePostActions(currentInstanceUrl?: string) {
     });
   };
 
-  const refreshPost = (postId: string, emit: EmitFunction) => {
-    emit("refreshPost", postId);
+  const refreshPost = (postId: string, emit?: EmitFunction) => {
+    emit?.("refreshPost", postId);
   };
 
-  const openReactionWindow = (postId: string, emit: EmitFunction) => {
-    emit("newReaction", postId);
+  const openReactionWindow = (postId: string, emit?: EmitFunction) => {
+    emit?.("newReaction", postId);
   };
 
-  const openRepostWindow = (post: MisskeyNote, emojis: { name: string; url: string }[], emit: EmitFunction) => {
-    emit("repost", { post, emojis });
+  const openRepostWindow = (
+    post: MisskeyNote,
+    emojis: { name: string; url: string }[],
+    emit?: EmitFunction,
+  ) => {
+    emit?.("repost", { post, emojis });
   };
 
-  const onClickReaction = (postId: string, reaction: string, emit: EmitFunction) => {
-    emit("reaction", { postId, reaction });
+  const onClickReaction = (postId: string, reaction: string, emit?: EmitFunction) => {
+    emit?.("reaction", { postId, reaction });
+  };
+
+  const onReactionEvent = (payload: { postId: string; reaction: string }) => {
+    onClickReaction(payload.postId, payload.reaction);
+  };
+
+  const openRepostWindowEvent = (payload: { post: MisskeyNote; emojis: { name: string; url: string }[] }) => {
+    openRepostWindow(payload.post, payload.emojis);
   };
 
   return {
@@ -51,5 +63,8 @@ export function usePostActions(currentInstanceUrl?: string) {
     openReactionWindow,
     openRepostWindow,
     onClickReaction,
+    onReaction: onReactionEvent,
+    openNewReaction: openReactionWindow,
+    openRepostWindowEvent,
   };
 }
