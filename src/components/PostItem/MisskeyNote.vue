@@ -1,139 +1,77 @@
 <script setup lang="ts">
-import { ipcSend } from "@/utils/ipc";
-import { isMyReaction, parseMisskeyAttachments } from "@/utils/misskey";
 import { Icon } from "@iconify/vue";
-import type { MisskeyNote } from "@shared/types/misskey";
-import { computed, onBeforeUnmount, onMounted, type PropType } from "vue";
+import type { MisskeyNote, MisskeyNoteProps } from "@shared/types/misskey";
+import { toRef } from "vue";
+import { useMisskeyNote } from "@/composables/useMisskeyNote";
+import { useMisskeyReactions } from "@/composables/useMisskeyReactions";
+import { usePostActions } from "@/composables/usePostActions";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 
-const props = defineProps({
-  post: {
-    type: Object as PropType<MisskeyNote>,
-    required: true,
-  },
-  emojis: {
-    type: Array as PropType<{ name: string; url: string }[]>,
-    default: null,
-  },
-  lineStyle: {
-    type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
-    required: true,
-  },
-  currentInstanceUrl: {
-    type: String as PropType<string>,
-    required: false,
-  },
-  hideCw: {
-    type: Boolean as PropType<boolean>,
-    default: false,
-    required: true,
-  },
-  showReactions: {
-    type: Boolean as PropType<boolean>,
-    default: true,
-  },
-  showActions: {
-    type: Boolean as PropType<boolean>,
-    default: true,
-  },
-  theme: {
-    type: String as PropType<"default">,
-    default: "default",
-  },
+const props = withDefaults(defineProps<MisskeyNoteProps>(), {
+  emojis: () => [],
+  showReactions: true,
+  showActions: true,
+  theme: "default",
 });
 
-const emit = defineEmits(["openPost", "openUserPage", "refreshPost", "reaction", "newReaction", "repost"]);
+const emit = defineEmits<{
+  openPost: [postId: string];
+  openUserPage: [user: MisskeyNote["user"]];
+  refreshPost: [postId: string];
+  reaction: [data: { postId: string; reaction: string }];
+  newReaction: [postId: string];
+  repost: [data: { post: MisskeyNote; emojis: { name: string; url: string }[] }];
+}>();
 
-const postType = computed(() => {
-  if (props.post.renote) {
-    if (props.post.text) {
-      return "quote";
-    } else {
-      return "renote";
-    }
-  } else if (props.post.replyId) {
-    return "reply";
-  } else {
-    return "note";
-  }
-});
+// Composables
+const postRef = toRef(props, "post");
+const emojisRef = toRef(props, "emojis");
 
-const renoteType = computed(() => {
-  if (props.post.text) {
-    return "quoted";
-  } else {
-    return "renoted";
-  }
-});
+const { postType, renoteType, postAttachments, setupStreamSubscription } = useMisskeyNote(
+  postRef,
+  props.currentInstanceUrl,
+);
 
-const postAtttachments = computed(() => {
-  return parseMisskeyAttachments(props.post, props.currentInstanceUrl);
-});
+const { reactions, isReacted } = useMisskeyReactions(postRef, emojisRef);
 
-const reactions = computed(() => {
-  const reactions = props.post.renote && !props.post.text ? props.post.renote.reactions : props.post.reactions;
-  return Object.keys(reactions)
-    .map((key) => {
-      if (!/^:/.test(key)) return { name: key, count: reactions[key] };
-      const reactionName = key.replace(/:|@\./g, "");
-      const localEmoji = props.emojis.find((emoji) => emoji.name === reactionName);
-      return {
-        name: key,
-        url:
-          localEmoji?.url ||
-          props.post.reactionEmojis[reactionName] ||
-          (props.post.renote as MisskeyNote)?.reactionEmojis[reactionName] ||
-          "",
-        count: reactions[key],
-        isRemote: !localEmoji,
-      };
-    })
-    .sort((a, b) => b.count - a.count);
-});
+const {
+  openPost: openPostAction,
+  openUserPage: openUserPageAction,
+  refreshPost: refreshPostAction,
+  openReactionWindow: openReactionWindowAction,
+  openRepostWindow: openRepostWindowAction,
+  onClickReaction: onClickReactionAction,
+} = usePostActions(props.currentInstanceUrl);
 
+// Event handlers
 const refreshPost = () => {
-  emit("refreshPost", props.post.id);
+  refreshPostAction(props.post.id, emit);
 };
 
 const openPost = () => {
-  ipcSend("open-url", { url: new URL(`/notes/${props.post.id}`, props.currentInstanceUrl).toString() });
+  openPostAction(props.post.id);
 };
 
 const openUserPage = (user: MisskeyNote["user"]) => {
-  const instanceUrl = user.host || props.currentInstanceUrl;
-  ipcSend("open-url", {
-    url: new URL(
-      `/@${user.username}`,
-      instanceUrl?.startsWith("https://") ? instanceUrl : `https://${instanceUrl}`,
-    ).toString(),
-  });
+  openUserPageAction(user);
 };
 
 const openReactionWindow = () => {
-  emit("newReaction", props.post.id);
+  openReactionWindowAction(props.post.id, emit);
 };
 
 const openRepostWindow = () => {
-  emit("repost", { post: props.post, emojis: props.emojis });
+  openRepostWindowAction(props.post, props.emojis, emit);
 };
 
 const onClickReaction = (postId: string, reaction: string) => {
-  emit("reaction", { postId, reaction });
+  onClickReactionAction(postId, reaction, emit);
 };
 
-onMounted(() => {
-  ipcSend("stream:sub-note", {
-    postId: props.post.id,
-  });
-});
-
-onBeforeUnmount(() => {
-  ipcSend("stream:unsub-note", {
-    postId: props.post.id,
-  });
-});
+// Setup stream subscription
+setupStreamSubscription();
 </script>
 
 <template>
@@ -150,7 +88,7 @@ onBeforeUnmount(() => {
       />
       <MisskeyNoteContent
         v-if="props.post.renote"
-        :note="props.post.renote"
+        :note="props.post.renote as MisskeyNote"
         :originNote="props.post"
         :type="renoteType"
         :lineStyle="props.lineStyle"
@@ -160,16 +98,16 @@ onBeforeUnmount(() => {
         @openUserPage="openUserPage"
       />
     </div>
-    <PostAttachmentsContainer class="attachments" v-if="postAtttachments">
-      <PostAttachments :attachments="postAtttachments" />
+    <PostAttachmentsContainer v-if="postAttachments?.length" class="attachments">
+      <PostAttachments :attachments="postAttachments" />
     </PostAttachmentsContainer>
-    <div class="reactions" v-if="props.showReactions">
+    <div class="reactions" v-if="props.showReactions && reactions.length">
       <button
         class="reaction"
         v-for="reaction in reactions"
         :class="{
           remote: reaction.isRemote,
-          reacted: isMyReaction(reaction.name, props.post.myReaction || props.post.renote?.myReaction),
+          reacted: isReacted(reaction.name),
         }"
         @click="onClickReaction(props.post.id, reaction.name)"
         :title="reaction.name.replace(/:/g, '')"

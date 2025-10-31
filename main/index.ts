@@ -89,7 +89,6 @@ const start = () => {
 
   ipcMain.on("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.log(event);
     switch (event) {
       case "set-mode":
         setMainWindowMode(data.mode);
@@ -112,7 +111,6 @@ const start = () => {
           height: workAreaSize.height,
         });
         mediaViewerWindow?.center();
-        console.log("media-viewer:open", data);
         mediaViewerWindow?.webContents.send(event, data);
         mediaViewerWindow?.show();
         mediaViewerWindow?.focus();
@@ -126,7 +124,6 @@ const start = () => {
         mainWindow?.webContents.reload();
         break;
       case "main:reaction":
-        console.log(data);
         mainWindow?.webContents.send(event, data);
         break;
       case "post:create":
@@ -137,7 +134,6 @@ const start = () => {
       case "post:close":
         postWindow?.webContents.send(event, data);
         postWindow?.close();
-        postWindow = null;
         break;
       case "post:reaction":
       case "post:repost":
@@ -215,7 +211,6 @@ const start = () => {
   });
 
   initialize();
-  console.log("initialized");
 };
 
 app.on("before-quit", () => {
@@ -239,7 +234,6 @@ app.on("activate", async () => {
 
 app.on("window-all-closed", () => {
   if (isMac) {
-    console.log("quit");
     app.quit();
   }
 });

@@ -30,14 +30,14 @@ export const useMisskeyStore = defineStore("misskey", () => {
     }
   };
 
-  const createReaction = async (postId: string, reaction: string) => {
+  const createMyReaction = async (postId: string, reaction: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
       // Update reaction on Local
-      const targetPost = (timelineStore.current?.posts as MisskeyNote[]).find(
-        (post) => post.id === postId,
-      ) as MisskeyNote;
+      let post = (timelineStore.current?.posts as MisskeyNote[]).find((post) => post.id === postId) as MisskeyNote;
+
+      const targetPost = post.renote || post;
 
       if (targetPost) {
         targetPost.myReaction = reaction;
@@ -49,11 +49,11 @@ export const useMisskeyStore = defineStore("misskey", () => {
         method: "misskey:createReaction",
         instanceUrl: timeline.currentInstance?.url,
         token: timeline.currentUser.token,
-        noteId: postId,
+        noteId: targetPost.id,
         reaction: reaction,
       }).catch(() => {
         store.$state.errors.push({
-          message: `${postId}へのリアクション失敗`,
+          message: `${targetPost.id}へのリアクション失敗`,
         });
       });
     } else {
@@ -61,13 +61,13 @@ export const useMisskeyStore = defineStore("misskey", () => {
     }
   };
 
-  const deleteReaction = async (postId: string) => {
+  const deleteMyReaction = async (postId: string) => {
     const timeline = getTimelineStore();
 
     if (timeline.currentUser) {
-      const targetPost = (timelineStore.current?.posts as MisskeyNote[]).find(
-        (post) => post.id === postId,
-      ) as MisskeyNote;
+      let post = (timelineStore.current?.posts as MisskeyNote[]).find((post) => post.id === postId) as MisskeyNote;
+
+      const targetPost = post.renote || post;
 
       if (targetPost && targetPost.myReaction) {
         const reaction = targetPost.myReaction;
@@ -83,10 +83,10 @@ export const useMisskeyStore = defineStore("misskey", () => {
         method: "misskey:deleteReaction",
         instanceUrl: timeline.currentInstance?.url,
         token: timeline.currentUser.token,
-        noteId: postId,
+        noteId: targetPost.id,
       }).catch(() => {
         store.$state.errors.push({
-          message: `${postId}のリアクション削除失敗`,
+          message: `${targetPost.id}のリアクション削除失敗`,
         });
       });
     } else {
@@ -124,6 +124,20 @@ export const useMisskeyStore = defineStore("misskey", () => {
       reactions[reaction] += 1;
     } else {
       reactions[reaction] = 1;
+    }
+  };
+
+  const removeReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
+    const timeline = getTimelineStore();
+    const post = store.timelines[timeline.currentIndex]?.posts.find((p: DotEPost) => p.id === postId) as MisskeyNote;
+    if (!post) return;
+    const reactions = post.renote ? post.renote.reactions : post.reactions;
+    if (reactions[reaction]) {
+      if (reactions[reaction] === 1) {
+        delete reactions[reaction];
+      } else {
+        reactions[reaction] -= 1;
+      }
     }
   };
 
@@ -247,10 +261,11 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   return {
     addEmoji,
-    createReaction,
-    deleteReaction,
+    createMyReaction,
+    deleteMyReaction,
     updatePost,
     addReaction,
+    removeReaction,
     getFollowedChannels,
     getMyAntennas,
     getUserLists,

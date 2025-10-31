@@ -198,7 +198,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   overflow: hidden;
   color: #efefef;
   font-size: 0.6rem;
-  line-height: 0.8rem;
+  line-height: 1rem;
 }
 
 .line-all {
@@ -223,6 +223,8 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   }
 }
 .line-1 {
+  min-height: 0.8rem;
+  white-space: nowrap;
   line-clamp: 1;
 }
 .line-2 {

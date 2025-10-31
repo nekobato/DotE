@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { PropType } from "vue";
 import { useRouter } from "vue-router";
@@ -19,23 +18,15 @@ const props = defineProps({
 
 const router = useRouter();
 
-const exit = () => {
-  switch (props.windowType) {
-    case "post":
-      ipcSend("post:close");
-      break;
-    case "settings":
-      router.push("/main/timeline");
-      break;
-  }
+const back = () => {
+  router.push("/main/timeline");
 };
 </script>
 
 <template>
   <div class="window-header">
-    <button class="nn-button type-ghost exit" @click="exit" :disabled="!props.canBack">
-      <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" v-if="props.windowType === 'post'" />
-      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" v-if="props.windowType === 'settings'" />
+    <button class="nn-button type-ghost exit" v-if="props.windowType === 'settings'" @click="back">
+      <Icon icon="mingcute:arrow-left-line" class="nn-icon size-xsmall" />
     </button>
   </div>
 </template>

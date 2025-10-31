@@ -3,7 +3,7 @@ import { ipcSend } from "@/utils/ipc";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import Loading from "@/components/common/DoteLoading.vue";
 import { Icon } from "@iconify/vue";
-import PostAttachments from "@/components/PostAttachments.vue";
+import PostAttachments from "@/components/PostItem/PostAttachments.vue";
 
 type Media = {
   type: "image" | "video" | "audio";
@@ -42,7 +42,6 @@ const imageSize = computed(() => {
   const width = window.innerWidth * 0.7;
   const height = window.innerHeight * 0.7;
   const { width: imageWidth, height: imageHeight } = currentMedia.value.size;
-  console.log(imageWidth, imageHeight, width, height);
   if (!imageWidth || !imageHeight) {
     return {
       width,

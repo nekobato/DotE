@@ -1,13 +1,16 @@
 import type { MisskeyNote } from "@shared/types/misskey";
-import { ref, computed } from "vue";
+import { computed, ref } from "vue";
 import { nanoid } from "nanoid/non-secure";
+import { useWebSocket } from "@vueuse/core";
 
 export const webSocketState = {
-  CONNECTING: 0,
-  OPEN: 1,
-  CLOSING: 2,
-  CLOSED: 3,
-};
+  CONNECTING: "CONNECTING",
+  OPEN: "OPEN",
+  CLOSING: "CLOSING",
+  CLOSED: "CLOSED",
+} as const;
+
+const buildMisskeyStreamUrl = (host: string, token: string) => `wss://${host}/streaming?i=${token}`;
 
 // https://github.com/misskey-dev/misskey/blob/master/packages/backend/src/server/api/stream/ChannelsService.ts
 export type MisskeyStreamChannel =
@@ -26,34 +29,15 @@ export type MisskeyStreamMessage = {
   body: MisskeyNote;
 };
 
-// https://misskey-hub.net/docs/api/streaming
-export const connectToMisskeyStream = (
-  host: string,
-  token: string,
-  // id: string,
-  // channel: MisskeyStreamChannel,
-  // params: {
-  //   local?: boolean;
-  //   media?: boolean;
-  //   reply?: boolean;
-  //   renote?: boolean;
-  //   poll?: boolean;
-  //   myRenote?: boolean;
-  //   myReaction?: boolean;
-  //   following?: boolean;
-  // } = {}
-) => {
-  return new WebSocket(`wss://${host}/streaming?i=${token}`);
-};
-
-export const disconnectWebSocket = (ws: WebSocket | null) => {
-  if (!ws) return;
-  ws.close();
-  ws.onopen = null;
-  ws.onerror = null;
-  ws.onclose = null;
-  ws.onmessage = null;
-  ws = null;
+type ConnectOptions = {
+  host: string;
+  token: string;
+  channel: MisskeyStreamChannel;
+  channelId?: string;
+  antennaId?: string;
+  tag?: string;
+  listId?: string;
+  query?: string;
 };
 
 export const useMisskeyStream = ({
@@ -67,28 +51,94 @@ export const useMisskeyStream = ({
   onEmojiAdded: (event: string, data: any) => void;
   onReconnect: () => void;
 }) => {
-  let ws: WebSocket;
-  const shouldConnect = ref(false);
-  const wsNoteSubScriptionQueue: string[] = [];
+  const shouldReconnect = ref(false);
+  const reconnecting = ref(false);
   const webSocketId = ref<string | null>(null);
-  const eventTime = {
-    lastOpen: 0,
-    lastClose: 0,
-  };
+  const subscriptionQueue: string[] = [];
+  const url = ref<string>();
+  const lastConnectOptions = ref<ConnectOptions | null>(null);
 
-  const onConnected = () => {
-    console.log("ws:connected");
-    if (wsNoteSubScriptionQueue.length) {
-      wsNoteSubScriptionQueue.forEach((postId) => {
-        ws?.send(
-          JSON.stringify({
-            type: "subNote",
-            body: { id: postId },
-          }),
-        );
-      });
-      wsNoteSubScriptionQueue.length = 0;
-    }
+  const { status, send, open, close } = useWebSocket(url, {
+    immediate: false,
+    autoConnect: false,
+    autoReconnect: {
+      retries: () => shouldReconnect.value,
+      delay: 500,
+    },
+    onConnected() {
+      const options = lastConnectOptions.value;
+      if (!options) return;
+
+      send(
+        JSON.stringify({
+          type: "connect",
+          body: {
+            channel: options.channel,
+            id: webSocketId.value,
+            params: {
+              ...(options.channel === "channel" ? { channelId: options.channelId } : {}),
+              ...(options.channel === "antenna" ? { antennaId: options.antennaId } : {}),
+              ...(options.channel === "userList" ? { listId: options.listId } : {}),
+              ...(options.channel === "hashtag" ? { tag: options.tag } : {}),
+              ...(options.query ? { query: options.query } : {}),
+            },
+          },
+        }),
+      );
+
+      if (reconnecting.value) {
+        reconnecting.value = false;
+        onReconnect();
+      }
+    },
+    onDisconnected() {
+      if (shouldReconnect.value) {
+        reconnecting.value = true;
+      } else {
+        reconnecting.value = false;
+      }
+    },
+    onError(_, error) {
+      console.error("ws:error", error);
+    },
+    onMessage(_, event) {
+      try {
+        const data = JSON.parse(event.data);
+        switch (data.type) {
+          case "connected":
+            console.log("ws:connected");
+            handleServerConnected();
+            break;
+          case "channel":
+            onChannel(data.body.type, data.body);
+            break;
+          case "noteUpdated":
+            onNoteUpdated(data.body.type, data.body);
+            break;
+          case "emojiAdded":
+            onEmojiAdded(data.body.type, data.body);
+            break;
+          default:
+            console.info("unhandled stream message", data);
+            break;
+        }
+      } catch (error) {
+        console.error("ws:message parse error", error);
+      }
+    },
+  });
+
+  const handleServerConnected = () => {
+    if (!subscriptionQueue.length) return;
+    subscriptionQueue.forEach((postId) => {
+      send(
+        JSON.stringify({
+          type: "subNote",
+          body: { id: postId },
+        }),
+      );
+    });
+    subscriptionQueue.length = 0;
   };
 
   const connect = ({
@@ -100,109 +150,54 @@ export const useMisskeyStream = ({
     tag,
     listId,
     query,
-  }: {
-    host: string;
-    token: string;
-    channel: MisskeyStreamChannel;
-    channelId?: string;
-    antennaId?: string;
-    tag?: string;
-    listId?: string;
-    query?: string;
-  }) => {
+  }: ConnectOptions) => {
     if (channel === "channel" && !channelId) return;
     if (channel === "antenna" && !antennaId) return;
     if (channel === "userList" && !listId) return;
     if (channel === "hashtag" && !tag) return;
 
-    shouldConnect.value = true;
+    shouldReconnect.value = true;
+    reconnecting.value = false;
     webSocketId.value = nanoid();
-    ws = connectToMisskeyStream(host, token);
-
-    ws.onopen = () => {
-      console.info("ws:open");
-      eventTime.lastOpen = Date.now();
-
-      ws?.send(
-        JSON.stringify({
-          type: "connect",
-          body: {
-            channel,
-            id: webSocketId.value,
-            params: {
-              ...(channel === "channel" ? { channelId } : {}),
-              ...(channel === "antenna" ? { antennaId } : {}),
-              ...(channel === "userList" ? { listId } : {}),
-              ...(channel === "hashtag" ? { tag } : {}),
-              ...(query ? { query } : {}),
-            },
-          },
-        }),
-      );
-      if (eventTime.lastClose) {
-        onReconnect();
-      }
+    lastConnectOptions.value = {
+      host,
+      token,
+      channel,
+      channelId,
+      antennaId,
+      tag,
+      listId,
+      query,
     };
-
-    ws.onerror = () => {
-      console.error("ws:error");
-    };
-
-    ws.onclose = () => {
-      console.info("ws:close");
-      eventTime.lastClose = Date.now();
-      if (shouldConnect.value) {
-        setTimeout(() => {
-          connect({ host, token, channel });
-        }, 500);
-      }
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      switch (data.type) {
-        case "connected":
-          onConnected();
-          break;
-        case "channel":
-          onChannel(data.body.type, data.body);
-          break;
-        case "noteUpdated":
-          onNoteUpdated(data.body.type, data.body);
-          break;
-        case "emojiAdded":
-          onEmojiAdded(data.body.type, data.body);
-          break;
-        default:
-          console.info("unhandled stream message", data);
-          break;
-      }
-    };
+    url.value = buildMisskeyStreamUrl(host, token);
+    open();
   };
 
   const disconnect = () => {
-    shouldConnect.value = false;
-    disconnectWebSocket(ws);
+    shouldReconnect.value = false;
+    reconnecting.value = false;
+    lastConnectOptions.value = null;
+    close();
   };
 
-  const state = computed(() => ws?.readyState);
+  const state = computed(() => status.value);
 
   const subNote = (postId: string) => {
     if (state.value === webSocketState.OPEN) {
-      ws?.send(
+      send(
         JSON.stringify({
           type: "subNote",
           body: { id: postId },
         }),
       );
     } else {
-      wsNoteSubScriptionQueue.push(postId);
+      subscriptionQueue.push(postId);
     }
   };
 
   const unsubNote = (postId: string) => {
     if (state.value === webSocketState.OPEN) {
-      ws?.send(
+      send(
         JSON.stringify({
           type: "unsubNote",
           body: { id: postId },
@@ -211,5 +206,5 @@ export const useMisskeyStream = ({
     }
   };
 
-  return { connect, disconnect, state, subNote, unsubNote, subNoteQueue: wsNoteSubScriptionQueue };
+  return { connect, disconnect, state, subNote, unsubNote, subNoteQueue: subscriptionQueue };
 };

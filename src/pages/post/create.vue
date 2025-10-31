@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import DoteAlert from "@/components/common/DoteAlert.vue";
 import DoteButton from "@/components/common/DoteButton.vue";
-import EmojiPicker from "@/features/misskey/post/EmojiPicker.vue";
+import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
+import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
-import { onMounted, PropType, reactive, ref } from "vue";
-import MisskeyNote from "@/components/MisskeyNote.vue";
-import BlueskyPost from "@/components/BlueskyPost.vue";
-import { computed } from "vue";
-import { AppBskyFeedDefs } from "@atproto/api";
-import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
+import { computed, onMounted, PropType, reactive, ref } from "vue";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
@@ -102,7 +100,6 @@ const blueskyPost = computed(() => {
         indexedAt: new Date().toISOString(),
         viewer: {},
       },
-      reason: null,
     };
 
     // Add embed if we're quoting a post
@@ -287,13 +284,6 @@ document.addEventListener("keydown", (e) => {
         </DoteAlert>
       </div>
     </div>
-    <div class="emoji-picker-container">
-      <div class="emoji-picker">
-        <div class="emoji-picker-body">
-          <EmojiPicker />
-        </div>
-      </div>
-    </div>
     <div class="post-container">
       <MisskeyNote
         v-if="misskeyNote"
@@ -408,10 +398,10 @@ document.addEventListener("keydown", (e) => {
     transparent 6px
   );
   background-repeat: repeat-x;
-  background-size: 8px 1px;
-
-  .post-item {
-    padding: 0;
-  }
+  background-size: 6px 1px;
+  background-position: top left;
+}
+.post-item {
+  margin: 16px 0 0;
 }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { ipcSend } from "@/utils/ipc";
 import { MisskeyAd } from "@shared/types/misskey";
 import { ElCarousel, ElCarouselItem } from "element-plus";
 import { PropType } from "vue";
@@ -9,12 +10,18 @@ defineProps({
     required: true,
   },
 });
+
+const handleAdClick = (url: string) => {
+  if (url) {
+    ipcSend("open-url", { url });
+  }
+};
 </script>
 <template>
   <div class="ad-container" v-if="items.length > 0">
     <ElCarousel class="carousel misskey-ad-carousel" :autoplay="true" :interval="5000" arrow="always">
       <ElCarouselItem class="carousel-item" v-for="(item, index) in items" :key="index">
-        <a :href="item.url" target="_blank" rel="noopener noreferrer">
+        <a href="#" @click.prevent="handleAdClick(item.url)" target="_blank" rel="noopener noreferrer">
           <img :src="item.imageUrl" :alt="`ad ${index + 1}`" />
         </a>
       </ElCarouselItem>
