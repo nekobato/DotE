@@ -1,58 +1,91 @@
 <script setup lang="ts">
-import { NewUser } from "@/store/users";
+import { useStore } from "@/store";
 import { ipcInvoke } from "@/utils/ipc";
-import { AppBskyActorGetProfile, ComAtprotoServerCreateSession } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import { ElInput } from "element-plus";
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import type { ApiInvokeResult } from "@shared/types/ipc";
+import type { NewUser } from "@/store/users";
 
-const instanceUrl = ref("bsky.social");
-const identifier = ref("");
-const password = ref("");
-const session = ref<ComAtprotoServerCreateSession.OutputSchema | null>(null);
+const store = useStore();
+
+const DEFAULT_BLUESKY_REDIRECT_URI = "daydream-of-the-elephants://oauth/bluesky/callback";
+const DEFAULT_BLUESKY_SCOPE = "atproto transition:generic";
+
+const handle = ref("");
+const isAuthorizing = ref(false);
+
+const oauthSettings = computed(() => {
+  const oauth = store.$state.settings.bluesky?.oauth;
+  return {
+    clientId: oauth?.clientId ?? "",
+    redirectUri: oauth?.redirectUri ?? DEFAULT_BLUESKY_REDIRECT_URI,
+    scope: oauth?.scope ?? DEFAULT_BLUESKY_SCOPE,
+  };
+});
+
+const normalizedHandle = computed(() => handle.value.trim().replace(/^@+/, ""));
+
+const deriveInstanceUrl = (input: string): string | undefined => {
+  if (!input || input.startsWith("did:")) return undefined;
+  const lower = input.toLowerCase();
+  const parts = lower.split(".");
+  if (parts.length < 2) return undefined;
+  const domain = parts.slice(1).join(".");
+  if (!domain) return undefined;
+  try {
+    const url = new URL(`https://${domain}`);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    return undefined;
+  }
+};
+
+const derivedInstanceUrl = computed(() => deriveInstanceUrl(normalizedHandle.value));
+const fallbackInstanceUrl = computed(() => derivedInstanceUrl.value ?? "https://bsky.social");
+
+const isConfigReady = computed(
+  () => Boolean(oauthSettings.value.clientId && oauthSettings.value.redirectUri && oauthSettings.value.scope),
+);
+const canStart = computed(() => Boolean(normalizedHandle.value && isConfigReady.value && !isAuthorizing.value));
+const usesCustomScheme = computed(() => oauthSettings.value.redirectUri.startsWith("daydream-of-the-elephants://"));
+
+const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+  if (!result.ok) {
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+    return undefined;
+  }
+  return result.data;
+};
 
 const emit = defineEmits<{
   complete: [user: NewUser];
 }>();
 
-const createSession = async () => {
-  instanceUrl.value = /^https?:\/\//.test(instanceUrl.value) ? instanceUrl.value : "https://" + instanceUrl.value;
+const startOAuth = async () => {
+  if (!normalizedHandle.value || !isConfigReady.value) return;
 
-  const res: ComAtprotoServerCreateSession.OutputSchema = await ipcInvoke("api", {
-    method: "bluesky:login",
-    instanceUrl: instanceUrl.value,
-    identifier: identifier.value,
-    password: password.value,
-  });
+  isAuthorizing.value = true;
+  try {
+    const result = await ipcInvoke("api", {
+      method: "bluesky:startOAuth",
+      handle: normalizedHandle.value,
+      instanceUrl: fallbackInstanceUrl.value,
+      clientId: oauthSettings.value.clientId || undefined,
+      redirectUri: oauthSettings.value.redirectUri || undefined,
+      scope: oauthSettings.value.scope || undefined,
+    });
 
-  session.value = res;
+    const res = unwrapApiResult(result, "Bluesky OAuth認証に失敗しました");
+    if (!res) return;
 
-  await fetchProfile();
-};
-
-const fetchProfile = async () => {
-  if (!session.value) return;
-
-  const res: AppBskyActorGetProfile.OutputSchema = await ipcInvoke("api", {
-    method: "bluesky:getProfile",
-    instanceUrl: instanceUrl.value,
-    session: session.value,
-  });
-
-  emit("complete", {
-    name: res.handle,
-    avatarUrl: res.avatar || "",
-    instanceUrl: instanceUrl.value,
-    instanceType: "bluesky",
-    token: "",
-    blueskySession: {
-      refreshJwt: session.value.refreshJwt,
-      accessJwt: session.value.accessJwt,
-      did: res.did,
-      handle: res.handle,
-      active: true,
-    },
-  });
+    emit("complete", res as NewUser);
+  } finally {
+    isAuthorizing.value = false;
+  }
 };
 </script>
 
@@ -60,19 +93,21 @@ const fetchProfile = async () => {
   <div>
     <div class="dote-field-row as-thread indent-1 active">
       <div class="content">
+        <p class="description">Bluesky のハンドルを入力して認証を開始いたしますわ。認証画面は外部ブラウザで開き、完了後にアプリへ戻ってまいりますの。</p>
         <div class="nn-form-item">
-          <ElInput class="account-input" v-model="instanceUrl" placeholder="https://..." size="small" />
+          <ElInput class="account-input" v-model="handle" placeholder="@handle.bsky.social" size="small" />
         </div>
-        <div class="nn-form-item">
-          <ElInput class="account-input" v-model="identifier" placeholder="Account" size="small" />
-        </div>
-        <div class="nn-form-item">
-          <ElInput class="account-input" v-model="password" placeholder="Password" size="small" />
-        </div>
+        <p v-if="normalizedHandle" class="hint">接続先候補: <span>{{ fallbackInstanceUrl }}</span></p>
+        <p v-if="usesCustomScheme" class="info">リダイレクト先: daydream-of-the-elephants://oauth/bluesky/callback</p>
+        <p v-if="!isConfigReady" class="config-warning">クライアント設定が未構成でございます。管理者様にご確認くださいませ。</p>
       </div>
       <div class="actions">
-        <button class="nn-button size-small action" @click="createSession" :disabled="!instanceUrl">
-          認証
+        <button
+          class="nn-button size-small action"
+          @click="startOAuth"
+          :disabled="!canStart"
+        >
+          認証開始
           <Icon icon="ion:open" class="nn-icon size-small" />
         </button>
       </div>
@@ -86,8 +121,31 @@ const fetchProfile = async () => {
   color: #fff;
   font-size: var(--font-size-14);
   .account-input {
-    width: 200px;
+    width: 220px;
   }
+}
+.description {
+  margin: 0 0 8px;
+  color: rgba(255, 255, 255, 0.85);
+}
+.hint {
+  margin: 4px 0 8px;
+  font-size: var(--font-size-12);
+  color: rgba(255, 255, 255, 0.65);
+  span {
+    font-weight: 600;
+    color: #fff;
+  }
+}
+.info {
+  margin: 0 0 8px;
+  font-size: var(--font-size-12);
+  color: rgba(255, 255, 255, 0.75);
+}
+.config-warning {
+  margin-top: 8px;
+  font-size: var(--font-size-12);
+  color: #ffb347;
 }
 .action {
   > svg {

@@ -1,9 +1,9 @@
-const fetch = require("electron-fetch").default;
-import { Response } from "electron-fetch";
 import { baseHeader } from "./request";
+import { requestJson } from "./helpers";
 
 export const mastodonRegisterApp = async ({ instanceUrl, clientName }: { instanceUrl: string; clientName: string }) => {
-  return fetch(new URL(`/api/v1/apps`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/apps`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -11,8 +11,6 @@ export const mastodonRegisterApp = async ({ instanceUrl, clientName }: { instanc
       redirect_uris: "urn:ietf:wg:oauth:2.0:oob",
       scopes: "read write follow",
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -27,7 +25,8 @@ export const mastodonGetAccessToken = async ({
   clientSecret: string;
   code: string;
 }) => {
-  return fetch(new URL(`/oauth/token`, instanceUrl).toString(), {
+  const url = new URL(`/oauth/token`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -37,26 +36,22 @@ export const mastodonGetAccessToken = async ({
       grant_type: "authorization_code",
       redirect_uri: "urn:ietf:wg:oauth:2.0:oob",
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const mastodonGetAccount = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
-  return fetch(new URL(`/api/v1/accounts/verify_credentials`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/accounts/verify_credentials`, instanceUrl).toString();
+  return requestJson(url, {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const mastodonGetInstance = async ({ instanceUrl }: { instanceUrl: string }) => {
-  return fetch(new URL(`/api/v2/instance`, instanceUrl).toString()).then((res: Response) => {
-    return res.json();
-  });
+  const url = new URL(`/api/v2/instance`, instanceUrl).toString();
+  return requestJson(url);
 };
 
 export const mastodonGetTimelinePublic = async ({
@@ -80,13 +75,11 @@ export const mastodonGetTimelinePublic = async ({
   if (untilId) {
     url.searchParams.append("max_id", untilId);
   }
-  return fetch(url.toString(), {
+  return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -111,13 +104,11 @@ export const mastodonGetTimelineHome = async ({
   if (untilId) {
     url.searchParams.append("max_id", untilId);
   }
-  return fetch(url.toString(), {
+  return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -142,13 +133,11 @@ export const mastodonGetTimelineLocal = async ({
   if (untilId) {
     url.searchParams.append("max_id", untilId);
   }
-  return fetch(url.toString(), {
+  return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -175,13 +164,11 @@ export const mastodonGetTimelineHashtag = async ({
   if (untilId) {
     url.searchParams.append("max_id", untilId);
   }
-  return fetch(url.toString(), {
+  return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -208,13 +195,11 @@ export const mastodonGetTimelineList = async ({
   if (untilId) {
     url.searchParams.append("max_id", untilId);
   }
-  return fetch(url.toString(), {
+  return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -239,13 +224,11 @@ export const mastodonGetNotifications = async ({
   if (untilId) {
     url.searchParams.append("max_id", untilId);
   }
-  return fetch(url.toString(), {
+  return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -268,7 +251,8 @@ export const mastodonPostStatus = async ({
   spoilerText?: string;
   visibility?: "public" | "unlisted" | "private" | "direct";
 }) => {
-  return fetch(new URL(`/api/v1/statuses`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/statuses`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: {
       ...baseHeader,
@@ -282,8 +266,6 @@ export const mastodonPostStatus = async ({
       spoiler_text: spoilerText,
       visibility,
     }),
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -296,14 +278,13 @@ export const mastodonDeleteStatus = async ({
   token: string;
   id: string;
 }) => {
-  return fetch(new URL(`/api/v1/statuses/${id}`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/statuses/${id}`, instanceUrl).toString();
+  return requestJson(url, {
     method: "DELETE",
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -316,14 +297,13 @@ export const mastodonFavourite = async ({
   token: string;
   id: string;
 }) => {
-  return fetch(new URL(`/api/v1/statuses/${id}/favourite`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/statuses/${id}/favourite`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -336,14 +316,13 @@ export const mastodonUnFavourite = async ({
   token: string;
   id: string;
 }) => {
-  return fetch(new URL(`/api/v1/statuses/${id}/unfavourite`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/statuses/${id}/unfavourite`, instanceUrl).toString();
+  return requestJson(url, {
     method: "POST",
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
@@ -356,23 +335,21 @@ export const mastodonGetStatus = async ({
   token: string;
   id: string;
 }) => {
-  return fetch(new URL(`/api/v1/statuses/${id}`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/statuses/${id}`, instanceUrl).toString();
+  return requestJson(url, {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };
 
 export const mastodonGetList = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
-  return fetch(new URL(`/api/v1/lists`, instanceUrl).toString(), {
+  const url = new URL(`/api/v1/lists`, instanceUrl).toString();
+  return requestJson(url, {
     headers: {
       ...baseHeader,
       Authorization: `Bearer ${token}`,
     },
-  }).then((res: Response) => {
-    return res.json();
   });
 };

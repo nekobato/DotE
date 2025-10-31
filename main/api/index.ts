@@ -1,6 +1,7 @@
 import * as misskeyRequest from "./misskey";
 import * as mastodonRequest from "./mastodon";
 import * as blueskyRequest from "./bluesky";
+import { blueskyStartOAuth } from "./bluesky-oauth";
 
 export const apiRequest = {
   ["misskey:checkMiAuth"]: misskeyRequest.misskeyCheckMiAuth,
@@ -42,7 +43,7 @@ export const apiRequest = {
   ["mastodon:unFavourite"]: mastodonRequest.mastodonUnFavourite,
   ["mastodon:getList"]: mastodonRequest.mastodonGetList,
 
-  ["bluesky:login"]: blueskyRequest.blueskyLogin,
+  ["bluesky:startOAuth"]: blueskyStartOAuth,
   ["bluesky:getProfile"]: blueskyRequest.blueskyGetProfile,
   ["bluesky:getTimeline"]: blueskyRequest.blueskyGetTimeline,
   ["bluesky:createPost"]: blueskyRequest.blueskyCreatePost,

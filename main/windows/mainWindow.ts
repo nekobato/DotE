@@ -1,11 +1,11 @@
 import { join } from "path";
 import electron, { BrowserWindow, screen } from "electron";
 import { getSettingAll } from "../db";
-import { pageRoot, preload } from "../static";
+import { isDevelopment, pageRoot, preload } from "../static";
 
 const pageName = "/main";
 
-export function createMainWindow() {
+export async function createMainWindow() {
   const settings = getSettingAll();
   const win = new BrowserWindow({
     x: 0,
@@ -19,7 +19,7 @@ export function createMainWindow() {
       preload: preload,
     },
     frame: true,
-    transparent: true,
+    transparent: false,
     hasShadow: false,
     skipTaskbar: false,
     show: true,
@@ -29,11 +29,11 @@ export function createMainWindow() {
     icon: join("build", `app_icon.png`),
   });
 
-  if (process.env.NODE_ENV === "development") {
-    win.loadURL(pageRoot.development + "#" + pageName);
-    win.webContents.openDevTools();
+  if (isDevelopment) {
+    await win.loadURL(pageRoot.development + "#" + pageName);
+    win.webContents.openDevTools({ mode: "detach" });
   } else {
-    win.loadFile(join(pageRoot.production), { hash: pageName });
+    await win.loadFile(join(pageRoot.production), { hash: pageName });
     // win.webContents.openDevTools();
   }
 

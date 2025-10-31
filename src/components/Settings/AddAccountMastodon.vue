@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { NewUser } from "@/store/users";
+import { useStore } from "@/store";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { ElInput } from "element-plus";
 import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 const instanceUrl = ref("");
 const clientName = ref("");
@@ -12,6 +14,18 @@ const clientId = ref("");
 const clientSecret = ref("");
 const authCode = ref("");
 const accessToken = ref("");
+const store = useStore();
+
+const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+  if (!result.ok) {
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+    return undefined;
+  }
+  return result.data;
+};
 
 const emit = defineEmits<{
   complete: [user: NewUser];
@@ -33,13 +47,15 @@ const getMastodonAuthUrl = (instanceUrl: string, clientId: string, clientSecret:
 const registerMastodonApp = async () => {
   instanceUrl.value = /^https?:\/\//.test(instanceUrl.value) ? instanceUrl.value : "https://" + instanceUrl.value;
   clientName.value = `dote-${nanoid()}`;
-  const res = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "mastodon:registerApp",
     instanceUrl: instanceUrl.value,
     clientName: clientName.value,
   });
-  clientId.value = res.client_id;
-  clientSecret.value = res.client_secret;
+  const res = unwrapApiResult(result, `${instanceUrl.value} のアプリ登録に失敗しました`);
+  if (!res) return;
+  clientId.value = (res as any).client_id;
+  clientSecret.value = (res as any).client_secret;
 
   ipcSend("open-url", {
     url: getMastodonAuthUrl(instanceUrl.value, clientId.value, clientSecret.value),
@@ -47,14 +63,16 @@ const registerMastodonApp = async () => {
 };
 
 const checkMastodonAuth = async () => {
-  const res = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "mastodon:getAccessToken",
     instanceUrl: instanceUrl.value,
     clientId: clientId.value,
     clientSecret: clientSecret.value,
     code: authCode.value,
   });
-  accessToken.value = res.access_token;
+  const res = unwrapApiResult(result, `${instanceUrl.value} の認証トークン取得に失敗しました`);
+  if (!res) return;
+  accessToken.value = (res as any).access_token;
   await fetchAndSetMastodonMyself(accessToken.value);
 
   // 色々リセットするのが面倒なのでリロード
@@ -64,15 +82,17 @@ const checkMastodonAuth = async () => {
 };
 
 const fetchAndSetMastodonMyself = async (token: string) => {
-  const res = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "mastodon:getAccount",
     instanceUrl: instanceUrl.value,
     token,
   });
+  const res = unwrapApiResult(result, `${instanceUrl.value} のアカウント取得に失敗しました`);
+  if (!res) return;
 
   emit("complete", {
-    name: res.username,
-    avatarUrl: res.avatar,
+    name: (res as any).username,
+    avatarUrl: (res as any).avatar,
     token: token,
     instanceUrl: instanceUrl.value,
     instanceType: "mastodon",

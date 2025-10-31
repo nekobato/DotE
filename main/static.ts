@@ -1,6 +1,8 @@
 import * as path from "path";
+import { app } from "electron";
 
-export const isDevelopment = process.env.NODE_ENV === "development";
+export const isDevelopment =
+  process.env.NODE_ENV === "development" || Boolean(process.env.VITE_DEV_SERVER_URL) || !app.isPackaged;
 
 process.env.ROOT = path.join(__dirname, "..");
 process.env.DIST = path.join(process.env.ROOT, "dist-electron");

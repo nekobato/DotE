@@ -1,0 +1,18 @@
+{
+  "client_id": "https://nekobato.github.io/DotE/bluesky-client-metadata.json",
+  "application_type": "native",
+  "client_name": "DotE Desktop",
+  "redirect_uris": [
+    "daydream-of-the-elephants://oauth/bluesky/callback"
+  ],
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "scope": "atproto transition:generic",
+  "token_endpoint_auth_method": "none",
+  "dpop_bound_access_tokens": true
+}

@@ -10,6 +10,12 @@ const config = {
   directories: {
     output: `release/${pkg.version}`,
   },
+  protocols: [
+    {
+      name: "DotE OAuth Redirect",
+      schemes: ["daydream-of-the-elephants"],
+    },
+  ],
   files: [
     "dist",
     "!dist/assets/*.map",

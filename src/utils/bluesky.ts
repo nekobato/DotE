@@ -43,8 +43,9 @@ const collectAttachmentsFromEmbed = (embed: unknown, attachments: Attachment[]):
   if (!embed) return;
 
   if (AppBskyEmbedImages.isView(embed)) {
+    const view = embed as AppBskyEmbedImages.View;
     attachments.push(
-      ...embed.images.map((image) => ({
+      ...view.images.map((image) => ({
         type: "image" as const,
         url: image.fullsize,
         thumbnailUrl: image.thumb,
@@ -58,21 +59,24 @@ const collectAttachmentsFromEmbed = (embed: unknown, attachments: Attachment[]):
   }
 
   if (AppBskyEmbedExternal.isView(embed)) {
+    const view = embed as AppBskyEmbedExternal.View;
     attachments.push({
       type: "url",
-      url: embed.external.uri,
+      url: view.external.uri,
     });
     return;
   }
 
   if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-    collectAttachmentsFromEmbed(embed.media, attachments);
-    collectAttachmentsFromEmbed(embed.record, attachments);
+    const view = embed as AppBskyEmbedRecordWithMedia.View;
+    collectAttachmentsFromEmbed(view.media, attachments);
+    collectAttachmentsFromEmbed(view.record, attachments);
     return;
   }
 
   if (AppBskyEmbedRecord.isView(embed)) {
-    const record = embed.record;
+    const view = embed as AppBskyEmbedRecord.View;
+    const record = view.record;
     if (AppBskyEmbedRecord.isViewRecord(record) && record.embeds) {
       record.embeds.forEach((nestedEmbed) => collectAttachmentsFromEmbed(nestedEmbed, attachments));
     }
@@ -90,14 +94,18 @@ const resolveRecordFromEmbed = (
 ): AppBskyEmbedRecord.ViewRecord | undefined => {
   if (!embed) return;
 
-  if (AppBskyEmbedRecord.isView(embed) && AppBskyEmbedRecord.isViewRecord(embed.record)) {
-    return embed.record;
+  if (AppBskyEmbedRecord.isView(embed)) {
+    const view = embed as AppBskyEmbedRecord.View;
+    if (AppBskyEmbedRecord.isViewRecord(view.record)) {
+      return view.record as AppBskyEmbedRecord.ViewRecord;
+    }
   }
 
   if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-    const recordView = embed.record;
+    const view = embed as AppBskyEmbedRecordWithMedia.View;
+    const recordView = view.record;
     if (AppBskyEmbedRecord.isView(recordView) && AppBskyEmbedRecord.isViewRecord(recordView.record)) {
-      return recordView.record;
+      return recordView.record as AppBskyEmbedRecord.ViewRecord;
     }
   }
 
@@ -124,7 +132,7 @@ export const extractPrimaryRecord = (
 ): AppBskyFeedPost.Record | undefined => {
   const record = entry.post.record;
   if (AppBskyFeedPost.isRecord(record)) {
-    return record;
+    return record as AppBskyFeedPost.Record;
   }
   return undefined;
 };

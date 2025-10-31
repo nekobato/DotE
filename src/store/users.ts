@@ -6,6 +6,7 @@ import { useStore } from ".";
 import { useInstanceStore } from "./instance";
 import { useTimelineStore } from "./timeline";
 import { defaultChannelNameFromType } from "@/utils/dote";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 export type NewUser = Omit<User, "id" | "instanceId"> & {
   instanceUrl: string;
@@ -34,6 +35,17 @@ export const useUsersStore = defineStore("users", () => {
       instanceStore = useInstanceStore();
     }
     return instanceStore;
+  };
+
+  const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+    if (!result.ok) {
+      store.$state.errors.push({
+        message,
+      });
+      console.error(message, result.error);
+      return undefined;
+    }
+    return result.data;
   };
 
   const users = store.$state.users;
@@ -101,39 +113,33 @@ export const useUsersStore = defineStore("users", () => {
     }
 
     if (instance.type === "misskey") {
-      const result: MisskeyEntities.User = await ipcInvoke("api", {
+      const result = await ipcInvoke("api", {
         method: "misskey:getI",
         instanceUrl: instance.url,
         token: user.token,
-      }).catch(() => {
-        store.$state.errors.push({
-          message: `${user.name}の認証失敗`,
-        });
       });
+      const data = unwrapApiResult(result, `${user.name}の認証失敗`);
 
-      if (result) {
+      if (data) {
         await ipcInvoke("db:upsert-user", {
           id: user.id,
-          name: result.username,
-          avatarUrl: result.avatarUrl ?? undefined,
+          name: (data as MisskeyEntities.User).username,
+          avatarUrl: (data as MisskeyEntities.User).avatarUrl ?? undefined,
         });
       }
     } else if (instance.type === "mastodon") {
-      const result: any = await ipcInvoke("api", {
+      const result = await ipcInvoke("api", {
         method: "mastodon:getAccount",
         instanceUrl: instance.url,
         token: user.token,
-      }).catch(() => {
-        store.$state.errors.push({
-          message: `${user.name}の認証失敗`,
-        });
       });
+      const data = unwrapApiResult(result, `${user.name}の認証失敗`);
 
-      if (result) {
+      if (data) {
         await ipcInvoke("db:upsert-user", {
           id: user.id,
-          name: result.username,
-          avatarUrl: result.avatar,
+          name: (data as any).username,
+          avatarUrl: (data as any).avatar,
         });
       }
     }
@@ -148,16 +154,12 @@ export const useUsersStore = defineStore("users", () => {
   };
 
   const postMisskeyAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
-    const result: MisskeyEntities.User = await ipcInvoke("api", {
+    const result = await ipcInvoke("api", {
       method: "misskey:checkMiAuth",
       instanceUrl: instanceUrl,
       sessionId: sessionId,
-    }).catch(() => {
-      store.$state.errors.push({
-        message: `${instanceUrl}の認証失敗`,
-      });
     });
-    return result;
+    return unwrapApiResult(result, `${instanceUrl}の認証失敗`) as MisskeyEntities.User | undefined;
   };
 
   const findUser = (userId: string) => {

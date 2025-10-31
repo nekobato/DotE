@@ -4,10 +4,10 @@ import { NewUser } from "@/store/users";
 import { doteMisskeyPermissionString } from "@/utils/dote";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
-import { InstanceType } from "@shared/types/store";
 import { ElInput } from "element-plus";
 import { nanoid } from "nanoid/non-secure";
 import { ref } from "vue";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 const store = useStore();
 
@@ -19,6 +19,17 @@ const emit = defineEmits<{
 const instanceUrl = ref("");
 const sessionId = ref("");
 
+const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+  if (!result.ok) {
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+    return undefined;
+  }
+  return result.data;
+};
+
 const getMisskeyAuthUrl = (instanceUrl: string, sessionId: string) => {
   const url = new URL(`/miauth/${sessionId}`, instanceUrl);
   url.search = new URLSearchParams({
@@ -29,15 +40,13 @@ const getMisskeyAuthUrl = (instanceUrl: string, sessionId: string) => {
 };
 
 const checkMiAuth = async () => {
-  const check = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: "misskey:checkMiAuth",
     instanceUrl: instanceUrl.value,
     sessionId: sessionId.value,
-  }).catch(() => {
-    store.$state.errors.push({
-      message: `${instanceUrl.value}の認証失敗`,
-    });
   });
+  const check = unwrapApiResult(result, `${instanceUrl.value}の認証失敗`);
+  if (!check) return;
 
   emit("complete", {
     name: check.user.name,
@@ -81,7 +90,7 @@ const openMisskeyAuthLink = () => {
     <!-- Confirm Auth -->
     <div class="dote-field-row as-thread indent-1 active" v-if="sessionId">
       <div class="content">
-        <span v-if="instanceType === 'misskey'">認証できた？</span>
+        <span>認証できた？</span>
       </div>
       <div class="actions">
         <button class="nn-button size-small action" @click="emit('close')">戻る</button>

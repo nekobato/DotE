@@ -1,5 +1,5 @@
 import { dialog } from "electron";
-import { autoUpdater, MacUpdater } from "electron-updater";
+import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 
 export const checkUpdate = () => {

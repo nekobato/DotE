@@ -1,14 +1,22 @@
 import { safeStorage } from "electron";
-import Store, { Schema } from "electron-store";
+import Store, { Schema, type Options as StoreOptions } from "electron-store";
 import { nanoid } from "nanoid/non-secure";
+import type { NodeSavedSession } from "@atproto/oauth-client-node";
 import type { Instance, Timeline, User, Settings, InstanceType } from "../shared/types/store";
+import { APP_LOOPBACK_REDIRECT_URI, BLUESKY_CUSTOM_REDIRECT_URI } from "./oauth/constants";
 
 export type StoreSchema = {
   timelines: Timeline[];
   instances: Instance[];
   users: User[];
   settings: Settings;
+  blueskySessions: Record<string, string>;
 };
+
+const DEFAULT_BLUESKY_CLIENT_ID = process.env.DOTE_BSKY_CLIENT_ID ?? "";
+const DEFAULT_BLUESKY_REDIRECT_URI = process.env.DOTE_BSKY_REDIRECT_URI ?? BLUESKY_CUSTOM_REDIRECT_URI;
+const DEFAULT_BLUESKY_SCOPE = process.env.DOTE_BSKY_SCOPE ?? "atproto transition:generic";
+const DEFAULT_BLUESKY_FALLBACK_REDIRECT_URI = APP_LOOPBACK_REDIRECT_URI;
 
 export const storeDefaults: StoreSchema = {
   users: [],
@@ -38,7 +46,15 @@ export const storeDefaults: StoreSchema = {
       hideCw: false,
       showReactions: true,
     },
+    bluesky: {
+      oauth: {
+        clientId: DEFAULT_BLUESKY_CLIENT_ID,
+        redirectUri: DEFAULT_BLUESKY_REDIRECT_URI,
+        scope: DEFAULT_BLUESKY_SCOPE,
+      },
+    },
   },
+  blueskySessions: {},
 };
 
 const schema: Schema<StoreSchema> = {
@@ -123,16 +139,71 @@ const schema: Schema<StoreSchema> = {
           showReactions: { type: "boolean" },
         },
       },
+      bluesky: {
+        type: "object",
+        properties: {
+          oauth: {
+            type: "object",
+            properties: {
+              clientId: { type: "string" },
+              redirectUri: { type: "string" },
+              scope: { type: "string" },
+            },
+          },
+        },
+      },
     },
+  },
+  blueskySessions: {
+    type: "object",
+    additionalProperties: {
+      type: "string",
+    },
+    default: {},
   },
 };
 
-export const store = new Store<StoreSchema>({
+type StoreInitOptions = StoreOptions<StoreSchema> & {
+  projectName: string;
+};
+
+const storeInitOptions: StoreInitOptions = {
   name: "dote",
   schema,
   defaults: storeDefaults,
   clearInvalidConfig: true,
-});
+  projectName: "DotE",
+  migrations: {
+    "0.0.21": (store) => {
+      const settings = store.get("settings") as StoreSchema["settings"] | undefined;
+      if (!settings || typeof settings !== "object") {
+        store.set("settings", storeDefaults.settings);
+        return;
+      }
+
+      if (!settings.bluesky || typeof settings.bluesky !== "object") {
+        store.set("settings.bluesky", { oauth: { ...storeDefaults.settings.bluesky.oauth } });
+      }
+
+      const currentOauth =
+        (store.get("settings.bluesky.oauth") as Partial<StoreSchema["settings"]["bluesky"]["oauth"]>) ?? {};
+      const normalizedRedirectUri =
+        !currentOauth.redirectUri || currentOauth.redirectUri === "daydream-of-the-elephants://oauth/callback"
+          ? BLUESKY_CUSTOM_REDIRECT_URI
+          : currentOauth.redirectUri;
+
+      const migratedOauth = {
+        clientId: currentOauth.clientId ?? DEFAULT_BLUESKY_CLIENT_ID,
+        redirectUri: normalizedRedirectUri,
+        scope: currentOauth.scope ?? DEFAULT_BLUESKY_SCOPE,
+      } satisfies StoreSchema["settings"]["bluesky"]["oauth"];
+
+      store.set("settings.bluesky.oauth", migratedOauth);
+    },
+  },
+};
+
+export const store = new Store<StoreSchema>(storeInitOptions);
 
 // Actions
 
@@ -261,14 +332,9 @@ export const getUserAll = () => {
   return store.get("users").map((user) => {
     user.token = safeStorage.decryptString(Buffer.from(user.token, "base64"));
 
-    if (user.blueskySession) {
-      const decryptedAccessToken = safeStorage.decryptString(Buffer.from(user.blueskySession.accessJwt, "base64"));
-      const decryptedRefreshToken = safeStorage.decryptString(Buffer.from(user.blueskySession.refreshJwt, "base64"));
-      user.blueskySession = {
-        ...user.blueskySession,
-        accessJwt: decryptedAccessToken,
-        refreshJwt: decryptedRefreshToken,
-      };
+    const sessionLike = user.blueskySession as unknown as Record<string, unknown> | undefined;
+    if (sessionLike && "accessJwt" in sessionLike) {
+      user.blueskySession = undefined;
     }
 
     return user;
@@ -281,19 +347,9 @@ export const upsertUser = (user: {
   name: string;
   token: string;
   avatarUrl: string;
-  blueskySession?: { did: string; accessJwt: string; refreshJwt: string };
+  blueskySession?: User["blueskySession"];
 }) => {
   const encryptedToken = safeStorage.encryptString(user.token).toString("base64");
-
-  if (user.blueskySession) {
-    const encryptedAccessToken = safeStorage.encryptString(user.blueskySession.accessJwt).toString("base64");
-    const encryptedRefreshToken = safeStorage.encryptString(user.blueskySession.refreshJwt).toString("base64");
-    user.blueskySession = {
-      ...user.blueskySession,
-      accessJwt: encryptedAccessToken,
-      refreshJwt: encryptedRefreshToken,
-    };
-  }
 
   if (user.id) {
     const currentUser = store.get("users").find((user) => user.instanceId === user.instanceId);
@@ -333,10 +389,65 @@ export const upsertUser = (user: {
   }
 };
 
+type PersistedBlueskySession = NodeSavedSession & {
+  updatedAt: string;
+};
+
+const encryptJson = (value: unknown) => {
+  const text = JSON.stringify(value);
+  return safeStorage.encryptString(text).toString("base64");
+};
+
+const decryptJson = <T>(encoded: string): T => {
+  const decrypted = safeStorage.decryptString(Buffer.from(encoded, "base64"));
+  return JSON.parse(decrypted) as T;
+};
+
+export const setBlueskyOAuthSession = (did: string, session: NodeSavedSession) => {
+  if (!did) throw new Error("did is required");
+  const storeValue: PersistedBlueskySession = {
+    ...session,
+    updatedAt: new Date().toISOString(),
+  };
+  const encoded = encryptJson(storeValue);
+  const all = store.get("blueskySessions");
+  store.set("blueskySessions", { ...all, [did]: encoded });
+};
+
+export const getBlueskyOAuthSession = (did: string): PersistedBlueskySession | undefined => {
+  if (!did) throw new Error("did is required");
+  const encoded = store.get("blueskySessions")[did];
+  if (!encoded) return undefined;
+  return decryptJson<PersistedBlueskySession>(encoded);
+};
+
+export const deleteBlueskyOAuthSession = (did: string) => {
+  if (!did) throw new Error("did is required");
+  const sessions = { ...store.get("blueskySessions") };
+  delete sessions[did];
+  store.set("blueskySessions", sessions);
+};
+
 // Setting
 
 export const getSettingAll = (): StoreSchema["settings"] => {
-  return store.get("settings");
+  const settings = store.get("settings") as Partial<StoreSchema["settings"]> | undefined;
+  const baseSettings = {
+    ...storeDefaults.settings,
+    ...(settings ?? {}),
+  } as StoreSchema["settings"];
+  const storedOauth = settings?.bluesky?.oauth ?? baseSettings.bluesky?.oauth ?? {};
+
+  return {
+    ...baseSettings,
+    bluesky: {
+      oauth: {
+        clientId: storedOauth.clientId || DEFAULT_BLUESKY_CLIENT_ID,
+        redirectUri: storedOauth.redirectUri || DEFAULT_BLUESKY_REDIRECT_URI,
+        scope: storedOauth.scope || DEFAULT_BLUESKY_SCOPE,
+      },
+    },
+  };
 };
 
 export const getSetting = (key: "opacity" | "mode") => {
@@ -375,7 +486,24 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.misskey.showReactions", value);
     case "text2Speech.enabled":
       return store.set("settings.text2Speech.enabled", value);
+    case "bluesky.oauth.clientId":
+      return store.set("settings.bluesky.oauth.clientId", value);
+    case "bluesky.oauth.redirectUri":
+      return store.set("settings.bluesky.oauth.redirectUri", value);
+    case "bluesky.oauth.scope":
+      return store.set("settings.bluesky.oauth.scope", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }
 };
+
+export const getBlueskyOAuthConfig = (): StoreSchema["settings"]["bluesky"]["oauth"] => {
+  const stored = (store.get("settings.bluesky.oauth") as Partial<StoreSchema["settings"]["bluesky"]["oauth"]>) ?? {};
+  return {
+    clientId: stored.clientId || DEFAULT_BLUESKY_CLIENT_ID,
+    redirectUri: stored.redirectUri || DEFAULT_BLUESKY_REDIRECT_URI,
+    scope: stored.scope || DEFAULT_BLUESKY_SCOPE,
+  };
+};
+
+export const getBlueskyLoopbackRedirectUri = () => DEFAULT_BLUESKY_FALLBACK_REDIRECT_URI;

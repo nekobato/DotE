@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { useTimelineStore } from "@/store/timeline";
+import { useStore } from "@/store";
 import { ipcInvoke } from "@/utils/ipc";
 import { Icon } from "@iconify/vue";
 import { computed, ref } from "vue";
@@ -7,9 +8,11 @@ import DoteLoading from "./common/DoteLoading.vue";
 import { methodOfChannel } from "@/store";
 import { useBlueskyStore } from "@/store/bluesky";
 import { ChannelName } from "@shared/types/store";
+import type { ApiInvokeResult } from "@shared/types/ipc";
 
 const timelineStore = useTimelineStore();
 const blueskyStore = useBlueskyStore();
+const store = useStore();
 
 const loading = ref(false);
 
@@ -28,8 +31,19 @@ const canReadmore = computed(() => {
   );
 });
 
+const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+  if (!result.ok) {
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, result.error);
+    return undefined;
+  }
+  return result.data;
+};
+
 const fetchOlderPosts = async (channel: ChannelName) => {
-  const additionalNotes = await ipcInvoke("api", {
+  const result = await ipcInvoke("api", {
     method: methodOfChannel[channel],
     channelId: timelineStore.current?.options.channelId, // option
     antennaId: timelineStore.current?.options?.antennaId, // option
@@ -38,10 +52,14 @@ const fetchOlderPosts = async (channel: ChannelName) => {
     tag: timelineStore.current?.options?.tag, // option
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
-    session: timelineStore.currentUser?.blueskySession,
     limit: 20,
     untilId: postsOrNotifications.value[postsOrNotifications.value.length - 1].id,
   });
+
+  const additionalNotes = unwrapApiResult(
+    result,
+    `${timelineStore.currentInstance?.name ?? "タイムライン"}の過去投稿取得に失敗しました`,
+  );
 
   if (additionalNotes) {
     if (timelineStore.current?.channel === "misskey:notifications") {
