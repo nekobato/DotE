@@ -32,6 +32,9 @@ importers:
       electron-updater:
         specifier: ^6.6.2
         version: 6.6.2
+      font-list:
+        specifier: ^1.6.0
+        version: 1.6.0
     devDependencies:
       '@iconify/vue':
         specifier: ^5.0.0
@@ -78,9 +81,6 @@ importers:
       prettier:
         specifier: ^3.7.4
         version: 3.7.4
-      sass:
-        specifier: ^1.97.1
-        version: 1.97.1
       sass-embedded:
         specifier: ^1.97.1
         version: 1.97.1
@@ -2693,6 +2693,9 @@ packages:
     peerDependenciesMeta:
       debug:
         optional: true
+
+  font-list@1.6.0:
+    resolution: {integrity: sha512-gI6N38fcq4er2BkKeW33SQt5nLMGX/GuT7mgWa3OiOZSQAJ3b6ZiCg3hPqlnnaULW/pcR1R7sUMrN6HfovXKAg==}
 
   for-in@1.0.2:
     resolution: {integrity: sha512-7EwmXrOjyL+ChxMhmG5lnW9MPt1aIeZEwKhQzoBUdTV0N3zuwWDZYVJatDvZ2OyzPUvdIAZDsCetk3coyMfcnQ==}
@@ -7591,6 +7594,7 @@ snapshots:
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.1.2
+    optional: true
 
   chownr@2.0.0: {}
 
@@ -8398,6 +8402,8 @@ snapshots:
       tabbable: 6.3.0
 
   follow-redirects@1.15.11: {}
+
+  font-list@1.6.0: {}
 
   for-in@1.0.2: {}
 
@@ -9961,7 +9967,8 @@ snapshots:
     dependencies:
       minimatch: 5.1.6
 
-  readdirp@4.1.2: {}
+  readdirp@4.1.2:
+    optional: true
 
   reconnecting-websocket@4.4.0: {}
 
@@ -10267,6 +10274,7 @@ snapshots:
       source-map-js: 1.2.1
     optionalDependencies:
       '@parcel/watcher': 2.5.1
+    optional: true
 
   sax@1.4.3: {}
 

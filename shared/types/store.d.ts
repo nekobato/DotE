@@ -97,6 +97,9 @@ export type LineStyle = "all" | "line-1" | "line-2" | "line-3";
 export type Settings = {
   opacity: number;
   mode: "show" | "haze" | "hide" | "settings" | "tutorial";
+  font: {
+    family: string;
+  };
   windowSize: {
     width: number;
     height: number;

@@ -5,11 +5,13 @@ import { keyboardEventToElectronAccelerator } from "@/utils/dote";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
 import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption } from "element-plus";
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
 const shortcutInput = ref<HTMLElement | null>(null);
+const systemFonts = ref<string[]>([]);
+const isFontsLoading = ref(false);
 
 watch(
   () => store.settings?.opacity,
@@ -18,9 +20,32 @@ watch(
   },
 );
 
+/**
+ * Persist max post count setting.
+ */
 const onChangeMaxPostCount = async (value: number) => {
   await settingsStore.setMaxPostCount(value);
 };
+
+/**
+ * Persist selected font family.
+ */
+const onChangeFontFamily = async (value: string | number | boolean) => {
+  await settingsStore.setFontFamily(String(value ?? ""));
+};
+
+/**
+ * Fetch installed fonts for selection UI.
+ */
+const loadSystemFonts = async () => {
+  isFontsLoading.value = true;
+  systemFonts.value = await settingsStore.fetchSystemFonts();
+  isFontsLoading.value = false;
+};
+
+onMounted(async () => {
+  await loadSystemFonts();
+});
 
 const postStyleOptions = [
   {
@@ -99,6 +124,26 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
           @change="(value) => onChangeMaxPostCount(Number(value))"
           size="small"
         />
+      </div>
+    </div>
+
+    <div class="dote-field-row indent-1">
+      <div class="content">
+        <span class="title">フォント</span>
+      </div>
+      <div class="form-actions">
+        <ElSelect
+          class="action-field font-field"
+          :model-value="store.settings.font.family"
+          size="small"
+          filterable
+          clearable
+          :loading="isFontsLoading"
+          @change="onChangeFontFamily"
+        >
+          <ElOption label="システム既定" value="" />
+          <ElOption v-for="font in systemFonts" :key="font" :label="font" :value="font" />
+        </ElSelect>
       </div>
     </div>
 
@@ -215,5 +260,8 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
 }
 .action-field {
   width: 130px;
+}
+.font-field {
+  width: 220px;
 }
 </style>

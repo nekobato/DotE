@@ -58,6 +58,10 @@ interface IpcEventMaps {
     args: void;
     result: Settings;
   };
+  "system:get-fonts": {
+    args: void;
+    result: string[];
+  };
 }
 
 const summarizeResult = (result: unknown): unknown => {

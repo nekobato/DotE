@@ -25,6 +25,9 @@ export const storeDefaults: StoreSchema = {
   settings: {
     opacity: 50,
     mode: "show",
+    font: {
+      family: "",
+    },
     windowSize: {
       width: 475,
       height: 600,
@@ -117,6 +120,12 @@ const schema: Schema<StoreSchema> = {
     properties: {
       opacity: { type: "number" },
       mode: { type: "string" },
+      font: {
+        type: "object",
+        properties: {
+          family: { type: "string" },
+        },
+      },
       windowSize: {
         type: "object",
         properties: {
@@ -474,6 +483,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.mode", value);
     case "windowSize":
       return store.set("settings.windowSize", value);
+    case "font.family":
+      return store.set("settings.font.family", value);
     case "maxPostCount":
       return store.set("settings.maxPostCount", Number(value));
     case "shortcuts.toggleTimeline":
