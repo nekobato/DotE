@@ -26,6 +26,7 @@ import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { useBlueskyStore } from "@/store/bluesky";
 import { useMastodonStore } from "@/store/mastodon";
+import { useMisskeyStore } from "@/store/misskey";
 
 // 型定義
 import type {
@@ -39,17 +40,57 @@ import { ipcSend } from "@/utils/ipc";
 
 // Composables
 import { useTimelineState } from "@/composables/useTimelineState";
-import { usePostActions } from "@/composables/usePostActions";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
 const mastodonStore = useMastodonStore();
+const misskeyStore = useMisskeyStore();
 const blueskyStore = useBlueskyStore();
 
 // Composables
 const { scrollPosition, hazeSettings, scrollState, platformData } = useTimelineState();
-const { onReaction, openNewReaction, openRepostWindowEvent, refreshPost } = usePostActions();
-const openRepostWindow = openRepostWindowEvent;
+
+/**
+ * Misskeyの投稿更新をトリガーします。
+ */
+const onMisskeyRefreshPost = (postId: string) => {
+  void misskeyStore.updatePost({ postId });
+};
+
+/**
+ * Misskeyのリアクション追加ウィンドウを開きます。
+ */
+const onMisskeyNewReaction = (postId: string) => {
+  const instanceUrl = timelineStore.currentInstance?.url;
+  const token = timelineStore.currentUser?.token;
+  if (!instanceUrl || !token) {
+    console.warn("Misskeyのリアクションウィンドウに必要な情報が不足しています", {
+      instanceUrl,
+      hasToken: Boolean(token),
+    });
+    return;
+  }
+  ipcSend("post:reaction", {
+    instanceUrl,
+    token,
+    noteId: postId,
+    emojis: emojis.value || [],
+  });
+};
+
+/**
+ * Misskeyのリアクション操作を行います。
+ */
+const onMisskeyReaction = (payload: { postId: string; reaction: string }) => {
+  ipcSend("main:reaction", payload);
+};
+
+/**
+ * Misskeyのリポストウィンドウを開きます。
+ */
+const onMisskeyRepost = (payload: { post: MisskeyNoteType; emojis: { name: string; url: string }[] }) => {
+  ipcSend("post:repost", payload);
+};
 
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
@@ -127,10 +168,10 @@ onMounted(() => {
           :lineStyle="store.settings.postStyle"
           theme="default"
           :key="post.id"
-          @reaction="onReaction"
-          @newReaction="openNewReaction"
-          @refreshPost="refreshPost"
-          @repost="openRepostWindow"
+          @reaction="onMisskeyReaction"
+          @newReaction="onMisskeyNewReaction"
+          @refreshPost="onMisskeyRefreshPost"
+          @repost="onMisskeyRepost"
         />
         <MisskeyNotification
           v-if="timelineStore.current.channel === 'misskey:notifications'"

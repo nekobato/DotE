@@ -76,7 +76,7 @@ const close = () => {
 };
 
 window.ipc?.on("post:reaction", () => {
-  search.value === "";
+  search.value = "";
 });
 
 watch(
@@ -87,12 +87,12 @@ watch(
     }
 
     searchInput.value?.focus();
-    search.value === "";
+    search.value = "";
   },
 );
 
 onMounted(() => {
-  search.value === "";
+  search.value = "";
   searchInput.value?.focus();
 });
 </script>
