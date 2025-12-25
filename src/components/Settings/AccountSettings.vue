@@ -109,6 +109,7 @@ const closeAddAccount = () => {
         <h3>新規アカウント</h3>
       </div>
       <div class="actions">
+        <span class="add-account-hint" v-if="!newAccountInstanceType && store.users.length === 0">アカウント追加 →</span>
         <button class="nn-button size-small action" v-if="!newAccountInstanceType" @click="startAddAccount">
           <Icon icon="mingcute:add-fill" class="nn-icon" />
         </button>
@@ -162,5 +163,10 @@ const closeAddAccount = () => {
   &:hover {
     background: rgba(255, 255, 255, 0.4);
   }
+}
+.add-account-hint {
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--font-size-12);
 }
 </style>
