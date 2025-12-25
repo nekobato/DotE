@@ -132,18 +132,26 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
         <span class="title">フォント</span>
       </div>
       <div class="form-actions">
-        <ElSelect
-          class="action-field font-field"
-          :model-value="store.settings.font.family"
-          size="small"
-          filterable
-          clearable
-          :loading="isFontsLoading"
-          @change="onChangeFontFamily"
-        >
-          <ElOption label="システム既定" value="" />
-          <ElOption v-for="font in systemFonts" :key="font" :label="font" :value="font" />
-        </ElSelect>
+        <div class="font-settings">
+          <ElSelect
+            class="action-field font-field"
+            :model-value="store.settings.font.family"
+            size="small"
+            filterable
+            clearable
+            :loading="isFontsLoading"
+            @change="onChangeFontFamily"
+          >
+            <ElOption label="システム既定" value="" />
+            <ElOption v-for="font in systemFonts" :key="font" :label="font" :value="font" />
+          </ElSelect>
+          <div
+            class="font-preview"
+            :style="store.settings.font.family ? { fontFamily: store.settings.font.family } : undefined"
+          >
+            例: 今日は良いお天気です。The quick brown fox jumps over the lazy dog. 1234567890
+          </div>
+        </div>
       </div>
     </div>
 
@@ -239,6 +247,20 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
     font-weight: bold;
     font-size: 14px;
   }
+}
+
+.font-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.font-preview {
+  color: var(--color-text-body);
+  font-size: 12px;
+  line-height: 1.4;
+  opacity: 0.8;
 }
 
 .dote-field-row {

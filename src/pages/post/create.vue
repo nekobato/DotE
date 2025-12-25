@@ -48,6 +48,9 @@ const state = reactive({
 });
 const text = ref("");
 const textCw = ref("");
+const postFontStyle = computed(() => ({
+  ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
+}));
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -283,7 +286,7 @@ document.addEventListener("keydown", (e) => {
 </script>
 
 <template>
-  <div class="post">
+  <div class="post" :style="postFontStyle">
     <div class="header">
       <ElAvatar :size="32" :src="state.user?.avatarUrl" class="dote-avatar" />
       <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>

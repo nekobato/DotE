@@ -101,6 +101,10 @@ const canScrollToTop = computed(() => scrollState.value.canScrollToTop);
 const canReadMore = computed(() => scrollState.value.canReadMore);
 const emojis = computed(() => platformData.value.emojis);
 const ads = computed(() => platformData.value.ads);
+const timelineStyle = computed(() => ({
+  opacity: hazeOpacity.value,
+  ...(store.settings.font.family ? { fontFamily: store.settings.font.family } : {}),
+}));
 
 const state = reactive({
   isAdding: false,
@@ -137,7 +141,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="page-container" :class="{ haze: isHazeMode }" :style="{ opacity: hazeOpacity }">
+  <div class="page-container" :class="{ haze: isHazeMode }" :style="timelineStyle">
     <TimelineHeader v-show="!isHazeMode" class="header" />
     <div class="dote-timeline-container" v-if="store.errors.length">
       <div class="dote-post-list">
