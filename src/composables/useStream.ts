@@ -23,7 +23,9 @@ export function useStream() {
       switch (event) {
         case "note":
           timelineStore.addNewPost(data.body);
-          text2Speech(data.body.user.user || data.body.user.username, data.body.text || data.body.renote.text);
+          if (store.settings.text2Speech.enabled) {
+            text2Speech(data.body.user.user || data.body.user.username, data.body.text || data.body.renote.text);
+          }
           break;
         default:
           console.warn("unhandled note", data);
