@@ -40,7 +40,18 @@ const readBodyIfNeeded = async (response: Response, shouldRead: boolean): Promis
   }
 };
 
-export const requestJson = async <T>(url: string, init?: Parameters<typeof fetch>[1]): Promise<T> => {
+type RequestJsonOptions = {
+  allowEmpty?: boolean;
+};
+
+/**
+ * JSON 応答を要求する共通リクエスト関数です。
+ */
+const requestJsonInternal = async <T>(
+  url: string,
+  init: Parameters<typeof fetch>[1] | undefined,
+  options: RequestJsonOptions,
+): Promise<T> => {
   let response: Response;
   try {
     response = await fetch(url, init);
@@ -56,6 +67,10 @@ export const requestJson = async <T>(url: string, init?: Parameters<typeof fetch
   const responseUrl = response.url || url;
   const isSuccess = response.ok;
   const contentType = response.headers.get("content-type") ?? "";
+
+  if (isSuccess && options.allowEmpty && (status === 204 || status === 205)) {
+    return undefined as T;
+  }
 
   const bodySnapshot = await readBodyIfNeeded(response, !isSuccess);
 
@@ -93,6 +108,20 @@ export const requestJson = async <T>(url: string, init?: Parameters<typeof fetch
       message: buildMessage(error, "JSON parse error"),
     });
   }
+};
+
+/**
+ * JSON 応答を要求する共通リクエスト関数です。
+ */
+export const requestJson = async <T>(url: string, init?: Parameters<typeof fetch>[1]): Promise<T> => {
+  return requestJsonInternal(url, init, { allowEmpty: false });
+};
+
+/**
+ * 204/205 の空응答を許容する JSON リクエストです。
+ */
+export const requestJsonAllowEmpty = async <T>(url: string, init?: Parameters<typeof fetch>[1]): Promise<T> => {
+  return requestJsonInternal(url, init, { allowEmpty: true });
 };
 
 export type { ApiErrorPayload };

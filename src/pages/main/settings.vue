@@ -15,7 +15,6 @@ const timelineStore = useTimelineStore();
     <Header windowType="settings" :canBack="timelineStore.isTimelineAvailable" />
     <div class="dote-scroller">
       <AccountSettings />
-      <ElDivider class="divider" />
       <TimelineSettings />
       <ElDivider class="divider" />
       <ApplicationSettings />

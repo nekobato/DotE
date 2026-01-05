@@ -11,6 +11,13 @@ export default defineConfig({
     electron({
       main: {
         entry: "main/index.ts",
+        vite: {
+          build: {
+            rollupOptions: {
+              external: ["font-list"],
+            },
+          },
+        },
       },
       preload: {
         input: path.join(__dirname, "main/preload.ts"),

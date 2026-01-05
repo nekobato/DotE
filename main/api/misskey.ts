@@ -1,5 +1,5 @@
 import { baseHeader } from "./request";
-import { requestJson } from "./helpers";
+import { requestJson, requestJsonAllowEmpty } from "./helpers";
 
 export const misskeyCheckMiAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
   const url = new URL(`/api/miauth/${sessionId}/check`, instanceUrl).toString();
@@ -304,7 +304,7 @@ export const misskeyCreateReaction = async ({
   reaction: string;
 }) => {
   const url = new URL(`/api/notes/reactions/create`, instanceUrl).toString();
-  return requestJson(url, {
+  return requestJsonAllowEmpty(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({
@@ -325,7 +325,7 @@ export const misskeyDeleteReaction = async ({
   noteId: string;
 }) => {
   const url = new URL(`/api/notes/reactions/delete`, instanceUrl).toString();
-  return requestJson(url, {
+  return requestJsonAllowEmpty(url, {
     method: "POST",
     headers: baseHeader,
     body: JSON.stringify({

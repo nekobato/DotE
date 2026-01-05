@@ -30,6 +30,7 @@ const onDeleteTimeline = async (timeline: Timeline) => {
 
 <template>
   <div class="account-settings dote-post-list" v-if="store.$state.users.length">
+    <ElDivider class="divider" />
     <h2 class="dote-field-group-title">タイムライン</h2>
     <div class="timeline-list">
       <div v-for="timeline in store.timelines" :key="timeline.id">

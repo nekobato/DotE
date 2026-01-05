@@ -21,6 +21,21 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "maxPostCount", value: count.toString() });
   };
 
+  /**
+   * Persist selected font family in settings.
+   */
+  const setFontFamily = async (family: string) => {
+    store.$state.settings.font.family = family;
+    return await ipcInvoke("settings:set", { key: "font.family", value: family });
+  };
+
+  /**
+   * Fetch installed system fonts via main process.
+   */
+  const fetchSystemFonts = async (): Promise<string[]> => {
+    return await ipcInvoke("system:get-fonts");
+  };
+
   const setPostStyle = async (style: Settings["postStyle"]) => {
     store.$state.settings.postStyle = style;
     return await ipcInvoke("settings:set", { key: "postStyle", value: style });
@@ -50,10 +65,12 @@ export const useSettingsStore = defineStore("settings", () => {
     setOpacity,
     setMode,
     setMaxPostCount,
+    setFontFamily,
     setPostStyle,
     setShortcutKey,
     setMisskeyHideCw,
     setMisskeyShowReactions,
     setText2SpeechEnabled,
+    fetchSystemFonts,
   };
 });

@@ -23,6 +23,7 @@ import { ApiError } from "./api/helpers";
 import type { ApiErrorPayload, ApiInvokeResult } from "../shared/types/ipc";
 import { notifyOAuthRedirect } from "./oauth/callback-router";
 import { APP_PROTOCOL_PREFIX, APP_PROTOCOL_SCHEME } from "./oauth/constants";
+import { getFonts } from "font-list";
 
 const isElectronRuntime = Boolean(process.versions?.electron);
 const electronApp = (electron as unknown as { app?: typeof app }).app ?? app;
@@ -38,6 +39,19 @@ const handleOAuthRedirectUrl = (url: string) => {
       mainWindow.show();
     }
     mainWindow.focus();
+  }
+};
+
+/**
+ * Load installed system fonts for selection UI.
+ */
+const getSystemFonts = async (): Promise<string[]> => {
+  try {
+    const fonts = await getFonts();
+    return Array.from(new Set(fonts)).sort((a, b) => a.localeCompare(b));
+  } catch (error) {
+    console.error("[system:get-fonts] failed", error);
+    return [];
   }
 };
 
@@ -341,6 +355,8 @@ const start = async () => {
         return db.setSetting(data.key, data.value);
       case "settings:all":
         return db.getSettingAll();
+      case "system:get-fonts":
+        return getSystemFonts();
       default:
         throw new Error(`${event} is not defined event.`);
     }

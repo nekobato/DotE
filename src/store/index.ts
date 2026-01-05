@@ -51,6 +51,9 @@ type RootState = {
 const initialSettings: Settings = {
   opacity: 50,
   mode: "show",
+  font: {
+    family: "",
+  },
   windowSize: {
     width: 475,
     height: 600,
