@@ -4,6 +4,7 @@ import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import { MastodonToot } from "@/types/mastodon";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
 
 export const useMastodonStore = defineStore("mastodon", () => {
   const store = useStore();
@@ -85,10 +86,7 @@ export const useMastodonStore = defineStore("mastodon", () => {
     });
     const res = unwrapApiResult(result, `${id}の取得失敗`);
     if (!res) return;
-    const postIndex = timeline.current?.posts.findIndex((p: DotEPost) => p.id === id);
-    if (!postIndex) return;
-
-    store.timelines[timeline.currentIndex].posts.splice(postIndex, 1, res);
+    updatePostAcrossTimelines(store.timelines, res);
   };
 
   const fetchPosts = async () => {
