@@ -5,33 +5,32 @@ import { Icon } from "@iconify/vue";
 import { ElInput } from "element-plus";
 import { computed, ref } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import { BLUESKY_CLIENT_ID, BLUESKY_REDIRECT_URI, BLUESKY_SCOPE } from "@shared/bluesky-oauth";
 import type { NewUser } from "@/store/users";
 
 const store = useStore();
 
-const DEFAULT_BLUESKY_REDIRECT_URI = "io.github.nekobato:/oauth/bluesky/callback";
-const DEFAULT_BLUESKY_SCOPE = "atproto transition:generic";
-
 const handle = ref("");
 const isAuthorizing = ref(false);
 
-const oauthSettings = computed(() => {
-  const oauth = store.$state.settings.bluesky?.oauth;
-  return {
-    clientId: oauth?.clientId ?? "",
-    redirectUri: oauth?.redirectUri ?? DEFAULT_BLUESKY_REDIRECT_URI,
-    scope: oauth?.scope ?? DEFAULT_BLUESKY_SCOPE,
-  };
-});
+const oauthSettings = computed(() => ({
+  clientId: BLUESKY_CLIENT_ID,
+  redirectUri: BLUESKY_REDIRECT_URI,
+  scope: BLUESKY_SCOPE,
+}));
 
 const normalizedHandle = computed(() => handle.value.trim().replace(/^@+/, ""));
 
+/**
+ * Derive a best-effort PDS origin from a handle-like input.
+ * For two-label handles (e.g. nekobato.net), keep the full domain.
+ */
 const deriveInstanceUrl = (input: string): string | undefined => {
   if (!input || input.startsWith("did:")) return undefined;
   const lower = input.toLowerCase();
-  const parts = lower.split(".");
+  const parts = lower.split(".").filter(Boolean);
   if (parts.length < 2) return undefined;
-  const domain = parts.slice(1).join(".");
+  const domain = parts.length >= 3 ? parts.slice(1).join(".") : parts.join(".");
   if (!domain) return undefined;
   try {
     const url = new URL(`https://${domain}`);
@@ -48,7 +47,6 @@ const isConfigReady = computed(
   () => Boolean(oauthSettings.value.clientId && oauthSettings.value.redirectUri && oauthSettings.value.scope),
 );
 const canStart = computed(() => Boolean(normalizedHandle.value && isConfigReady.value && !isAuthorizing.value));
-const usesCustomScheme = computed(() => oauthSettings.value.redirectUri.startsWith("io.github.nekobato:/"));
 
 const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -93,12 +91,10 @@ const startOAuth = async () => {
   <div>
     <div class="dote-field-row as-thread indent-1 active">
       <div class="content">
-        <p class="description">Bluesky のハンドルを入力して認証を開始いたしますわ。認証画面は外部ブラウザで開き、完了後にアプリへ戻ってまいりますの。</p>
+        <p class="description">Bluesky Handle</p>
         <div class="nn-form-item">
           <ElInput class="account-input" v-model="handle" placeholder="@handle.bsky.social" size="small" />
         </div>
-        <p v-if="normalizedHandle" class="hint">接続先候補: <span>{{ fallbackInstanceUrl }}</span></p>
-        <p v-if="usesCustomScheme" class="info">リダイレクト先: io.github.nekobato:/oauth/bluesky/callback</p>
         <p v-if="!isConfigReady" class="config-warning">クライアント設定が未構成でございます。管理者様にご確認くださいませ。</p>
       </div>
       <div class="actions">
@@ -130,22 +126,22 @@ const startOAuth = async () => {
 }
 .hint {
   margin: 4px 0 8px;
-  font-size: var(--font-size-12);
   color: rgba(255, 255, 255, 0.65);
+  font-size: var(--font-size-12);
   span {
-    font-weight: 600;
     color: #fff;
+    font-weight: 600;
   }
 }
 .info {
   margin: 0 0 8px;
-  font-size: var(--font-size-12);
   color: rgba(255, 255, 255, 0.75);
+  font-size: var(--font-size-12);
 }
 .config-warning {
   margin-top: 8px;
-  font-size: var(--font-size-12);
   color: #ffb347;
+  font-size: var(--font-size-12);
 }
 .action {
   > svg {

@@ -121,8 +121,12 @@ export type Settings = {
     hideCw: boolean;
     showReactions: boolean;
   };
-  bluesky: {
-    oauth: {
+  /**
+   * Legacy Bluesky OAuth settings.
+   * These values are now hard-coded and any persisted settings are ignored.
+   */
+  bluesky?: {
+    oauth?: {
       clientId: string;
       redirectUri: string;
       scope: string;

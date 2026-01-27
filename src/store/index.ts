@@ -75,13 +75,6 @@ const initialSettings: Settings = {
     hideCw: false,
     showReactions: true,
   },
-  bluesky: {
-    oauth: {
-      clientId: "",
-      redirectUri: "io.github.nekobato:/oauth/bluesky/callback",
-      scope: "atproto transition:generic",
-    },
-  },
 };
 
 // DBから取得した生データ全て
