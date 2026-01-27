@@ -13,7 +13,7 @@ const config = {
   protocols: [
     {
       name: "DotE OAuth Redirect",
-      schemes: ["daydream-of-the-elephants"],
+      schemes: ["io.github.nekobato"],
     },
   ],
   files: [

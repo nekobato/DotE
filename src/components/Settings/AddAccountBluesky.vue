@@ -9,7 +9,7 @@ import type { NewUser } from "@/store/users";
 
 const store = useStore();
 
-const DEFAULT_BLUESKY_REDIRECT_URI = "daydream-of-the-elephants://oauth/bluesky/callback";
+const DEFAULT_BLUESKY_REDIRECT_URI = "io.github.nekobato:/oauth/bluesky/callback";
 const DEFAULT_BLUESKY_SCOPE = "atproto transition:generic";
 
 const handle = ref("");
@@ -48,7 +48,7 @@ const isConfigReady = computed(
   () => Boolean(oauthSettings.value.clientId && oauthSettings.value.redirectUri && oauthSettings.value.scope),
 );
 const canStart = computed(() => Boolean(normalizedHandle.value && isConfigReady.value && !isAuthorizing.value));
-const usesCustomScheme = computed(() => oauthSettings.value.redirectUri.startsWith("daydream-of-the-elephants://"));
+const usesCustomScheme = computed(() => oauthSettings.value.redirectUri.startsWith("io.github.nekobato:/"));
 
 const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -98,7 +98,7 @@ const startOAuth = async () => {
           <ElInput class="account-input" v-model="handle" placeholder="@handle.bsky.social" size="small" />
         </div>
         <p v-if="normalizedHandle" class="hint">接続先候補: <span>{{ fallbackInstanceUrl }}</span></p>
-        <p v-if="usesCustomScheme" class="info">リダイレクト先: daydream-of-the-elephants://oauth/bluesky/callback</p>
+        <p v-if="usesCustomScheme" class="info">リダイレクト先: io.github.nekobato:/oauth/bluesky/callback</p>
         <p v-if="!isConfigReady" class="config-warning">クライアント設定が未構成でございます。管理者様にご確認くださいませ。</p>
       </div>
       <div class="actions">

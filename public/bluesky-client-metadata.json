@@ -3,7 +3,7 @@
   "application_type": "native",
   "client_name": "DotE Desktop",
   "redirect_uris": [
-    "daydream-of-the-elephants://oauth/bluesky/callback"
+    "io.github.nekobato:/oauth/bluesky/callback"
   ],
   "grant_types": [
     "authorization_code",

@@ -13,7 +13,7 @@ export type StoreSchema = {
   blueskySessions: Record<string, string>;
 };
 
-const DEFAULT_BLUESKY_CLIENT_ID = process.env.DOTE_BSKY_CLIENT_ID ?? "";
+const DEFAULT_BLUESKY_CLIENT_ID = "https://nekobato.github.io/DotE/bluesky-client-metadata.json";
 const DEFAULT_BLUESKY_REDIRECT_URI = process.env.DOTE_BSKY_REDIRECT_URI ?? BLUESKY_CUSTOM_REDIRECT_URI;
 const DEFAULT_BLUESKY_SCOPE = process.env.DOTE_BSKY_SCOPE ?? "atproto transition:generic";
 const DEFAULT_BLUESKY_FALLBACK_REDIRECT_URI = APP_LOOPBACK_REDIRECT_URI;
@@ -196,13 +196,14 @@ const storeInitOptions: StoreInitOptions = {
 
       const currentOauth =
         (store.get("settings.bluesky.oauth") as Partial<StoreSchema["settings"]["bluesky"]["oauth"]>) ?? {};
-      const normalizedRedirectUri =
-        !currentOauth.redirectUri || currentOauth.redirectUri === "daydream-of-the-elephants://oauth/callback"
-          ? BLUESKY_CUSTOM_REDIRECT_URI
-          : currentOauth.redirectUri;
+      const legacyRedirectUriPrefix = "daydream-of-the-elephants:";
+      const isLegacyRedirectUri = !currentOauth.redirectUri || currentOauth.redirectUri.startsWith(legacyRedirectUriPrefix);
+      const normalizedRedirectUri = isLegacyRedirectUri
+        ? BLUESKY_CUSTOM_REDIRECT_URI
+        : (currentOauth.redirectUri ?? BLUESKY_CUSTOM_REDIRECT_URI);
 
       const migratedOauth = {
-        clientId: currentOauth.clientId ?? DEFAULT_BLUESKY_CLIENT_ID,
+        clientId: DEFAULT_BLUESKY_CLIENT_ID,
         redirectUri: normalizedRedirectUri,
         scope: currentOauth.scope ?? DEFAULT_BLUESKY_SCOPE,
       } satisfies StoreSchema["settings"]["bluesky"]["oauth"];
@@ -451,7 +452,7 @@ export const getSettingAll = (): StoreSchema["settings"] => {
     ...baseSettings,
     bluesky: {
       oauth: {
-        clientId: storedOauth.clientId || DEFAULT_BLUESKY_CLIENT_ID,
+        clientId: DEFAULT_BLUESKY_CLIENT_ID,
         redirectUri: storedOauth.redirectUri || DEFAULT_BLUESKY_REDIRECT_URI,
         scope: storedOauth.scope || DEFAULT_BLUESKY_SCOPE,
       },
@@ -511,7 +512,7 @@ export const setSetting = (key: string, value: any) => {
 export const getBlueskyOAuthConfig = (): StoreSchema["settings"]["bluesky"]["oauth"] => {
   const stored = (store.get("settings.bluesky.oauth") as Partial<StoreSchema["settings"]["bluesky"]["oauth"]>) ?? {};
   return {
-    clientId: stored.clientId || DEFAULT_BLUESKY_CLIENT_ID,
+    clientId: DEFAULT_BLUESKY_CLIENT_ID,
     redirectUri: stored.redirectUri || DEFAULT_BLUESKY_REDIRECT_URI,
     scope: stored.scope || DEFAULT_BLUESKY_SCOPE,
   };

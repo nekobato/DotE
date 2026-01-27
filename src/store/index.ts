@@ -78,7 +78,7 @@ const initialSettings: Settings = {
   bluesky: {
     oauth: {
       clientId: "",
-      redirectUri: "daydream-of-the-elephants://oauth/bluesky/callback",
+      redirectUri: "io.github.nekobato:/oauth/bluesky/callback",
       scope: "atproto transition:generic",
     },
   },
