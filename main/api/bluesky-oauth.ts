@@ -68,14 +68,18 @@ export const blueskyStartOAuth = async ({
     typeof app.isDefaultProtocolClient === "function"
       ? app.isDefaultProtocolClient(APP_PROTOCOL_SCHEME)
       : true;
+  const isPackaged = app.isPackaged;
 
   let redirectUriCandidate = redirectUri ?? env.redirectUri;
   if (
     redirectUriCandidate.startsWith(APP_PROTOCOL_PREFIX) &&
-    !isCustomSchemeRegistered &&
+    (!isPackaged || !isCustomSchemeRegistered) &&
     env.loopbackRedirectUri
   ) {
-    console.warn("[oauth] Custom scheme unavailable; falling back to loopback redirect URI");
+    console.warn("[oauth] Using loopback redirect URI in this environment", {
+      isPackaged,
+      isCustomSchemeRegistered,
+    });
     redirectUriCandidate = env.loopbackRedirectUri;
   }
   const redirectUriParseResult = oauthRedirectUriSchema.safeParse(redirectUriCandidate);

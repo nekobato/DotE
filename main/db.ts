@@ -3,6 +3,7 @@ import Store, { Schema, type Options as StoreOptions } from "electron-store";
 import { nanoid } from "nanoid/non-secure";
 import type { NodeSavedSession } from "@atproto/oauth-client-node";
 import type { Instance, Timeline, User, Settings, InstanceType } from "../shared/types/store";
+import { BLUESKY_CLIENT_ID, BLUESKY_SCOPE } from "../shared/bluesky-oauth";
 import { APP_LOOPBACK_REDIRECT_URI, BLUESKY_CUSTOM_REDIRECT_URI } from "./oauth/constants";
 
 export type StoreSchema = {
@@ -13,10 +14,28 @@ export type StoreSchema = {
   blueskySessions: Record<string, string>;
 };
 
-const DEFAULT_BLUESKY_CLIENT_ID = "https://nekobato.github.io/DotE/bluesky-client-metadata.json";
-const DEFAULT_BLUESKY_REDIRECT_URI = process.env.DOTE_BSKY_REDIRECT_URI ?? BLUESKY_CUSTOM_REDIRECT_URI;
-const DEFAULT_BLUESKY_SCOPE = process.env.DOTE_BSKY_SCOPE ?? "atproto transition:generic";
+export type BlueskyOAuthConfig = {
+  clientId: string;
+  redirectUri: string;
+  scope: string;
+};
+
+const DEFAULT_BLUESKY_CLIENT_ID = BLUESKY_CLIENT_ID;
+const DEFAULT_BLUESKY_REDIRECT_URI = BLUESKY_CUSTOM_REDIRECT_URI;
+const DEFAULT_BLUESKY_SCOPE = BLUESKY_SCOPE;
 const DEFAULT_BLUESKY_FALLBACK_REDIRECT_URI = APP_LOOPBACK_REDIRECT_URI;
+const LEGACY_BLUESKY_REDIRECT_URI_PREFIX = "daydream-of-the-elephants:";
+
+/**
+ * Normalize Bluesky OAuth redirect URI to the current, spec-compliant custom scheme.
+ * Legacy values are upgraded eagerly so persisted settings cannot keep the app broken.
+ */
+const normalizeBlueskyRedirectUri = (value?: string): string => {
+  if (!value || value.startsWith(LEGACY_BLUESKY_REDIRECT_URI_PREFIX)) {
+    return BLUESKY_CUSTOM_REDIRECT_URI;
+  }
+  return value;
+};
 
 export const storeDefaults: StoreSchema = {
   users: [],
@@ -48,13 +67,6 @@ export const storeDefaults: StoreSchema = {
     misskey: {
       hideCw: false,
       showReactions: true,
-    },
-    bluesky: {
-      oauth: {
-        clientId: DEFAULT_BLUESKY_CLIENT_ID,
-        redirectUri: DEFAULT_BLUESKY_REDIRECT_URI,
-        scope: DEFAULT_BLUESKY_SCOPE,
-      },
     },
   },
   blueskySessions: {},
@@ -189,26 +201,6 @@ const storeInitOptions: StoreInitOptions = {
         store.set("settings", storeDefaults.settings);
         return;
       }
-
-      if (!settings.bluesky || typeof settings.bluesky !== "object") {
-        store.set("settings.bluesky", { oauth: { ...storeDefaults.settings.bluesky.oauth } });
-      }
-
-      const currentOauth =
-        (store.get("settings.bluesky.oauth") as Partial<StoreSchema["settings"]["bluesky"]["oauth"]>) ?? {};
-      const legacyRedirectUriPrefix = "daydream-of-the-elephants:";
-      const isLegacyRedirectUri = !currentOauth.redirectUri || currentOauth.redirectUri.startsWith(legacyRedirectUriPrefix);
-      const normalizedRedirectUri = isLegacyRedirectUri
-        ? BLUESKY_CUSTOM_REDIRECT_URI
-        : (currentOauth.redirectUri ?? BLUESKY_CUSTOM_REDIRECT_URI);
-
-      const migratedOauth = {
-        clientId: DEFAULT_BLUESKY_CLIENT_ID,
-        redirectUri: normalizedRedirectUri,
-        scope: currentOauth.scope ?? DEFAULT_BLUESKY_SCOPE,
-      } satisfies StoreSchema["settings"]["bluesky"]["oauth"];
-
-      store.set("settings.bluesky.oauth", migratedOauth);
     },
   },
 };
@@ -442,21 +434,9 @@ export const deleteBlueskyOAuthSession = (did: string) => {
 
 export const getSettingAll = (): StoreSchema["settings"] => {
   const settings = store.get("settings") as Partial<StoreSchema["settings"]> | undefined;
-  const baseSettings = {
+  return {
     ...storeDefaults.settings,
     ...(settings ?? {}),
-  } as StoreSchema["settings"];
-  const storedOauth = settings?.bluesky?.oauth ?? baseSettings.bluesky?.oauth ?? {};
-
-  return {
-    ...baseSettings,
-    bluesky: {
-      oauth: {
-        clientId: DEFAULT_BLUESKY_CLIENT_ID,
-        redirectUri: storedOauth.redirectUri || DEFAULT_BLUESKY_REDIRECT_URI,
-        scope: storedOauth.scope || DEFAULT_BLUESKY_SCOPE,
-      },
-    },
   };
 };
 
@@ -498,23 +478,16 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.misskey.showReactions", value);
     case "text2Speech.enabled":
       return store.set("settings.text2Speech.enabled", value);
-    case "bluesky.oauth.clientId":
-      return store.set("settings.bluesky.oauth.clientId", value);
-    case "bluesky.oauth.redirectUri":
-      return store.set("settings.bluesky.oauth.redirectUri", value);
-    case "bluesky.oauth.scope":
-      return store.set("settings.bluesky.oauth.scope", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }
 };
 
-export const getBlueskyOAuthConfig = (): StoreSchema["settings"]["bluesky"]["oauth"] => {
-  const stored = (store.get("settings.bluesky.oauth") as Partial<StoreSchema["settings"]["bluesky"]["oauth"]>) ?? {};
+export const getBlueskyOAuthConfig = (): BlueskyOAuthConfig => {
   return {
     clientId: DEFAULT_BLUESKY_CLIENT_ID,
-    redirectUri: stored.redirectUri || DEFAULT_BLUESKY_REDIRECT_URI,
-    scope: stored.scope || DEFAULT_BLUESKY_SCOPE,
+    redirectUri: normalizeBlueskyRedirectUri(DEFAULT_BLUESKY_REDIRECT_URI),
+    scope: DEFAULT_BLUESKY_SCOPE,
   };
 };
 
