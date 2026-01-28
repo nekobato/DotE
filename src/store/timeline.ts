@@ -179,7 +179,9 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updatePost = <T extends DotEPost>(post: T) => {
-    updatePostAcrossTimelines(store.timelines, post);
+    const userId = currentUser.value?.id;
+    if (!userId) return;
+    updatePostAcrossTimelines(store.timelines, post, userId);
   };
 
   const removePost = (postId: string) => {

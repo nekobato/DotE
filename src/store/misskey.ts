@@ -179,7 +179,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     });
     const res = unwrapApiResult(result, `${postId}の取得失敗`);
     if (!res) return;
-    updatePostAcrossTimelines(store.timelines, res);
+    updatePostAcrossTimelines(store.timelines, res, timeline.currentUser.id);
   };
 
   const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {

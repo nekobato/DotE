@@ -20,7 +20,7 @@ const isMastodonToot = (post: DotEPost): post is MastodonToot => {
   return "reblogs_count" in post && "favourites_count" in post && "reblogged" in post;
 };
 
-const updateMisskeyRenote = (note: MisskeyNote, updated: IdentifiedPost): boolean => {
+const updateMisskeyRenote = (note: MisskeyNote, updated: MisskeyNote): boolean => {
   const renote = note.renote as MisskeyNote | undefined;
   if (!renote) return false;
   if (renote.id === updated.id) {
@@ -30,21 +30,21 @@ const updateMisskeyRenote = (note: MisskeyNote, updated: IdentifiedPost): boolea
   return updateMisskeyRenote(renote, updated);
 };
 
-const updateMastodonReblog = (toot: MastodonToot, updated: IdentifiedPost): boolean => {
+const updateMastodonReblog = (toot: MastodonToot, updated: MastodonToot): boolean => {
   const reblog = toot.reblog as MastodonToot | undefined;
   if (!reblog) return false;
   if (reblog.id === updated.id) {
-    toot.reblog = updated as MastodonToot;
+    toot.reblog = updated as Omit<MastodonToot, "reblog">;
     return true;
   }
   return updateMastodonReblog(reblog, updated);
 };
 
-const updateNestedReference = (post: DotEPost, updated: IdentifiedPost): boolean => {
-  if (isMisskeyNote(post)) {
+const updateNestedReference = (post: DotEPost, updated: DotEPost): boolean => {
+  if (isMisskeyNote(post) && isMisskeyNote(updated)) {
     return updateMisskeyRenote(post, updated);
   }
-  if (isMastodonToot(post)) {
+  if (isMastodonToot(post) && isMastodonToot(updated)) {
     return updateMastodonReblog(post, updated);
   }
   return false;
@@ -55,10 +55,20 @@ const updatePostsInTimeline = (timeline: TimelineStore, updated: IdentifiedPost)
     return 0;
   }
 
+  const updatedIsMisskey = isMisskeyNote(updated);
+  const updatedIsMastodon = isMastodonToot(updated);
+
   let count = 0;
   for (let index = 0; index < timeline.posts.length; index += 1) {
     const post = timeline.posts[index];
-    if (hasId(post) && post.id === updated.id) {
+    const postIsMisskey = isMisskeyNote(post);
+    const postIsMastodon = isMastodonToot(post);
+    const isCompatible =
+      (postIsMisskey && updatedIsMisskey) ||
+      (postIsMastodon && updatedIsMastodon) ||
+      (!postIsMisskey && !postIsMastodon && !updatedIsMisskey && !updatedIsMastodon);
+
+    if (hasId(post) && post.id === updated.id && isCompatible) {
       timeline.posts.splice(index, 1, updated);
       count += 1;
       continue;
@@ -72,12 +82,17 @@ const updatePostsInTimeline = (timeline: TimelineStore, updated: IdentifiedPost)
   return count;
 };
 
-export const updatePostAcrossTimelines = (timelines: TimelineStore[], updated: DotEPost): UpdateResult => {
-  if (!hasId(updated)) {
+export const updatePostAcrossTimelines = (
+  timelines: TimelineStore[],
+  updated: DotEPost,
+  userId: string,
+): UpdateResult => {
+  if (!hasId(updated) || !userId) {
     return { updatedCount: 0 };
   }
 
   const updatedCount = timelines.reduce((total, timeline) => {
+    if (timeline.userId !== userId) return total;
     return total + updatePostsInTimeline(timeline, updated);
   }, 0);
 

@@ -86,7 +86,7 @@ export const useMastodonStore = defineStore("mastodon", () => {
     });
     const res = unwrapApiResult(result, `${id}の取得失敗`);
     if (!res) return;
-    updatePostAcrossTimelines(store.timelines, res);
+    updatePostAcrossTimelines(store.timelines, res, timeline.currentUser.id);
   };
 
   const fetchPosts = async () => {
