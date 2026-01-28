@@ -6,9 +6,19 @@ import { MisskeyNote } from "@shared/types/misskey";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
 
+type FetchNoteParams = {
+  postId: string;
+  instanceUrl: string;
+  token: string;
+  userId: string;
+};
+
 export const useMisskeyStore = defineStore("misskey", () => {
   const store = useStore();
   let timelineStore: ReturnType<typeof useTimelineStore>;
+  const reactionEmojiRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const reactionEmojiRefreshInFlight = new Set<string>();
+  const reactionEmojiRefreshDelay = 500;
 
   // 初期化時に循環参照を避けるため、遅延初期化
   const getTimelineStore = () => {
@@ -38,7 +48,10 @@ export const useMisskeyStore = defineStore("misskey", () => {
     return (post as MisskeyNote).reactionEmojis !== undefined;
   };
 
-  const forEachMisskeyNote = (callback: (note: MisskeyNote) => void) => {
+  const forEachMisskeyNote = (
+    callback: (note: MisskeyNote) => void,
+    options?: { userId?: string },
+  ) => {
     const visited = new WeakSet<MisskeyNote>();
     const traverse = (note?: MisskeyNote) => {
       if (!note || visited.has(note)) return;
@@ -51,6 +64,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     };
 
     store.timelines.forEach((timeline: TimelineStore) => {
+      if (options?.userId && timeline.userId !== options.userId) return;
       timeline.posts.forEach((post: DotEPost) => {
         if (!isMisskeyNotePost(post)) return;
         traverse(post);
@@ -58,21 +72,25 @@ export const useMisskeyStore = defineStore("misskey", () => {
     });
   };
 
-  const updateNotesById = (noteId: string, updater: (note: MisskeyNote) => void) => {
+  const updateNotesById = (
+    noteId: string,
+    updater: (note: MisskeyNote) => void,
+    options?: { userId?: string },
+  ) => {
     forEachMisskeyNote((note) => {
       if (note.id === noteId) {
         updater(note);
       }
-    });
+    }, options);
   };
 
-  const findNoteById = (noteId: string): MisskeyNote | undefined => {
+  const findNoteById = (noteId: string, options?: { userId?: string }): MisskeyNote | undefined => {
     let found: MisskeyNote | undefined;
     forEachMisskeyNote((note) => {
       if (!found && note.id === noteId) {
         found = note;
       }
-    });
+    }, options);
     return found;
   };
 
@@ -95,6 +113,18 @@ export const useMisskeyStore = defineStore("misskey", () => {
     updateNotesById(postId, (note) => {
       incrementReaction(note, name);
     });
+  };
+
+  const fetchNoteById = async ({ postId, instanceUrl, token, userId }: FetchNoteParams) => {
+    const result = await ipcInvoke("api", {
+      method: "misskey:getNote",
+      instanceUrl,
+      token,
+      noteId: postId,
+    });
+    const res = unwrapApiResult(result, `${postId}の取得失敗`);
+    if (!res) return;
+    updatePostAcrossTimelines(store.timelines, res, userId);
   };
 
   const createMyReaction = async (postId: string, reaction: string) => {
@@ -171,15 +201,14 @@ export const useMisskeyStore = defineStore("misskey", () => {
     const timeline = getTimelineStore();
     if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
 
-    const result = await ipcInvoke("api", {
-      method: "misskey:getNote",
-      instanceUrl: timeline.currentInstance?.url,
+    const instanceUrl = timeline.currentInstance?.url;
+    if (!instanceUrl) return;
+    await fetchNoteById({
+      postId,
+      instanceUrl,
       token: timeline.currentUser.token,
-      noteId: postId,
+      userId: timeline.currentUser.id,
     });
-    const res = unwrapApiResult(result, `${postId}の取得失敗`);
-    if (!res) return;
-    updatePostAcrossTimelines(store.timelines, res, timeline.currentUser.id);
   };
 
   const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
@@ -191,6 +220,60 @@ export const useMisskeyStore = defineStore("misskey", () => {
   const removeReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     updateNotesById(postId, (note) => {
       decrementReaction(note, reaction);
+    });
+  };
+
+  const normalizeReactionEmojiKey = (reaction: string) => {
+    return reaction.replace(/:|@\./g, "");
+  };
+
+  const hasReactionEmoji = (note: MisskeyNote, reactionKey: string) => {
+    if (note.reactionEmojis?.[reactionKey]) return true;
+    const renote = note.renote as MisskeyNote | undefined;
+    return Boolean(renote?.reactionEmojis?.[reactionKey]);
+  };
+
+  const shouldRefreshReactionEmoji = (postId: string, reaction: string, userId: string) => {
+    if (!reaction.startsWith(":")) return false;
+    const note = findNoteById(postId, { userId });
+    if (!note) return false;
+    const reactionKey = normalizeReactionEmojiKey(reaction);
+    if (!reactionKey) return false;
+    return !hasReactionEmoji(note, reactionKey);
+  };
+
+  const scheduleReactionEmojiRefresh = (params: FetchNoteParams) => {
+    const timerKey = `${params.userId}:${params.postId}`;
+    const existingTimer = reactionEmojiRefreshTimers.get(timerKey);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+    const timer = setTimeout(async () => {
+      reactionEmojiRefreshTimers.delete(timerKey);
+      if (reactionEmojiRefreshInFlight.has(timerKey)) return;
+      reactionEmojiRefreshInFlight.add(timerKey);
+      try {
+        await fetchNoteById(params);
+      } finally {
+        reactionEmojiRefreshInFlight.delete(timerKey);
+      }
+    }, reactionEmojiRefreshDelay);
+    reactionEmojiRefreshTimers.set(timerKey, timer);
+  };
+
+  const ensureReactionEmoji = ({ postId, reaction }: { postId: string; reaction: string }) => {
+    const timeline = getTimelineStore();
+    const currentUser = timeline.currentUser;
+    const instanceUrl = timeline.currentInstance?.url;
+    if (!currentUser || !instanceUrl) return;
+
+    if (!shouldRefreshReactionEmoji(postId, reaction, currentUser.id)) return;
+
+    scheduleReactionEmojiRefresh({
+      postId,
+      instanceUrl,
+      token: currentUser.token,
+      userId: currentUser.id,
     });
   };
 
@@ -301,6 +384,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     createMyReaction,
     deleteMyReaction,
     updatePost,
+    ensureReactionEmoji,
     addReaction,
     removeReaction,
     getFollowedChannels,

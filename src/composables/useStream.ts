@@ -36,9 +36,11 @@ export function useStream() {
       switch (event) {
         case "reacted":
           await misskeyStore.addReaction({ postId: data.id, reaction: data.body.reaction });
+          misskeyStore.ensureReactionEmoji({ postId: data.id, reaction: data.body.reaction });
           break;
         case "unreacted":
           await misskeyStore.removeReaction({ postId: data.id, reaction: data.body.reaction });
+          misskeyStore.ensureReactionEmoji({ postId: data.id, reaction: data.body.reaction });
           break;
         default:
           console.warn("unhandled noteUpdated", data);
