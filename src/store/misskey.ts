@@ -18,6 +18,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
   let timelineStore: ReturnType<typeof useTimelineStore>;
   const reactionEmojiRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>();
   const reactionEmojiRefreshInFlight = new Set<string>();
+  const reactionEmojiRefreshPending = new Set<string>();
   const reactionEmojiRefreshDelay = 500;
 
   // 初期化時に循環参照を避けるため、遅延初期化
@@ -237,6 +238,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     if (!reaction.startsWith(":")) return false;
     const note = findNoteById(postId, { userId });
     if (!note) return false;
+    if (!note.reactions?.[reaction]) return false;
     const reactionKey = normalizeReactionEmojiKey(reaction);
     if (!reactionKey) return false;
     return !hasReactionEmoji(note, reactionKey);
@@ -244,18 +246,29 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   const scheduleReactionEmojiRefresh = (params: FetchNoteParams) => {
     const timerKey = `${params.userId}:${params.postId}`;
+    if (reactionEmojiRefreshInFlight.has(timerKey)) {
+      reactionEmojiRefreshPending.add(timerKey);
+      return;
+    }
     const existingTimer = reactionEmojiRefreshTimers.get(timerKey);
     if (existingTimer) {
       clearTimeout(existingTimer);
     }
     const timer = setTimeout(async () => {
       reactionEmojiRefreshTimers.delete(timerKey);
-      if (reactionEmojiRefreshInFlight.has(timerKey)) return;
+      if (reactionEmojiRefreshInFlight.has(timerKey)) {
+        reactionEmojiRefreshPending.add(timerKey);
+        return;
+      }
       reactionEmojiRefreshInFlight.add(timerKey);
       try {
         await fetchNoteById(params);
       } finally {
         reactionEmojiRefreshInFlight.delete(timerKey);
+        if (reactionEmojiRefreshPending.has(timerKey)) {
+          reactionEmojiRefreshPending.delete(timerKey);
+          scheduleReactionEmojiRefresh(params);
+        }
       }
     }, reactionEmojiRefreshDelay);
     reactionEmojiRefreshTimers.set(timerKey, timer);
