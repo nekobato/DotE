@@ -5,12 +5,10 @@ interface Props {
   visible: boolean;
 }
 
-interface Emits {
-  scrollToTop: [];
-}
-
 defineProps<Props>();
-const emit = defineEmits<Emits>();
+const emit = defineEmits<{
+  (event: "scrollToTop"): void;
+}>();
 
 const handleClick = () => {
   emit("scrollToTop");

@@ -9,6 +9,7 @@ import { defaultChannelNameFromType } from "@/utils/dote";
 import { useBlueskyStore } from "./bluesky";
 import { useMisskeyStore } from "./misskey";
 import { useMastodonStore } from "./mastodon";
+import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -178,11 +179,9 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const updatePost = <T extends DotEPost>(post: T) => {
-    const currentPosts = store.timelines[currentIndex.value].posts as T[];
-    if (!currentPosts) return;
-    const postIndex = currentPosts.findIndex((p: T) => p.id === post.id);
-    if (postIndex === -1) return;
-    currentPosts.splice(postIndex, 1, post);
+    const userId = currentUser.value?.id;
+    if (!userId) return;
+    updatePostAcrossTimelines(store.timelines, post, userId);
   };
 
   const removePost = (postId: string) => {

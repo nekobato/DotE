@@ -4,6 +4,7 @@ import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import { MisskeyNote } from "@shared/types/misskey";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
 
 export const useMisskeyStore = defineStore("misskey", () => {
   const store = useStore();
@@ -178,10 +179,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     });
     const res = unwrapApiResult(result, `${postId}の取得失敗`);
     if (!res) return;
-    const postIndex = timeline.current?.posts.findIndex((p: DotEPost) => p.id === postId);
-    if (!postIndex) return;
-
-    store.timelines[timeline.currentIndex].posts.splice(postIndex, 1, res);
+    updatePostAcrossTimelines(store.timelines, res, timeline.currentUser.id);
   };
 
   const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
