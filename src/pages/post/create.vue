@@ -32,6 +32,7 @@ type AttachmentItem = {
   previewUrl?: string;
   status: UploadStatus;
   fileId?: string;
+  mediaId?: string;
   error?: string;
 };
 
@@ -82,11 +83,16 @@ const canUseEmojiPicker = computed(
   () => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0,
 );
 const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
-const canUseAttachments = computed(() => state.instance?.type === "misskey");
+const canUseAttachments = computed(
+  () => state.instance?.type === "misskey" || state.instance?.type === "mastodon",
+);
 const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.status === "uploading"));
 const hasFailedAttachments = computed(() => attachments.value.some((item) => item.status === "failed"));
 const uploadedMisskeyFileIds = computed(() =>
   attachments.value.filter((item) => item.status === "uploaded" && item.fileId).map((item) => item.fileId as string),
+);
+const uploadedMastodonMediaIds = computed(() =>
+  attachments.value.filter((item) => item.status === "uploaded" && item.mediaId).map((item) => item.mediaId as string),
 );
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
@@ -199,6 +205,9 @@ const canSubmit = computed(() => {
     if (state.instance?.type === "misskey") {
       return text.value.length > 0 || uploadedMisskeyFileIds.value.length > 0;
     }
+    if (state.instance?.type === "mastodon") {
+      return text.value.length > 0 || uploadedMastodonMediaIds.value.length > 0;
+    }
     return text.value.length > 0;
   }
   return true;
@@ -254,6 +263,30 @@ const uploadMisskeyFile = async (item: AttachmentItem) => {
   }));
 };
 
+const uploadMastodonMedia = async (item: AttachmentItem) => {
+  const result = await ipcInvoke("api", {
+    method: "mastodon:uploadMedia",
+    instanceUrl: state.instance?.url,
+    token: state.user?.token,
+    filePath: item.path,
+    fileType: item.type,
+  });
+  const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} へのアップロードに失敗しました`);
+  if (!res || !(res as { id?: string }).id) {
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      status: "failed",
+      error: "アップロードに失敗しました",
+    }));
+    return;
+  }
+  updateAttachment(item.id, (current) => ({
+    ...current,
+    status: "uploaded",
+    mediaId: (res as { id: string }).id,
+  }));
+};
+
 const addAttachment = async (file: File) => {
   const filePath = (file as FileWithPath).path;
   if (!filePath) {
@@ -273,7 +306,13 @@ const addAttachment = async (file: File) => {
   };
 
   attachments.value = [...attachments.value, item];
-  await uploadMisskeyFile(item);
+  if (state.instance?.type === "misskey") {
+    await uploadMisskeyFile(item);
+    return;
+  }
+  if (state.instance?.type === "mastodon") {
+    await uploadMastodonMedia(item);
+  }
 };
 
 const onSelectFiles = async (event: Event) => {
@@ -334,13 +373,14 @@ const postToMisskey = async () => {
 };
 
 const postToMastodon = async () => {
+  const mediaIds = uploadedMastodonMediaIds.value.length ? uploadedMastodonMediaIds.value : undefined;
   const result = await ipcInvoke("api", {
     method: "mastodon:postStatus",
     instanceUrl: state.instance?.url,
     token: state.user?.token,
     status: text.value,
     // inReplyToId: null,
-    // mediaIds: [],
+    mediaIds,
     // sensitive: false,
     // spoilerText: null,
     // visibility: "public",
@@ -348,6 +388,7 @@ const postToMastodon = async () => {
   const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} への投稿に失敗しました`);
   if (res?.id) {
     text.value = "";
+    clearAttachments();
     ipcSend("post:close");
   }
 };
