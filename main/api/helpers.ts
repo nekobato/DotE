@@ -125,3 +125,77 @@ export const requestJsonAllowEmpty = async <T>(url: string, init?: Parameters<ty
 };
 
 export type { ApiErrorPayload };
+
+type MultipartField = {
+  name: string;
+  value: string | number | boolean;
+};
+
+type MultipartFile = {
+  name: string;
+  filename: string;
+  data: Buffer;
+  contentType?: string;
+};
+
+const CRLF = "\r\n";
+
+const appendField = (buffers: Buffer[], boundary: string, field: MultipartField) => {
+  buffers.push(Buffer.from(`--${boundary}${CRLF}`));
+  buffers.push(Buffer.from(`Content-Disposition: form-data; name="${field.name}"${CRLF}${CRLF}`));
+  buffers.push(Buffer.from(String(field.value)));
+  buffers.push(Buffer.from(CRLF));
+};
+
+const appendFile = (buffers: Buffer[], boundary: string, file: MultipartFile) => {
+  buffers.push(Buffer.from(`--${boundary}${CRLF}`));
+  buffers.push(
+    Buffer.from(`Content-Disposition: form-data; name="${file.name}"; filename="${file.filename}"${CRLF}`),
+  );
+  buffers.push(Buffer.from(`Content-Type: ${file.contentType || "application/octet-stream"}${CRLF}${CRLF}`));
+  buffers.push(file.data);
+  buffers.push(Buffer.from(CRLF));
+};
+
+export const buildMultipartFormData = ({
+  fields,
+  file,
+}: {
+  fields: MultipartField[];
+  file: MultipartFile;
+}): { body: Buffer; contentType: string } => {
+  const boundary = `----DotEFormBoundary${Math.random().toString(16).slice(2)}`;
+  const buffers: Buffer[] = [];
+  fields.forEach((field) => appendField(buffers, boundary, field));
+  appendFile(buffers, boundary, file);
+  buffers.push(Buffer.from(`--${boundary}--${CRLF}`));
+
+  return {
+    body: Buffer.concat(buffers),
+    contentType: `multipart/form-data; boundary=${boundary}`,
+  };
+};
+
+export const requestFormData = async <T>(
+  url: string,
+  options: {
+    body: Buffer;
+    contentType: string;
+    headers?: Record<string, string>;
+    method?: string;
+  },
+): Promise<T> => {
+  return requestJsonInternal(
+    url,
+    {
+      method: options.method ?? "POST",
+      headers: {
+        ...(options.headers ?? {}),
+        "content-type": options.contentType,
+        "content-length": options.body.length.toString(),
+      },
+      body: options.body,
+    },
+    { allowEmpty: false },
+  );
+};

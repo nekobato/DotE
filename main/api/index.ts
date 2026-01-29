@@ -7,6 +7,7 @@ export const apiRequest = {
   ["misskey:checkMiAuth"]: misskeyRequest.misskeyCheckMiAuth,
   ["misskey:getI"]: misskeyRequest.missekyGetI,
   ["misskey:getEmojis"]: misskeyRequest.misskeyGetEmojis,
+  ["misskey:uploadFile"]: misskeyRequest.misskeyUploadFile,
   ["misskey:getTimelineHome"]: misskeyRequest.misskeyGetTimelineHome,
   ["misskey:getTimelineLocal"]: misskeyRequest.misskeyGetTimelineLocal,
   ["misskey:getTimelineGlobal"]: misskeyRequest.misskeyGetTimelineGlobal,
