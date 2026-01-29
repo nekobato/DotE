@@ -4,6 +4,7 @@ import DoteButton from "@/components/common/DoteButton.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
+import Mfm from "@/components/misskey/Mfm.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
@@ -50,6 +51,7 @@ const state = reactive({
 const text = ref("");
 const textCw = ref("");
 const showEmojiPicker = ref(false);
+const showMfmPreview = ref(false);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
@@ -61,6 +63,7 @@ const postFontStyle = computed(() => ({
 const canUseEmojiPicker = computed(
   () => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0,
 );
+const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -297,6 +300,10 @@ const toggleEmojiPicker = async () => {
   }
 };
 
+const toggleMfmPreview = () => {
+  showMfmPreview.value = !showMfmPreview.value;
+};
+
 const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
   await insertEmojiAtCursor(emoji.name);
 };
@@ -334,14 +341,30 @@ document.addEventListener("keydown", (e) => {
     <div class="post-layout">
       <div class="post-field-container">
         <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" ref="textInputRef" />
-        <div class="post-tools" v-if="canUseEmojiPicker">
-          <button class="nn-button size-small tool-button" @click="toggleEmojiPicker">
+        <div class="post-tools" v-if="canUseEmojiPicker || canUseMfmPreview">
+          <button v-if="canUseEmojiPicker" class="nn-button size-small tool-button" @click="toggleEmojiPicker">
             <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
             <span>絵文字</span>
+          </button>
+          <button
+            v-if="canUseMfmPreview"
+            class="nn-button size-small tool-button"
+            :class="{ active: showMfmPreview }"
+            @click="toggleMfmPreview"
+          >
+            <Icon icon="mingcute:eye-2-line" class="nn-icon size-xsmall" />
+            <span>プレビュー</span>
           </button>
         </div>
         <div class="emoji-picker-panel" v-if="canUseEmojiPicker && showEmojiPicker">
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
+        </div>
+        <div class="mfm-preview-panel" v-if="canUseMfmPreview && showMfmPreview">
+          <div class="mfm-preview-header">MFM プレビュー</div>
+          <div class="mfm-preview-body">
+            <Mfm :text="text" :emojis="props.data.emojis || []" :host="state.instance?.url" postStyle="all" />
+            <div class="mfm-preview-empty" v-if="text.length === 0">本文を入力するとプレビューが表示されます</div>
+          </div>
         </div>
         <DoteAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
@@ -447,6 +470,9 @@ document.addEventListener("keydown", (e) => {
   &:hover {
     background: var(--dote-color-white-t2);
   }
+  &.active {
+    background: var(--dote-color-white-t2);
+  }
 }
 .emoji-picker-panel {
   height: 240px;
@@ -455,6 +481,28 @@ document.addEventListener("keydown", (e) => {
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
   background-color: var(--dote-background-color);
+}
+.mfm-preview-panel {
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+  background-color: var(--dote-background-color);
+}
+.mfm-preview-header {
+  padding: 6px 10px;
+  color: var(--dote-color-white-t5);
+  font-size: 0.65rem;
+  border-bottom: 1px solid var(--dote-color-white-t1);
+}
+.mfm-preview-body {
+  max-height: 240px;
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+.mfm-preview-empty {
+  color: var(--dote-color-white-t3);
+  font-size: 0.7rem;
 }
 .post-settings {
   display: flex;
