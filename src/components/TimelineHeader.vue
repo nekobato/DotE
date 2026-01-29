@@ -64,6 +64,11 @@ const timelineWithImages = computed(() => {
   });
 });
 
+const currentEmojis = computed(() => {
+  if (timelineStore.currentInstance?.type !== "misskey") return [];
+  return timelineStore.currentInstance.misskey?.emojis || [];
+});
+
 const toggleMenu = () => {
   isDetailVisible.value = !isDetailVisible.value;
 };
@@ -75,7 +80,9 @@ const haze = () => {
 
 const post = () => {
   toggleMenu();
-  ipcSend("post:create");
+  ipcSend("post:create", {
+    emojis: currentEmojis.value,
+  });
 };
 
 const reload = () => {
