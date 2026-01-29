@@ -383,6 +383,11 @@ export const misskeyCreateNote = async ({
   text,
   cw,
   visibility,
+  localOnly,
+  noExtractMentions,
+  noExtractHashtags,
+  noExtractEmojis,
+  noExtractLinks,
   replyId,
   renoteId,
   poll,
@@ -393,6 +398,11 @@ export const misskeyCreateNote = async ({
   text: string;
   cw: string | null;
   visibility?: string;
+  localOnly?: boolean;
+  noExtractMentions?: boolean;
+  noExtractHashtags?: boolean;
+  noExtractEmojis?: boolean;
+  noExtractLinks?: boolean;
   replyId?: string;
   renoteId?: string;
   poll?: any;
@@ -407,6 +417,11 @@ export const misskeyCreateNote = async ({
       text,
       cw,
       visibility,
+      localOnly,
+      noExtractMentions,
+      noExtractHashtags,
+      noExtractEmojis,
+      noExtractLinks,
       replyId,
       renoteId,
       poll,

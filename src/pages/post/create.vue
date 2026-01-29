@@ -69,6 +69,7 @@ const text = ref("");
 const textCw = ref("");
 const showEmojiPicker = ref(false);
 const showMfmPreview = ref(false);
+const showMisskeyOptions = ref(false);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
@@ -76,6 +77,12 @@ const emojiPickerRef = ref<{
 const textInputRef = ref<{ textarea?: HTMLTextAreaElement | null } | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const attachments = ref<AttachmentItem[]>([]);
+const misskeyVisibility = ref<"public" | "home" | "followers">("public");
+const misskeyLocalOnly = ref(false);
+const misskeyNoExtractMentions = ref(false);
+const misskeyNoExtractHashtags = ref(false);
+const misskeyNoExtractEmojis = ref(false);
+const misskeyNoExtractLinks = ref(false);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
@@ -86,6 +93,7 @@ const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
 const canUseAttachments = computed(
   () => state.instance?.type === "misskey" || state.instance?.type === "mastodon",
 );
+const canUseMisskeyOptions = computed(() => state.instance?.type === "misskey");
 const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.status === "uploading"));
 const hasFailedAttachments = computed(() => attachments.value.some((item) => item.status === "failed"));
 const uploadedMisskeyFileIds = computed(() =>
@@ -349,15 +357,15 @@ const postToMisskey = async () => {
     instanceUrl: state.instance?.url,
     token: state.user?.token,
     i: state.user?.token,
-    // visibility: "public",
+    visibility: misskeyVisibility.value,
     // visibleUserIds: [],
     text: text.value || null,
     cw: textCw.value || null,
-    // localOnly: false,
-    // noExtractMentions: false,
-    // noExtractHashtags: false,
-    // noExtractEmojis: false,
-    // noExtractLinks: false,
+    localOnly: misskeyLocalOnly.value,
+    noExtractMentions: misskeyNoExtractMentions.value,
+    noExtractHashtags: misskeyNoExtractHashtags.value,
+    noExtractEmojis: misskeyNoExtractEmojis.value,
+    noExtractLinks: misskeyNoExtractLinks.value,
     // poll: null,
     // replyId: null,
     renoteId: renoteId || null,
@@ -473,6 +481,10 @@ const toggleMfmPreview = () => {
   showMfmPreview.value = !showMfmPreview.value;
 };
 
+const toggleMisskeyOptions = () => {
+  showMisskeyOptions.value = !showMisskeyOptions.value;
+};
+
 const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
   await insertEmojiAtCursor(emoji.name);
 };
@@ -529,6 +541,16 @@ document.addEventListener("keydown", (e) => {
             <span>プレビュー</span>
           </button>
         </div>
+        <div class="post-tools" v-if="canUseMisskeyOptions">
+          <button
+            class="nn-button size-small tool-button"
+            :class="{ active: showMisskeyOptions }"
+            @click="toggleMisskeyOptions"
+          >
+            <Icon icon="mingcute:settings-4-line" class="nn-icon size-xsmall" />
+            <span>投稿設定</span>
+          </button>
+        </div>
         <div class="post-tools" v-if="canUseAttachments">
           <button class="nn-button size-small tool-button" @click="openFilePicker">
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
@@ -544,6 +566,42 @@ document.addEventListener("keydown", (e) => {
           <div class="mfm-preview-body">
             <Mfm :text="text" :emojis="props.data.emojis || []" :host="state.instance?.url" postStyle="all" />
             <div class="mfm-preview-empty" v-if="text.length === 0">本文を入力するとプレビューが表示されます</div>
+          </div>
+        </div>
+        <div class="misskey-options" v-if="canUseMisskeyOptions && showMisskeyOptions">
+          <div class="misskey-options-row">
+            <label class="nn-label">公開範囲</label>
+            <select class="nn-select" v-model="misskeyVisibility">
+              <option value="public">public</option>
+              <option value="home">home</option>
+              <option value="followers">followers</option>
+            </select>
+          </div>
+          <div class="misskey-options-row">
+            <label class="nn-label">CW</label>
+            <input class="nn-text-field cw-input" type="text" v-model="textCw" placeholder="内容に注意が必要な場合" />
+          </div>
+          <div class="misskey-options-group">
+            <label class="nn-checkbox">
+              <input type="checkbox" v-model="misskeyLocalOnly" />
+              <span>ローカルのみに投稿</span>
+            </label>
+            <label class="nn-checkbox">
+              <input type="checkbox" v-model="misskeyNoExtractMentions" />
+              <span>メンションの自動抽出を無効化</span>
+            </label>
+            <label class="nn-checkbox">
+              <input type="checkbox" v-model="misskeyNoExtractHashtags" />
+              <span>ハッシュタグの自動抽出を無効化</span>
+            </label>
+            <label class="nn-checkbox">
+              <input type="checkbox" v-model="misskeyNoExtractEmojis" />
+              <span>絵文字の自動抽出を無効化</span>
+            </label>
+            <label class="nn-checkbox">
+              <input type="checkbox" v-model="misskeyNoExtractLinks" />
+              <span>リンクの自動抽出を無効化</span>
+            </label>
           </div>
         </div>
         <div class="attachments-panel" v-if="attachments.length">
@@ -712,6 +770,35 @@ document.addEventListener("keydown", (e) => {
 }
 .mfm-preview-empty {
   color: var(--dote-color-white-t3);
+  font-size: 0.7rem;
+}
+.misskey-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+  background-color: var(--dote-background-color);
+}
+.misskey-options-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.misskey-options-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  .nn-checkbox span {
+    color: var(--dote-color-white-t5);
+    font-size: 0.65rem;
+  }
+}
+.cw-input {
+  width: 100%;
+  height: 28px;
   font-size: 0.7rem;
 }
 .attachments-panel {
