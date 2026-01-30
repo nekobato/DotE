@@ -7,7 +7,7 @@ import EmojiPicker from "@/components/EmojiPicker.vue";
 import Mfm from "@/components/misskey/Mfm.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
@@ -88,6 +88,7 @@ const hasFailedAttachments = computed(() => attachments.value.some((item) => ite
 const uploadedMisskeyFileIds = computed(() =>
   attachments.value.filter((item) => item.status === "uploaded" && item.fileId).map((item) => item.fileId as string),
 );
+const hasAttachments = computed(() => attachments.value.length > 0);
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -197,7 +198,7 @@ const canSubmit = computed(() => {
 
   if (submitType.value === "note" || submitType.value === "toot" || submitType.value === "post") {
     if (state.instance?.type === "misskey") {
-      return text.value.length > 0 || uploadedMisskeyFileIds.value.length > 0;
+      return text.value.length > 0 || hasAttachments.value;
     }
     return text.value.length > 0;
   }
@@ -230,32 +231,63 @@ const clearAttachments = () => {
   attachments.value = [];
 };
 
-const uploadMisskeyFile = async (item: AttachmentItem) => {
-  const result = await ipcInvoke("api", {
-    method: "misskey:uploadFile",
-    instanceUrl: state.instance?.url,
-    token: state.user?.token,
-    filePath: item.path,
-    fileType: item.type,
-  });
-  const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} へのアップロードに失敗しました`);
-  if (!res || !(res as { id?: string }).id) {
+const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
+  updateAttachment(item.id, (current) => ({
+    ...current,
+    status: "uploading",
+    error: undefined,
+  }));
+  try {
+    const result = await ipcInvoke("api", {
+      method: "misskey:uploadFile",
+      instanceUrl: state.instance?.url,
+      token: state.user?.token,
+      filePath: item.path,
+      fileType: item.type,
+    });
+    const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} へのアップロードに失敗しました`);
+    if (!res || !(res as { id?: string }).id) {
+      updateAttachment(item.id, (current) => ({
+        ...current,
+        status: "failed",
+        error: "アップロードに失敗しました",
+      }));
+      return false;
+    }
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      status: "uploaded",
+      fileId: (res as { id: string }).id,
+    }));
+    return true;
+  } catch (error) {
     updateAttachment(item.id, (current) => ({
       ...current,
       status: "failed",
       error: "アップロードに失敗しました",
     }));
-    return;
+    if (error instanceof Error) {
+      state.post.error = error.message;
+    } else {
+      state.post.error = "アップロードに失敗しました";
+    }
+    return false;
   }
-  updateAttachment(item.id, (current) => ({
-    ...current,
-    status: "uploaded",
-    fileId: (res as { id: string }).id,
-  }));
+};
+
+const uploadMisskeyAttachments = async (): Promise<boolean> => {
+  const targets = attachments.value.filter((item) => item.status === "ready" || item.status === "failed");
+  for (const item of targets) {
+    const ok = await uploadMisskeyFile(item);
+    if (!ok) {
+      return false;
+    }
+  }
+  return true;
 };
 
 const addAttachment = async (file: File) => {
-  const filePath = (file as FileWithPath).path;
+  const filePath = getPathForFile(file) || (file as FileWithPath).path;
   if (!filePath) {
     state.post.error = "ファイルパスを取得できませんでした";
     return;
@@ -269,11 +301,10 @@ const addAttachment = async (file: File) => {
     size: file.size,
     type: file.type,
     previewUrl,
-    status: "uploading",
+    status: "ready",
   };
 
   attachments.value = [...attachments.value, item];
-  await uploadMisskeyFile(item);
 };
 
 const onSelectFiles = async (event: Event) => {
@@ -303,6 +334,9 @@ const removeAttachment = (id: string) => {
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const renoteId = targetNote?.renoteId && !targetNote.text ? targetNote.renoteId : targetNote?.id;
+  if (!(await uploadMisskeyAttachments())) {
+    return;
+  }
   const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : null;
 
   const result = await ipcInvoke("api", {
@@ -514,6 +548,7 @@ document.addEventListener("keydown", (e) => {
               <div class="attachment-name">{{ item.name }}</div>
               <div class="attachment-meta">
                 <span>{{ formatFileSize(item.size) }}</span>
+                <span class="status" v-if="item.status === 'ready'">未送信</span>
                 <span class="status" v-if="item.status === 'uploading'">アップロード中</span>
                 <span class="status" v-if="item.status === 'uploaded'">完了</span>
                 <span class="status error" v-if="item.status === 'failed'">失敗</span>
