@@ -6,6 +6,13 @@ export const ipcSend = (event: string, payload?: object) => {
   window.ipc?.send(event, JSON.stringify(payload));
 };
 
+export const getPathForFile = (file: File): string => {
+  if (typeof window === "undefined" || !window.ipc?.getPathForFile) {
+    return "";
+  }
+  return window.ipc.getPathForFile(file);
+};
+
 interface IpcEventMaps {
   api: {
     args: any;
