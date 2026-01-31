@@ -337,7 +337,6 @@ document.addEventListener("keydown", (e) => {
         <div class="post-tools" v-if="canUseEmojiPicker">
           <button class="nn-button size-small tool-button" @click="toggleEmojiPicker">
             <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
-            <span>絵文字</span>
           </button>
         </div>
         <div class="emoji-picker-panel" v-if="canUseEmojiPicker && showEmojiPicker">
@@ -423,6 +422,7 @@ document.addEventListener("keydown", (e) => {
 .post-field-container {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   height: 100%;
 }
 .post-field {
@@ -452,9 +452,9 @@ document.addEventListener("keydown", (e) => {
   height: 240px;
   margin-top: 8px;
   overflow: hidden;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .post-settings {
   display: flex;
