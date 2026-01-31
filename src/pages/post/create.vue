@@ -77,7 +77,7 @@ const emojiPickerRef = ref<{
 const textInputRef = ref<{ textarea?: HTMLTextAreaElement | null } | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const attachments = ref<AttachmentItem[]>([]);
-const misskeyVisibility = ref<"public" | "home" | "followers">("public");
+const misskeyVisibility = ref<"public" | "home" | "followers" | null>(null);
 const misskeyLocalOnly = ref(false);
 const misskeyNoExtractMentions = ref(false);
 const misskeyNoExtractHashtags = ref(false);
@@ -352,12 +352,13 @@ const postToMisskey = async () => {
   const renoteId = targetNote?.renoteId && !targetNote.text ? targetNote.renoteId : targetNote?.id;
   const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : null;
 
+  const visibility = misskeyVisibility.value;
   const result = await ipcInvoke("api", {
     method: "misskey:createNote",
     instanceUrl: state.instance?.url,
     token: state.user?.token,
     i: state.user?.token,
-    visibility: misskeyVisibility.value,
+    ...(visibility ? { visibility } : {}),
     // visibleUserIds: [],
     text: text.value || null,
     cw: textCw.value || null,
@@ -572,6 +573,7 @@ document.addEventListener("keydown", (e) => {
           <div class="misskey-options-row">
             <label class="nn-label">公開範囲</label>
             <select class="nn-select" v-model="misskeyVisibility">
+              <option :value="null">default</option>
               <option value="public">public</option>
               <option value="home">home</option>
               <option value="followers">followers</option>
