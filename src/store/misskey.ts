@@ -228,6 +228,40 @@ export const useMisskeyStore = defineStore("misskey", () => {
     return reaction.replace(/:|@\./g, "");
   };
 
+  const isEmojiUrl = (emoji: string) => {
+    return /^https?:\/\//.test(emoji) || emoji.startsWith("data:");
+  };
+
+  const getLocalEmojiUrl = (reactionKey: string) => {
+    const timeline = getTimelineStore();
+    const instance = timeline.currentInstance;
+    if (!instance || instance.type !== "misskey") return undefined;
+    return instance.misskey?.emojis?.find((emoji) => emoji.name === reactionKey)?.url;
+  };
+
+  const applyReactionEmojiFromStream = ({
+    postId,
+    reaction,
+    emoji,
+  }: {
+    postId: string;
+    reaction: string;
+    emoji?: string | null;
+  }) => {
+    if (!emoji) return false;
+    if (!reaction.startsWith(":")) return false;
+    const reactionKey = normalizeReactionEmojiKey(reaction);
+    if (!reactionKey) return false;
+
+    const url = isEmojiUrl(emoji) ? emoji : getLocalEmojiUrl(reactionKey);
+    if (!url) return false;
+
+    updateNotesById(postId, (note) => {
+      note.reactionEmojis[reactionKey] = url;
+    });
+    return true;
+  };
+
   const hasReactionEmoji = (note: MisskeyNote, reactionKey: string) => {
     if (note.reactionEmojis?.[reactionKey]) return true;
     const renote = note.renote as MisskeyNote | undefined;
@@ -274,11 +308,27 @@ export const useMisskeyStore = defineStore("misskey", () => {
     reactionEmojiRefreshTimers.set(timerKey, timer);
   };
 
-  const ensureReactionEmoji = ({ postId, reaction }: { postId: string; reaction: string }) => {
+  const ensureReactionEmoji = ({
+    postId,
+    reaction,
+    emoji,
+  }: {
+    postId: string;
+    reaction: string;
+    emoji?: string | null;
+  }) => {
     const timeline = getTimelineStore();
     const currentUser = timeline.currentUser;
     const instanceUrl = timeline.currentInstance?.url;
     if (!currentUser || !instanceUrl) return;
+
+    if (!reaction.startsWith(":")) return;
+    const reactionKey = normalizeReactionEmojiKey(reaction);
+    if (!reactionKey) return;
+
+    if (applyReactionEmojiFromStream({ postId, reaction, emoji })) return;
+
+    if (getLocalEmojiUrl(reactionKey)) return;
 
     if (!shouldRefreshReactionEmoji(postId, reaction, currentUser.id)) return;
 
