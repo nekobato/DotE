@@ -3,6 +3,7 @@ import DoteAlert from "@/components/common/DoteAlert.vue";
 import DoteButton from "@/components/common/DoteButton.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
+import EmojiPicker from "@/components/EmojiPicker.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { ipcInvoke, ipcSend } from "@/utils/ipc";
@@ -11,12 +12,12 @@ import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
-import { computed, onMounted, PropType, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, PropType, reactive, ref } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
-  emojis: MisskeyEntities.EmojiSimple[];
+  emojis?: MisskeyEntities.EmojiSimple[];
 };
 
 const submitTextMap = {
@@ -48,9 +49,18 @@ const state = reactive({
 });
 const text = ref("");
 const textCw = ref("");
+const showEmojiPicker = ref(false);
+const emojiPickerRef = ref<{
+  focusSearch: () => void;
+  resetSearch: () => void;
+} | null>(null);
+const textInputRef = ref<{ textarea?: HTMLTextAreaElement | null } | null>(null);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
+const canUseEmojiPicker = computed(
+  () => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0,
+);
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -260,9 +270,35 @@ const submit = async () => {
   }
 };
 
-const onInput = (value: string) => {
-  if (value[value.length - 1] === ":") {
+const insertEmojiAtCursor = async (emojiName: string) => {
+  const insertion = `:${emojiName}:`;
+  const current = text.value;
+  const textarea = textInputRef.value?.textarea;
+  if (!textarea) {
+    text.value = `${current}${insertion}`;
+    return;
   }
+
+  const start = textarea.selectionStart ?? current.length;
+  const end = textarea.selectionEnd ?? current.length;
+  text.value = `${current.slice(0, start)}${insertion}${current.slice(end)}`;
+
+  await nextTick();
+  textarea.focus();
+  const nextPosition = start + insertion.length;
+  textarea.setSelectionRange(nextPosition, nextPosition);
+};
+
+const toggleEmojiPicker = async () => {
+  showEmojiPicker.value = !showEmojiPicker.value;
+  if (showEmojiPicker.value) {
+    await nextTick();
+    emojiPickerRef.value?.focusSearch();
+  }
+};
+
+const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
+  await insertEmojiAtCursor(emoji.name);
 };
 
 onMounted(async () => {
@@ -297,7 +333,15 @@ document.addEventListener("keydown", (e) => {
     </div>
     <div class="post-layout">
       <div class="post-field-container">
-        <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" @input="onInput" />
+        <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" ref="textInputRef" />
+        <div class="post-tools" v-if="canUseEmojiPicker">
+          <button class="nn-button size-small tool-button" @click="toggleEmojiPicker">
+            <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
+          </button>
+        </div>
+        <div class="emoji-picker-panel" v-if="canUseEmojiPicker && showEmojiPicker">
+          <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
+        </div>
         <DoteAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
         </DoteAlert>
@@ -378,11 +422,39 @@ document.addEventListener("keydown", (e) => {
 .post-field-container {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   height: 100%;
 }
 .post-field {
   width: 100%;
   margin: 8px 0 0;
+}
+.post-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.tool-button {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 8px;
+  color: var(--dote-color-white);
+  font-size: 0.7rem;
+  background: var(--dote-color-white-t1);
+  border-radius: 6px;
+  &:hover {
+    background: var(--dote-color-white-t2);
+  }
+}
+.emoji-picker-panel {
+  height: 240px;
+  margin-top: 8px;
+  overflow: hidden;
+  background-color: var(--dote-background-color);
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
 }
 .post-settings {
   display: flex;

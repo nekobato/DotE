@@ -9,7 +9,8 @@ const router = useRouter();
 
 const pagedata = ref<any>({});
 
-window.ipc?.on("post:create", () => {
+window.ipc?.on("post:create", (_, payload) => {
+  pagedata.value = payload || {};
   router.push("/post/create");
 });
 
