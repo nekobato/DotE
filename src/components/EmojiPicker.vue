@@ -163,6 +163,7 @@ defineExpose({
   flex-direction: column;
   gap: 4px;
   width: 40%;
+  min-width: 0;
   height: 100%;
   margin: 0;
   padding: 8px;
@@ -200,6 +201,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   width: 60%;
+  min-width: 0;
   height: 100%;
   overflow-y: scroll;
 }

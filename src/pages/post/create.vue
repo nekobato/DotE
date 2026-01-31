@@ -443,6 +443,7 @@ const insertEmojiAtCursor = async (emojiName: string) => {
     text.value = `${current}${insertion}`;
     return;
   }
+  }
 
   const start = textarea.selectionStart ?? current.length;
   const end = textarea.selectionEnd ?? current.length;
@@ -462,12 +463,12 @@ const toggleEmojiPicker = async () => {
   }
 };
 
-const toggleMfmPreview = () => {
-  showMfmPreview.value = !showMfmPreview.value;
-};
-
 const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
   await insertEmojiAtCursor(emoji.name);
+};
+
+const toggleMfmPreview = () => {
+  showMfmPreview.value = !showMfmPreview.value;
 };
 
 onBeforeUnmount(() => {
@@ -644,6 +645,7 @@ document.addEventListener("keydown", (e) => {
 .post-field-container {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   height: 100%;
 }
 .post-field {
