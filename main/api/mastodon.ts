@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 import { baseHeader } from "./request";
-import { requestJson } from "./helpers";
+import { buildMultipartFormData, requestFormData, requestJson } from "./helpers";
 
 export const mastodonRegisterApp = async ({ instanceUrl, clientName }: { instanceUrl: string; clientName: string }) => {
   const url = new URL(`/api/v1/apps`, instanceUrl).toString();
@@ -227,6 +229,44 @@ export const mastodonGetNotifications = async ({
   return requestJson(url.toString(), {
     headers: {
       ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const mastodonUploadMedia = async ({
+  instanceUrl,
+  token,
+  filePath,
+  fileType,
+  description,
+}: {
+  instanceUrl: string;
+  token: string;
+  filePath: string;
+  fileType?: string;
+  description?: string;
+}) => {
+  const url = new URL(`/api/v2/media`, instanceUrl).toString();
+  const buffer = await readFile(filePath);
+  const filename = basename(filePath);
+  const fields = [] as { name: string; value: string | number | boolean }[];
+  if (description) {
+    fields.push({ name: "description", value: description });
+  }
+  const { body, contentType } = buildMultipartFormData({
+    fields,
+    file: {
+      name: "file",
+      filename,
+      data: buffer,
+      contentType: fileType || "application/octet-stream",
+    },
+  });
+  return requestFormData(url, {
+    body,
+    contentType,
+    headers: {
       Authorization: `Bearer ${token}`,
     },
   });
