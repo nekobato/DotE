@@ -36,7 +36,11 @@ export function useStream() {
       switch (event) {
         case "reacted":
           await misskeyStore.addReaction({ postId: data.id, reaction: data.body.reaction });
-          misskeyStore.ensureReactionEmoji({ postId: data.id, reaction: data.body.reaction });
+          misskeyStore.ensureReactionEmoji({
+            postId: data.id,
+            reaction: data.body.reaction,
+            emoji: data.body.emoji,
+          });
           break;
         case "unreacted":
           await misskeyStore.removeReaction({ postId: data.id, reaction: data.body.reaction });
