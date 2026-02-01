@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
+import { contextBridge, ipcRenderer, type IpcRendererEvent, webUtils } from "electron";
 
 // --------- Expose some API to the Renderer process. ---------
 contextBridge.exposeInMainWorld("ipc", {
@@ -11,5 +11,8 @@ contextBridge.exposeInMainWorld("ipc", {
   },
   on(event: string, callback: (event: IpcRendererEvent, ...args: any[]) => void) {
     ipcRenderer.on(event, callback);
+  },
+  getPathForFile(file: File) {
+    return webUtils.getPathForFile(file);
   },
 });

@@ -1,5 +1,7 @@
+import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 import { baseHeader } from "./request";
-import { requestJson, requestJsonAllowEmpty } from "./helpers";
+import { buildMultipartFormData, requestFormData, requestJson, requestJsonAllowEmpty } from "./helpers";
 
 export const misskeyCheckMiAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
   const url = new URL(`/api/miauth/${sessionId}/check`, instanceUrl).toString();
@@ -41,6 +43,46 @@ export const misskeyGetEmojis = async ({ instanceUrl }: { instanceUrl: string })
     });
     throw error;
   }
+};
+
+export const misskeyUploadFile = async ({
+  instanceUrl,
+  token,
+  filePath,
+  fileType,
+  isSensitive,
+  comment,
+}: {
+  instanceUrl: string;
+  token: string;
+  filePath: string;
+  fileType?: string;
+  isSensitive?: boolean;
+  comment?: string;
+}) => {
+  const url = new URL(`/api/drive/files/create`, instanceUrl).toString();
+  const buffer = await readFile(filePath);
+  const filename = basename(filePath);
+  const fields = [{ name: "i", value: token }] as { name: string; value: string | number | boolean }[];
+  if (typeof isSensitive === "boolean") {
+    fields.push({ name: "isSensitive", value: isSensitive });
+  }
+  if (comment) {
+    fields.push({ name: "comment", value: comment });
+  }
+  const { body, contentType } = buildMultipartFormData({
+    fields,
+    file: {
+      name: "file",
+      filename,
+      data: buffer,
+      contentType: fileType || "application/octet-stream",
+    },
+  });
+  return requestFormData(url, {
+    body,
+    contentType,
+  });
 };
 
 export const misskeyGetTimelineHome = async ({
@@ -344,7 +386,7 @@ export const misskeyCreateNote = async ({
   replyId,
   renoteId,
   poll,
-  files,
+  fileIds,
 }: {
   instanceUrl: string;
   token: string;
@@ -354,7 +396,7 @@ export const misskeyCreateNote = async ({
   replyId?: string;
   renoteId?: string;
   poll?: any;
-  files?: any;
+  fileIds?: string[] | null;
 }) => {
   const url = new URL(`/api/notes/create`, instanceUrl).toString();
   return requestJson(url, {
@@ -368,7 +410,7 @@ export const misskeyCreateNote = async ({
       replyId,
       renoteId,
       poll,
-      files,
+      fileIds,
     }),
   });
 };

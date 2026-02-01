@@ -4,21 +4,38 @@ import DoteButton from "@/components/common/DoteButton.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
+import Mfm from "@/components/misskey/Mfm.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
-import { ipcInvoke, ipcSend } from "@/utils/ipc";
+import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
-import { computed, nextTick, onMounted, PropType, reactive, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
   emojis?: MisskeyEntities.EmojiSimple[];
 };
+
+type UploadStatus = "ready" | "uploading" | "uploaded" | "failed";
+
+type AttachmentItem = {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+  previewUrl?: string;
+  status: UploadStatus;
+  fileId?: string;
+  error?: string;
+};
+
+type FileWithPath = File & { path?: string };
 
 const submitTextMap = {
   note: "Note",
@@ -50,17 +67,28 @@ const state = reactive({
 const text = ref("");
 const textCw = ref("");
 const showEmojiPicker = ref(false);
+const showMfmPreview = ref(false);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
 } | null>(null);
 const textInputRef = ref<{ textarea?: HTMLTextAreaElement | null } | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const attachments = ref<AttachmentItem[]>([]);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
 const canUseEmojiPicker = computed(
   () => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0,
 );
+const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
+const canUseAttachments = computed(() => state.instance?.type === "misskey");
+const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.status === "uploading"));
+const hasFailedAttachments = computed(() => attachments.value.some((item) => item.status === "failed"));
+const uploadedMisskeyFileIds = computed(() =>
+  attachments.value.filter((item) => item.status === "uploaded" && item.fileId).map((item) => item.fileId as string),
+);
+const hasAttachments = computed(() => attachments.value.length > 0);
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -164,16 +192,152 @@ const canSubmit = computed(() => {
   if (state.post.isSending) {
     return false;
   }
+  if (hasUploadingAttachments.value || hasFailedAttachments.value) {
+    return false;
+  }
 
   if (submitType.value === "note" || submitType.value === "toot" || submitType.value === "post") {
+    if (state.instance?.type === "misskey") {
+      return text.value.length > 0 || hasAttachments.value;
+    }
     return text.value.length > 0;
   }
   return true;
 });
 
+const formatFileSize = (size: number) => {
+  if (size < 1024) return `${size}B`;
+  if (size < 1024 * 1024) return `${Math.round(size / 1024)}KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)}MB`;
+};
+
+const updateAttachment = (id: string, updater: (item: AttachmentItem) => AttachmentItem) => {
+  attachments.value = attachments.value.map((item) => (item.id === id ? updater(item) : item));
+};
+
+const createAttachmentId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const clearAttachments = () => {
+  attachments.value.forEach((item) => {
+    if (item.previewUrl) {
+      URL.revokeObjectURL(item.previewUrl);
+    }
+  });
+  attachments.value = [];
+};
+
+const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
+  updateAttachment(item.id, (current) => ({
+    ...current,
+    status: "uploading",
+    error: undefined,
+  }));
+  try {
+    const result = await ipcInvoke("api", {
+      method: "misskey:uploadFile",
+      instanceUrl: state.instance?.url,
+      token: state.user?.token,
+      filePath: item.path,
+      fileType: item.type,
+    });
+    const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} へのアップロードに失敗しました`);
+    if (!res || !(res as { id?: string }).id) {
+      updateAttachment(item.id, (current) => ({
+        ...current,
+        status: "failed",
+        error: "アップロードに失敗しました",
+      }));
+      return false;
+    }
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      status: "uploaded",
+      fileId: (res as { id: string }).id,
+    }));
+    return true;
+  } catch (error) {
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      status: "failed",
+      error: "アップロードに失敗しました",
+    }));
+    if (error instanceof Error) {
+      state.post.error = error.message;
+    } else {
+      state.post.error = "アップロードに失敗しました";
+    }
+    return false;
+  }
+};
+
+const uploadMisskeyAttachments = async (): Promise<boolean> => {
+  const targets = attachments.value.filter((item) => item.status === "ready" || item.status === "failed");
+  for (const item of targets) {
+    const ok = await uploadMisskeyFile(item);
+    if (!ok) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const addAttachment = async (file: File) => {
+  const filePath = getPathForFile(file) || (file as FileWithPath).path;
+  if (!filePath) {
+    state.post.error = "ファイルパスを取得できませんでした";
+    return;
+  }
+
+  const previewUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
+  const item: AttachmentItem = {
+    id: createAttachmentId(),
+    name: file.name,
+    path: filePath,
+    size: file.size,
+    type: file.type,
+    previewUrl,
+    status: "ready",
+  };
+
+  attachments.value = [...attachments.value, item];
+};
+
+const onSelectFiles = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const files = Array.from(target.files ?? []);
+  target.value = "";
+  if (!files.length) return;
+  if (!canUseAttachments.value) return;
+
+  for (const file of files) {
+    await addAttachment(file);
+  }
+};
+
+const openFilePicker = () => {
+  fileInputRef.value?.click();
+};
+
+const removeAttachment = (id: string) => {
+  const target = attachments.value.find((item) => item.id === id);
+  if (target?.previewUrl) {
+    URL.revokeObjectURL(target.previewUrl);
+  }
+  attachments.value = attachments.value.filter((item) => item.id !== id);
+};
+
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const renoteId = targetNote?.renoteId && !targetNote.text ? targetNote.renoteId : targetNote?.id;
+  if (!(await uploadMisskeyAttachments())) {
+    return;
+  }
+  const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : null;
 
   const result = await ipcInvoke("api", {
     method: "misskey:createNote",
@@ -192,12 +356,13 @@ const postToMisskey = async () => {
     // poll: null,
     // replyId: null,
     renoteId: renoteId || null,
-    // fileIds: [],
+    fileIds,
   });
   const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} への投稿に失敗しました`);
   if (res?.createdNote) {
     text.value = "";
     textCw.value = "";
+    clearAttachments();
     ipcSend("post:close");
   }
 };
@@ -301,6 +466,14 @@ const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
   await insertEmojiAtCursor(emoji.name);
 };
 
+const toggleMfmPreview = () => {
+  showMfmPreview.value = !showMfmPreview.value;
+};
+
+onBeforeUnmount(() => {
+  clearAttachments();
+});
+
 onMounted(async () => {
   const users = await ipcInvoke("db:get-users");
   const timelines = await ipcInvoke("db:get-timeline-all");
@@ -334,13 +507,62 @@ document.addEventListener("keydown", (e) => {
     <div class="post-layout">
       <div class="post-field-container">
         <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" ref="textInputRef" />
-        <div class="post-tools" v-if="canUseEmojiPicker">
-          <button class="nn-button size-small tool-button" @click="toggleEmojiPicker">
+        <div class="post-tools" v-if="canUseEmojiPicker || canUseMfmPreview">
+          <button v-if="canUseEmojiPicker" class="nn-button size-small tool-button" @click="toggleEmojiPicker">
             <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
+            <span>絵文字</span>
           </button>
+          <button
+            v-if="canUseMfmPreview"
+            class="nn-button size-small tool-button"
+            :class="{ active: showMfmPreview }"
+            @click="toggleMfmPreview"
+          >
+            <Icon icon="mingcute:eye-2-line" class="nn-icon size-xsmall" />
+            <span>プレビュー</span>
+          </button>
+        </div>
+        <div class="post-tools" v-if="canUseAttachments">
+          <button class="nn-button size-small tool-button" @click="openFilePicker">
+            <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
+            <span>添付</span>
+          </button>
+          <input class="file-input" type="file" multiple ref="fileInputRef" @change="onSelectFiles" />
         </div>
         <div class="emoji-picker-panel" v-if="canUseEmojiPicker && showEmojiPicker">
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
+        </div>
+        <div class="mfm-preview-panel" v-if="canUseMfmPreview && showMfmPreview">
+          <div class="mfm-preview-header">MFM プレビュー</div>
+          <div class="mfm-preview-body">
+            <Mfm :text="text" :emojis="props.data.emojis || []" :host="state.instance?.url" postStyle="all" />
+            <div class="mfm-preview-empty" v-if="text.length === 0">本文を入力するとプレビューが表示されます</div>
+          </div>
+        </div>
+        <div class="attachments-panel" v-if="attachments.length">
+          <div class="attachment-item" v-for="item in attachments" :key="item.id" :class="[item.status]">
+            <div class="attachment-preview" v-if="item.previewUrl">
+              <img :src="item.previewUrl" :alt="item.name" />
+            </div>
+            <div class="attachment-info">
+              <div class="attachment-name">{{ item.name }}</div>
+              <div class="attachment-meta">
+                <span>{{ formatFileSize(item.size) }}</span>
+                <span class="status" v-if="item.status === 'ready'">未送信</span>
+                <span class="status" v-if="item.status === 'uploading'">アップロード中</span>
+                <span class="status" v-if="item.status === 'uploaded'">完了</span>
+                <span class="status error" v-if="item.status === 'failed'">失敗</span>
+              </div>
+              <div class="attachment-error" v-if="item.error">{{ item.error }}</div>
+            </div>
+            <button
+              class="nn-button size-small tool-button remove"
+              :disabled="item.status === 'uploading'"
+              @click="removeAttachment(item.id)"
+            >
+              <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" />
+            </button>
+          </div>
         </div>
         <DoteAlert class="mt-4" type="error" v-if="state.post.error">
           {{ state.post.error }}
@@ -447,14 +669,107 @@ document.addEventListener("keydown", (e) => {
   &:hover {
     background: var(--dote-color-white-t2);
   }
+  &.active {
+    background: var(--dote-color-white-t2);
+  }
+}
+.tool-button.remove {
+  margin-left: auto;
+}
+.file-input {
+  display: none;
 }
 .emoji-picker-panel {
   height: 240px;
   margin-top: 8px;
   overflow: hidden;
-  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
+  background-color: var(--dote-background-color);
+}
+.mfm-preview-panel {
+  margin-top: 8px;
+  overflow: hidden;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+  background-color: var(--dote-background-color);
+}
+.mfm-preview-header {
+  padding: 6px 10px;
+  color: var(--dote-color-white-t5);
+  font-size: 0.65rem;
+  border-bottom: 1px solid var(--dote-color-white-t1);
+}
+.mfm-preview-body {
+  max-height: 240px;
+  padding: 8px 10px;
+  overflow-y: auto;
+}
+.mfm-preview-empty {
+  color: var(--dote-color-white-t3);
+  font-size: 0.7rem;
+}
+.attachments-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+  background-color: var(--dote-background-color);
+}
+.attachment-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+  background: var(--dote-color-white-t1);
+  &.failed {
+    border-color: rgba(255, 120, 120, 0.5);
+  }
+}
+.attachment-preview {
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 6px;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+.attachment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+.attachment-name {
+  color: var(--dote-color-white);
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-meta {
+  display: flex;
+  gap: 8px;
+  color: var(--dote-color-white-t5);
+  font-size: 0.6rem;
+}
+.attachment-meta .status {
+  &.error {
+    color: #ff9b9b;
+  }
+}
+.attachment-error {
+  color: #ff9b9b;
+  font-size: 0.6rem;
 }
 .post-settings {
   display: flex;
