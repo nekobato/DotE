@@ -443,7 +443,6 @@ const insertEmojiAtCursor = async (emojiName: string) => {
     text.value = `${current}${insertion}`;
     return;
   }
-  }
 
   const start = textarea.selectionStart ?? current.length;
   const end = textarea.selectionEnd ?? current.length;
