@@ -14,6 +14,7 @@ const applyTheme = (value: Settings["theme"]) => {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   root.dataset.theme = value;
+  // Element Plus uses html.dark for its dark theme variables.
   root.classList.toggle("dark", value === "dark");
   root.style.colorScheme = value;
 };

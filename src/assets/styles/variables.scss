@@ -42,18 +42,27 @@
   --color-text-input-placeholder: #e5e5e5;
   --color-text-code: #e5e5e5;
 
-  --dote-color-white: #e5e5e5;
+  --dote-color-ink: #e5e5e5;
+  /* Deprecated alias; prefer --dote-color-ink */
+  --dote-color-white: var(--dote-color-ink);
   --dote-color-black: #000000;
   --dote-color-info: #909399;
   --dote-color-success: #67c23a;
   --dote-color-warning: #e6a23c;
   --dote-color-error: #f56c6c;
 
-  --dote-color-white-t1: rgba(255, 255, 255, 0.08);
-  --dote-color-white-t2: rgba(255, 255, 255, 0.32);
-  --dote-color-white-t3: rgba(255, 255, 255, 0.48);
-  --dote-color-white-t4: rgba(255, 255, 255, 0.64);
-  --dote-color-white-t5: rgba(255, 255, 255, 0.8);
+  --dote-color-ink-t1: rgba(255, 255, 255, 0.08);
+  --dote-color-ink-t2: rgba(255, 255, 255, 0.32);
+  --dote-color-ink-t3: rgba(255, 255, 255, 0.48);
+  --dote-color-ink-t4: rgba(255, 255, 255, 0.64);
+  --dote-color-ink-t5: rgba(255, 255, 255, 0.8);
+
+  /* Deprecated alias; prefer --dote-color-ink-t* */
+  --dote-color-white-t1: var(--dote-color-ink-t1);
+  --dote-color-white-t2: var(--dote-color-ink-t2);
+  --dote-color-white-t3: var(--dote-color-ink-t3);
+  --dote-color-white-t4: var(--dote-color-ink-t4);
+  --dote-color-white-t5: var(--dote-color-ink-t5);
 
   --dote-color-black-t1: rgba(0, 0, 0, 0.08);
   --dote-color-black-t2: rgba(0, 0, 0, 0.32);
@@ -63,7 +72,7 @@
 
   /* Tokens */
   --dote-background-color: var(--color-background);
-  --dote-border-color: var(--dote-color-white-t1);
+  --dote-border-color: var(--dote-color-ink-t1);
 }
 
 :root[data-theme="light"] {
@@ -93,18 +102,27 @@
   --color-text-input-placeholder: #7a7a7a;
   --color-text-code: #1f2328;
 
-  --dote-color-white: #1f2328;
+  --dote-color-ink: #1f2328;
+  /* Deprecated alias; prefer --dote-color-ink */
+  --dote-color-white: var(--dote-color-ink);
   --dote-color-black: #000000;
   --dote-color-info: #909399;
   --dote-color-success: #67c23a;
   --dote-color-warning: #e6a23c;
   --dote-color-error: #f56c6c;
 
-  --dote-color-white-t1: rgba(0, 0, 0, 0.08);
-  --dote-color-white-t2: rgba(0, 0, 0, 0.32);
-  --dote-color-white-t3: rgba(0, 0, 0, 0.48);
-  --dote-color-white-t4: rgba(0, 0, 0, 0.64);
-  --dote-color-white-t5: rgba(0, 0, 0, 0.8);
+  --dote-color-ink-t1: rgba(31, 35, 40, 0.08);
+  --dote-color-ink-t2: rgba(31, 35, 40, 0.32);
+  --dote-color-ink-t3: rgba(31, 35, 40, 0.48);
+  --dote-color-ink-t4: rgba(31, 35, 40, 0.64);
+  --dote-color-ink-t5: rgba(31, 35, 40, 0.8);
+
+  /* Deprecated alias; prefer --dote-color-ink-t* */
+  --dote-color-white-t1: var(--dote-color-ink-t1);
+  --dote-color-white-t2: var(--dote-color-ink-t2);
+  --dote-color-white-t3: var(--dote-color-ink-t3);
+  --dote-color-white-t4: var(--dote-color-ink-t4);
+  --dote-color-white-t5: var(--dote-color-ink-t5);
 
   --dote-color-black-t1: rgba(0, 0, 0, 0.08);
   --dote-color-black-t2: rgba(0, 0, 0, 0.32);
@@ -114,5 +132,5 @@
 
   /* Tokens */
   --dote-background-color: var(--color-background);
-  --dote-border-color: var(--dote-color-white-t1);
+  --dote-border-color: var(--dote-color-ink-t1);
 }
