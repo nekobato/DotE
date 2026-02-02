@@ -92,6 +92,13 @@ const onMisskeyRepost = (payload: { post: MisskeyNoteType; emojis: { name: strin
   ipcSend("post:repost", payload);
 };
 
+/**
+ * Misskeyの返信ウィンドウを開きます。
+ */
+const onMisskeyReply = (note: MisskeyNoteType) => {
+  ipcSend("post:create", { post: note, emojis: emojis.value, mode: "reply", replyToId: note.id });
+};
+
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
 // Computed values from composables
@@ -176,6 +183,7 @@ onMounted(() => {
           @newReaction="onMisskeyNewReaction"
           @refreshPost="onMisskeyRefreshPost"
           @repost="onMisskeyRepost"
+          @reply="onMisskeyReply"
         />
         <MisskeyNotification
           v-if="timelineStore.current.channel === 'misskey:notifications'"
