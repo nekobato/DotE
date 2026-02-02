@@ -39,6 +39,7 @@ export type Timeline = {
   };
   updateInterval: number;
   available: boolean;
+  lastReadId?: string;
 };
 
 type InsranceBase = {

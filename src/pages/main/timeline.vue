@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Vue関連
-import { computed, nextTick, reactive, ref, onMounted } from "vue";
+import { computed, nextTick, reactive, ref, onBeforeUnmount, onMounted, watch } from "vue";
 
 // 外部ライブラリ
 import { AppBskyFeedDefs } from "@atproto/api";
@@ -106,6 +106,80 @@ const timelineStyle = computed(() => ({
   ...(store.settings.font.family ? { fontFamily: store.settings.font.family } : {}),
 }));
 
+type TimelinePostIdSource = {
+  id?: string;
+  post?: {
+    cid?: string;
+  };
+};
+
+/**
+ * Resolve a stable post id across platforms.
+ */
+const resolvePostId = (post: TimelinePostIdSource) => {
+  return post.post?.cid ?? post.id ?? "";
+};
+
+const postIndexMap = computed(() => {
+  const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
+  return new Map(posts.map((post, index) => [resolvePostId(post), index]));
+});
+
+const lastReadIndex = computed(() => {
+  const lastReadId = timelineStore.current?.lastReadId;
+  if (!lastReadId) return -1;
+  const index = postIndexMap.value.get(lastReadId);
+  return index ?? -1;
+});
+
+/**
+ * Check if a post should be marked as read.
+ */
+const isReadPost = (post: TimelinePostIdSource) => {
+  const postId = resolvePostId(post);
+  if (!postId) return false;
+  const readIndex = lastReadIndex.value;
+  if (readIndex === -1) return false;
+  const index = postIndexMap.value.get(postId);
+  if (index === undefined) return false;
+  return index >= readIndex;
+};
+
+const postObserver = ref<IntersectionObserver | null>(null);
+
+/**
+ * Observe visible posts to update last read id.
+ */
+const observePosts = () => {
+  if (!timelineContainer.value) return;
+  postObserver.value?.disconnect();
+  postObserver.value = new IntersectionObserver(
+    (entries) => {
+      const visibleIndices = entries
+        .filter((entry) => entry.isIntersecting)
+        .map((entry) => postIndexMap.value.get((entry.target as HTMLElement).dataset.postId ?? ""))
+        .filter((index): index is number => typeof index === "number");
+
+      if (visibleIndices.length === 0) return;
+      const newestVisibleIndex = Math.min(...visibleIndices);
+      const currentReadIndex = lastReadIndex.value;
+      if (currentReadIndex === -1 || newestVisibleIndex < currentReadIndex) {
+        const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
+        const target = posts[newestVisibleIndex];
+        const targetId = target ? resolvePostId(target) : "";
+        if (targetId) {
+          timelineStore.setLastReadId(targetId);
+        }
+      }
+    },
+    { root: timelineContainer.value, threshold: 0.6 },
+  );
+
+  timelineContainer.value.querySelectorAll<HTMLElement>("[data-post-id]").forEach((element) => {
+    postObserver.value?.observe(element);
+  });
+};
+
 const state = reactive({
   isAdding: false,
   isEmpty: false,
@@ -138,6 +212,19 @@ timelineStore.$onAction((action) => {
 onMounted(() => {
   ipcSend("init-shortcuts");
 });
+
+watch(
+  () => postIndexMap.value,
+  async () => {
+    await nextTick();
+    observePosts();
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  postObserver.value?.disconnect();
+});
 </script>
 
 <template>
@@ -162,8 +249,9 @@ onMounted(() => {
             timelineStore.currentInstance?.type === 'misskey' &&
             timelineStore.current.channel !== 'misskey:notifications'
           "
-          class="post-item"
+          :class="['post-item', { 'is-read': isReadPost(post) }]"
           v-for="post in timelineStore.current.posts"
+          :data-post-id="resolvePostId(post)"
           :post="post as MisskeyNoteType"
           :emojis="emojis"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
@@ -195,7 +283,9 @@ onMounted(() => {
             timelineStore.current.channel !== 'mastodon:notifications'
           "
           v-for="toot in timelineStore.current?.posts"
+          :data-post-id="resolvePostId(toot)"
           :key="toot.id"
+          :class="['post-item', { 'is-read': isReadPost(toot) }]"
           :post="toot as MastodonTootType"
           :instanceUrl="timelineStore.currentInstance?.url"
           :lineStyle="store.settings.postStyle"
@@ -214,7 +304,9 @@ onMounted(() => {
         <BlueskyPost
           v-if="timelineStore.currentInstance?.type === 'bluesky'"
           v-for="post in timelineStore.current.posts as AppBskyFeedDefs.FeedViewPost[]"
+          :data-post-id="resolvePostId(post)"
           :key="post.post.cid"
+          :class="['post-item', { 'is-read': isReadPost(post) }]"
           :post="post"
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"

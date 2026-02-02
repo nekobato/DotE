@@ -16,6 +16,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   const current = computed(() => store.$state.timelines.find((timeline) => timeline.available));
   const currentIndex = computed(() => store.$state.timelines.findIndex((timeline) => timeline.available));
   const timelines = computed(() => store.$state.timelines);
+  let lastReadSaveTimer: ReturnType<typeof setTimeout> | undefined;
 
   const currentUser = computed(() => {
     return store.$state.users.find((user) => user.id === current?.value?.userId);
@@ -48,6 +49,23 @@ export const useTimelineStore = defineStore("timeline", () => {
     if (store.$state.timelines[currentIndex.value]) {
       store.$state.timelines[currentIndex.value].notifications = notifications;
     }
+  };
+
+  /**
+   * Persist last read post id for the current timeline (debounced).
+   */
+  const setLastReadId = (postId: string) => {
+    const timeline = store.$state.timelines[currentIndex.value];
+    if (!timeline || !postId) return;
+    if (timeline.lastReadId === postId) return;
+    timeline.lastReadId = postId;
+    if (lastReadSaveTimer) {
+      clearTimeout(lastReadSaveTimer);
+    }
+    lastReadSaveTimer = setTimeout(async () => {
+      const { posts, notifications, bluesky, ...timelineForStore } = timeline;
+      await ipcInvoke("db:set-timeline", timelineForStore);
+    }, 400);
   };
 
   // missky, mastodon, bluesky
@@ -247,5 +265,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     addMoreNotifications,
     setPosts,
     setNotifications,
+    setLastReadId,
   };
 });
