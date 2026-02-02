@@ -229,7 +229,12 @@ const canSubmit = computed(() => {
     return false;
   }
 
-  if (submitType.value === "note" || submitType.value === "toot" || submitType.value === "post") {
+  if (
+    submitType.value === "note" ||
+    submitType.value === "toot" ||
+    submitType.value === "reply" ||
+    submitType.value === "post"
+  ) {
     if (state.instance?.type === "misskey") {
       return text.value.length > 0 || hasAttachments.value;
     }
