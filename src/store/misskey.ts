@@ -431,6 +431,11 @@ export const useMisskeyStore = defineStore("misskey", () => {
           (post: DotEPost) => !store.timelines[timeline.currentIndex]?.posts?.some((p: DotEPost) => p.id === post.id),
         );
 
+        if (timeline.isReadmoreLocked) {
+          timeline.queuePendingPosts(filteredPosts);
+          return;
+        }
+
         timeline.setPosts([...filteredPosts, ...store.timelines[timeline.currentIndex]?.posts]);
       } catch (e) {
         store.$state.errors.push({

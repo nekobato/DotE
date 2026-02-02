@@ -75,6 +75,7 @@ const readmore = async () => {
     return;
   }
 
+  timelineStore.startReadmore();
   loading.value = true;
 
   switch (timelineStore.currentInstance?.type) {
