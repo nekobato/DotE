@@ -17,7 +17,7 @@
 
 label.nn-label {
   display: block;
-  color: rgba(255,255,255, 0.72);
+  color: var(--dote-color-white-t4);
   font-weight: bold;
   font-size: 14px;
   line-height: 1;
@@ -33,16 +33,16 @@ textarea.nn-text-field {
   height: 24px;
   margin: 0;
   padding: 2px 8px;
-  color: #ffffff;
+  color: var(--color-text-input);
   font-weight: normal;
   font-size: 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: var(--dote-color-white-t1);
+  border: 1px solid var(--dote-color-white-t3);
   border-radius: 4px;
   -webkit-appearance: textfield;
 
   &:focus {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--dote-color-white-t2);
   }
 }
 
@@ -123,7 +123,7 @@ textarea.nn-text-field {
     width: 20px;
     height: 20px;
     margin: 0;
-    border: 2px solid #bdbdbd;
+    border: 2px solid var(--dote-color-white-t3);
     border-radius: 4px;
     cursor: pointer;
   }

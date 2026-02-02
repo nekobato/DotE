@@ -66,8 +66,26 @@ const postStyleOptions = [
   },
 ];
 
+const themeOptions = [
+  {
+    label: "ダーク",
+    value: "dark",
+  },
+  {
+    label: "ライト",
+    value: "light",
+  },
+];
+
 const onChangePostStyle = (value: string | number | boolean) => {
   settingsStore.setPostStyle(value as Settings["postStyle"]);
+};
+
+/**
+ * Persist selected theme in settings.
+ */
+const onChangeTheme = (value: string | number | boolean) => {
+  settingsStore.setTheme(value as Settings["theme"]);
 };
 
 const focusShortcutInput = () => {
@@ -108,6 +126,17 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
       </div>
       <div class="actions">
         <ElSlider v-model="store.settings.opacity" :min="0" :max="100" show-input size="small" />
+      </div>
+    </div>
+
+    <div class="dote-field-row indent-1">
+      <div class="content">
+        <span class="title">テーマ</span>
+      </div>
+      <div class="form-actions">
+        <ElSelect class="action-field" :model-value="store.settings.theme" size="small" @change="onChangeTheme">
+          <ElOption v-for="option in themeOptions" :key="option.value" :label="option.label" :value="option.value" />
+        </ElSelect>
       </div>
     </div>
 
