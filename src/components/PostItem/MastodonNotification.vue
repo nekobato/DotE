@@ -81,7 +81,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
             }}</span>
           </div>
         </div>
-        <div class="dote-post-content">
+        <div class="dote-post-content" :class="[lineStyle]">
           <img
             v-if="props.post || props.by"
             class="dote-avatar"
@@ -216,8 +216,8 @@ const openUserPage = (user: MastodonToot["account"]) => {
 
   .dote-avatar {
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
+    width: var(--post-avatar-size);
+    height: var(--post-avatar-size);
     margin: 0 0 auto 0;
     object-fit: cover;
     overflow: hidden;
@@ -225,11 +225,11 @@ const openUserPage = (user: MastodonToot["account"]) => {
     border-radius: 50%;
     &.mini {
       position: absolute;
-      top: 32px;
+      top: var(--post-avatar-mini-offset);
       left: 0;
       z-index: 1;
-      width: 20px;
-      height: 20px;
+      width: var(--post-avatar-mini-size);
+      height: var(--post-avatar-mini-size);
     }
 
     & + * {

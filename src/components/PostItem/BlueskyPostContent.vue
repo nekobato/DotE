@@ -84,7 +84,7 @@ const openOriginPage = () => {
         />
       </div>
     </div>
-    <div class="dote-post-content">
+    <div class="dote-post-content" :class="[props.lineStyle]">
       <img class="dote-avatar" :src="author.avatar || ''" alt="" @click="openUserPage" />
       <img
         class="dote-avatar origin-user"
@@ -115,8 +115,8 @@ const openOriginPage = () => {
 
 .dote-avatar {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--post-avatar-size);
+  height: var(--post-avatar-size);
   margin: 0 0 auto 0;
   object-fit: cover;
   overflow: hidden;
@@ -124,18 +124,18 @@ const openOriginPage = () => {
   border-radius: 50%;
   &.mini {
     position: relative;
-    top: 28px;
+    top: var(--post-avatar-mini-offset);
     z-index: 1;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-mini-size);
+    height: var(--post-avatar-mini-size);
   }
 
   &.origin-user {
     position: absolute;
-    top: 12px;
+    top: var(--post-avatar-origin-offset);
     left: 0;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-origin-size);
+    height: var(--post-avatar-origin-size);
     margin-left: 0;
   }
 
@@ -202,8 +202,8 @@ const openOriginPage = () => {
 }
 
 .dote-post-info .renote > .dote-post-body > .dote-avatar {
-  width: 20px;
-  height: 20px;
+  width: var(--post-avatar-mini-size);
+  height: var(--post-avatar-mini-size);
 }
 
 .text-container {

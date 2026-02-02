@@ -97,10 +97,10 @@ const openUserPage = (user: MastodonToot["account"]) => {
             }}</span>
           </div>
         </div>
-        <div class="dote-post-content">
+        <div class="dote-post-content" :class="[props.lineStyle]">
           <img
             class="dote-avatar"
-            :class="{ mini: postType === 'reblog', 'line-1': props.lineStyle === 'line-1' }"
+            :class="{ mini: postType === 'reblog' }"
             :src="props.post.account.avatar || ''"
             alt=""
             @click="openUserPage(post.account)"
@@ -284,29 +284,19 @@ const openUserPage = (user: MastodonToot["account"]) => {
 
   .dote-avatar {
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
+    width: var(--post-avatar-size);
+    height: var(--post-avatar-size);
     margin: 0 0 auto 0;
     object-fit: cover;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.24);
     border-radius: 50%;
-    &.line-1 {
-      width: 20px;
-      height: 20px;
-
-      &.mini {
-        top: 24px;
-        width: 16px;
-        height: 16px;
-      }
-    }
     &.mini {
       position: relative;
-      top: 28px;
+      top: var(--post-avatar-mini-offset);
       z-index: 1;
-      width: 20px;
-      height: 20px;
+      width: var(--post-avatar-mini-size);
+      height: var(--post-avatar-mini-size);
     }
 
     & + * {
