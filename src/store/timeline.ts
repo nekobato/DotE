@@ -84,6 +84,7 @@ export const useTimelineStore = defineStore("timeline", () => {
       return;
     }
     const mergedPosts = uniquePostsById([...timeline.pendingNewPosts, ...timeline.posts]);
+    // Keep only the newest posts within maxPostCount.
     timeline.posts = mergedPosts.slice(0, store.$state.settings.maxPostCount);
     timeline.pendingNewPosts = [];
     timeline.readmoreLocked = false;
@@ -105,7 +106,9 @@ export const useTimelineStore = defineStore("timeline", () => {
     const timeline = getCurrentTimeline();
     if (!timeline) return;
     timeline.posts = posts;
-    resetReadmoreState(timeline);
+    if (!timeline.readmoreLocked) {
+      resetReadmoreState(timeline);
+    }
 
     if (store.$state.settings.maxPostCount < timeline.posts.length) {
       timeline.posts = timeline.posts.slice(0, store.$state.settings.maxPostCount);
@@ -281,7 +284,6 @@ export const useTimelineStore = defineStore("timeline", () => {
   const addMorePosts = (posts: DotEPost[]) => {
     const timeline = getCurrentTimeline();
     if (!timeline?.posts) return;
-    timeline.readmoreLocked = true;
     const filteredPosts = posts.filter((post: DotEPost) => !timeline.posts.some((p: DotEPost) => p.id === post.id));
     timeline.posts = [...timeline.posts, ...filteredPosts] as DotEPost[];
   };
