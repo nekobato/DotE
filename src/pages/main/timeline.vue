@@ -106,23 +106,39 @@ const timelineStyle = computed(() => ({
   ...(store.settings.font.family ? { fontFamily: store.settings.font.family } : {}),
 }));
 
-type TimelinePostIdSource = {
-  id?: string;
-  post?: {
-    cid?: string;
-  };
-};
+type TimelinePostIdSource = MisskeyNoteType | MastodonTootType | AppBskyFeedDefs.FeedViewPost;
 
 /**
  * Resolve a stable post id across platforms.
  */
 const resolvePostId = (post: TimelinePostIdSource) => {
-  return post.post?.cid ?? post.id ?? "";
+  if ("post" in post && post.post?.cid) return post.post.cid;
+  if ("id" in post && post.id) return post.id;
+  return "";
+};
+
+/**
+ * Resolve post creation time across platforms.
+ */
+const resolvePostCreatedAt = (post: TimelinePostIdSource) => {
+  if ("createdAt" in post && typeof post.createdAt === "string") return post.createdAt;
+  if ("created_at" in post && typeof post.created_at === "string") return post.created_at;
+  if ("post" in post && post.post) {
+    if (typeof post.post.indexedAt === "string") return post.post.indexedAt;
+    const record = post.post.record as { createdAt?: string } | undefined;
+    if (record?.createdAt) return record.createdAt;
+  }
+  return "";
 };
 
 const postIndexMap = computed(() => {
   const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
   return new Map(posts.map((post, index) => [resolvePostId(post), index]));
+});
+
+const postIdsKey = computed(() => {
+  const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
+  return posts.map((post) => resolvePostId(post)).join("|");
 });
 
 const lastReadIndex = computed(() => {
@@ -142,40 +158,73 @@ const isReadPost = (post: TimelinePostIdSource) => {
   if (readIndex === -1) return false;
   const index = postIndexMap.value.get(postId);
   if (index === undefined) return false;
-  return index >= readIndex;
+  const lastReadAt = timelineStore.current?.lastReadAt;
+  if (lastReadAt) {
+    const postCreatedAt = resolvePostCreatedAt(post);
+    if (postCreatedAt) {
+      const postTime = Date.parse(postCreatedAt);
+      const lastTime = Date.parse(lastReadAt);
+      if (!Number.isNaN(postTime) && !Number.isNaN(lastTime) && postTime > lastTime) {
+        return false;
+      }
+    }
+  }
+  return index <= readIndex;
 };
 
 const postObserver = ref<IntersectionObserver | null>(null);
+const observedPostIds = new Set<string>();
+
+/**
+ * Reset post observer state (e.g. when switching timelines).
+ */
+const resetPostObserver = () => {
+  postObserver.value?.disconnect();
+  postObserver.value = null;
+  observedPostIds.clear();
+};
 
 /**
  * Observe visible posts to update last read id.
  */
 const observePosts = () => {
   if (!timelineContainer.value) return;
-  postObserver.value?.disconnect();
-  postObserver.value = new IntersectionObserver(
-    (entries) => {
-      const visibleIndices = entries
-        .filter((entry) => entry.isIntersecting)
-        .map((entry) => postIndexMap.value.get((entry.target as HTMLElement).dataset.postId ?? ""))
-        .filter((index): index is number => typeof index === "number");
-
-      if (visibleIndices.length === 0) return;
-      const newestVisibleIndex = Math.min(...visibleIndices);
-      const currentReadIndex = lastReadIndex.value;
-      if (currentReadIndex === -1 || newestVisibleIndex < currentReadIndex) {
-        const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
-        const target = posts[newestVisibleIndex];
-        const targetId = target ? resolvePostId(target) : "";
-        if (targetId) {
-          timelineStore.setLastReadId(targetId);
+  if (!postObserver.value) {
+    postObserver.value = new IntersectionObserver(
+      (entries) => {
+        const visibleIndices: number[] = [];
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const targetEl = entry.target as HTMLElement;
+          const postId = targetEl.dataset?.postId;
+          if (!postId) continue;
+          const index = postIndexMap.value.get(postId);
+          if (typeof index === "number") {
+            visibleIndices.push(index);
+          }
         }
-      }
-    },
-    { root: timelineContainer.value, threshold: 0.6 },
-  );
+
+        if (visibleIndices.length === 0) return;
+        const oldestVisibleIndex = Math.max(...visibleIndices);
+        const currentReadIndex = lastReadIndex.value;
+        if (currentReadIndex === -1 || oldestVisibleIndex > currentReadIndex) {
+          const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
+          const target = posts[oldestVisibleIndex];
+          const targetId = target ? resolvePostId(target) : "";
+          const targetCreatedAt = target ? resolvePostCreatedAt(target) : "";
+          if (targetId) {
+            timelineStore.setLastReadId(targetId, targetCreatedAt);
+          }
+        }
+      },
+      { root: timelineContainer.value, threshold: 0.3 },
+    );
+  }
 
   timelineContainer.value.querySelectorAll<HTMLElement>("[data-post-id]").forEach((element) => {
+    const postId = element.dataset?.postId;
+    if (!postId || observedPostIds.has(postId)) return;
+    observedPostIds.add(postId);
     postObserver.value?.observe(element);
   });
 };
@@ -214,8 +263,11 @@ onMounted(() => {
 });
 
 watch(
-  () => postIndexMap.value,
-  async () => {
+  () => [timelineStore.currentIndex, postIdsKey.value] as const,
+  async ([nextIndex], [prevIndex]) => {
+    if (nextIndex !== prevIndex) {
+      resetPostObserver();
+    }
     await nextTick();
     observePosts();
   },
@@ -223,7 +275,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  postObserver.value?.disconnect();
+  resetPostObserver();
 });
 </script>
 
@@ -249,8 +301,8 @@ onBeforeUnmount(() => {
             timelineStore.currentInstance?.type === 'misskey' &&
             timelineStore.current.channel !== 'misskey:notifications'
           "
-          :class="['post-item', { 'is-read': isReadPost(post) }]"
           v-for="post in timelineStore.current.posts"
+          :class="['post-item', { 'is-read': isReadPost(post) }]"
           :data-post-id="resolvePostId(post)"
           :post="post as MisskeyNoteType"
           :emojis="emojis"

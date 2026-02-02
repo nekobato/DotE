@@ -54,17 +54,28 @@ export const useTimelineStore = defineStore("timeline", () => {
   /**
    * Persist last read post id for the current timeline (debounced).
    */
-  const setLastReadId = (postId: string) => {
+  const setLastReadId = (postId: string, lastReadAt?: string) => {
     const timeline = store.$state.timelines[currentIndex.value];
     if (!timeline || !postId) return;
-    if (timeline.lastReadId === postId) return;
+    if (timeline.lastReadId === postId && (!lastReadAt || timeline.lastReadAt === lastReadAt)) return;
+    const previousLastReadId = timeline.lastReadId;
+    const previousLastReadAt = timeline.lastReadAt;
     timeline.lastReadId = postId;
+    if (lastReadAt) {
+      timeline.lastReadAt = lastReadAt;
+    }
     if (lastReadSaveTimer) {
       clearTimeout(lastReadSaveTimer);
     }
     lastReadSaveTimer = setTimeout(async () => {
       const { posts, notifications, bluesky, ...timelineForStore } = timeline;
-      await ipcInvoke("db:set-timeline", timelineForStore);
+      try {
+        await ipcInvoke("db:set-timeline", timelineForStore);
+      } catch (error) {
+        console.error("Failed to persist timeline lastReadId", error);
+        timeline.lastReadId = previousLastReadId;
+        timeline.lastReadAt = previousLastReadAt;
+      }
     }, 400);
   };
 
@@ -172,6 +183,10 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const changeActiveTimeline = async (index: number) => {
+    if (lastReadSaveTimer) {
+      clearTimeout(lastReadSaveTimer);
+      lastReadSaveTimer = undefined;
+    }
     if (store.timelines[index].available) return;
     store.timelines.forEach(async (timeline, i) => {
       const { posts, notifications, ...timelineForStore } = timeline;
