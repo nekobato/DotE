@@ -123,15 +123,27 @@ const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | un
 
 const mastodonToot = computed(() => {
   if (state.instance?.type === "mastodon" && props.data.post) {
+    const target = props.data.post as MastodonTootType;
+    const original = target.reblog ?? target;
+    const boosterAccount = {
+      ...original.account,
+      display_name: state.user?.name ?? original.account.display_name,
+      avatar: state.user?.avatarUrl ?? original.account.avatar,
+      url: original.account.url,
+    } as MastodonTootType["account"];
+
     return {
-      account: {
-        name: state.user?.name,
-        host: state.instance?.url,
-        avatarUrl: state.user?.avatarUrl,
-      },
-      reblog: props.data.post as MastodonTootType["reblog"],
-    } as unknown as MastodonTootType;
+      ...original,
+      id: target.id ?? original.id,
+      account: boosterAccount,
+      reblog: original,
+      media_attachments: original.media_attachments ?? [],
+      sensitive: Boolean(original.sensitive),
+      favourited: Boolean(original.favourited),
+      favourites_count: original.favourites_count ?? 0,
+    } as MastodonTootType;
   }
+  return null;
 });
 
 const misskeyNote = computed(() => {
@@ -197,9 +209,6 @@ const submitType = computed(() => {
   }
   if (state.instance?.type === "mastodon") {
     if (isBoostMode.value) {
-      return "boost";
-    }
-    if (mastodonToot.value) {
       return "boost";
     }
     return "toot";
