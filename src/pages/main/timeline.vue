@@ -92,6 +92,13 @@ const onMisskeyRepost = (payload: { post: MisskeyNoteType; emojis: { name: strin
   ipcSend("post:repost", payload);
 };
 
+/**
+ * Mastodonの返信ウィンドウを開きます。
+ */
+const onMastodonReply = (toot: MastodonTootType) => {
+  ipcSend("post:create", { post: toot, mode: "reply", replyToId: toot.id });
+};
+
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
 // Computed values from composables
@@ -201,6 +208,7 @@ onMounted(() => {
           :lineStyle="store.settings.postStyle"
           @refreshPost="mastodonStore.updatePost"
           @favourite="mastodonStore.toggleFavourite"
+          @reply="onMastodonReply"
         />
         <MastodonNotification
           v-if="timelineStore.current.channel === 'mastodon:notifications'"
