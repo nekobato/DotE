@@ -43,6 +43,8 @@ export const apiRequest = {
   ["mastodon:getStaus"]: mastodonRequest.mastodonGetStatus,
   ["mastodon:favourite"]: mastodonRequest.mastodonFavourite,
   ["mastodon:unFavourite"]: mastodonRequest.mastodonUnFavourite,
+  ["mastodon:reblog"]: mastodonRequest.mastodonReblog,
+  ["mastodon:unReblog"]: mastodonRequest.mastodonUnReblog,
   ["mastodon:getList"]: mastodonRequest.mastodonGetList,
 
   ["bluesky:startOAuth"]: blueskyStartOAuth,

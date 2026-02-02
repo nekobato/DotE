@@ -92,6 +92,13 @@ const onMisskeyRepost = (payload: { post: MisskeyNoteType; emojis: { name: strin
   ipcSend("post:repost", payload);
 };
 
+/**
+ * MastodonのBoost確認画面を開きます。
+ */
+const onMastodonBoost = (toot: MastodonTootType) => {
+  ipcSend("post:repost", { post: toot, mode: "boost" });
+};
+
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
 // Computed values from composables
@@ -201,6 +208,7 @@ onMounted(() => {
           :lineStyle="store.settings.postStyle"
           @refreshPost="mastodonStore.updatePost"
           @favourite="mastodonStore.toggleFavourite"
+          @boost="onMastodonBoost"
         />
         <MastodonNotification
           v-if="timelineStore.current.channel === 'mastodon:notifications'"

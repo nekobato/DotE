@@ -366,6 +366,44 @@ export const mastodonUnFavourite = async ({
   });
 };
 
+export const mastodonReblog = async ({
+  instanceUrl,
+  token,
+  id,
+}: {
+  instanceUrl: string;
+  token: string;
+  id: string;
+}) => {
+  const url = new URL(`/api/v1/statuses/${id}/reblog`, instanceUrl).toString();
+  return requestJson(url, {
+    method: "POST",
+    headers: {
+      ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+export const mastodonUnReblog = async ({
+  instanceUrl,
+  token,
+  id,
+}: {
+  instanceUrl: string;
+  token: string;
+  id: string;
+}) => {
+  const url = new URL(`/api/v1/statuses/${id}/unreblog`, instanceUrl).toString();
+  return requestJson(url, {
+    method: "POST",
+    headers: {
+      ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 export const mastodonGetStatus = async ({
   instanceUrl,
   token,
