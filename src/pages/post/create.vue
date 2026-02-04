@@ -2,6 +2,7 @@
 import DoteAlert from "@/components/common/DoteAlert.vue";
 import DoteButton from "@/components/common/DoteButton.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import Mfm from "@/components/misskey/Mfm.vue";
@@ -19,6 +20,8 @@ import type { ApiInvokeResult } from "@shared/types/ipc";
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
   emojis?: MisskeyEntities.EmojiSimple[];
+  mode?: "reply";
+  replyToId?: string;
 };
 
 type UploadStatus = "ready" | "uploading" | "uploaded" | "failed";
@@ -44,6 +47,7 @@ const submitTextMap = {
   quote: "Quote",
   toot: "Toot",
   boost: "Boost",
+  reply: "Reply",
   post: "Post",
   repost: "Repost",
 };
@@ -103,6 +107,18 @@ const uploadedMastodonMediaIds = computed(() =>
   attachments.value.filter((item) => item.status === "uploaded" && item.mediaId).map((item) => item.mediaId as string),
 );
 const hasAttachments = computed(() => attachments.value.length > 0);
+const isReplyMode = computed(() => props.data.mode === "reply");
+
+const mastodonReplyTarget = computed(() => {
+  if (!isReplyMode.value) return null;
+  if (state.instance?.type !== "mastodon") return null;
+  return props.data.post as MastodonTootType | null;
+});
+
+const replyToId = computed(() => {
+  if (!isReplyMode.value) return undefined;
+  return props.data.replyToId ?? (mastodonReplyTarget.value?.id || undefined);
+});
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
@@ -188,6 +204,9 @@ const submitType = computed(() => {
     return "note";
   }
   if (state.instance?.type === "mastodon") {
+    if (isReplyMode.value) {
+      return "reply";
+    }
     if (mastodonToot.value) {
       return "boost";
     }
@@ -210,7 +229,12 @@ const canSubmit = computed(() => {
     return false;
   }
 
-  if (submitType.value === "note" || submitType.value === "toot" || submitType.value === "post") {
+  if (
+    submitType.value === "note" ||
+    submitType.value === "toot" ||
+    submitType.value === "reply" ||
+    submitType.value === "post"
+  ) {
     if (state.instance?.type === "misskey") {
       return text.value.length > 0 || hasAttachments.value;
     }
@@ -450,7 +474,7 @@ const postToMastodon = async () => {
     instanceUrl: state.instance?.url,
     token: state.user?.token,
     status: text.value,
-    // inReplyToId: null,
+    ...(replyToId.value ? { inReplyToId: replyToId.value } : {}),
     mediaIds,
     // sensitive: false,
     // spoilerText: null,
@@ -698,6 +722,15 @@ document.addEventListener("keydown", (e) => {
       </div>
     </div>
     <div class="post-container">
+      <MastodonToot
+        v-if="mastodonReplyTarget"
+        class="post-item"
+        :post="mastodonReplyTarget"
+        :instanceUrl="state.instance?.url"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+      />
       <MisskeyNote
         v-if="misskeyNote"
         class="post-item"
