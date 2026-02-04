@@ -75,18 +75,32 @@ const readmore = async () => {
     return;
   }
 
+  const beforeCount = postsOrNotifications.value.length;
+  timelineStore.startReadmore();
   loading.value = true;
 
-  switch (timelineStore.currentInstance?.type) {
-    case "bluesky":
-      await blueskyStore.fetchOlderPosts(timelineStore.current.channel);
-      break;
-    default:
-      await fetchOlderPosts(timelineStore.current.channel);
-      break;
+  try {
+    switch (timelineStore.currentInstance?.type) {
+      case "bluesky":
+        await blueskyStore.fetchOlderPosts(timelineStore.current.channel);
+        break;
+      default:
+        await fetchOlderPosts(timelineStore.current.channel);
+        break;
+    }
+  } catch (error) {
+    const message = `${timelineStore.currentInstance?.name ?? "タイムライン"}の過去投稿取得に失敗しました`;
+    store.$state.errors.push({
+      message,
+    });
+    console.error(message, error);
+  } finally {
+    const afterCount = postsOrNotifications.value.length;
+    if (afterCount <= beforeCount) {
+      timelineStore.applyPendingNewPosts();
+    }
+    loading.value = false;
   }
-
-  loading.value = false;
 };
 </script>
 <template>

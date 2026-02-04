@@ -99,6 +99,8 @@ const hazeOpacity = computed(() => hazeSettings.value.opacity);
 const isHazeMode = computed(() => hazeSettings.value.isEnabled);
 const canScrollToTop = computed(() => scrollState.value.canScrollToTop);
 const canReadMore = computed(() => scrollState.value.canReadMore);
+const pendingNewPostsCount = computed(() => timelineStore.pendingNewPostsCount);
+const hasPendingNewPosts = computed(() => pendingNewPostsCount.value > 0);
 const emojis = computed(() => platformData.value.emojis);
 const ads = computed(() => platformData.value.ads);
 const timelineStyle = computed(() => ({
@@ -120,6 +122,13 @@ const scrollToTop = () => {
     top: 0,
     behavior: "smooth",
   });
+};
+
+/**
+ * Apply queued new posts while readmore is active.
+ */
+const applyPendingNewPosts = () => {
+  timelineStore.applyPendingNewPosts();
 };
 
 timelineStore.$onAction((action) => {
@@ -157,6 +166,10 @@ onMounted(() => {
       }"
     >
       <PostList v-if="timelineStore.current?.posts?.length || timelineStore.current?.notifications.length">
+        <button v-if="hasPendingNewPosts" class="pending-posts-button nn-button" @click="applyPendingNewPosts">
+          ここに読み込む
+          <span class="pending-count">({{ pendingNewPostsCount }}件)</span>
+        </button>
         <MisskeyNote
           v-if="
             timelineStore.currentInstance?.type === 'misskey' &&
@@ -273,5 +286,17 @@ body::-webkit-scrollbar {
 }
 .dote-post-list {
   padding-top: 4px;
+}
+
+.pending-posts-button {
+  width: calc(100% - 16px);
+  margin: 4px 8px 8px;
+  font-size: var(--font-size-14);
+  justify-content: center;
+}
+
+.pending-count {
+  margin-left: 4px;
+  opacity: 0.7;
 }
 </style>

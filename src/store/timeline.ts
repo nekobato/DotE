@@ -17,6 +17,13 @@ export const useTimelineStore = defineStore("timeline", () => {
   const currentIndex = computed(() => store.$state.timelines.findIndex((timeline) => timeline.available));
   const timelines = computed(() => store.$state.timelines);
 
+  /**
+   * Get the currently active timeline state.
+   */
+  const getCurrentTimeline = () => {
+    return store.$state.timelines[currentIndex.value];
+  };
+
   const currentUser = computed(() => {
     return store.$state.users.find((user) => user.id === current?.value?.userId);
   });
@@ -31,16 +38,80 @@ export const useTimelineStore = defineStore("timeline", () => {
   const misskeyStore = useMisskeyStore();
   const mastodonStore = useMastodonStore();
 
-  const setPosts = (posts: DotEPost[]) => {
-    if (store.$state.timelines[currentIndex.value]) {
-      store.$state.timelines[currentIndex.value].posts = posts;
+  /**
+   * Normalize posts by removing duplicates while keeping order.
+   */
+  const uniquePostsById = (posts: DotEPost[]) => {
+    const seen = new Set<string>();
+    return posts.filter((post) => {
+      if (seen.has(post.id)) return false;
+      seen.add(post.id);
+      return true;
+    });
+  };
 
-      if (store.$state.settings.maxPostCount < store.$state.timelines[currentIndex.value].posts.length) {
-        store.$state.timelines[currentIndex.value].posts = store.$state.timelines[currentIndex.value].posts.slice(
-          0,
-          store.$state.settings.maxPostCount,
-        );
-      }
+  /**
+   * Clear readmore state for the timeline.
+   */
+  const resetReadmoreState = (timeline: TimelineStore) => {
+    timeline.readmoreLocked = false;
+    timeline.pendingNewPosts = [];
+  };
+
+  /**
+   * Queue posts while readmore is active.
+   */
+  const queuePendingPosts = (posts: DotEPost[]) => {
+    const timeline = getCurrentTimeline();
+    if (!timeline?.posts) return;
+    const existingIds = new Set([
+      ...timeline.posts.map((post) => post.id),
+      ...timeline.pendingNewPosts.map((post) => post.id),
+    ]);
+    const unique = posts.filter((post) => !existingIds.has(post.id));
+    if (unique.length === 0) return;
+    timeline.pendingNewPosts = [...unique, ...timeline.pendingNewPosts];
+  };
+
+  /**
+   * Apply pending posts to the timeline and unlock readmore.
+   */
+  const applyPendingNewPosts = () => {
+    const timeline = getCurrentTimeline();
+    if (!timeline?.posts) return;
+    if (!timeline.pendingNewPosts.length) {
+      timeline.readmoreLocked = false;
+      return;
+    }
+    const mergedPosts = uniquePostsById([...timeline.pendingNewPosts, ...timeline.posts]);
+    // Keep only the newest posts within maxPostCount.
+    timeline.posts = mergedPosts.slice(0, store.$state.settings.maxPostCount);
+    timeline.pendingNewPosts = [];
+    timeline.readmoreLocked = false;
+  };
+
+  /**
+   * Lock timeline updates while readmore is active.
+   */
+  const startReadmore = () => {
+    const timeline = getCurrentTimeline();
+    if (!timeline) return;
+    timeline.readmoreLocked = true;
+  };
+
+  const pendingNewPostsCount = computed(() => getCurrentTimeline()?.pendingNewPosts?.length ?? 0);
+  const isReadmoreLocked = computed(() => getCurrentTimeline()?.readmoreLocked ?? false);
+
+  const setPosts = (posts: DotEPost[]) => {
+    const timeline = getCurrentTimeline();
+    if (!timeline) return;
+    timeline.posts = posts;
+    if (!timeline.readmoreLocked) {
+      resetReadmoreState(timeline);
+    }
+
+    if (store.$state.settings.maxPostCount < timeline.posts.length) {
+      timeline.posts = timeline.posts.slice(0, store.$state.settings.maxPostCount);
     }
   };
 
@@ -95,7 +166,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updateTimeline = async ({ posts, ...timeline }: TimelineStore) => {
+  const updateTimeline = async ({ posts, notifications, pendingNewPosts, readmoreLocked, ...timeline }: TimelineStore) => {
     await ipcInvoke("db:set-timeline", timeline);
     await store.initTimelines();
   };
@@ -156,7 +227,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   const changeActiveTimeline = async (index: number) => {
     if (store.timelines[index].available) return;
     store.timelines.forEach(async (timeline, i) => {
-      const { posts, notifications, ...timelineForStore } = timeline;
+      const { posts, notifications, pendingNewPosts, readmoreLocked, ...timelineForStore } = timeline;
 
       await ipcInvoke("db:set-timeline", {
         ...timelineForStore,
@@ -167,14 +238,18 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const addNewPost = (post: DotEPost) => {
-    // abort if no posts
-    if (!store.timelines[currentIndex.value]?.posts) return;
+    const timeline = getCurrentTimeline();
+    if (!timeline?.posts) return;
+    if (timeline.readmoreLocked) {
+      queuePendingPosts([post]);
+      return;
+    }
     // detect duplicate
-    if (store.timelines[currentIndex.value].posts.some((p: DotEPost) => p.id === post.id)) return;
-    store.timelines[currentIndex.value].posts = [post, ...store.timelines[currentIndex.value].posts] as DotEPost[];
+    if (timeline.posts.some((p: DotEPost) => p.id === post.id)) return;
+    timeline.posts = [post, ...timeline.posts] as DotEPost[];
 
-    if (store.settings.maxPostCount < store.timelines[currentIndex.value].posts.length) {
-      store.timelines[currentIndex.value].posts.pop();
+    if (store.settings.maxPostCount < timeline.posts.length) {
+      timeline.posts.pop();
     }
   };
 
@@ -182,13 +257,20 @@ export const useTimelineStore = defineStore("timeline", () => {
     const userId = currentUser.value?.id;
     if (!userId) return;
     updatePostAcrossTimelines(store.timelines, post, userId);
+    const timeline = getCurrentTimeline();
+    if (!timeline?.pendingNewPosts?.length) return;
+    timeline.pendingNewPosts = timeline.pendingNewPosts.map((pending) =>
+      pending.id === post.id ? post : pending,
+    ) as DotEPost[];
   };
 
   const removePost = (postId: string) => {
-    if (!store.timelines[currentIndex.value]?.posts) return;
-    store.timelines[currentIndex.value].posts = store.timelines[currentIndex.value].posts.filter(
-      (post: DotEPost) => post.id !== postId,
-    ) as DotEPost[];
+    const timeline = getCurrentTimeline();
+    if (!timeline?.posts) return;
+    timeline.posts = timeline.posts.filter((post: DotEPost) => post.id !== postId) as DotEPost[];
+    if (timeline.pendingNewPosts.length) {
+      timeline.pendingNewPosts = timeline.pendingNewPosts.filter((post: DotEPost) => post.id !== postId) as DotEPost[];
+    }
   };
 
   const addNewNotification = <T extends MisskeyEntities.Notification | MastodonNotification>(notification: T) => {
@@ -200,14 +282,10 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   const addMorePosts = (posts: DotEPost[]) => {
-    if (!store.timelines[currentIndex.value]?.posts) return;
-    const filteredPosts = posts.filter(
-      (post: DotEPost) => !store.timelines[currentIndex.value].posts.some((p: DotEPost) => p.id === post.id),
-    );
-    store.timelines[currentIndex.value].posts = [
-      ...store.timelines[currentIndex.value].posts,
-      ...filteredPosts,
-    ] as DotEPost[];
+    const timeline = getCurrentTimeline();
+    if (!timeline?.posts) return;
+    const filteredPosts = posts.filter((post: DotEPost) => !timeline.posts.some((p: DotEPost) => p.id === post.id));
+    timeline.posts = [...timeline.posts, ...filteredPosts] as DotEPost[];
   };
 
   const addMoreNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
@@ -247,5 +325,10 @@ export const useTimelineStore = defineStore("timeline", () => {
     addMoreNotifications,
     setPosts,
     setNotifications,
+    startReadmore,
+    queuePendingPosts,
+    applyPendingNewPosts,
+    pendingNewPostsCount,
+    isReadmoreLocked,
   };
 });
