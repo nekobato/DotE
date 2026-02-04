@@ -43,6 +43,14 @@ input {
   visibility: hidden;
 }
 
+.post-item {
+  transition: opacity 0.2s ease;
+
+  &.is-read {
+    opacity: 0.6;
+  }
+}
+
 .dote-field-group-title {
   display: block;
   padding: 8px 16px 0px;

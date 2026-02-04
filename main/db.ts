@@ -94,6 +94,8 @@ const schema: Schema<StoreSchema> = {
         },
         updateInterval: { type: "number" },
         available: { type: "boolean" },
+        lastReadId: { type: "string" },
+        lastReadAt: { type: "string" },
       },
       required: ["id", "userId", "channel", "available"],
     },
