@@ -12,7 +12,7 @@ body {
 }
 
 h1 {
-  color: #bababa;
+  color: var(--color-text-title);
   font-size: 3.2em;
   line-height: 1.1;
 }
@@ -20,7 +20,7 @@ h1 {
 button,
 input {
   outline-width: 2;
-  outline-color: #fff;
+  outline-color: var(--dote-color-white);
 }
 
 .dote-unvisible {
@@ -30,7 +30,7 @@ input {
 .dote-field-group-title {
   display: block;
   padding: 8px 16px 0px;
-  color: #bababa;
+  color: var(--color-text-title);
   font-weight: bold;
   font-size: 1rem;
 
@@ -83,6 +83,6 @@ input {
     margin-bottom: -2px;
   }
   a {
-    color: #efefef;
+    color: var(--color-text-link);
   }
 }

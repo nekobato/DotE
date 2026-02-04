@@ -270,7 +270,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
   .text-container {
     min-height: calc(0.8rem * 2);
     overflow: hidden;
-    color: #efefef;
+    color: var(--dote-color-white);
     font-size: 0.6rem;
     line-height: 1rem;
   }
@@ -279,7 +279,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     display: flex;
     align-items: center;
     min-height: calc(0.8rem * 2);
-    color: #efefef;
+    color: var(--dote-color-white);
     font-size: 0.6rem;
     line-height: 0.8rem;
   }

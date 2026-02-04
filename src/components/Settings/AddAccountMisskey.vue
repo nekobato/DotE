@@ -115,7 +115,7 @@ const openMisskeyAuthLink = () => {
 }
 .content {
   padding: 4px 0;
-  color: #fff;
+  color: var(--color-text-body);
   font-size: var(--font-size-14);
   .account-input {
     width: 200px;
@@ -127,7 +127,7 @@ const openMisskeyAuthLink = () => {
     height: 16px;
   }
   &:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--dote-color-ink-t2);
   }
 }
 </style>

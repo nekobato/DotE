@@ -24,8 +24,8 @@ button {
   text-align: center;
   text-decoration: none;
   word-break: break-word;
-  background: rgba(255, 255, 255, 0);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  border: 1px solid var(--dote-color-white-t2);
   border-radius: 4px;
   cursor: pointer;
   transition-property: background-color, border-color, color, fill;
@@ -144,13 +144,13 @@ button {
     fill: var(--color-button-text);
     &:hover,
     &:focus {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.1);
+      color: var(--dote-color-white);
+      background: var(--dote-color-white-t1);
     }
 
     &:active {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.2);
+      color: var(--dote-color-white);
+      background: var(--dote-color-white-t2);
     }
 
     &[disabled] {
@@ -169,7 +169,7 @@ button {
   cursor: pointer;
   &:hover {
     svg {
-      fill: #dddddd;
+      fill: var(--dote-color-white);
     }
   }
 }

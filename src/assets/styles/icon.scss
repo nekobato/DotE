@@ -2,7 +2,7 @@
   display: inline-flex;
   width: 24px;
   height: 24px;
-  fill: #ffffff;
+  fill: var(--dote-color-white);
 
   &.size-large {
     width: 32px;
@@ -24,11 +24,11 @@
   }
 
   &.secondary {
-    fill: #999999;
+    fill: var(--dote-color-white-t4);
   }
 
   &.disabled {
-    fill: #cccccc;
+    fill: var(--dote-color-white-t2);
   }
 
   &.accent {

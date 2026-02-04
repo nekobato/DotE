@@ -209,7 +209,7 @@ const openOriginPage = () => {
 .text-container {
   min-height: calc(0.8rem * 2);
   overflow: hidden;
-  color: #efefef;
+  color: var(--dote-color-white);
   font-size: 0.6rem;
   line-height: 0.8rem;
 }
