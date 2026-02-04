@@ -392,7 +392,7 @@ onMounted(() => {
 .content {
   display: inline-flex;
   align-items: center;
-  color: #fff;
+  color: var(--color-text-body);
   font-size: var(--font-size-14);
 
   & > * {

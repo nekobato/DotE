@@ -237,9 +237,6 @@ const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | Blu
   align-items: center;
   justify-content: flex-start;
   padding: 7px 0 9px; /* for appearance */
-  box-shadow:
-    rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
-    rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
   -webkit-app-region: no-drag;
 
   &.detailed {

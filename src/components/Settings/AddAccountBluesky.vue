@@ -114,7 +114,7 @@ const startOAuth = async () => {
 <style lang="scss" scoped>
 .content {
   padding: 4px 0;
-  color: #fff;
+  color: var(--color-text-body);
   font-size: var(--font-size-14);
   .account-input {
     width: 220px;
@@ -122,20 +122,20 @@ const startOAuth = async () => {
 }
 .description {
   margin: 0 0 8px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-text-subtitle);
 }
 .hint {
   margin: 4px 0 8px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--color-text-caption);
   font-size: var(--font-size-12);
   span {
-    color: #fff;
+    color: var(--color-text-body);
     font-weight: 600;
   }
 }
 .info {
   margin: 0 0 8px;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--color-text-caption);
   font-size: var(--font-size-12);
 }
 .config-warning {
@@ -149,7 +149,7 @@ const startOAuth = async () => {
     height: 16px;
   }
   &:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--dote-color-ink-t2);
   }
 }
 </style>
