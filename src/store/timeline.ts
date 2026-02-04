@@ -364,5 +364,6 @@ export const useTimelineStore = defineStore("timeline", () => {
     applyPendingNewPosts,
     pendingNewPostsCount,
     isReadmoreLocked,
+    setLastReadId,
   };
 });
