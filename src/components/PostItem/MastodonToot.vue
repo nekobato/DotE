@@ -339,39 +339,39 @@ const openUserPage = (user: MastodonToot["account"]) => {
     color: #efefef;
     font-size: 0.6rem;
     line-height: 1rem;
-  }
 
-  .line-all {
-    display: block;
-    .cw,
-    .text {
+    &.line-all {
       display: block;
+      .cw,
+      .text {
+        display: block;
+      }
     }
-  }
-  .line-1,
-  .line-2,
-  .line-3 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    .cw,
-    .text {
-      display: inline;
-    }
+    &.line-1,
+    &.line-2,
+    &.line-3 {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      .cw,
+      .text {
+        display: inline;
+      }
 
-    .cw + * {
-      margin-left: 8px;
+      .cw + * {
+        margin-left: 8px;
+      }
     }
-  }
-  .line-1 {
-    min-height: 0.8rem;
-    white-space: nowrap;
-    line-clamp: 1;
-  }
-  .line-2 {
-    line-clamp: 2;
-  }
-  .line-3 {
-    line-clamp: 3;
+    &.line-1 {
+      min-height: 0.8rem;
+      white-space: nowrap;
+      -webkit-line-clamp: 1;
+    }
+    &.line-2 {
+      -webkit-line-clamp: 2;
+    }
+    &.line-3 {
+      -webkit-line-clamp: 3;
+    }
   }
 }
 </style>

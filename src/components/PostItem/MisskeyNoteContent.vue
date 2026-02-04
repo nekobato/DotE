@@ -227,52 +227,52 @@ const lineClass = computed(() => {
   color: #efefef;
   font-size: 0.6rem;
   line-height: 1rem;
-}
 
-.read-all {
-  font-size: 0.5rem;
-}
+  .read-all {
+    font-size: 0.5rem;
+  }
 
-.line-all {
-  display: block;
-  .cw,
-  .text {
+  &.line-all {
     display: block;
-  }
+    .cw,
+    .text {
+      display: block;
+    }
 
-  .read-all {
-    margin-top: 4px;
+    .read-all {
+      margin-top: 4px;
+    }
   }
-}
-.line-1,
-.line-2,
-.line-3 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  .cw,
-  .text {
-    display: inline;
-  }
+  &.line-1,
+  &.line-2,
+  &.line-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    .cw,
+    .text {
+      display: inline;
+    }
 
-  .cw + * {
-    margin-left: 8px;
+    .cw + * {
+      margin-left: 8px;
+    }
   }
-}
-.line-1 {
-  min-height: 0.8rem;
-  white-space: nowrap;
-  line-clamp: 1;
-}
-.line-2 {
-  line-clamp: 2;
-  .read-all {
-    margin-top: 4px;
+  &.line-1 {
+    min-height: 0.8rem;
+    white-space: nowrap;
+    -webkit-line-clamp: 1;
   }
-}
-.line-3 {
-  line-clamp: 3;
-  .read-all {
-    margin-top: 4px;
+  &.line-2 {
+    -webkit-line-clamp: 2;
+    .read-all {
+      margin-top: 4px;
+    }
+  }
+  &.line-3 {
+    -webkit-line-clamp: 3;
+    .read-all {
+      margin-top: 4px;
+    }
   }
 }
 </style>
