@@ -143,6 +143,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
         :notification="props.notification"
         :currentInstanceUrl="props.currentInstanceUrl"
         :emojis="props.emojis"
+        :lineStyle="props.lineStyle"
         @openUserPage="openUserPage"
       />
     </div>

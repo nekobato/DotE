@@ -62,11 +62,11 @@ const lineClass = computed(() => {
         />
       </div>
     </div>
-    <div class="dote-post-content">
+    <div class="dote-post-content" :class="[props.lineStyle]">
       <Icon icon="mingcute:refresh-3-line" class="post-type-mark" v-if="props.type === 'quoted'" />
       <img
         class="dote-avatar"
-        :class="{ mini: props.type === 'renote', 'line-1': props.lineStyle === 'line-1' }"
+        :class="{ mini: props.type === 'renote' }"
         :src="props.note.user.avatarUrl || ''"
         alt=""
         @click="openUserPage(props.note.user)"
@@ -158,37 +158,27 @@ const lineClass = computed(() => {
 
 .dote-avatar {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--post-avatar-size);
+  height: var(--post-avatar-size);
   margin: 0 0 auto 0;
   object-fit: cover;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
-  &.line-1 {
-    width: 20px;
-    height: 20px;
-
-    &.mini {
-      top: 24px;
-      width: 16px;
-      height: 16px;
-    }
-  }
   &.mini {
     position: relative;
-    top: 28px;
+    top: var(--post-avatar-mini-offset);
     z-index: 1;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-mini-size);
+    height: var(--post-avatar-mini-size);
   }
 
   &.origin-user {
     position: absolute;
-    top: 12px;
+    top: var(--post-avatar-origin-offset);
     left: 0;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-origin-size);
+    height: var(--post-avatar-origin-size);
     margin-left: 0;
   }
 
@@ -227,8 +217,8 @@ const lineClass = computed(() => {
   }
 }
 .dote-post-info .renote > .dote-post-body > .dote-avatar {
-  width: 20px;
-  height: 20px;
+  width: var(--post-avatar-mini-size);
+  height: var(--post-avatar-mini-size);
 }
 
 .text-container {
@@ -237,52 +227,52 @@ const lineClass = computed(() => {
   color: var(--dote-color-white);
   font-size: 0.6rem;
   line-height: 1rem;
-}
 
-.read-all {
-  font-size: 0.5rem;
-}
+  .read-all {
+    font-size: 0.5rem;
+  }
 
-.line-all {
-  display: block;
-  .cw,
-  .text {
+  &.line-all {
     display: block;
-  }
+    .cw,
+    .text {
+      display: block;
+    }
 
-  .read-all {
-    margin-top: 4px;
+    .read-all {
+      margin-top: 4px;
+    }
   }
-}
-.line-1,
-.line-2,
-.line-3 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  .cw,
-  .text {
-    display: inline;
-  }
+  &.line-1,
+  &.line-2,
+  &.line-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    .cw,
+    .text {
+      display: inline;
+    }
 
-  .cw + * {
-    margin-left: 8px;
+    .cw + * {
+      margin-left: 8px;
+    }
   }
-}
-.line-1 {
-  min-height: 0.8rem;
-  white-space: nowrap;
-  line-clamp: 1;
-}
-.line-2 {
-  line-clamp: 2;
-  .read-all {
-    margin-top: 4px;
+  &.line-1 {
+    min-height: 0.8rem;
+    white-space: nowrap;
+    -webkit-line-clamp: 1;
   }
-}
-.line-3 {
-  line-clamp: 3;
-  .read-all {
-    margin-top: 4px;
+  &.line-2 {
+    -webkit-line-clamp: 2;
+    .read-all {
+      margin-top: 4px;
+    }
+  }
+  &.line-3 {
+    -webkit-line-clamp: 3;
+    .read-all {
+      margin-top: 4px;
+    }
   }
 }
 </style>

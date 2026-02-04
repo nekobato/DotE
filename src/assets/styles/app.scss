@@ -11,6 +11,22 @@ body {
   height: 100%;
 }
 
+.dote-post-content {
+  --post-avatar-size: 32px;
+  --post-avatar-mini-size: 20px;
+  --post-avatar-mini-offset: 28px;
+  --post-avatar-origin-size: 20px;
+  --post-avatar-origin-offset: 12px;
+
+  &.line-1 {
+    --post-avatar-size: var(--post-body--line-height);
+    --post-avatar-mini-size: var(--font-size-12);
+    --post-avatar-mini-offset: calc(var(--post-avatar-size) - 4px);
+    --post-avatar-origin-size: var(--font-size-12);
+    --post-avatar-origin-offset: calc(var(--post-avatar-size) / 2 - 4px);
+  }
+}
+
 h1 {
   color: var(--color-text-title);
   font-size: 3.2em;
