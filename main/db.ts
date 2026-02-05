@@ -256,9 +256,15 @@ export const deleteTimeline = (id: string) => {
 
   const newTimelines = store.get("timelines");
 
-  // すべてのTimelineがavailableならば最初のTimelineをavailableにする
-  if (!newTimelines.some((timeline) => timeline.available)) {
-    store.set("timelines", [...newTimelines, { ...newTimelines[0], available: true }]);
+  // availableが存在しない場合は、先頭のTimelineをavailableにする
+  if (newTimelines.length > 0 && !newTimelines.some((timeline) => timeline.available)) {
+    store.set("timelines", [
+      {
+        ...newTimelines[0],
+        available: true,
+      },
+      ...newTimelines.slice(1),
+    ]);
   }
 };
 
