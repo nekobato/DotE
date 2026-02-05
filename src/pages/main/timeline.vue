@@ -285,8 +285,9 @@ onMounted(() => {
 
 watch(
   () => [timelineStore.currentIndex, postIdsKey.value] as const,
-  async ([nextIndex], [prevIndex]) => {
-    if (nextIndex !== prevIndex) {
+  async ([nextIndex], prevValue) => {
+    const prevIndex = prevValue?.[0];
+    if (prevIndex !== undefined && nextIndex !== prevIndex) {
       resetPostObserver();
     }
     await nextTick();
