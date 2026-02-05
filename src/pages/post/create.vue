@@ -20,7 +20,8 @@ import type { ApiInvokeResult } from "@shared/types/ipc";
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
   emojis?: MisskeyEntities.EmojiSimple[];
-  mode?: "boost";
+  mode?: "boost" | "reply";
+  replyToId?: string;
 };
 
 type UploadStatus = "ready" | "uploading" | "uploaded" | "failed";
@@ -46,6 +47,7 @@ const submitTextMap = {
   quote: "Quote",
   toot: "Toot",
   boost: "Boost",
+  reply: "Reply",
   post: "Post",
   repost: "Repost",
 };
@@ -106,10 +108,23 @@ const uploadedMastodonMediaIds = computed(() =>
 );
 const hasAttachments = computed(() => attachments.value.length > 0);
 const isBoostMode = computed(() => props.data.mode === "boost");
+const isReplyMode = computed(() => props.data.mode === "reply");
+
 const boostTargetId = computed(() => {
   if (!isBoostMode.value) return undefined;
   const target = props.data.post as MastodonTootType | undefined;
   return target?.id;
+});
+
+const mastodonReplyTarget = computed(() => {
+  if (!isReplyMode.value) return null;
+  if (state.instance?.type !== "mastodon") return null;
+  return props.data.post as MastodonTootType | null;
+});
+
+const replyToId = computed(() => {
+  if (!isReplyMode.value) return undefined;
+  return props.data.replyToId ?? (mastodonReplyTarget.value?.id || undefined);
 });
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
@@ -211,6 +226,12 @@ const submitType = computed(() => {
     if (isBoostMode.value) {
       return "boost";
     }
+    if (isReplyMode.value) {
+      return "reply";
+    }
+    if (mastodonToot.value) {
+      return "boost";
+    }
     return "toot";
   }
   if (state.instance?.type === "bluesky") {
@@ -230,7 +251,12 @@ const canSubmit = computed(() => {
     return false;
   }
 
-  if (submitType.value === "note" || submitType.value === "toot" || submitType.value === "post") {
+  if (
+    submitType.value === "note" ||
+    submitType.value === "toot" ||
+    submitType.value === "reply" ||
+    submitType.value === "post"
+  ) {
     if (state.instance?.type === "misskey") {
       return text.value.length > 0 || hasAttachments.value;
     }
@@ -488,7 +514,7 @@ const postToMastodon = async () => {
     instanceUrl: state.instance?.url,
     token: state.user?.token,
     status: text.value,
-    // inReplyToId: null,
+    ...(replyToId.value ? { inReplyToId: replyToId.value } : {}),
     mediaIds,
     // sensitive: false,
     // spoilerText: null,
@@ -747,6 +773,15 @@ document.addEventListener("keydown", (e) => {
         v-if="isBoostMode && mastodonToot"
         class="post-item"
         :post="mastodonToot"
+        :instanceUrl="state.instance?.url"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+      />
+      <MastodonToot
+        v-else-if="mastodonReplyTarget"
+        class="post-item"
+        :post="mastodonReplyTarget"
         :instanceUrl="state.instance?.url"
         :showReactions="false"
         :showActions="false"

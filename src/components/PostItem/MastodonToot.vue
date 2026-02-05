@@ -34,7 +34,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["refreshPost", "reaction", "favourite", "boost"]);
+const emit = defineEmits(["refreshPost", "reaction", "favourite", "boost", "reply"]);
 
 const post = computed(() => {
   return props.post.reblog || props.post;
@@ -79,6 +79,13 @@ const openPost = () => {
 
 const openUserPage = (user: MastodonToot["account"]) => {
   ipcSend("open-url", { url: user.url });
+};
+
+/**
+ * Emit reply action for this toot.
+ */
+const replyToPost = () => {
+  emit("reply", post.value);
 };
 
 /**
@@ -135,6 +142,9 @@ const boostPost = () => {
       </button>
     </div>
     <div class="dote-post-actions">
+      <button class="dote-post-action" @click="replyToPost" v-if="props.showActions">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:message-2-line" />
+      </button>
       <button class="dote-post-action" @click="boostPost" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
       </button>
