@@ -45,6 +45,7 @@ const submitTextMap = {
   note: "Note",
   renote: "Renote",
   quote: "Quote",
+  reply: "Reply",
   toot: "Toot",
   boost: "Boost",
   reply: "Reply",
@@ -116,6 +117,12 @@ const boostTargetId = computed(() => {
   return target?.id;
 });
 
+const misskeyReplyTarget = computed(() => {
+  if (!isReplyMode.value) return null;
+  if (state.instance?.type !== "misskey") return null;
+  return props.data.post as MisskeyNoteType | null;
+});
+
 const mastodonReplyTarget = computed(() => {
   if (!isReplyMode.value) return null;
   if (state.instance?.type !== "mastodon") return null;
@@ -124,7 +131,13 @@ const mastodonReplyTarget = computed(() => {
 
 const replyToId = computed(() => {
   if (!isReplyMode.value) return undefined;
-  return props.data.replyToId ?? (mastodonReplyTarget.value?.id || undefined);
+  if (state.instance?.type === "misskey") {
+    return props.data.replyToId ?? (misskeyReplyTarget.value?.id || undefined);
+  }
+  if (state.instance?.type === "mastodon") {
+    return props.data.replyToId ?? (mastodonReplyTarget.value?.id || undefined);
+  }
+  return props.data.replyToId;
 });
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
@@ -162,7 +175,7 @@ const mastodonToot = computed(() => {
 });
 
 const misskeyNote = computed(() => {
-  if (state.instance?.type === "misskey") {
+  if (state.instance?.type === "misskey" && !isReplyMode.value) {
     const renotePost = props.data.post as MisskeyNoteType;
     return {
       text: text.value,
@@ -217,6 +230,9 @@ const blueskyPost = computed(() => {
 
 const submitType = computed(() => {
   if (state.instance?.type === "misskey") {
+    if (isReplyMode.value) {
+      return "reply";
+    }
     if (misskeyNote.value?.renote) {
       return text.value ? "quote" : "renote";
     }
@@ -253,8 +269,8 @@ const canSubmit = computed(() => {
 
   if (
     submitType.value === "note" ||
-    submitType.value === "toot" ||
     submitType.value === "reply" ||
+    submitType.value === "toot" ||
     submitType.value === "post"
   ) {
     if (state.instance?.type === "misskey") {
@@ -451,7 +467,12 @@ const removeAttachment = (id: string) => {
 
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
-  const renoteId = targetNote?.renoteId && !targetNote.text ? targetNote.renoteId : targetNote?.id;
+  const replyId = isReplyMode.value ? replyToId.value ?? null : null;
+  const renoteId = isReplyMode.value
+    ? null
+    : targetNote?.renoteId && !targetNote.text
+      ? targetNote.renoteId
+      : targetNote?.id ?? null;
   if (!(await uploadMisskeyAttachments())) {
     return;
   }
@@ -473,7 +494,7 @@ const postToMisskey = async () => {
     noExtractEmojis: misskeyNoExtractEmojis.value,
     noExtractLinks: misskeyNoExtractLinks.value,
     // poll: null,
-    // replyId: null,
+    replyId,
     renoteId: renoteId || null,
     fileIds,
   });
@@ -786,6 +807,18 @@ document.addEventListener("keydown", (e) => {
         :showReactions="false"
         :showActions="false"
         lineStyle="all"
+      />
+      <MisskeyNote
+        v-if="misskeyReplyTarget"
+        class="post-item"
+        :post="misskeyReplyTarget"
+        :emojis="props.data.emojis || []"
+        :currentInstanceUrl="state.instance?.url"
+        :hideCw="false"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+        theme="default"
       />
       <MisskeyNote
         v-if="misskeyNote"

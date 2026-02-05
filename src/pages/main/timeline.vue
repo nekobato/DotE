@@ -93,6 +93,13 @@ const onMisskeyRepost = (payload: { post: MisskeyNoteType; emojis: { name: strin
 };
 
 /**
+ * Misskeyの返信ウィンドウを開きます。
+ */
+const onMisskeyReply = (note: MisskeyNoteType) => {
+  ipcSend("post:create", { post: note, emojis: emojis.value, mode: "reply", replyToId: note.id });
+};
+
+/**
  * Mastodonの返信ウィンドウを開きます。
  */
 const onMastodonReply = (toot: MastodonTootType) => {
@@ -330,6 +337,7 @@ onBeforeUnmount(() => {
           @newReaction="onMisskeyNewReaction"
           @refreshPost="onMisskeyRefreshPost"
           @repost="onMisskeyRepost"
+          @reply="onMisskeyReply"
         />
         <MisskeyNotification
           v-if="timelineStore.current.channel === 'misskey:notifications'"

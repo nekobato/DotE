@@ -23,6 +23,7 @@ const emit = defineEmits<{
   reaction: [data: { postId: string; reaction: string }];
   newReaction: [postId: string];
   repost: [data: { post: MisskeyNote; emojis: { name: string; url: string }[] }];
+  reply: [post: MisskeyNote];
 }>();
 
 // Composables
@@ -68,6 +69,13 @@ const openRepostWindow = () => {
 
 const onClickReaction = (postId: string, reaction: string) => {
   onClickReactionAction(postId, reaction, emit);
+};
+
+/**
+ * Emit reply action for this note.
+ */
+const replyToPost = () => {
+  emit("reply", props.post);
 };
 
 // Setup stream subscription
@@ -121,6 +129,9 @@ setupStreamSubscription();
     <div class="dote-post-actions">
       <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-fill" />
+      </button>
+      <button class="dote-post-action" @click="replyToPost" v-if="props.showActions">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:message-2-line" />
       </button>
       <button class="dote-post-action" @click="openReactionWindow" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
