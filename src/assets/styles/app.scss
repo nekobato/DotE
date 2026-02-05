@@ -11,8 +11,24 @@ body {
   height: 100%;
 }
 
+.dote-post-content {
+  --post-avatar-size: 32px;
+  --post-avatar-mini-size: 20px;
+  --post-avatar-mini-offset: 28px;
+  --post-avatar-origin-size: 20px;
+  --post-avatar-origin-offset: 12px;
+
+  &.line-1 {
+    --post-avatar-size: var(--post-body--line-height);
+    --post-avatar-mini-size: var(--font-size-12);
+    --post-avatar-mini-offset: calc(var(--post-avatar-size) - 4px);
+    --post-avatar-origin-size: var(--font-size-12);
+    --post-avatar-origin-offset: calc(var(--post-avatar-size) / 2 - 4px);
+  }
+}
+
 h1 {
-  color: #bababa;
+  color: var(--color-text-title);
   font-size: 3.2em;
   line-height: 1.1;
 }
@@ -20,17 +36,25 @@ h1 {
 button,
 input {
   outline-width: 2;
-  outline-color: #fff;
+  outline-color: var(--dote-color-white);
 }
 
 .dote-unvisible {
   visibility: hidden;
 }
 
+.post-item {
+  transition: opacity 0.2s ease;
+
+  &.is-read {
+    opacity: 0.6;
+  }
+}
+
 .dote-field-group-title {
   display: block;
   padding: 8px 16px 0px;
-  color: #bababa;
+  color: var(--color-text-title);
   font-weight: bold;
   font-size: 1rem;
 
@@ -83,6 +107,6 @@ input {
     margin-bottom: -2px;
   }
   a {
-    color: #efefef;
+    color: var(--color-text-link);
   }
 }

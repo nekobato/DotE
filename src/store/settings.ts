@@ -16,6 +16,14 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "mode", value: mode });
   };
 
+  /**
+   * Persist selected theme (dark or light).
+   */
+  const setTheme = async (theme: Settings["theme"]) => {
+    store.$state.settings.theme = theme;
+    return await ipcInvoke("settings:set", { key: "theme", value: theme });
+  };
+
   const setMaxPostCount = async (count: number) => {
     store.$state.settings.maxPostCount = count;
     return await ipcInvoke("settings:set", { key: "maxPostCount", value: count.toString() });
@@ -64,6 +72,7 @@ export const useSettingsStore = defineStore("settings", () => {
   return {
     setOpacity,
     setMode,
+    setTheme,
     setMaxPostCount,
     setFontFamily,
     setPostStyle,

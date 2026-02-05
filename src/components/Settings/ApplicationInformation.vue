@@ -27,7 +27,7 @@ import { information } from "@/store/information";
   align-items: center;
   width: 100%;
   padding: 4px 0;
-  color: #fff;
+  color: var(--color-text-body);
   font-size: var(--font-size-14);
   .title {
     display: inline-flex;

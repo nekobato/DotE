@@ -74,6 +74,40 @@ export const useMastodonStore = defineStore("mastodon", () => {
     }
   };
 
+  /**
+   * Boost or unboost a toot and update the local cache.
+   */
+  const toggleReblog = async ({ id, reblogged }: { id: string; reblogged: boolean }) => {
+    const timeline = getTimelineStore();
+    if (!timeline.currentUser) {
+      throw new Error("user not found");
+    }
+
+    const result = await ipcInvoke("api", {
+      method: reblogged ? "mastodon:unReblog" : "mastodon:reblog",
+      instanceUrl: timeline.currentInstance?.url,
+      token: timeline.currentUser.token,
+      id: id,
+    });
+    if (!result.ok) {
+      reportApiError(result, `${id}の${reblogged ? "ブースト解除" : "ブースト"}失敗`);
+      return;
+    }
+
+    const toot = store.$state.timelines[timeline.currentIndex].posts.find(
+      (post: DotEPost) => post.id === id,
+    ) as MastodonToot | undefined;
+    if (!toot) return;
+
+    if (reblogged) {
+      toot.reblogged = false;
+      toot.reblogs_count = Math.max(0, toot.reblogs_count - 1);
+    } else {
+      toot.reblogged = true;
+      toot.reblogs_count += 1;
+    }
+  };
+
   const updatePost = async ({ id }: { id: string }) => {
     const timeline = getTimelineStore();
     if (!store.timelines[timeline.currentIndex] || !timeline.currentUser) return;
@@ -153,6 +187,7 @@ export const useMastodonStore = defineStore("mastodon", () => {
   return {
     getList,
     toggleFavourite,
+    toggleReblog,
     updatePost,
     fetchPosts,
     fetchDiffPosts,

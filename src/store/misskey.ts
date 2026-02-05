@@ -228,8 +228,20 @@ export const useMisskeyStore = defineStore("misskey", () => {
     return reaction.replace(/:|@\./g, "");
   };
 
-  const isEmojiUrl = (emoji: string) => {
-    return /^https?:\/\//.test(emoji) || emoji.startsWith("data:");
+  type StreamEmoji = { url?: unknown } | string | null | undefined;
+
+  const isEmojiUrl = (emoji: unknown): emoji is string => {
+    return typeof emoji === "string" && (/^https?:\/\//.test(emoji) || emoji.startsWith("data:"));
+  };
+
+  const extractEmojiUrl = (emoji: StreamEmoji): string | undefined => {
+    if (!emoji) return undefined;
+    if (isEmojiUrl(emoji)) return emoji;
+    if (typeof emoji === "object") {
+      const url = (emoji as { url?: unknown }).url;
+      if (typeof url === "string" && url.length > 0) return url;
+    }
+    return undefined;
   };
 
   const getLocalEmojiUrl = (reactionKey: string) => {
@@ -246,14 +258,14 @@ export const useMisskeyStore = defineStore("misskey", () => {
   }: {
     postId: string;
     reaction: string;
-    emoji?: string | null;
+    emoji?: StreamEmoji;
   }) => {
     if (!emoji) return false;
     if (!reaction.startsWith(":")) return false;
     const reactionKey = normalizeReactionEmojiKey(reaction);
     if (!reactionKey) return false;
 
-    const url = isEmojiUrl(emoji) ? emoji : getLocalEmojiUrl(reactionKey);
+    const url = extractEmojiUrl(emoji) ?? getLocalEmojiUrl(reactionKey);
     if (!url) return false;
 
     updateNotesById(postId, (note) => {
@@ -315,7 +327,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
   }: {
     postId: string;
     reaction: string;
-    emoji?: string | null;
+    emoji?: StreamEmoji;
   }) => {
     const timeline = getTimelineStore();
     const currentUser = timeline.currentUser;

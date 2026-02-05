@@ -2,6 +2,7 @@
 import DoteAlert from "@/components/common/DoteAlert.vue";
 import DoteButton from "@/components/common/DoteButton.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import Mfm from "@/components/misskey/Mfm.vue";
@@ -19,7 +20,7 @@ import type { ApiInvokeResult } from "@shared/types/ipc";
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
   emojis?: MisskeyEntities.EmojiSimple[];
-  mode?: "reply";
+  mode?: "boost" | "reply";
   replyToId?: string;
 };
 
@@ -47,6 +48,7 @@ const submitTextMap = {
   reply: "Reply",
   toot: "Toot",
   boost: "Boost",
+  reply: "Reply",
   post: "Post",
   repost: "Repost",
 };
@@ -106,7 +108,14 @@ const uploadedMastodonMediaIds = computed(() =>
   attachments.value.filter((item) => item.status === "uploaded" && item.mediaId).map((item) => item.mediaId as string),
 );
 const hasAttachments = computed(() => attachments.value.length > 0);
+const isBoostMode = computed(() => props.data.mode === "boost");
 const isReplyMode = computed(() => props.data.mode === "reply");
+
+const boostTargetId = computed(() => {
+  if (!isBoostMode.value) return undefined;
+  const target = props.data.post as MastodonTootType | undefined;
+  return target?.id;
+});
 
 const misskeyReplyTarget = computed(() => {
   if (!isReplyMode.value) return null;
@@ -114,9 +123,21 @@ const misskeyReplyTarget = computed(() => {
   return props.data.post as MisskeyNoteType | null;
 });
 
+const mastodonReplyTarget = computed(() => {
+  if (!isReplyMode.value) return null;
+  if (state.instance?.type !== "mastodon") return null;
+  return props.data.post as MastodonTootType | null;
+});
+
 const replyToId = computed(() => {
   if (!isReplyMode.value) return undefined;
-  return props.data.replyToId ?? (misskeyReplyTarget.value?.id || undefined);
+  if (state.instance?.type === "misskey") {
+    return props.data.replyToId ?? (misskeyReplyTarget.value?.id || undefined);
+  }
+  if (state.instance?.type === "mastodon") {
+    return props.data.replyToId ?? (mastodonReplyTarget.value?.id || undefined);
+  }
+  return props.data.replyToId;
 });
 
 const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
@@ -130,15 +151,27 @@ const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | un
 
 const mastodonToot = computed(() => {
   if (state.instance?.type === "mastodon" && props.data.post) {
+    const target = props.data.post as MastodonTootType;
+    const original = target.reblog ?? target;
+    const boosterAccount = {
+      ...original.account,
+      display_name: state.user?.name ?? original.account.display_name,
+      avatar: state.user?.avatarUrl ?? original.account.avatar,
+      url: original.account.url,
+    } as MastodonTootType["account"];
+
     return {
-      account: {
-        name: state.user?.name,
-        host: state.instance?.url,
-        avatarUrl: state.user?.avatarUrl,
-      },
-      reblog: props.data.post as MastodonTootType["reblog"],
-    } as unknown as MastodonTootType;
+      ...original,
+      id: target.id ?? original.id,
+      account: boosterAccount,
+      reblog: original,
+      media_attachments: original.media_attachments ?? [],
+      sensitive: Boolean(original.sensitive),
+      favourited: Boolean(original.favourited),
+      favourites_count: original.favourites_count ?? 0,
+    } as MastodonTootType;
   }
+  return null;
 });
 
 const misskeyNote = computed(() => {
@@ -206,6 +239,12 @@ const submitType = computed(() => {
     return "note";
   }
   if (state.instance?.type === "mastodon") {
+    if (isBoostMode.value) {
+      return "boost";
+    }
+    if (isReplyMode.value) {
+      return "reply";
+    }
     if (mastodonToot.value) {
       return "boost";
     }
@@ -469,6 +508,24 @@ const postToMisskey = async () => {
 };
 
 const postToMastodon = async () => {
+  if (isBoostMode.value) {
+    if (!boostTargetId.value) {
+      state.post.error = "ブースト対象の投稿が見つかりませんでした";
+      return;
+    }
+    const result = await ipcInvoke("api", {
+      method: "mastodon:reblog",
+      instanceUrl: state.instance?.url,
+      token: state.user?.token,
+      id: boostTargetId.value,
+    });
+    const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} のブーストに失敗しました`);
+    if (res) {
+      ipcSend("post:close");
+    }
+    return;
+  }
+
   if (!(await uploadMastodonAttachments())) {
     return;
   }
@@ -478,7 +535,7 @@ const postToMastodon = async () => {
     instanceUrl: state.instance?.url,
     token: state.user?.token,
     status: text.value,
-    // inReplyToId: null,
+    ...(replyToId.value ? { inReplyToId: replyToId.value } : {}),
     mediaIds,
     // sensitive: false,
     // spoilerText: null,
@@ -615,8 +672,15 @@ document.addEventListener("keydown", (e) => {
     </div>
     <div class="post-layout">
       <div class="post-field-container">
-        <ElInput class="post-field" :autosize="{ minRows: 2 }" type="textarea" v-model="text" ref="textInputRef" />
-        <div class="post-tools" v-if="canUseEmojiPicker || canUseMfmPreview">
+        <ElInput
+          class="post-field"
+          :autosize="{ minRows: 2 }"
+          type="textarea"
+          v-model="text"
+          ref="textInputRef"
+          :disabled="isBoostMode"
+        />
+        <div class="post-tools" v-if="!isBoostMode && (canUseEmojiPicker || canUseMfmPreview)">
           <button v-if="canUseEmojiPicker" class="nn-button size-small tool-button" @click="toggleEmojiPicker">
             <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
             <span>絵文字</span>
@@ -631,7 +695,7 @@ document.addEventListener("keydown", (e) => {
             <span>プレビュー</span>
           </button>
         </div>
-        <div class="post-tools" v-if="canUseMisskeyOptions">
+        <div class="post-tools" v-if="!isBoostMode && canUseMisskeyOptions">
           <button
             class="nn-button size-small tool-button"
             :class="{ active: showMisskeyOptions }"
@@ -641,24 +705,24 @@ document.addEventListener("keydown", (e) => {
             <span>投稿設定</span>
           </button>
         </div>
-        <div class="post-tools" v-if="canUseAttachments">
+        <div class="post-tools" v-if="!isBoostMode && canUseAttachments">
           <button class="nn-button size-small tool-button" @click="openFilePicker">
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
             <span>添付</span>
           </button>
           <input class="file-input" type="file" multiple ref="fileInputRef" @change="onSelectFiles" />
         </div>
-        <div class="emoji-picker-panel" v-if="canUseEmojiPicker && showEmojiPicker">
+        <div class="emoji-picker-panel" v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker">
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
         </div>
-        <div class="mfm-preview-panel" v-if="canUseMfmPreview && showMfmPreview">
+        <div class="mfm-preview-panel" v-if="!isBoostMode && canUseMfmPreview && showMfmPreview">
           <div class="mfm-preview-header">MFM プレビュー</div>
           <div class="mfm-preview-body">
             <Mfm :text="text" :emojis="props.data.emojis || []" :host="state.instance?.url" postStyle="all" />
             <div class="mfm-preview-empty" v-if="text.length === 0">本文を入力するとプレビューが表示されます</div>
           </div>
         </div>
-        <div class="misskey-options" v-if="canUseMisskeyOptions && showMisskeyOptions">
+        <div class="misskey-options" v-if="!isBoostMode && canUseMisskeyOptions && showMisskeyOptions">
           <div class="misskey-options-row">
             <label class="nn-label">公開範囲</label>
             <select class="nn-select" v-model="misskeyVisibility">
@@ -695,7 +759,7 @@ document.addEventListener("keydown", (e) => {
             </label>
           </div>
         </div>
-        <div class="attachments-panel" v-if="attachments.length">
+        <div class="attachments-panel" v-if="!isBoostMode && attachments.length">
           <div class="attachment-item" v-for="item in attachments" :key="item.id" :class="[item.status]">
             <div class="attachment-preview" v-if="item.previewUrl">
               <img :src="item.previewUrl" :alt="item.name" />
@@ -726,6 +790,24 @@ document.addEventListener("keydown", (e) => {
       </div>
     </div>
     <div class="post-container">
+      <MastodonToot
+        v-if="isBoostMode && mastodonToot"
+        class="post-item"
+        :post="mastodonToot"
+        :instanceUrl="state.instance?.url"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+      />
+      <MastodonToot
+        v-else-if="mastodonReplyTarget"
+        class="post-item"
+        :post="mastodonReplyTarget"
+        :instanceUrl="state.instance?.url"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+      />
       <MisskeyNote
         v-if="misskeyReplyTarget"
         class="post-item"
