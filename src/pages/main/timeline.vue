@@ -99,6 +99,13 @@ const onMastodonReply = (toot: MastodonTootType) => {
   ipcSend("post:create", { post: toot, mode: "reply", replyToId: toot.id });
 };
 
+/**
+ * MastodonのBoost確認画面を開きます。
+ */
+const onMastodonBoost = (toot: MastodonTootType) => {
+  ipcSend("post:repost", { post: toot, mode: "boost" });
+};
+
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
 // Computed values from composables
@@ -350,6 +357,7 @@ onBeforeUnmount(() => {
           :lineStyle="store.settings.postStyle"
           @refreshPost="mastodonStore.updatePost"
           @favourite="mastodonStore.toggleFavourite"
+          @boost="onMastodonBoost"
           @reply="onMastodonReply"
         />
         <MastodonNotification

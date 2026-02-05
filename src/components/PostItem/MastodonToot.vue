@@ -34,7 +34,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["refreshPost", "reaction", "favourite", "reply"]);
+const emit = defineEmits(["refreshPost", "reaction", "favourite", "boost", "reply"]);
 
 const post = computed(() => {
   return props.post.reblog || props.post;
@@ -87,6 +87,13 @@ const openUserPage = (user: MastodonToot["account"]) => {
 const replyToPost = () => {
   emit("reply", post.value);
 };
+
+/**
+ * Emit boost action for this toot.
+ */
+const boostPost = () => {
+  emit("boost", post.value);
+};
 </script>
 
 <template>
@@ -137,6 +144,9 @@ const replyToPost = () => {
     <div class="dote-post-actions">
       <button class="dote-post-action" @click="replyToPost" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:message-2-line" />
+      </button>
+      <button class="dote-post-action" @click="boostPost" v-if="props.showActions">
+        <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
       </button>
       <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
         <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
