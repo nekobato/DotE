@@ -84,7 +84,7 @@ const openOriginPage = () => {
         />
       </div>
     </div>
-    <div class="dote-post-content">
+    <div class="dote-post-content" :class="[props.lineStyle]">
       <img class="dote-avatar" :src="author.avatar || ''" alt="" @click="openUserPage" />
       <img
         class="dote-avatar origin-user"
@@ -115,8 +115,8 @@ const openOriginPage = () => {
 
 .dote-avatar {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--post-avatar-size);
+  height: var(--post-avatar-size);
   margin: 0 0 auto 0;
   object-fit: cover;
   overflow: hidden;
@@ -124,18 +124,18 @@ const openOriginPage = () => {
   border-radius: 50%;
   &.mini {
     position: relative;
-    top: 28px;
+    top: var(--post-avatar-mini-offset);
     z-index: 1;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-mini-size);
+    height: var(--post-avatar-mini-size);
   }
 
   &.origin-user {
     position: absolute;
-    top: 12px;
+    top: var(--post-avatar-origin-offset);
     left: 0;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-origin-size);
+    height: var(--post-avatar-origin-size);
     margin-left: 0;
   }
 
@@ -202,46 +202,46 @@ const openOriginPage = () => {
 }
 
 .dote-post-info .renote > .dote-post-body > .dote-avatar {
-  width: 20px;
-  height: 20px;
+  width: var(--post-avatar-mini-size);
+  height: var(--post-avatar-mini-size);
 }
 
 .text-container {
   min-height: calc(0.8rem * 2);
   overflow: hidden;
-  color: #efefef;
+  color: var(--dote-color-white);
   font-size: 0.6rem;
   line-height: 0.8rem;
-}
 
-.line-all {
-  display: block;
-  .cw,
-  .text {
+  &.line-all {
     display: block;
+    .cw,
+    .text {
+      display: block;
+    }
   }
-}
-.line-1,
-.line-2,
-.line-3 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  .cw,
-  .text {
-    display: inline;
-  }
+  &.line-1,
+  &.line-2,
+  &.line-3 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    .cw,
+    .text {
+      display: inline;
+    }
 
-  .cw + * {
-    margin-left: 8px;
+    .cw + * {
+      margin-left: 8px;
+    }
   }
-}
-.line-1 {
-  line-clamp: 1;
-}
-.line-2 {
-  line-clamp: 2;
-}
-.line-3 {
-  line-clamp: 3;
+  &.line-1 {
+    -webkit-line-clamp: 1;
+  }
+  &.line-2 {
+    -webkit-line-clamp: 2;
+  }
+  &.line-3 {
+    -webkit-line-clamp: 3;
+  }
 }
 </style>

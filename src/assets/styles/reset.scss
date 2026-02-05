@@ -27,7 +27,7 @@ dd {
 }
 
 html {
-  color: #ffffff;
+  color: var(--color-text-body);
   font-weight: normal;
   font-size: 20px;
   font-family:  Roboto, 'Segoe UI', 'Helvetica Neue', "Hiragino Kaku Gothic Pro", "Hiragino Sans", Meiryo, sans-serif;

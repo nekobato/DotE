@@ -149,7 +149,7 @@ const closeAddAccount = () => {
 }
 .content {
   padding: 4px 0;
-  color: #fff;
+  color: var(--color-text-body);
   font-size: var(--font-size-14);
   .account-input {
     width: 200px;
@@ -161,12 +161,12 @@ const closeAddAccount = () => {
     height: 16px;
   }
   &:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--dote-color-ink-t2);
   }
 }
 .add-account-hint {
   margin-left: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-text-caption);
   font-size: var(--font-size-12);
 }
 </style>

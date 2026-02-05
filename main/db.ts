@@ -44,6 +44,7 @@ export const storeDefaults: StoreSchema = {
   settings: {
     opacity: 50,
     mode: "show",
+    theme: "dark",
     font: {
       family: "",
     },
@@ -132,6 +133,7 @@ const schema: Schema<StoreSchema> = {
     properties: {
       opacity: { type: "number" },
       mode: { type: "string" },
+      theme: { type: "string" },
       font: {
         type: "object",
         properties: {
@@ -462,6 +464,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.opacity", Number(value));
     case "mode":
       return store.set("settings.mode", value);
+    case "theme":
+      return store.set("settings.theme", value);
     case "windowSize":
       return store.set("settings.windowSize", value);
     case "font.family":

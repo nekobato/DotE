@@ -25,6 +25,11 @@ const props = defineProps({
     default: {},
     required: true,
   },
+  lineStyle: {
+    type: String as PropType<"all" | "line-1" | "line-2" | "line-3">,
+    required: false,
+    default: "all",
+  },
 });
 
 const emit = defineEmits(["openUserPage"]);
@@ -68,7 +73,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 
 <template>
   <div class="note-content">
-    <div class="dote-post-content">
+    <div class="dote-post-content" :class="[props.lineStyle]">
       <img class="dote-avatar" v-if="user" :src="user.avatarUrl || ''" alt="" @click="openUserPage(user)" />
       <div class="text-container">
         <p v-if="props.notification.type === 'follow'">{{ parseUsername(user?.name) }}があなたをフォローしました</p>
@@ -136,8 +141,8 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 
 .dote-avatar {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  width: var(--post-avatar-size);
+  height: var(--post-avatar-size);
   margin: 0 0 auto 0;
   object-fit: cover;
   overflow: hidden;
@@ -145,10 +150,10 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   border-radius: 50%;
   &.mini {
     position: relative;
-    top: 28px;
+    top: var(--post-avatar-mini-offset);
     z-index: 1;
-    width: 20px;
-    height: 20px;
+    width: var(--post-avatar-mini-size);
+    height: var(--post-avatar-mini-size);
   }
 
   & + * {
@@ -187,8 +192,8 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   }
 }
 .dote-post-info .renote > .dote-post-body > .dote-avatar {
-  width: 20px;
-  height: 20px;
+  width: var(--post-avatar-mini-size);
+  height: var(--post-avatar-mini-size);
 }
 
 .text-container {
@@ -196,7 +201,7 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   align-items: center;
   min-height: calc(0.8rem * 2);
   overflow: hidden;
-  color: #efefef;
+  color: var(--dote-color-white);
   font-size: 0.6rem;
   line-height: 1rem;
 }
@@ -225,12 +230,12 @@ const openUserPage = (user: MisskeyNote["user"]) => {
 .line-1 {
   min-height: 0.8rem;
   white-space: nowrap;
-  line-clamp: 1;
+  -webkit-line-clamp: 1;
 }
 .line-2 {
-  line-clamp: 2;
+  -webkit-line-clamp: 2;
 }
 .line-3 {
-  line-clamp: 3;
+  -webkit-line-clamp: 3;
 }
 </style>
