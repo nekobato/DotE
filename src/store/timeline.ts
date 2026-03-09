@@ -66,10 +66,10 @@ export const useTimelineStore = defineStore("timeline", () => {
     const timeline = getCurrentTimeline();
     if (!timeline?.posts) return;
     const existingIds = new Set([
-      ...timeline.posts.map((post) => post.id),
-      ...timeline.pendingNewPosts.map((post) => post.id),
+      ...timeline.posts.map((post: DotEPost) => post.id),
+      ...timeline.pendingNewPosts.map((post: DotEPost) => post.id),
     ]);
-    const unique = posts.filter((post) => !existingIds.has(post.id));
+    const unique = posts.filter((post: DotEPost) => !existingIds.has(post.id));
     if (unique.length === 0) return;
     timeline.pendingNewPosts = [...unique, ...timeline.pendingNewPosts];
   };
@@ -195,7 +195,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const updateTimeline = async ({ posts, notifications, pendingNewPosts, readmoreLocked, ...timeline }: TimelineStore) => {
+  const updateTimeline = async (timeline: Timeline) => {
     await ipcInvoke("db:set-timeline", timeline);
     await store.initTimelines();
   };
@@ -292,7 +292,7 @@ export const useTimelineStore = defineStore("timeline", () => {
     updatePostAcrossTimelines(store.timelines, post, userId);
     const timeline = getCurrentTimeline();
     if (!timeline?.pendingNewPosts?.length) return;
-    timeline.pendingNewPosts = timeline.pendingNewPosts.map((pending) =>
+    timeline.pendingNewPosts = timeline.pendingNewPosts.map((pending: DotEPost) =>
       pending.id === post.id ? post : pending,
     ) as DotEPost[];
   };
