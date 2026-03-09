@@ -10,7 +10,7 @@ const store = useStore();
 const timelineStore = useTimelineStore();
 
 const onUpdateTimeline = async (timeline: Timeline) => {
-  await timelineStore.updateTimeline({ ...timeline, posts: [], notifications: [] });
+  await timelineStore.updateTimeline(timeline);
 };
 
 const addTimeline = async () => {
