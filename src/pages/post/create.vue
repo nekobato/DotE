@@ -48,7 +48,6 @@ const submitTextMap = {
   reply: "Reply",
   toot: "Toot",
   boost: "Boost",
-  reply: "Reply",
   post: "Post",
   repost: "Repost",
 };
