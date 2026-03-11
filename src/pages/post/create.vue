@@ -90,13 +90,9 @@ const misskeyNoExtractLinks = ref(false);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
-const canUseEmojiPicker = computed(
-  () => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0,
-);
+const canUseEmojiPicker = computed(() => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0);
 const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
-const canUseAttachments = computed(
-  () => state.instance?.type === "misskey" || state.instance?.type === "mastodon",
-);
+const canUseAttachments = computed(() => state.instance?.type === "misskey" || state.instance?.type === "mastodon");
 const canUseMisskeyOptions = computed(() => state.instance?.type === "misskey");
 const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.status === "uploading"));
 const hasFailedAttachments = computed(() => attachments.value.some((item) => item.status === "failed"));
@@ -139,7 +135,7 @@ const replyToId = computed(() => {
   return props.data.replyToId;
 });
 
-const handleApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+const handleApiResult = <T,>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
     state.post.error = message;
     console.error(message, result.error);
@@ -466,16 +462,16 @@ const removeAttachment = (id: string) => {
 
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
-  const replyId = isReplyMode.value ? replyToId.value ?? null : null;
+  const replyId = isReplyMode.value ? (replyToId.value ?? null) : null;
   const renoteId = isReplyMode.value
     ? null
     : targetNote?.renoteId && !targetNote.text
       ? targetNote.renoteId
-      : targetNote?.id ?? null;
+      : (targetNote?.id ?? null);
   if (!(await uploadMisskeyAttachments())) {
     return;
   }
-  const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : null;
+  const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : undefined;
 
   const visibility = misskeyVisibility.value;
   const result = await ipcInvoke("api", {
@@ -495,7 +491,7 @@ const postToMisskey = async () => {
     // poll: null,
     replyId,
     renoteId: renoteId || null,
-    fileIds,
+    ...(fileIds ? { fileIds } : {}),
   });
   const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} への投稿に失敗しました`);
   if (res?.createdNote) {

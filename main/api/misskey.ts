@@ -406,7 +406,7 @@ export const misskeyCreateNote = async ({
   replyId?: string;
   renoteId?: string;
   poll?: any;
-  fileIds?: string[] | null;
+  fileIds?: string[];
 }) => {
   const url = new URL(`/api/notes/create`, instanceUrl).toString();
   return requestJson(url, {
@@ -425,7 +425,7 @@ export const misskeyCreateNote = async ({
       replyId,
       renoteId,
       poll,
-      fileIds,
+      ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     }),
   });
 };
