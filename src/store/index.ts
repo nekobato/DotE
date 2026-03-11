@@ -34,6 +34,8 @@ export type TimelineStore = Timeline & {
   bluesky?: {
     cursor?: string;
   };
+  pendingNewPosts: DotEPost[];
+  readmoreLocked: boolean;
 };
 
 export type ErrorItem = {
@@ -247,6 +249,8 @@ export const useStore = defineStore("store", {
             ...timeline,
             posts: [],
             notifications: [],
+            pendingNewPosts: [],
+            readmoreLocked: false,
           };
         });
         console.info("[store] initTimelines:done", this.$state.timelines);
