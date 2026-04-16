@@ -25,13 +25,43 @@ window.ipc?.on("resume-timeline", () => {});
 // IPCイベントハンドラの設定
 setupIpcHandlers();
 
+/**
+ * Return the reactive sources that define the active stream subscription.
+ */
+const timelineStreamSources = () =>
+  [
+    route.name,
+    timelineStore.isTimelineAvailable,
+    timelineStore.current?.id,
+    timelineStore.current?.userId,
+    timelineStore.current?.channel,
+    timelineStore.current?.updateInterval,
+    timelineStore.current?.options?.channelId,
+    timelineStore.current?.options?.antennaId,
+    timelineStore.current?.options?.listId,
+    timelineStore.current?.options?.tag,
+    timelineStore.current?.options?.query,
+    timelineStore.currentInstance?.url,
+  ] as const;
+
+/**
+ * Keep the stream connection aligned with the current route and timeline selection.
+ */
+const syncStreamConnection = () => {
+  if (route.name !== "MainTimeline" || !timelineStore.isTimelineAvailable) {
+    disconnectAllStreams();
+    return;
+  }
+
+  initStream();
+};
+
 watch(
-  () => route.name,
+  timelineStreamSources,
   () => {
-    if (route.name === "MainTimeline") {
-      console.log("initStream");
-    }
+    syncStreamConnection();
   },
+  { immediate: true },
 );
 
 onBeforeMount(async () => {
@@ -39,10 +69,9 @@ onBeforeMount(async () => {
   console.info("store", store);
 
   if (timelineStore.isTimelineAvailable) {
-    router.push("/main/timeline");
-    initStream();
+    await router.push("/main/timeline");
   } else {
-    router.push("/main/settings");
+    await router.push("/main/settings");
   }
 });
 

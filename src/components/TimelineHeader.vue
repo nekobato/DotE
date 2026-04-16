@@ -9,7 +9,6 @@ import { useInstanceStore } from "@/store/instance";
 import { onClickOutside } from "@vueuse/core";
 import ChannelIcon from "./ChannelIcon.vue";
 import { useStore } from "@/store";
-import { nextTick } from "vue";
 import { mastodonChannelsMap } from "@/utils/mastodon";
 import { misskeyChannelsMap } from "@/utils/misskey";
 import { blueskyChannelsMap } from "@/utils/bluesky";
@@ -98,9 +97,6 @@ const settings = () => {
 const changeTimeline = async (index: number) => {
   await timelineStore.changeActiveTimeline(index);
   toggleMenu();
-  nextTick(() => {
-    timelineStore.fetchInitialPosts();
-  });
 };
 
 const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | BlueskyChannelName) => {
