@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   updateTimeline: [Timeline];
+  deleteTimeline: [Timeline];
 }>();
 
 const store = useStore();
@@ -118,6 +119,7 @@ const antennaId = ref(props.timeline.options?.antennaId ?? "");
 const listId = ref(props.timeline.options?.listId ?? "");
 const tag = ref(props.timeline.options?.tag ?? "");
 const searchQuery = ref(props.timeline.options?.query ?? "");
+const isDeleteConfirming = ref(false);
 
 const accountOptions = computed(() =>
   store.users.map((user) => ({
@@ -147,6 +149,8 @@ const streamOptions = (
       return [];
   }
 };
+
+const canDeleteTimeline = computed(() => store.timelines.length > 1);
 
 const clearOptionValues = () => {
   channelId.value = "";
@@ -231,6 +235,29 @@ const onChangeSearchQuery = async (query: string) => {
       query,
     },
   });
+};
+
+/**
+ * Open the delete confirmation for the current timeline.
+ */
+const startDeleteTimeline = () => {
+  if (!canDeleteTimeline.value) return;
+  isDeleteConfirming.value = true;
+};
+
+/**
+ * Close the delete confirmation for the current timeline.
+ */
+const cancelDeleteTimeline = () => {
+  isDeleteConfirming.value = false;
+};
+
+/**
+ * Request deletion of the current timeline.
+ */
+const confirmDeleteTimeline = () => {
+  emit("deleteTimeline", props.timeline);
+  isDeleteConfirming.value = false;
 };
 
 const fetchSelectionsFromChannel = async (channel: ChannelName) => {
@@ -377,6 +404,32 @@ onMounted(() => {
         <ElInput size="small" placeholder="#" v-model="tag" @change="onChangeHashtag" />
       </div>
     </div>
+    <div class="dote-field-row indent-1">
+      <div class="content"></div>
+      <div class="actions">
+        <button
+          class="nn-button size-small action"
+          :disabled="!canDeleteTimeline"
+          @click="startDeleteTimeline"
+          v-if="!isDeleteConfirming"
+        >
+          <Icon icon="ion:trash" class="nn-icon" />
+        </button>
+        <button class="nn-button size-small action" @click="cancelDeleteTimeline" v-if="isDeleteConfirming">
+          <Icon icon="ion:close" class="nn-icon" />
+        </button>
+      </div>
+    </div>
+    <div class="dote-field-row as-thread indent-1" v-if="isDeleteConfirming">
+      <div class="content">
+        <span class="label">確認：このタイムラインを削除しますか？</span>
+      </div>
+      <div class="actions">
+        <button class="nn-button size-small type-warning action" @click="confirmDeleteTimeline">
+          <Icon icon="ion:checkmark-done" class="nn-icon" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -407,5 +460,20 @@ onMounted(() => {
 .actions.for-select,
 .actions.for-text-field {
   width: 200px;
+}
+.action {
+  > svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--dote-color-ink-t2);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
 }
 </style>

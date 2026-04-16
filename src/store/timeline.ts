@@ -205,52 +205,62 @@ export const useTimelineStore = defineStore("timeline", () => {
     await store.initTimelines();
   };
 
-  const deleteTimelineByUserId = async (userId: string) => {
-    store.$state.timelines.forEach(async (timeline) => {
-      if (timeline.userId === userId) {
-        await ipcInvoke("db:delete-timeline", {
-          id: timeline.id,
-        });
-      }
-    });
-
-    // 更新してみる
+  /**
+   * Keep the timeline state usable after one or more timelines were deleted.
+   */
+  const normalizeTimelinesAfterDeletion = async () => {
     await store.initTimelines();
 
-    // UserもTimelineも無いなら終わり
     if (store.$state.users.length === 0) {
       return;
     }
 
-    // UserはいるけどTimelineが無いならTimelineを作る
     if (store.$state.timelines.length === 0) {
-      const instance = store.instances.find((instance) => instance.id === store.users[0].instanceId);
-      await createTimeline({
-        userId: store.users[0].id,
+      const fallbackUser = store.users[0];
+      const instance = store.instances.find((item) => item.id === fallbackUser.instanceId);
+
+      await ipcInvoke("db:set-timeline", {
+        userId: fallbackUser.id,
         channel: defaultChannelNameFromType(instance?.type),
         options: {},
         updateInterval: 60 * 1000, // 60 sec
         available: true,
       });
+      await store.initTimelines();
       return;
     }
 
-    // すべてのTimelineがavailableならば最初のTimelineをavailableにする
-    if (!store.$state.timelines.some((timeline) => !timeline.available)) {
-      await updateTimeline({
-        ...store.$state.timelines[0],
+    if (!store.$state.timelines.some((timeline) => timeline.available)) {
+      const { posts, notifications, bluesky, pendingNewPosts, readmoreLocked, ...timelineForStore } =
+        store.$state.timelines[0];
+
+      await ipcInvoke("db:set-timeline", {
+        ...timelineForStore,
         available: true,
       });
+      await store.initTimelines();
     }
+  };
 
-    await store.initTimelines();
+  const deleteTimelineByUserId = async (userId: string) => {
+    const targetTimelines = store.$state.timelines.filter((timeline) => timeline.userId === userId);
+
+    await Promise.all(
+      targetTimelines.map((timeline) =>
+        ipcInvoke("db:delete-timeline", {
+          id: timeline.id,
+        }),
+      ),
+    );
+
+    await normalizeTimelinesAfterDeletion();
   };
 
   const deleteTimeline = async (timelineId: string) => {
     await ipcInvoke("db:delete-timeline", {
       id: timelineId,
     });
-    await store.initTimelines();
+    await normalizeTimelinesAfterDeletion();
   };
 
   const changeActiveTimeline = async (index: number) => {

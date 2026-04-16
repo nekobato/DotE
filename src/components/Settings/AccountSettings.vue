@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
 import { NewUser, useUsersStore } from "@/store/users";
-import { useTimelineStore } from "@/store/timeline";
 import { Icon } from "@iconify/vue";
 import { ref } from "vue";
 import { ElAvatar, ElRadioButton, ElRadioGroup } from "element-plus";
@@ -13,7 +12,6 @@ import InstanceIcon from "../InstanceIcon.vue";
 
 const store = useStore();
 const usersStore = useUsersStore();
-const timelineStore = useTimelineStore();
 
 const state = ref({
   actions: {
@@ -32,8 +30,7 @@ const startDeleteAccount = (id: string) => {
 
 const confirmDeleteAccount = async () => {
   if (state.value.actions.delete.id) {
-    usersStore.deleteUser(state.value.actions.delete.id);
-    timelineStore.deleteTimelineByUserId(state.value.actions.delete.id);
+    await usersStore.deleteUser(state.value.actions.delete.id);
   }
   state.value.actions.delete.id = null;
 
@@ -109,7 +106,9 @@ const closeAddAccount = () => {
         <h3>新規アカウント</h3>
       </div>
       <div class="actions">
-        <span class="add-account-hint" v-if="!newAccountInstanceType && store.users.length === 0">アカウント追加 →</span>
+        <span class="add-account-hint" v-if="!newAccountInstanceType && store.users.length === 0"
+          >アカウント追加 →</span
+        >
         <button class="nn-button size-small action" v-if="!newAccountInstanceType" @click="startAddAccount">
           <Icon icon="mingcute:add-fill" class="nn-icon" />
         </button>

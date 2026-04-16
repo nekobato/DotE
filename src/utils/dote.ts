@@ -52,9 +52,9 @@ export const defaultChannelNameFromType = (type?: InstanceType): ChannelName => 
     case "misskey":
       return "misskey:homeTimeline";
     case "mastodon":
-      return "misskey:homeTimeline";
+      return "mastodon:homeTimeline";
     case "bluesky":
-      return "misskey:homeTimeline";
+      return "bluesky:homeTimeline";
     default:
       return "misskey:homeTimeline";
   }
