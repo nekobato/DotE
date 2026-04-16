@@ -1,5 +1,6 @@
 import type { Instance, Timeline, User, Settings } from "@shared/types/store";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import type { AutoUpdateState } from "@shared/types/update";
 
 export const ipcSend = (event: string, payload?: object) => {
   if (typeof window === "undefined") return;
@@ -69,6 +70,18 @@ interface IpcEventMaps {
     args: void;
     result: string[];
   };
+  "app:update:get-state": {
+    args: void;
+    result: AutoUpdateState;
+  };
+  "app:update:check": {
+    args: void;
+    result: AutoUpdateState;
+  };
+  "app:update:install": {
+    args: void;
+    result: AutoUpdateState;
+  };
 }
 
 const summarizeResult = (result: unknown): unknown => {
@@ -89,7 +102,9 @@ const summarizeResult = (result: unknown): unknown => {
             : undefined,
       hasError: apiResult.error !== undefined && apiResult.error !== null,
       errorType:
-        apiResult.error && typeof apiResult.error === "object" ? (apiResult.error as { type?: string }).type : undefined,
+        apiResult.error && typeof apiResult.error === "object"
+          ? (apiResult.error as { type?: string }).type
+          : undefined,
     };
   }
 
