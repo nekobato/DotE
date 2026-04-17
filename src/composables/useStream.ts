@@ -116,6 +116,14 @@ export function useStream() {
 
       await misskeyStore.createMyReaction(targetPost.id, data.reaction);
     });
+
+    window.ipc?.on("timeline:add-post", (_, data: { post: MastodonToot }) => {
+      if (timelineStore.currentInstance?.type !== "mastodon") return;
+      timelineStore.addNewPost(data.post);
+      if (data.post.reblog) {
+        timelineStore.updatePost(data.post.reblog as MastodonToot);
+      }
+    });
   };
 
   // ストリーム初期化関数

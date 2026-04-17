@@ -1,13 +1,4 @@
-import electron, {
-  app,
-  BrowserWindow,
-  dialog,
-  globalShortcut,
-  ipcMain,
-  Menu,
-  powerMonitor,
-  protocol,
-} from "electron";
+import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, powerMonitor, protocol } from "electron";
 import path from "node:path";
 import { createMainWindow } from "./windows/mainWindow";
 import { createPostWindow } from "./windows/postWindow";
@@ -269,6 +260,9 @@ const start = async () => {
         mainWindow?.webContents.reload();
         break;
       case "main:reaction":
+        mainWindow?.webContents.send(event, data);
+        break;
+      case "timeline:add-post":
         mainWindow?.webContents.send(event, data);
         break;
       case "post:create":

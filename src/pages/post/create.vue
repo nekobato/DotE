@@ -516,6 +516,7 @@ const postToMastodon = async () => {
     });
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} のブーストに失敗しました`);
     if (res) {
+      ipcSend("timeline:add-post", { post: res as MastodonTootType });
       ipcSend("post:close");
     }
     return;
