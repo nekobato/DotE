@@ -262,6 +262,9 @@ const start = async () => {
       case "main:reaction":
         mainWindow?.webContents.send(event, data);
         break;
+      case "timeline:add-post":
+        mainWindow?.webContents.send(event, data);
+        break;
       case "post:create":
         postWindow?.webContents.send(event, data);
         postWindow?.center();

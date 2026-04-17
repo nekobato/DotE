@@ -22,6 +22,8 @@ type PageProps = {
   emojis?: MisskeyEntities.EmojiSimple[];
   mode?: "boost" | "reply";
   replyToId?: string;
+  timelineId?: string;
+  userId?: string;
 };
 
 type UploadStatus = "ready" | "uploading" | "uploaded" | "failed";
@@ -516,6 +518,11 @@ const postToMastodon = async () => {
     });
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} のブーストに失敗しました`);
     if (res) {
+      ipcSend("timeline:add-post", {
+        post: res as MastodonTootType,
+        timelineId: props.data.timelineId ?? state.timeline?.id,
+        userId: props.data.userId ?? state.user?.id,
+      });
       ipcSend("post:close");
     }
     return;
