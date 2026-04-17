@@ -55,9 +55,9 @@ const exitAddAccount = () => {
   newAccountInstanceType.value = undefined;
 };
 
-const createAccount = (user: NewUser) => {
+const createAccount = async (user: NewUser) => {
   newAccountInstanceType.value = undefined;
-  usersStore.createUser(user);
+  await usersStore.createUser(user);
 };
 
 const closeAddAccount = () => {
