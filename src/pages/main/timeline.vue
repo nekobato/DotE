@@ -110,7 +110,12 @@ const onMastodonReply = (toot: MastodonTootType) => {
  * MastodonのBoost確認画面を開きます。
  */
 const onMastodonBoost = (toot: MastodonTootType) => {
-  ipcSend("post:repost", { post: toot, mode: "boost" });
+  ipcSend("post:repost", {
+    post: toot,
+    mode: "boost",
+    timelineId: timelineStore.current?.id,
+    userId: timelineStore.currentUser?.id,
+  });
 };
 
 const timelineContainer = ref<HTMLDivElement | null>(null);

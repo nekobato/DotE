@@ -117,8 +117,11 @@ export function useStream() {
       await misskeyStore.createMyReaction(targetPost.id, data.reaction);
     });
 
-    window.ipc?.on("timeline:add-post", (_, data: { post: MastodonToot }) => {
+    window.ipc?.on("timeline:add-post", (_, data: { post: MastodonToot; timelineId?: string; userId?: string }) => {
       if (timelineStore.currentInstance?.type !== "mastodon") return;
+      if (!data.timelineId || !data.userId) return;
+      if (timelineStore.current?.id !== data.timelineId) return;
+      if (timelineStore.currentUser?.id !== data.userId) return;
       timelineStore.addNewPost(data.post);
       if (data.post.reblog) {
         timelineStore.updatePost(data.post.reblog as MastodonToot);
