@@ -38,6 +38,13 @@ export const useMisskeyPolling = ({ poll }: { poll: () => void }) => {
 };
 
 /**
+ * Mastodon用のポーリング機能
+ */
+export const useMastodonPolling = ({ poll }: { poll: () => void }) => {
+  return usePolling({ poll });
+};
+
+/**
  * Bluesky用のポーリング機能
  */
 export const useBlueskyPolling = ({ poll }: { poll: () => void }) => {

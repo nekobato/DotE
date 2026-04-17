@@ -2,7 +2,7 @@
 import router from "@/router";
 import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import { useUsersStore } from "@/store/users";
 import { useInstanceStore } from "@/store/instance";
@@ -68,6 +68,50 @@ const currentEmojis = computed(() => {
   return timelineStore.currentInstance.misskey?.emojis || [];
 });
 
+const now = ref(Date.now());
+const nextUpdateAt = ref<number | null>(null);
+let countdownTimer: number | undefined;
+
+const shouldShowUpdateCountdown = computed(() => {
+  const type = timelineStore.currentInstance?.type;
+  const channel = timelineStore.current?.channel;
+  const interval = timelineStore.current?.updateInterval ?? 0;
+  if (!interval) return false;
+  if (type === "bluesky") return true;
+  if (type === "mastodon" && channel !== "mastodon:notifications") return true;
+  return false;
+});
+
+const syncCountdown = () => {
+  if (!shouldShowUpdateCountdown.value || !timelineStore.current?.updateInterval) {
+    nextUpdateAt.value = null;
+    return;
+  }
+
+  nextUpdateAt.value = Date.now() + timelineStore.current.updateInterval;
+};
+
+const tickCountdown = () => {
+  now.value = Date.now();
+  const interval = timelineStore.current?.updateInterval ?? 0;
+  if (!shouldShowUpdateCountdown.value || !interval || nextUpdateAt.value === null) {
+    return;
+  }
+
+  while (nextUpdateAt.value <= now.value) {
+    nextUpdateAt.value += interval;
+  }
+};
+
+const updateCountdownLabel = computed(() => {
+  if (!shouldShowUpdateCountdown.value || nextUpdateAt.value === null) return "";
+
+  const remainingSeconds = Math.max(0, Math.ceil((nextUpdateAt.value - now.value) / 1000));
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+});
+
 const toggleMenu = () => {
   isDetailVisible.value = !isDetailVisible.value;
 };
@@ -104,6 +148,32 @@ const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | Blu
 
   return allChannelNameMap[channel] || channel;
 };
+
+watch(
+  () =>
+    [
+      timelineStore.current?.id,
+      timelineStore.current?.channel,
+      timelineStore.current?.updateInterval,
+      timelineStore.currentInstance?.type,
+    ] as const,
+  () => {
+    syncCountdown();
+    tickCountdown();
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  countdownTimer = window.setInterval(() => {
+    tickCountdown();
+  }, 1000);
+});
+
+onBeforeUnmount(() => {
+  if (!countdownTimer) return;
+  window.clearInterval(countdownTimer);
+});
 </script>
 
 <template>
@@ -130,6 +200,9 @@ const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | Blu
         />
         <ChannelIcon v-if="currentTimelineImages.channel" :channel="currentTimelineImages.channel" />
       </div>
+    </div>
+    <div class="update-countdown" v-if="updateCountdownLabel">
+      <span>次回 {{ updateCountdownLabel }}</span>
     </div>
     <div class="detail" v-if="isDetailVisible" ref="detailRef">
       <div class="action-group">
@@ -189,6 +262,15 @@ const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | Blu
   background-color: var(--dote-background-color);
   border: 1px solid var(--dote-border-color);
   -webkit-app-region: drag;
+}
+.update-countdown {
+  position: absolute;
+  right: 12px;
+  color: var(--color-text-caption);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+  -webkit-app-region: no-drag;
 }
 .timeline-images {
   display: inline-flex;
