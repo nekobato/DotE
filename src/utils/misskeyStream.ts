@@ -141,16 +141,7 @@ export const useMisskeyStream = ({
     subscriptionQueue.length = 0;
   };
 
-  const connect = ({
-    host,
-    token,
-    channel,
-    channelId,
-    antennaId,
-    tag,
-    listId,
-    query,
-  }: ConnectOptions) => {
+  const connect = ({ host, token, channel, channelId, antennaId, tag, listId, query }: ConnectOptions) => {
     if (channel === "channel" && !channelId) return;
     if (channel === "antenna" && !antennaId) return;
     if (channel === "userList" && !listId) return;
@@ -170,6 +161,24 @@ export const useMisskeyStream = ({
       query,
     };
     url.value = buildMisskeyStreamUrl(host, token);
+    open();
+  };
+
+  /**
+   * Reconnect with the latest successful connect options.
+   */
+  const reconnect = (force = false) => {
+    const options = lastConnectOptions.value;
+    if (!options) return;
+    if (!force && (state.value === webSocketState.OPEN || state.value === webSocketState.CONNECTING)) {
+      return;
+    }
+
+    shouldReconnect.value = true;
+    reconnecting.value = true;
+    webSocketId.value = nanoid();
+    url.value = buildMisskeyStreamUrl(options.host, options.token);
+    close();
     open();
   };
 
@@ -206,5 +215,5 @@ export const useMisskeyStream = ({
     }
   };
 
-  return { connect, disconnect, state, subNote, unsubNote, subNoteQueue: subscriptionQueue };
+  return { connect, reconnect, disconnect, state, subNote, unsubNote, subNoteQueue: subscriptionQueue };
 };
