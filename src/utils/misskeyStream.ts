@@ -54,7 +54,7 @@ export const useMisskeyStream = ({
   const shouldReconnect = ref(false);
   const reconnecting = ref(false);
   const webSocketId = ref<string | null>(null);
-  const subscriptionQueue: string[] = [];
+  const activeSubscriptions = new Set<string>();
   const url = ref<string>();
   const lastConnectOptions = ref<ConnectOptions | null>(null);
 
@@ -129,8 +129,8 @@ export const useMisskeyStream = ({
   });
 
   const handleServerConnected = () => {
-    if (!subscriptionQueue.length) return;
-    subscriptionQueue.forEach((postId) => {
+    if (!activeSubscriptions.size) return;
+    activeSubscriptions.forEach((postId) => {
       send(
         JSON.stringify({
           type: "subNote",
@@ -138,7 +138,6 @@ export const useMisskeyStream = ({
         }),
       );
     });
-    subscriptionQueue.length = 0;
   };
 
   const connect = ({ host, token, channel, channelId, antennaId, tag, listId, query }: ConnectOptions) => {
@@ -186,12 +185,14 @@ export const useMisskeyStream = ({
     shouldReconnect.value = false;
     reconnecting.value = false;
     lastConnectOptions.value = null;
+    activeSubscriptions.clear();
     close();
   };
 
   const state = computed(() => status.value);
 
   const subNote = (postId: string) => {
+    activeSubscriptions.add(postId);
     if (state.value === webSocketState.OPEN) {
       send(
         JSON.stringify({
@@ -199,12 +200,11 @@ export const useMisskeyStream = ({
           body: { id: postId },
         }),
       );
-    } else {
-      subscriptionQueue.push(postId);
     }
   };
 
   const unsubNote = (postId: string) => {
+    activeSubscriptions.delete(postId);
     if (state.value === webSocketState.OPEN) {
       send(
         JSON.stringify({
@@ -215,5 +215,5 @@ export const useMisskeyStream = ({
     }
   };
 
-  return { connect, reconnect, disconnect, state, subNote, unsubNote, subNoteQueue: subscriptionQueue };
+  return { connect, reconnect, disconnect, state, subNote, unsubNote };
 };
