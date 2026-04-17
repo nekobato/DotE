@@ -16,7 +16,7 @@ const authCode = ref("");
 const accessToken = ref("");
 const store = useStore();
 
-const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | undefined => {
+const unwrapApiResult = <T,>(result: ApiInvokeResult<T>, message: string): T | undefined => {
   if (!result.ok) {
     store.$state.errors.push({
       message,
@@ -74,11 +74,6 @@ const checkMastodonAuth = async () => {
   if (!res) return;
   accessToken.value = (res as any).access_token;
   await fetchAndSetMastodonMyself(accessToken.value);
-
-  // 色々リセットするのが面倒なのでリロード
-  setTimeout(() => {
-    window.ipc.send("main:reload");
-  }, 100);
 };
 
 const fetchAndSetMastodonMyself = async (token: string) => {

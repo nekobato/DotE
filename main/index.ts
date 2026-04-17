@@ -8,7 +8,7 @@ import { release } from "os";
 import menuTemplate from "./menu";
 import * as db from "./db";
 import { apiRequest } from "./api";
-import { checkUpdate } from "./autoupdate";
+import { checkForAppUpdates, getAutoUpdateState, installDownloadedUpdate, setupAutoUpdater } from "./autoupdate";
 import type { Settings } from "../shared/types/store";
 import { ApiError } from "./api/helpers";
 import type { ApiErrorPayload, ApiInvokeResult } from "../shared/types/ipc";
@@ -80,10 +80,6 @@ if (isElectronRuntime && electronApp?.requestSingleInstanceLock) {
       mainWindow.focus();
     }
   });
-}
-
-if (isElectronRuntime) {
-  checkUpdate();
 }
 
 const registerCustomProtocolClient = () => {
@@ -223,6 +219,10 @@ const start = async () => {
   mediaViewerWindow = createMediaViewerWindow();
   postWindow = createPostWindow();
 
+  mainWindow.webContents.on("did-finish-load", () => {
+    mainWindow?.webContents.send("app:update-state", getAutoUpdateState());
+  });
+
   ipcMain.on("renderer-event", async (_, event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
     switch (event) {
@@ -351,6 +351,12 @@ const start = async () => {
         return db.getSettingAll();
       case "system:get-fonts":
         return getSystemFonts();
+      case "app:update:get-state":
+        return getAutoUpdateState();
+      case "app:update:check":
+        return await checkForAppUpdates();
+      case "app:update:install":
+        return installDownloadedUpdate();
       default:
         throw new Error(`${event} is not defined event.`);
     }
@@ -415,6 +421,12 @@ if (isElectronRuntime && electronApp) {
   electronApp.whenReady().then(async () => {
     registerCustomProtocolClient();
     await start();
+    setupAutoUpdater({
+      notifyState: (state) => {
+        mainWindow?.webContents.send("app:update-state", state);
+      },
+    });
+    void checkForAppUpdates();
     const initialUrls = extractCustomSchemeUrls(process.argv.slice(1));
     initialUrls.forEach(handleOAuthRedirectUrl);
   });

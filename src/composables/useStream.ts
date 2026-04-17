@@ -2,8 +2,8 @@ import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
 import { misskeyChannels } from "@/utils/misskey";
-import { useBlueskyPolling, useMisskeyPolling } from "@/utils/polling";
-import { MisskeyStreamChannel, useMisskeyStream } from "@/utils/misskeyStream";
+import { useBlueskyPolling, useMastodonPolling, useMisskeyPolling } from "@/utils/polling";
+import { MisskeyStreamChannel, useMisskeyStream, webSocketState as misskeyWebSocketState } from "@/utils/misskeyStream";
 import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
 import { blueskyChannels } from "@/utils/bluesky";
 import { nextTick } from "vue";
@@ -17,6 +17,7 @@ export function useStream() {
   const store = useStore();
   const timelineStore = useTimelineStore();
   const misskeyStore = useMisskeyStore();
+  let misskeyHealthCheckTimer: number | undefined;
 
   const misskeyStream = useMisskeyStream({
     onChannel: (event, data) => {
@@ -59,6 +60,12 @@ export function useStream() {
   });
 
   const misskeyPolling = useMisskeyPolling({
+    poll: () => {
+      timelineStore.fetchDiffPosts();
+    },
+  });
+
+  const mastodonPolling = useMastodonPolling({
     poll: () => {
       timelineStore.fetchDiffPosts();
     },
@@ -127,6 +134,39 @@ export function useStream() {
         timelineStore.updatePost(data.post.reblog as MastodonToot);
       }
     });
+
+    window.ipc?.on("resume-timeline", () => {
+      const currentTimeline = timelineStore.current;
+      if (timelineStore.currentInstance?.type !== "misskey") return;
+      if (!currentTimeline) return;
+      if (!misskeyChannels.includes(currentTimeline.channel as MisskeyChannelName)) return;
+      if (currentTimeline.channel === "misskey:search") return;
+      misskeyStream.reconnect(true);
+    });
+  };
+
+  const stopMisskeyHealthCheck = () => {
+    if (!misskeyHealthCheckTimer) return;
+    window.clearInterval(misskeyHealthCheckTimer);
+    misskeyHealthCheckTimer = undefined;
+  };
+
+  const startMisskeyHealthCheck = () => {
+    stopMisskeyHealthCheck();
+    misskeyHealthCheckTimer = window.setInterval(() => {
+      const currentTimeline = timelineStore.current;
+      if (timelineStore.currentInstance?.type !== "misskey") return;
+      if (!currentTimeline) return;
+      if (!misskeyChannels.includes(currentTimeline.channel as MisskeyChannelName)) return;
+      if (currentTimeline.channel === "misskey:search") return;
+
+      const state = misskeyStream.state.value;
+      if (state === misskeyWebSocketState.OPEN || state === misskeyWebSocketState.CONNECTING) {
+        return;
+      }
+
+      misskeyStream.reconnect();
+    }, 30 * 1000);
   };
 
   // ストリーム初期化関数
@@ -138,7 +178,9 @@ export function useStream() {
     misskeyStream.disconnect();
     misskeyPolling.stopPolling();
     mastodonStream.disconnect();
+    mastodonPolling.stopPolling();
     blueskyPolling.stopPolling();
+    stopMisskeyHealthCheck();
 
     if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
       if (current.channel === "mastodon:list" && !current.options?.listId) {
@@ -153,6 +195,9 @@ export function useStream() {
         channel: current.channel as MastodonChannelName,
         token: timelineStore.currentUser.token,
       });
+      if (current.channel !== "mastodon:notifications") {
+        mastodonPolling.startPolling(timelineStore.current.updateInterval);
+      }
     }
 
     if (misskeyChannels.includes(current.channel as MisskeyChannelName)) {
@@ -202,6 +247,7 @@ export function useStream() {
           antennaId: current.options?.antennaId,
           listId: current.options?.listId,
         });
+        startMisskeyHealthCheck();
       }
     }
 
@@ -220,7 +266,9 @@ export function useStream() {
     misskeyStream.disconnect();
     misskeyPolling.stopPolling();
     mastodonStream.disconnect();
+    mastodonPolling.stopPolling();
     blueskyPolling.stopPolling();
+    stopMisskeyHealthCheck();
   };
 
   return {
