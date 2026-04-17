@@ -2,7 +2,7 @@ import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
 import { misskeyChannels } from "@/utils/misskey";
-import { useBlueskyPolling, useMisskeyPolling } from "@/utils/polling";
+import { useBlueskyPolling, useMastodonPolling, useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream, webSocketState as misskeyWebSocketState } from "@/utils/misskeyStream";
 import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
 import { blueskyChannels } from "@/utils/bluesky";
@@ -60,6 +60,12 @@ export function useStream() {
   });
 
   const misskeyPolling = useMisskeyPolling({
+    poll: () => {
+      timelineStore.fetchDiffPosts();
+    },
+  });
+
+  const mastodonPolling = useMastodonPolling({
     poll: () => {
       timelineStore.fetchDiffPosts();
     },
@@ -161,6 +167,7 @@ export function useStream() {
     misskeyStream.disconnect();
     misskeyPolling.stopPolling();
     mastodonStream.disconnect();
+    mastodonPolling.stopPolling();
     blueskyPolling.stopPolling();
     stopMisskeyHealthCheck();
 
@@ -177,6 +184,9 @@ export function useStream() {
         channel: current.channel as MastodonChannelName,
         token: timelineStore.currentUser.token,
       });
+      if (current.channel !== "mastodon:notifications") {
+        mastodonPolling.startPolling(timelineStore.current.updateInterval);
+      }
     }
 
     if (misskeyChannels.includes(current.channel as MisskeyChannelName)) {
@@ -245,6 +255,7 @@ export function useStream() {
     misskeyStream.disconnect();
     misskeyPolling.stopPolling();
     mastodonStream.disconnect();
+    mastodonPolling.stopPolling();
     blueskyPolling.stopPolling();
     stopMisskeyHealthCheck();
   };

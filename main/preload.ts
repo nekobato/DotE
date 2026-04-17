@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("ipc", {
   },
   on(event: string, callback: (event: IpcRendererEvent, ...args: any[]) => void) {
     ipcRenderer.on(event, callback);
+    return () => ipcRenderer.removeListener(event, callback);
   },
   getPathForFile(file: File) {
     return webUtils.getPathForFile(file);
