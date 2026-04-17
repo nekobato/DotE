@@ -107,9 +107,7 @@ const updateCountdownLabel = computed(() => {
   if (!shouldShowUpdateCountdown.value || nextUpdateAt.value === null) return "";
 
   const remainingSeconds = Math.max(0, Math.ceil((nextUpdateAt.value - now.value) / 1000));
-  const minutes = Math.floor(remainingSeconds / 60);
-  const seconds = remainingSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return `${remainingSeconds}`;
 });
 
 const toggleMenu = () => {
@@ -202,7 +200,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <div class="update-countdown" v-if="updateCountdownLabel">
-      <span>次回 {{ updateCountdownLabel }}</span>
+      <span>{{ updateCountdownLabel }}</span>
     </div>
     <div class="detail" v-if="isDetailVisible" ref="detailRef">
       <div class="action-group">
