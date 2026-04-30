@@ -291,7 +291,8 @@ export const checkForAppUpdates = async (): Promise<AutoUpdateState> => {
   if (
     autoUpdateState.status === "available" ||
     autoUpdateState.status === "downloading" ||
-    autoUpdateState.status === "downloaded"
+    autoUpdateState.status === "downloaded" ||
+    autoUpdateState.status === "installing"
   ) {
     return autoUpdateState;
   }
@@ -326,10 +327,33 @@ export const checkForAppUpdates = async (): Promise<AutoUpdateState> => {
  * Restart the application and install the already-downloaded update.
  */
 export const installDownloadedUpdate = (): AutoUpdateState => {
+  if (autoUpdateState.status === "installing") {
+    return autoUpdateState;
+  }
+
   if (autoUpdateState.status !== "downloaded") {
     return autoUpdateState;
   }
 
-  autoUpdater.quitAndInstall();
-  return autoUpdateState;
+  const installingState = setAutoUpdateState({
+    status: "installing",
+    errorMessage: null,
+  });
+
+  try {
+    autoUpdater.quitAndInstall();
+  } catch (error) {
+    log.error("autoUpdater: install failed", error);
+    return setAutoUpdateState({
+      status: "error",
+      checkedAt: nowIsoString(),
+      errorMessage: toErrorMessage(error),
+      progressPercent: null,
+      bytesPerSecond: null,
+      transferredBytes: null,
+      totalBytes: null,
+    });
+  }
+
+  return installingState;
 };

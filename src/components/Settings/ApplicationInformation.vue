@@ -64,6 +64,7 @@ const statusLabel = computed(() => {
     "not-available": "最新です",
     downloading: "ダウンロード中",
     downloaded: "適用できます",
+    installing: "適用中",
     error: "エラー",
     disabled: "利用できません",
   };
@@ -105,7 +106,7 @@ const progressLabel = computed(() => {
 });
 
 const canCheckForUpdates = computed(() => {
-  return !["checking", "available", "downloading", "downloaded"].includes(autoUpdateState.value.status);
+  return !["checking", "available", "downloading", "downloaded", "installing"].includes(autoUpdateState.value.status);
 });
 
 const canInstallUpdate = computed(() => autoUpdateState.value.status === "downloaded");
@@ -256,6 +257,7 @@ onUnmounted(() => {
 
 .status-badge.is-checking,
 .status-badge.is-downloading,
+.status-badge.is-installing,
 .status-badge.is-available {
   color: var(--color-text-body);
 }
