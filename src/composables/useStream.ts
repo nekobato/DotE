@@ -6,17 +6,19 @@ import { useBlueskyPolling, useMastodonPolling, useMisskeyPolling } from "@/util
 import { MisskeyStreamChannel, useMisskeyStream, webSocketState as misskeyWebSocketState } from "@/utils/misskeyStream";
 import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
 import { blueskyChannels } from "@/utils/bluesky";
-import { nextTick } from "vue";
+import { nextTick, watch } from "vue";
 import { useMastodonStream } from "@/utils/mastodonStream";
 import { MisskeyNote } from "@shared/types/misskey";
 import { MastodonToot } from "@/types/mastodon";
 import { text2Speech } from "@/utils/text2Speech";
 import { useMisskeyStore } from "@/store/misskey";
+import { useMisskeyTimelineConnectionStore } from "@/store/misskeyTimelineConnection";
 
 export function useStream() {
   const store = useStore();
   const timelineStore = useTimelineStore();
   const misskeyStore = useMisskeyStore();
+  const misskeyTimelineConnectionStore = useMisskeyTimelineConnectionStore();
   let misskeyHealthCheckTimer: number | undefined;
 
   const misskeyStream = useMisskeyStream({
@@ -61,6 +63,7 @@ export function useStream() {
 
   const misskeyPolling = useMisskeyPolling({
     poll: () => {
+      misskeyTimelineConnectionStore.scheduleNextPolling();
       timelineStore.fetchDiffPosts();
     },
   });
@@ -91,6 +94,15 @@ export function useStream() {
       timelineStore.fetchDiffPosts();
     },
   });
+
+  watch(
+    misskeyStream.state,
+    (state) => {
+      if (!misskeyTimelineConnectionStore.isWebSocket) return;
+      misskeyTimelineConnectionStore.setWebSocketStatus(state);
+    },
+    { immediate: true },
+  );
 
   // IPCイベントハンドラの設定
   const setupIpcHandlers = () => {
@@ -181,6 +193,7 @@ export function useStream() {
     mastodonPolling.stopPolling();
     blueskyPolling.stopPolling();
     stopMisskeyHealthCheck();
+    misskeyTimelineConnectionStore.reset();
 
     if (mastodonChannels.includes(current.channel as MastodonChannelName)) {
       if (current.channel === "mastodon:list" && !current.options?.listId) {
@@ -237,6 +250,7 @@ export function useStream() {
       }
 
       if (timelineStore.current.channel === "misskey:search") {
+        misskeyTimelineConnectionStore.startPolling(timelineStore.current.updateInterval);
         misskeyPolling.startPolling(timelineStore.current.updateInterval);
       } else {
         misskeyStream.connect({
@@ -247,6 +261,7 @@ export function useStream() {
           antennaId: current.options?.antennaId,
           listId: current.options?.listId,
         });
+        misskeyTimelineConnectionStore.startWebSocket(misskeyStream.state.value);
         startMisskeyHealthCheck();
       }
     }
@@ -269,6 +284,7 @@ export function useStream() {
     mastodonPolling.stopPolling();
     blueskyPolling.stopPolling();
     stopMisskeyHealthCheck();
+    misskeyTimelineConnectionStore.reset();
   };
 
   return {

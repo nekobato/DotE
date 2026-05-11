@@ -4,6 +4,7 @@ import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
+import { storeToRefs } from "pinia";
 import { useUsersStore } from "@/store/users";
 import { useInstanceStore } from "@/store/instance";
 import { onClickOutside } from "@vueuse/core";
@@ -12,6 +13,11 @@ import { useStore } from "@/store";
 import { mastodonChannelsMap } from "@/utils/mastodon";
 import { misskeyChannelsMap } from "@/utils/misskey";
 import { blueskyChannelsMap } from "@/utils/bluesky";
+import { webSocketState } from "@/utils/misskeyStream";
+import {
+  useMisskeyTimelineConnectionStore,
+  type MisskeyTimelineWebSocketState,
+} from "@/store/misskeyTimelineConnection";
 import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
 
 const appLogoImagePathMap = {
@@ -24,6 +30,38 @@ const store = useStore();
 const timelineStore = useTimelineStore();
 const usersStore = useUsersStore();
 const instanceStore = useInstanceStore();
+const misskeyTimelineConnectionStore = useMisskeyTimelineConnectionStore();
+const { connectionType, webSocketStatus, nextPollingAt } = storeToRefs(misskeyTimelineConnectionStore);
+
+const webSocketStatusViewMap: Record<
+  MisskeyTimelineWebSocketState,
+  {
+    className: string;
+    icon: string;
+    title: string;
+  }
+> = {
+  [webSocketState.CONNECTING]: {
+    className: "is-connecting",
+    icon: "mingcute:heartbeat-line",
+    title: "WebSocket 接続確認中",
+  },
+  [webSocketState.OPEN]: {
+    className: "is-open",
+    icon: "mingcute:heartbeat-line",
+    title: "WebSocket 接続中",
+  },
+  [webSocketState.CLOSING]: {
+    className: "is-closing",
+    icon: "mingcute:heartbeat-line",
+    title: "WebSocket 切断中",
+  },
+  [webSocketState.CLOSED]: {
+    className: "is-closed",
+    icon: "mingcute:heartbeat-line",
+    title: "WebSocket 未接続",
+  },
+};
 
 const isDetailVisible = ref(false);
 const detailRef = ref(null);
@@ -72,18 +110,26 @@ const now = ref(Date.now());
 const nextUpdateAt = ref<number | null>(null);
 let countdownTimer: number | undefined;
 
-const shouldShowUpdateCountdown = computed(() => {
+const isCurrentMisskeyTimeline = computed(() => timelineStore.currentInstance?.type === "misskey");
+const shouldShowMisskeyWebSocketStatus = computed(
+  () => isCurrentMisskeyTimeline.value && connectionType.value === "websocket",
+);
+const shouldShowMisskeyPollingCountdown = computed(
+  () => isCurrentMisskeyTimeline.value && connectionType.value === "polling" && nextPollingAt.value !== null,
+);
+const shouldShowLocalUpdateCountdown = computed(() => {
   const type = timelineStore.currentInstance?.type;
   const channel = timelineStore.current?.channel;
   const interval = timelineStore.current?.updateInterval ?? 0;
   if (!interval) return false;
+  if (type === "misskey") return false;
   if (type === "bluesky") return true;
   if (type === "mastodon" && channel !== "mastodon:notifications") return true;
   return false;
 });
 
 const syncCountdown = () => {
-  if (!shouldShowUpdateCountdown.value || !timelineStore.current?.updateInterval) {
+  if (!shouldShowLocalUpdateCountdown.value || !timelineStore.current?.updateInterval) {
     nextUpdateAt.value = null;
     return;
   }
@@ -94,7 +140,7 @@ const syncCountdown = () => {
 const tickCountdown = () => {
   now.value = Date.now();
   const interval = timelineStore.current?.updateInterval ?? 0;
-  if (!shouldShowUpdateCountdown.value || !interval || nextUpdateAt.value === null) {
+  if (!shouldShowLocalUpdateCountdown.value || !interval || nextUpdateAt.value === null) {
     return;
   }
 
@@ -103,12 +149,23 @@ const tickCountdown = () => {
   }
 };
 
-const updateCountdownLabel = computed(() => {
-  if (!shouldShowUpdateCountdown.value || nextUpdateAt.value === null) return "";
+const countdownTargetAt = computed(() => {
+  if (shouldShowMisskeyPollingCountdown.value) return nextPollingAt.value;
+  if (shouldShowLocalUpdateCountdown.value) return nextUpdateAt.value;
+  return null;
+});
 
-  const remainingSeconds = Math.max(0, Math.ceil((nextUpdateAt.value - now.value) / 1000));
+const updateCountdownLabel = computed(() => {
+  const targetAt = countdownTargetAt.value;
+  if (targetAt === null) return "";
+
+  const remainingSeconds = Math.max(0, Math.ceil((targetAt - now.value) / 1000));
   return `${remainingSeconds}`;
 });
+
+const webSocketStatusView = computed(
+  () => webSocketStatusViewMap[webSocketStatus.value] ?? webSocketStatusViewMap[webSocketState.CLOSED],
+);
 
 const toggleMenu = () => {
   isDetailVisible.value = !isDetailVisible.value;
@@ -199,7 +256,16 @@ onBeforeUnmount(() => {
         <ChannelIcon v-if="currentTimelineImages.channel" :channel="currentTimelineImages.channel" />
       </div>
     </div>
-    <div class="update-countdown" v-if="updateCountdownLabel">
+    <div
+      class="connection-status websocket-status"
+      v-if="shouldShowMisskeyWebSocketStatus"
+      :class="webSocketStatusView.className"
+      :title="webSocketStatusView.title"
+      :aria-label="webSocketStatusView.title"
+    >
+      <Icon :icon="webSocketStatusView.icon" class="nn-icon size-xsmall" />
+    </div>
+    <div class="connection-status update-countdown" v-else-if="updateCountdownLabel" title="次回更新まで">
       <span>{{ updateCountdownLabel }}</span>
     </div>
     <div class="detail" v-if="isDetailVisible" ref="detailRef">
@@ -261,14 +327,43 @@ onBeforeUnmount(() => {
   border: 1px solid var(--dote-border-color);
   -webkit-app-region: drag;
 }
-.update-countdown {
+.connection-status {
   position: absolute;
+  top: 10px;
   right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  -webkit-app-region: no-drag;
+}
+.websocket-status {
+  color: var(--color-text-caption);
+  line-height: 1;
+
+  &.is-open {
+    color: var(--dote-color-success);
+  }
+
+  &.is-connecting,
+  &.is-closing {
+    color: var(--dote-color-warning);
+  }
+
+  &.is-closed {
+    color: var(--dote-color-error);
+  }
+
+  .nn-icon {
+    fill: currentColor;
+  }
+}
+.update-countdown {
   color: var(--color-text-caption);
   font-size: 11px;
   line-height: 1;
   white-space: nowrap;
-  -webkit-app-region: no-drag;
 }
 .timeline-images {
   display: inline-flex;

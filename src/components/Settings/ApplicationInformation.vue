@@ -56,25 +56,16 @@ const installUpdate = async () => {
   }
 };
 
-const statusLabel = computed(() => {
-  const labelMap: Record<AutoUpdateState["status"], string> = {
-    idle: "未確認",
-    checking: "確認中",
-    available: "更新があります",
-    "not-available": "最新です",
-    downloading: "ダウンロード中",
-    downloaded: "適用できます",
-    installing: "適用中",
-    error: "エラー",
-    disabled: "利用できません",
-  };
+/**
+ * Append the latest update check timestamp to a status label.
+ */
+const withCheckedAt = (label: string) => {
+  if (!checkedAtLabel.value) {
+    return label;
+  }
 
-  return labelMap[autoUpdateState.value.status];
-});
-
-const statusClass = computed(() => `is-${autoUpdateState.value.status}`);
-
-const latestVersion = computed(() => autoUpdateState.value.downloadedVersion ?? autoUpdateState.value.availableVersion);
+  return `${label} (${checkedAtLabel.value})`;
+};
 
 const checkedAtLabel = computed(() => {
   if (!autoUpdateState.value.checkedAt) {
@@ -86,6 +77,35 @@ const checkedAtLabel = computed(() => {
     timeStyle: "short",
   }).format(new Date(autoUpdateState.value.checkedAt));
 });
+
+const statusLabel = computed(() => {
+  const status = autoUpdateState.value.status;
+
+  if (["available", "downloading", "downloaded", "installing"].includes(status)) {
+    return withCheckedAt("最新バージョンがあります");
+  }
+
+  if (status === "not-available" || status === "disabled") {
+    return withCheckedAt("最新");
+  }
+
+  const labelMap: Partial<Record<AutoUpdateState["status"], string>> = {
+    idle: "未確認",
+    checking: "確認中",
+    error: "エラー",
+  };
+
+  return labelMap[status] ?? status;
+});
+
+const statusClass = computed(() => {
+  const status = autoUpdateState.value.status;
+  if (status === "disabled") return "is-not-available";
+  if (["downloading", "downloaded", "installing"].includes(status)) return "is-available";
+  return `is-${status}`;
+});
+
+const latestVersion = computed(() => autoUpdateState.value.downloadedVersion ?? autoUpdateState.value.availableVersion);
 
 const progressLabel = computed(() => {
   const percent = autoUpdateState.value.progressPercent;
@@ -127,7 +147,7 @@ onUnmounted(() => {
 
 <template>
   <div class="information dote-post-list">
-    <h2 class="dote-field-group-title">その他</h2>
+    <h2 class="dote-field-group-title">アプリケーション</h2>
 
     <div class="dote-field-row indent-1">
       <div class="content">バージョン</div>
@@ -139,8 +159,7 @@ onUnmounted(() => {
     <div class="dote-field-row indent-1">
       <div class="content">更新状態</div>
       <div class="form-actions status-actions">
-        <span class="status-badge" :class="statusClass">{{ statusLabel }}</span>
-        <span v-if="checkedAtLabel" class="help-text">{{ checkedAtLabel }}</span>
+        <span class="status-text" :class="statusClass">{{ statusLabel }}</span>
       </div>
     </div>
 
@@ -163,24 +182,16 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-if="autoUpdateState.errorMessage" class="dote-field-row indent-1 wrap">
-      <div class="content">更新メッセージ</div>
-      <div class="form-actions status-actions">
-        <span class="error-text">{{ autoUpdateState.errorMessage }}</span>
-      </div>
-    </div>
-
-    <div class="dote-field-row indent-1 wrap">
-      <div class="content">更新操作</div>
+    <div class="dote-field-row indent-1 update-actions-row">
       <div class="form-actions button-actions">
         <ElButton size="small" :loading="isChecking" :disabled="!canCheckForUpdates" @click="checkForUpdates">
           更新を確認
         </ElButton>
         <ElButton
+          v-if="canInstallUpdate"
           size="small"
           type="primary"
           :loading="isInstalling"
-          :disabled="!canInstallUpdate"
           @click="installUpdate"
         >
           再起動して適用
@@ -234,31 +245,27 @@ onUnmounted(() => {
   justify-content: flex-end;
 }
 
-.status-badge {
-  padding: 2px 8px;
-  border: 1px solid var(--dote-border-color);
-  border-radius: 6px;
+.status-text {
   color: var(--color-text-body);
-  font-size: var(--font-size-12);
+  font-size: var(--font-size-14);
   line-height: 1.5;
+  text-align: right;
 }
 
-.status-badge.is-not-available,
-.status-badge.is-downloaded {
+.status-text.is-not-available,
+.status-text.is-downloaded {
   color: var(--color-text-link);
-  border-color: var(--color-text-link);
 }
 
-.status-badge.is-error,
-.status-badge.is-disabled {
+.status-text.is-error,
+.status-text.is-disabled {
   color: var(--color-text-notice);
-  border-color: var(--color-text-notice);
 }
 
-.status-badge.is-checking,
-.status-badge.is-downloading,
-.status-badge.is-installing,
-.status-badge.is-available {
+.status-text.is-checking,
+.status-text.is-downloading,
+.status-text.is-installing,
+.status-text.is-available {
   color: var(--color-text-body);
 }
 
