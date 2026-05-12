@@ -2,6 +2,16 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { baseHeader } from "./request";
 import { buildMultipartFormData, requestFormData, requestJson } from "./helpers";
+import { getInstanceMetaCache, setInstanceMetaCache } from "../db";
+
+const INSTANCE_META_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Check whether cached instance metadata is fresh enough to skip a network request.
+ */
+const isFreshInstanceMetaCache = (cachedAt: number, now = Date.now()): boolean => {
+  return now - cachedAt < INSTANCE_META_CACHE_TTL_MS;
+};
 
 export const mastodonRegisterApp = async ({ instanceUrl, clientName }: { instanceUrl: string; clientName: string }) => {
   const url = new URL(`/api/v1/apps`, instanceUrl).toString();
@@ -53,7 +63,25 @@ export const mastodonGetAccount = async ({ instanceUrl, token }: { instanceUrl: 
 
 export const mastodonGetInstance = async ({ instanceUrl }: { instanceUrl: string }) => {
   const url = new URL(`/api/v2/instance`, instanceUrl).toString();
-  return requestJson(url);
+  const cached = getInstanceMetaCache("mastodon", instanceUrl);
+  if (cached && isFreshInstanceMetaCache(cached.cachedAt)) {
+    return cached.data;
+  }
+
+  try {
+    const meta = await requestJson(url);
+    setInstanceMetaCache("mastodon", instanceUrl, meta);
+    return meta;
+  } catch (error) {
+    if (cached) {
+      console.warn("[mastodon] getInstance:using-stale-cache", {
+        instanceUrl,
+        cachedAt: new Date(cached.cachedAt).toISOString(),
+      });
+      return cached.data;
+    }
+    throw error;
+  }
 };
 
 export const mastodonGetTimelinePublic = async ({

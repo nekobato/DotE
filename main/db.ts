@@ -12,6 +12,12 @@ export type StoreSchema = {
   users: User[];
   settings: Settings;
   blueskySessions: Record<string, string>;
+  instanceMetaCache: Record<string, InstanceMetaCacheEntry>;
+};
+
+export type InstanceMetaCacheEntry = {
+  cachedAt: number;
+  data: unknown;
 };
 
 export type BlueskyOAuthConfig = {
@@ -25,6 +31,14 @@ const DEFAULT_BLUESKY_REDIRECT_URI = BLUESKY_CUSTOM_REDIRECT_URI;
 const DEFAULT_BLUESKY_SCOPE = BLUESKY_SCOPE;
 const DEFAULT_BLUESKY_FALLBACK_REDIRECT_URI = APP_LOOPBACK_REDIRECT_URI;
 const LEGACY_BLUESKY_REDIRECT_URI_PREFIX = "daydream-of-the-elephants:";
+
+/**
+ * Build a stable key for per-instance metadata caches.
+ */
+const instanceMetaCacheKey = (type: InstanceType, instanceUrl: string): string => {
+  const url = new URL(instanceUrl);
+  return `${type}:${url.origin}`;
+};
 
 /**
  * Normalize Bluesky OAuth redirect URI to the current, spec-compliant custom scheme.
@@ -71,6 +85,7 @@ export const storeDefaults: StoreSchema = {
     },
   },
   blueskySessions: {},
+  instanceMetaCache: {},
 };
 
 const schema: Schema<StoreSchema> = {
@@ -183,6 +198,18 @@ const schema: Schema<StoreSchema> = {
     type: "object",
     additionalProperties: {
       type: "string",
+    },
+    default: {},
+  },
+  instanceMetaCache: {
+    type: "object",
+    additionalProperties: {
+      type: "object",
+      properties: {
+        cachedAt: { type: "number" },
+        data: { type: "object" },
+      },
+      required: ["cachedAt", "data"],
     },
     default: {},
   },
@@ -323,10 +350,54 @@ export const upsertInstance = (instance: {
 export const deleteInstance = (id: string) => {
   if (!id) throw new Error("id is required");
 
+  const instance = store.get("instances").find((instance) => instance.id === id);
+  if (instance) {
+    deleteInstanceMetaCache(instance.type, instance.url);
+  }
+
   return store.set(
     "instances",
     store.get("instances").filter((instance) => instance.id !== id),
   );
+};
+
+/**
+ * Get cached metadata for a Fediverse instance.
+ */
+export const getInstanceMetaCache = (type: InstanceType, instanceUrl: string): InstanceMetaCacheEntry | undefined => {
+  if (!type) throw new Error("type is required");
+  if (!instanceUrl) throw new Error("instanceUrl is required");
+  return store.get("instanceMetaCache")[instanceMetaCacheKey(type, instanceUrl)];
+};
+
+/**
+ * Persist metadata for a Fediverse instance.
+ */
+export const setInstanceMetaCache = (type: InstanceType, instanceUrl: string, data: unknown) => {
+  if (!type) throw new Error("type is required");
+  if (!instanceUrl) throw new Error("instanceUrl is required");
+  if (!data || typeof data !== "object") throw new Error("data must be an object");
+
+  const cache = store.get("instanceMetaCache");
+  store.set("instanceMetaCache", {
+    ...cache,
+    [instanceMetaCacheKey(type, instanceUrl)]: {
+      cachedAt: Date.now(),
+      data,
+    },
+  });
+};
+
+/**
+ * Remove cached metadata for a Fediverse instance.
+ */
+export const deleteInstanceMetaCache = (type: InstanceType, instanceUrl: string) => {
+  if (!type) throw new Error("type is required");
+  if (!instanceUrl) throw new Error("instanceUrl is required");
+
+  const cache = { ...store.get("instanceMetaCache") };
+  delete cache[instanceMetaCacheKey(type, instanceUrl)];
+  store.set("instanceMetaCache", cache);
 };
 
 // User
