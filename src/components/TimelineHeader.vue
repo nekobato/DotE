@@ -4,6 +4,7 @@ import { useTimelineStore } from "@/store/timeline";
 import { ipcSend } from "@/utils/ipc";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { Icon } from "@iconify/vue";
+import { ElTooltip } from "element-plus";
 import { storeToRefs } from "pinia";
 import { useUsersStore } from "@/store/users";
 import { useInstanceStore } from "@/store/instance";
@@ -193,6 +194,40 @@ const settings = () => {
   router.push("/main/settings");
 };
 
+type HeaderActionButton = {
+  className: string;
+  icon: string;
+  title: string;
+  onClick: () => void;
+};
+
+const headerActionButtons: HeaderActionButton[] = [
+  {
+    className: "haze",
+    icon: "mingcute:ghost-line",
+    title: "ウィンドウ透過モード",
+    onClick: haze,
+  },
+  {
+    className: "post",
+    icon: "mingcute:pencil-line",
+    title: "投稿",
+    onClick: post,
+  },
+  {
+    className: "refresh",
+    icon: "mingcute:refresh-1-line",
+    title: "リロード",
+    onClick: reload,
+  },
+  {
+    className: "settings",
+    icon: "mingcute:settings-3-line",
+    title: "設定",
+    onClick: settings,
+  },
+];
+
 const changeTimeline = async (index: number) => {
   await timelineStore.changeActiveTimeline(index);
   toggleMenu();
@@ -270,18 +305,22 @@ onBeforeUnmount(() => {
     </div>
     <div class="detail" v-if="isDetailVisible" ref="detailRef">
       <div class="action-group">
-        <button class="nn-button type-ghost haze" @click="haze" title="ウィンドウ透過モード">
-          <Icon icon="mingcute:ghost-line" class="nn-icon size-xsmall" />
-        </button>
-        <button class="nn-button type-ghost post" @click="post" title="投稿">
-          <Icon icon="mingcute:pencil-line" class="nn-icon size-xsmall" />
-        </button>
-        <button class="nn-button type-ghost refresh" @click="reload" title="リロード">
-          <Icon icon="mingcute:refresh-1-line" class="nn-icon size-xsmall" />
-        </button>
-        <button class="nn-button type-ghost settings" @click="settings" title="設定">
-          <Icon icon="mingcute:settings-3-line" class="nn-icon size-xsmall" />
-        </button>
+        <ElTooltip
+          v-for="actionButton in headerActionButtons"
+          :key="actionButton.className"
+          :content="actionButton.title"
+          placement="bottom"
+          :show-after="200"
+        >
+          <button
+            class="nn-button type-ghost"
+            :class="actionButton.className"
+            @click="actionButton.onClick"
+            :title="actionButton.title"
+          >
+            <Icon :icon="actionButton.icon" class="nn-icon size-xsmall" />
+          </button>
+        </ElTooltip>
       </div>
       <div class="timeline-list">
         <div class="timeline-item" v-for="(timeline, index) in timelineWithImages" @click="changeTimeline(index)">

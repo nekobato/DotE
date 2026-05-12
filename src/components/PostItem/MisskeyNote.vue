@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
 import type { MisskeyNote, MisskeyNoteProps } from "@shared/types/misskey";
-import { toRef } from "vue";
+import { computed, toRef } from "vue";
 import { useMisskeyNote } from "@/composables/useMisskeyNote";
 import { useMisskeyReactions } from "@/composables/useMisskeyReactions";
 import { usePostActions } from "@/composables/usePostActions";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
+import PostActionDropdown from "./PostActionDropdown.vue";
 
 const props = withDefaults(defineProps<MisskeyNoteProps>(), {
   emojis: () => [],
@@ -78,6 +78,43 @@ const replyToPost = () => {
   emit("reply", props.post);
 };
 
+const postActions = computed(() => [
+  ...(props.showActions
+    ? [
+        { command: "refresh", icon: "mingcute:refresh-1-fill", label: "更新" },
+        { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
+        { command: "reaction", icon: "mingcute:add-fill", label: "リアクション" },
+        { command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" },
+      ]
+    : []),
+  { command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" },
+]);
+
+/**
+ * Run a selected Misskey post action from the dropdown command.
+ */
+const runPostAction = (command: string) => {
+  switch (command) {
+    case "refresh":
+      refreshPost();
+      return;
+    case "reply":
+      replyToPost();
+      return;
+    case "reaction":
+      openReactionWindow();
+      return;
+    case "repost":
+      openRepostWindow();
+      return;
+    case "open":
+      openPost();
+      return;
+    default:
+      return;
+  }
+};
+
 // Setup stream subscription
 setupStreamSubscription();
 </script>
@@ -126,23 +163,7 @@ setupStreamSubscription();
         <span class="count">{{ reaction.count }}</span>
       </button>
     </div>
-    <div class="dote-post-actions">
-      <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-fill" />
-      </button>
-      <button class="dote-post-action" @click="replyToPost" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:message-2-line" />
-      </button>
-      <button class="dote-post-action" @click="openReactionWindow" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:add-fill" />
-      </button>
-      <button class="dote-post-action" @click="openRepostWindow" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
-      </button>
-      <button class="dote-post-action" @click="openPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
-      </button>
-    </div>
+    <PostActionDropdown :actions="postActions" @select="runPostAction" />
   </div>
 </template>
 
@@ -213,53 +234,6 @@ setupStreamSubscription();
       font-size: 12px;
       line-height: 20px;
     }
-  }
-}
-
-.dote-post-actions {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 0 auto;
-  padding: 0;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  visibility: hidden;
-}
-
-.dote-post:hover .dote-post-actions {
-  visibility: visible;
-}
-
-.dote-post-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 20px;
-  margin: 0 0 0 auto;
-  padding: 0;
-  color: var(---dote-color-white-t4);
-  font-size: var(--post-action--font-size);
-  line-height: var(--post-action--line-height);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  &:hover {
-    background: var(--dote-color-white-t1);
-    filter: brightness(0.9);
-  }
-  &.active {
-    color: var(--post-action--active-color);
-  }
-  > .nn-icon {
-    width: 16px;
-    height: 16px;
-    color: var(--dote-color-white);
   }
 }
 </style>

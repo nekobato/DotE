@@ -6,6 +6,7 @@ import PostAttachments from "./PostAttachments.vue";
 import { MastodonToot } from "@/types/mastodon";
 import { parseMastodonText } from "@/utils/mastodon";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
+import PostActionDropdown from "./PostActionDropdown.vue";
 
 const props = defineProps({
   post: {
@@ -94,6 +95,39 @@ const replyToPost = () => {
 const boostPost = () => {
   emit("boost", post.value);
 };
+
+const postActions = computed(() => [
+  ...(props.showActions
+    ? [
+        { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
+        { command: "boost", icon: "mingcute:repeat-fill", label: "ブースト" },
+        { command: "refresh", icon: "mingcute:refresh-1-line", label: "更新" },
+      ]
+    : []),
+  { command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" },
+]);
+
+/**
+ * Run a selected Mastodon post action from the dropdown command.
+ */
+const runPostAction = (command: string) => {
+  switch (command) {
+    case "reply":
+      replyToPost();
+      return;
+    case "boost":
+      boostPost();
+      return;
+    case "refresh":
+      refreshPost();
+      return;
+    case "open":
+      openPost();
+      return;
+    default:
+      return;
+  }
+};
 </script>
 
 <template>
@@ -141,20 +175,7 @@ const boostPost = () => {
         <span class="count">{{ props.post.favourites_count }}</span>
       </button>
     </div>
-    <div class="dote-post-actions">
-      <button class="dote-post-action" @click="replyToPost" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:message-2-line" />
-      </button>
-      <button class="dote-post-action" @click="boostPost" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:repeat-fill" />
-      </button>
-      <button class="dote-post-action" @click="refreshPost" v-if="props.showActions">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:refresh-1-line" />
-      </button>
-      <button class="dote-post-action" @click="openPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
-      </button>
-    </div>
+    <PostActionDropdown :actions="postActions" @select="runPostAction" />
   </div>
 </template>
 
@@ -229,53 +250,6 @@ const boostPost = () => {
       height: 16px;
       color: var(--dote-color-white);
     }
-  }
-}
-
-.dote-post-actions {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 0 auto;
-  padding: 0;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  visibility: hidden;
-}
-
-.dote-post:hover .dote-post-actions {
-  visibility: visible;
-}
-
-.dote-post-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 20px;
-  margin: 0 0 0 auto;
-  padding: 0;
-  color: var(---dote-color-white-t4);
-  font-size: var(--post-action--font-size);
-  line-height: var(--post-action--line-height);
-  background-color: transparent;
-  border: none;
-  cursor: pointer;
-  &:hover {
-    background: var(--dote-color-white-t1);
-    filter: brightness(0.9);
-  }
-  &.active {
-    color: var(--post-action--active-color);
-  }
-  > .nn-icon {
-    width: 16px;
-    height: 16px;
-    color: var(--dote-color-white);
   }
 }
 

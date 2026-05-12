@@ -6,6 +6,7 @@ import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
+import PostActionDropdown from "./PostActionDropdown.vue";
 
 const props = defineProps({
   type: {
@@ -62,6 +63,17 @@ const openPost = () => {
 const openUserPage = (user: MastodonToot["account"]) => {
   ipcSend("open-url", { url: user.url });
 };
+
+const postActions = computed(() => [{ command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" }]);
+
+/**
+ * Run a selected Mastodon notification action from the dropdown command.
+ */
+const runPostAction = (command: string) => {
+  if (command === "open") {
+    openPost();
+  }
+};
 </script>
 
 <template>
@@ -111,11 +123,7 @@ const openUserPage = (user: MastodonToot["account"]) => {
     <PostAttachmentsContainer class="attachments" v-if="postAtttachments">
       <PostAttachments :attachments="postAtttachments" />
     </PostAttachmentsContainer>
-    <div class="dote-post-actions">
-      <button class="dote-post-action" @click="openPost">
-        <Icon class="nn-icon size-xsmall" icon="mingcute:external-link-line" />
-      </button>
-    </div>
+    <PostActionDropdown :actions="postActions" @select="runPostAction" />
   </div>
 </template>
 
@@ -138,53 +146,6 @@ const openUserPage = (user: MastodonToot["account"]) => {
 
 .attachments {
   margin-top: 4px;
-}
-
-.dote-post-actions {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 0 0 0 auto;
-  padding: 0;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  visibility: hidden;
-
-  .dote-post-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 20px;
-    margin: 0 0 0 auto;
-    padding: 0;
-    color: var(---dote-color-white-t4);
-    font-size: var(--post-action--font-size);
-    line-height: var(--post-action--line-height);
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    &:hover {
-      background: var(--dote-color-white-t1);
-      filter: brightness(0.9);
-    }
-    &.active {
-      color: var(--post-action--active-color);
-    }
-    > .nn-icon {
-      width: 16px;
-      height: 16px;
-      color: var(--dote-color-white);
-    }
-  }
-}
-
-.dote-post:hover .dote-post-actions {
-  visibility: visible;
 }
 
 .toot-content {

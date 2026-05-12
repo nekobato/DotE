@@ -333,7 +333,7 @@ onBeforeUnmount(() => {
     >
       <PostList v-if="timelineStore.current?.posts?.length || timelineStore.current?.notifications.length">
         <button v-if="hasPendingNewPosts" class="pending-posts-button nn-button" @click="applyPendingNewPosts">
-          ここに読み込む
+          読み込む
           <span class="pending-count">({{ pendingNewPostsCount }}件)</span>
         </button>
         <MisskeyNote

@@ -1,10 +1,9 @@
-import { app, shell } from "electron";
+import { shell } from "electron";
 import crypto from "node:crypto";
 import type { AppBskyActorGetProfile } from "@atproto/api";
 import { oauthRedirectUriSchema } from "@atproto/oauth-types";
 import { getBlueskyOAuthClient, getBlueskyOAuthEnvironment } from "../oauth/client";
 import { waitForOAuthCallback } from "../oauth/callback-router";
-import { APP_PROTOCOL_PREFIX, APP_PROTOCOL_SCHEME } from "../oauth/constants";
 import { createBlueskyAgent } from "../oauth/agent";
 
 const DEFAULT_BSKY_INSTANCE_URL = "https://bsky.social";
@@ -64,24 +63,7 @@ export const blueskyStartOAuth = async ({
   const env = getBlueskyOAuthEnvironment();
   const resolvedClientId = clientId ?? env.clientId;
 
-  const isCustomSchemeRegistered =
-    typeof app.isDefaultProtocolClient === "function"
-      ? app.isDefaultProtocolClient(APP_PROTOCOL_SCHEME)
-      : true;
-  const isPackaged = app.isPackaged;
-
-  let redirectUriCandidate = redirectUri ?? env.redirectUri;
-  if (
-    redirectUriCandidate.startsWith(APP_PROTOCOL_PREFIX) &&
-    (!isPackaged || !isCustomSchemeRegistered) &&
-    env.loopbackRedirectUri
-  ) {
-    console.warn("[oauth] Using loopback redirect URI in this environment", {
-      isPackaged,
-      isCustomSchemeRegistered,
-    });
-    redirectUriCandidate = env.loopbackRedirectUri;
-  }
+  const redirectUriCandidate = redirectUri ?? env.redirectUri;
   const redirectUriParseResult = oauthRedirectUriSchema.safeParse(redirectUriCandidate);
   if (!redirectUriParseResult.success) {
     throw new Error("Bluesky OAuth redirect URI is invalid");
