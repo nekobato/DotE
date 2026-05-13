@@ -32,7 +32,7 @@ const channelNameToIconMap = {
 </script>
 <template>
   <div class="channel-icon">
-    <Icon v-if="props.channel" :icon="channelNameToIconMap[props.channel]" />
+    <Icon v-if="props.channel" :icon="channelNameToIconMap[props.channel]" class="icon" />
   </div>
 </template>
 <style lang="scss" scoped>

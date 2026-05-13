@@ -14,18 +14,20 @@ import { useStore } from "@/store";
 import { mastodonChannelsMap } from "@/utils/mastodon";
 import { misskeyChannelsMap } from "@/utils/misskey";
 import { blueskyChannelsMap } from "@/utils/bluesky";
+import { resolvePlatformIconUrl } from "@/utils/platformIcon";
 import { webSocketState } from "@/utils/misskeyStream";
 import {
   useMisskeyTimelineConnectionStore,
   type MisskeyTimelineWebSocketState,
 } from "@/store/misskeyTimelineConnection";
-import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
-
-const appLogoImagePathMap = {
-  misskey: "/images/icons/misskey.png",
-  mastodon: "/images/icons/mastodon.png",
-  bluesky: "/images/icons/bluesky.png",
-};
+import type {
+  BlueskyChannelName,
+  ChannelName,
+  InstanceStore,
+  MastodonChannelName,
+  MisskeyChannelName,
+  User,
+} from "@shared/types/store";
 
 const store = useStore();
 const timelineStore = useTimelineStore();
@@ -68,6 +70,68 @@ const isDetailVisible = ref(false);
 const detailRef = ref(null);
 const toggleButtonRef = ref(null);
 
+type TimelineImages = {
+  app: string;
+  instance?: string;
+  account?: string;
+  channel?: ChannelName;
+};
+
+/**
+ * Build the image set shown in the timeline selector.
+ */
+const toTimelineImages = (instance?: InstanceStore, user?: User, channel?: ChannelName): TimelineImages => {
+  return {
+    app: instance ? resolvePlatformIconUrl(instance.type) : "",
+    instance: instance?.iconUrl,
+    account: user?.avatarUrl,
+    channel,
+  };
+};
+
+/**
+ * Remove a URL scheme before rendering an instance label.
+ */
+const stripUrlProtocol = (url: string): string => {
+  return url.replace(/^https?:\/\//, "");
+};
+
+/**
+ * Resolve the short account suffix shown in the timeline list.
+ */
+const getInstanceDisplayHost = (instance?: InstanceStore): string => {
+  if (!instance) return "";
+  if (instance.type === "bluesky") return "bluesky";
+  return stripUrlProtocol(instance.url);
+};
+
+/**
+ * Hide broken image placeholders while preserving their reserved layout slot.
+ */
+const hideTimelineImage = (event: Event) => {
+  if (event.currentTarget instanceof HTMLImageElement) {
+    event.currentTarget.style.visibility = "hidden";
+  }
+};
+
+/**
+ * Restore image visibility after a successful load.
+ */
+const showTimelineImage = (event: Event) => {
+  if (event.currentTarget instanceof HTMLImageElement) {
+    event.currentTarget.style.visibility = "visible";
+  }
+};
+
+/**
+ * Resolve a human-readable channel label.
+ */
+const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | BlueskyChannelName) => {
+  const allChannelNameMap = { ...mastodonChannelsMap, ...misskeyChannelsMap, ...blueskyChannelsMap };
+
+  return allChannelNameMap[channel] || channel;
+};
+
 onClickOutside(
   detailRef,
   () => {
@@ -79,25 +143,19 @@ onClickOutside(
 );
 
 const currentTimelineImages = computed(() => {
-  return {
-    app: timelineStore.currentInstance ? appLogoImagePathMap[timelineStore.currentInstance.type] : "",
-    instance: timelineStore.currentInstance?.iconUrl,
-    account: timelineStore.currentUser?.avatarUrl,
-    channel: timelineStore.current?.channel,
-  };
+  return toTimelineImages(timelineStore.currentInstance, timelineStore.currentUser, timelineStore.current?.channel);
 });
 
 const timelineWithImages = computed(() => {
   return store.$state.timelines.map((timeline) => {
     const instance = instanceStore.findInstanceByUserId(timeline.userId);
+    const user = usersStore.findUser(timeline.userId);
     return {
       ...timeline,
-      images: {
-        app: instance ? appLogoImagePathMap[instance.type] : "",
-        instance: instance?.iconUrl,
-        account: usersStore.findUser(timeline.userId)?.avatarUrl,
-        channel: timeline.channel,
-      },
+      accountName: user?.name ?? "",
+      accountHost: getInstanceDisplayHost(instance),
+      channelLabel: getChannelLabel(timeline.channel),
+      images: toTimelineImages(instance, user, timeline.channel),
     };
   });
 });
@@ -233,12 +291,6 @@ const changeTimeline = async (index: number) => {
   toggleMenu();
 };
 
-const getChannelLabel = (channel: MisskeyChannelName | MastodonChannelName | BlueskyChannelName) => {
-  const allChannelNameMap = { ...mastodonChannelsMap, ...misskeyChannelsMap, ...blueskyChannelsMap };
-
-  return allChannelNameMap[channel] || channel;
-};
-
 watch(
   () =>
     [
@@ -275,18 +327,29 @@ onBeforeUnmount(() => {
         @click="toggleMenu"
         ref="toggleButtonRef"
       >
-        <img class="image app" v-if="currentTimelineImages.app" :src="currentTimelineImages.app" alt="app" />
+        <img
+          class="image app"
+          v-if="currentTimelineImages.app"
+          :src="currentTimelineImages.app"
+          alt="app"
+          @load="showTimelineImage"
+          @error="hideTimelineImage"
+        />
         <img
           class="image instance"
           v-if="currentTimelineImages.instance"
           :src="currentTimelineImages.instance"
           alt="instance"
+          @load="showTimelineImage"
+          @error="hideTimelineImage"
         />
         <img
           class="image user"
           v-if="currentTimelineImages.account"
           :src="currentTimelineImages.account"
           alt="account"
+          @load="showTimelineImage"
+          @error="hideTimelineImage"
         />
         <ChannelIcon v-if="currentTimelineImages.channel" :channel="currentTimelineImages.channel" />
       </div>
@@ -323,31 +386,50 @@ onBeforeUnmount(() => {
         </ElTooltip>
       </div>
       <div class="timeline-list">
-        <div class="timeline-item" v-for="(timeline, index) in timelineWithImages" @click="changeTimeline(index)">
+        <div
+          class="timeline-item"
+          v-for="(timeline, index) in timelineWithImages"
+          :key="timeline.id"
+          @click="changeTimeline(index)"
+        >
           <div
             class="timeline-images"
             :class="{
               current: timeline.id === timelineStore.current?.id,
             }"
           >
-            <img class="image app" v-if="timeline.images.app" :src="timeline.images.app" alt="app" />
+            <img
+              class="image app"
+              v-if="timeline.images.app"
+              :src="timeline.images.app"
+              alt="app"
+              @load="showTimelineImage"
+              @error="hideTimelineImage"
+            />
             <img
               class="image instance"
               v-if="timeline.images.instance"
               :src="timeline.images.instance"
               alt="instance"
+              @load="showTimelineImage"
+              @error="hideTimelineImage"
             />
-            <img class="image user" v-if="timeline.images.account" :src="timeline.images.account" alt="account" />
+            <img
+              class="image user"
+              v-if="timeline.images.account"
+              :src="timeline.images.account"
+              alt="account"
+              @load="showTimelineImage"
+              @error="hideTimelineImage"
+            />
             <ChannelIcon v-if="timeline.images.channel" :channel="timeline.images.channel" />
           </div>
           <div class="timeline-title">
             <div class="account">
-              <span class="nickname">{{ usersStore.findUser(timeline.userId)?.name }}</span>
-              <span class="instance"
-                >@{{ instanceStore.findInstanceByUserId(timeline.userId)?.url?.replace("https://", "") }}</span
-              >
+              <span class="nickname">{{ timeline.accountName }}</span>
+              <span class="instance" v-if="timeline.accountHost">@{{ timeline.accountHost }}</span>
             </div>
-            <div class="stream">{{ getChannelLabel(timeline.channel) }}</div>
+            <div class="stream">{{ timeline.channelLabel }}</div>
           </div>
         </div>
       </div>
@@ -406,14 +488,17 @@ onBeforeUnmount(() => {
 }
 .timeline-images {
   display: inline-flex;
+  flex: 0 0 160px;
   gap: 12px;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   width: 160px;
+  min-width: 160px;
   height: 24px;
   overflow: hidden;
   background: var(--dote-color-white-t2);
-  border: var(--dote-color-white);
+  border: 1px solid transparent;
   border-radius: 4px;
 
   &.current {
@@ -429,11 +514,14 @@ onBeforeUnmount(() => {
   }
 
   .image {
+    flex: 0 0 24px;
     width: 24px;
     height: 24px;
+    object-fit: cover;
 
     &.instance,
     &.user {
+      flex-basis: 20px;
       width: 20px;
       height: 20px;
       border-radius: 2px;
@@ -513,16 +601,32 @@ onBeforeUnmount(() => {
   }
   .timeline-title {
     display: flex;
+    flex: 1 1 auto;
     align-items: center;
     justify-content: flex-start;
+    min-width: 0;
     margin-left: 8px;
+    overflow: hidden;
+
     .account {
+      display: flex;
+      min-width: 0;
+      overflow: hidden;
       color: var(--dote-color-white);
       font-weight: bold;
       font-size: 14px;
       line-height: 1;
     }
+    .nickname,
+    .instance,
     .stream {
+      min-width: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .stream {
+      flex: 0 0 auto;
       margin-left: 4px;
       color: var(--dote-color-white);
       font-weight: bold;

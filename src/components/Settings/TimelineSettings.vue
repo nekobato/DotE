@@ -5,15 +5,16 @@ import TimelineForm from "./TimelineForm.vue";
 import type { ChannelName, InstanceType, Timeline } from "@shared/types/store";
 import { Icon } from "@iconify/vue";
 import { defaultChannelNameFromType } from "@/utils/dote";
+import { resolvePlatformIconUrl } from "@/utils/platformIcon";
 import { computed, ref } from "vue";
 import { useUsersStore } from "@/store/users";
 import { useInstanceStore } from "@/store/instance";
 import ChannelIcon from "@/components/ChannelIcon.vue";
 
 const appLogoImagePathMap: Record<InstanceType, string> = {
-  misskey: "/images/icons/misskey.png",
-  mastodon: "/images/icons/mastodon.png",
-  bluesky: "/images/icons/bluesky.png",
+  misskey: resolvePlatformIconUrl("misskey"),
+  mastodon: resolvePlatformIconUrl("mastodon"),
+  bluesky: resolvePlatformIconUrl("bluesky"),
 };
 
 const store = useStore();
@@ -194,14 +195,17 @@ const onDeleteTimeline = async (timeline: Timeline) => {
 }
 .timeline-images {
   display: inline-flex;
+  flex: 0 0 160px;
   gap: 12px;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   width: 160px;
+  min-width: 160px;
   height: 24px;
   overflow: hidden;
   background: var(--dote-color-white-t2);
-  border: var(--dote-color-white);
+  border: 1px solid transparent;
   border-radius: 4px;
 
   &.current {
@@ -209,11 +213,14 @@ const onDeleteTimeline = async (timeline: Timeline) => {
   }
 
   .image {
+    flex: 0 0 24px;
     width: 24px;
     height: 24px;
+    object-fit: cover;
 
     &.instance,
     &.user {
+      flex-basis: 20px;
       width: 20px;
       height: 20px;
       border-radius: 2px;
