@@ -14,7 +14,7 @@ import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
-import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref, watch } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 
 type PageProps = {
@@ -42,6 +42,11 @@ type AttachmentItem = {
 };
 
 type FileWithPath = File & { path?: string };
+
+type TextInputRef = {
+  focus?: () => void;
+  textarea?: HTMLTextAreaElement | null;
+};
 
 const submitTextMap = {
   note: "Note",
@@ -80,7 +85,7 @@ const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
 } | null>(null);
-const textInputRef = ref<{ textarea?: HTMLTextAreaElement | null } | null>(null);
+const textInputRef = ref<TextInputRef | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const attachments = ref<AttachmentItem[]>([]);
 const misskeyVisibility = ref<"public" | "home" | "followers" | null>(null);
@@ -638,11 +643,29 @@ const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
   await insertEmojiAtCursor(emoji.name);
 };
 
+/**
+ * Focus the writable post textarea after the page has rendered.
+ */
+const focusPostTextInput = async () => {
+  if (isBoostMode.value) return;
+
+  await nextTick();
+  textInputRef.value?.focus?.();
+  const textarea = textInputRef.value?.textarea;
+  if (!textarea) return;
+
+  textarea.focus();
+  const cursorPosition = text.value.length;
+  textarea.setSelectionRange(cursorPosition, cursorPosition);
+};
+
 onBeforeUnmount(() => {
   clearAttachments();
 });
 
 onMounted(async () => {
+  await focusPostTextInput();
+
   const users = await ipcInvoke("db:get-users");
   const timelines = await ipcInvoke("db:get-timeline-all");
   const instances = await ipcInvoke("db:get-instance-all");
@@ -651,6 +674,14 @@ onMounted(async () => {
   state.user = users.find((user: any) => user.id === state.timeline?.userId);
   state.instance = instances.find((instance: any) => instance.id === state.user?.instanceId);
 });
+
+watch(
+  () => props.data,
+  () => {
+    void focusPostTextInput();
+  },
+  { flush: "post" },
+);
 
 document.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" && e.shiftKey) || (e.key === "Enter" && e.metaKey)) {
