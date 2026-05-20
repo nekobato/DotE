@@ -263,20 +263,33 @@ export const useTimelineStore = defineStore("timeline", () => {
     await normalizeTimelinesAfterDeletion();
   };
 
+  /**
+   * Remove timeline-only runtime fields before persisting a timeline.
+   */
+  const toPersistedTimeline = (timeline: TimelineStore): Timeline => {
+    const { posts, notifications, bluesky, pendingNewPosts, readmoreLocked, ...timelineForStore } = timeline;
+    return timelineForStore;
+  };
+
   const changeActiveTimeline = async (index: number) => {
     if (lastReadSaveTimer) {
       clearTimeout(lastReadSaveTimer);
       lastReadSaveTimer = undefined;
     }
-    if (store.timelines[index].available) return;
-    store.timelines.forEach(async (timeline, i) => {
-      const { posts, notifications, pendingNewPosts, readmoreLocked, ...timelineForStore } = timeline;
+    if (!store.timelines[index] || store.timelines[index].available) return;
 
-      await ipcInvoke("db:set-timeline", {
-        ...timelineForStore,
-        available: i === index,
-      });
+    store.$state.timelines.forEach((timeline, i) => {
+      timeline.available = i === index;
     });
+
+    await Promise.all(
+      store.$state.timelines.map((timeline, i) =>
+        ipcInvoke("db:set-timeline", {
+          ...toPersistedTimeline(timeline),
+          available: i === index,
+        }),
+      ),
+    );
     await store.initTimelines();
   };
 

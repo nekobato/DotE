@@ -1,7 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
 import { baseHeader } from "./request";
-import { buildMultipartFormData, requestFormData, requestJson } from "./helpers";
+import { buildMultipartFormData, requestFormData, requestJson, resolveUploadFileData } from "./helpers";
 import { getInstanceMetaCache, setInstanceMetaCache } from "../db";
 
 const INSTANCE_META_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -266,18 +264,26 @@ export const mastodonUploadMedia = async ({
   instanceUrl,
   token,
   filePath,
+  fileDataBase64,
+  fileName,
   fileType,
   description,
 }: {
   instanceUrl: string;
   token: string;
-  filePath: string;
+  filePath?: string;
+  fileDataBase64?: string;
+  fileName?: string;
   fileType?: string;
   description?: string;
 }) => {
   const url = new URL(`/api/v2/media`, instanceUrl).toString();
-  const buffer = await readFile(filePath);
-  const filename = basename(filePath);
+  const { data, filename } = await resolveUploadFileData({
+    filePath,
+    fileDataBase64,
+    fileName,
+    fallbackFileName: "upload",
+  });
   const fields = [] as { name: string; value: string | number | boolean }[];
   if (description) {
     fields.push({ name: "description", value: description });
@@ -287,7 +293,7 @@ export const mastodonUploadMedia = async ({
     file: {
       name: "file",
       filename,
-      data: buffer,
+      data,
       contentType: fileType || "application/octet-stream",
     },
   });

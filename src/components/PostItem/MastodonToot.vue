@@ -5,6 +5,7 @@ import { computed, type PropType } from "vue";
 import PostAttachments from "./PostAttachments.vue";
 import { MastodonToot } from "@/types/mastodon";
 import { parseMastodonText } from "@/utils/mastodon";
+import { resolvePostCreatedAt } from "@/utils/postDate";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostActionDropdown from "./PostActionDropdown.vue";
 
@@ -40,6 +41,8 @@ const emit = defineEmits(["refreshPost", "reaction", "favourite", "boost", "repl
 const post = computed(() => {
   return props.post.reblog || props.post;
 });
+
+const postCreatedAt = computed(() => resolvePostCreatedAt(post.value));
 
 const postType = computed(() => {
   if (props.post.reblog) {
@@ -175,7 +178,7 @@ const runPostAction = (command: string) => {
         <span class="count">{{ props.post.favourites_count }}</span>
       </button>
     </div>
-    <PostActionDropdown :actions="postActions" @select="runPostAction" />
+    <PostActionDropdown :actions="postActions" :createdAt="postCreatedAt" @select="runPostAction" />
   </div>
 </template>
 

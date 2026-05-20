@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 import fetch, { Response } from "electron-fetch";
 import type { ApiErrorPayload } from "@shared/types/ipc";
 
@@ -138,6 +140,47 @@ type MultipartFile = {
   contentType?: string;
 };
 
+type UploadFileDataSource = {
+  filePath?: string;
+  fileDataBase64?: string;
+  fileName?: string;
+  fallbackFileName: string;
+};
+
+/**
+ * Remove a data URL prefix from a base64 payload when the renderer sends one.
+ */
+const normalizeBase64Payload = (value: string): string => {
+  const separatorIndex = value.indexOf(",");
+  return separatorIndex >= 0 ? value.slice(separatorIndex + 1) : value;
+};
+
+/**
+ * Resolve upload file bytes from either an on-disk path or renderer-provided base64 data.
+ */
+export const resolveUploadFileData = async ({
+  filePath,
+  fileDataBase64,
+  fileName,
+  fallbackFileName,
+}: UploadFileDataSource): Promise<{ data: Buffer; filename: string }> => {
+  if (fileDataBase64) {
+    return {
+      data: Buffer.from(normalizeBase64Payload(fileDataBase64), "base64"),
+      filename: fileName || fallbackFileName,
+    };
+  }
+
+  if (filePath) {
+    return {
+      data: await readFile(filePath),
+      filename: basename(filePath),
+    };
+  }
+
+  throw new Error("アップロードするファイルデータを取得できませんでした");
+};
+
 const CRLF = "\r\n";
 
 const appendField = (buffers: Buffer[], boundary: string, field: MultipartField) => {
@@ -149,9 +192,7 @@ const appendField = (buffers: Buffer[], boundary: string, field: MultipartField)
 
 const appendFile = (buffers: Buffer[], boundary: string, file: MultipartFile) => {
   buffers.push(Buffer.from(`--${boundary}${CRLF}`));
-  buffers.push(
-    Buffer.from(`Content-Disposition: form-data; name="${file.name}"; filename="${file.filename}"${CRLF}`),
-  );
+  buffers.push(Buffer.from(`Content-Disposition: form-data; name="${file.name}"; filename="${file.filename}"${CRLF}`));
   buffers.push(Buffer.from(`Content-Type: ${file.contentType || "application/octet-stream"}${CRLF}${CRLF}`));
   buffers.push(file.data);
   buffers.push(Buffer.from(CRLF));

@@ -7,6 +7,7 @@ import {
   extractReposter,
 } from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
+import { resolvePostCreatedAt } from "@/utils/postDate";
 import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
@@ -75,6 +76,8 @@ const isLiked = computed(() => {
 });
 
 const postAttachments = computed<Attachment[]>(() => extractBlueskyAttachments(props.post));
+
+const postCreatedAt = computed(() => resolvePostCreatedAt(props.post));
 
 const openPost = () => {
   const postId = props.post.post.uri.split("/").pop();
@@ -177,7 +180,7 @@ const runPostAction = (command: string) => {
         <span class="count">{{ props.post.post.likeCount }}</span>
       </button>
     </div>
-    <PostActionDropdown :actions="postActions" @select="runPostAction" />
+    <PostActionDropdown :actions="postActions" :createdAt="postCreatedAt" @select="runPostAction" />
   </div>
 </template>
 

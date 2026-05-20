@@ -50,6 +50,7 @@ export const apiRequest = {
   ["bluesky:startOAuth"]: blueskyStartOAuth,
   ["bluesky:getProfile"]: blueskyRequest.blueskyGetProfile,
   ["bluesky:getTimeline"]: blueskyRequest.blueskyGetTimeline,
+  ["bluesky:uploadImage"]: blueskyRequest.blueskyUploadImage,
   ["bluesky:createPost"]: blueskyRequest.blueskyCreatePost,
   ["bluesky:like"]: blueskyRequest.blueskyLike,
   ["bluesky:deleteLike"]: blueskyRequest.blueskyDeleteLike,

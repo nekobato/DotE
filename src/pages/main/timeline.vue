@@ -89,21 +89,35 @@ const onMisskeyReaction = (payload: { postId: string; reaction: string }) => {
  * Misskeyのリポストウィンドウを開きます。
  */
 const onMisskeyRepost = (payload: { post: MisskeyNoteType; emojis: { name: string; url: string }[] }) => {
-  ipcSend("post:repost", payload);
+  ipcSend("post:repost", {
+    ...payload,
+    ...currentPostTargetPayload(),
+  });
 };
 
 /**
  * Misskeyの返信ウィンドウを開きます。
  */
 const onMisskeyReply = (note: MisskeyNoteType) => {
-  ipcSend("post:create", { post: note, emojis: emojis.value, mode: "reply", replyToId: note.id });
+  ipcSend("post:create", {
+    post: note,
+    emojis: emojis.value,
+    mode: "reply",
+    replyToId: note.id,
+    ...currentPostTargetPayload(),
+  });
 };
 
 /**
  * Mastodonの返信ウィンドウを開きます。
  */
 const onMastodonReply = (toot: MastodonTootType) => {
-  ipcSend("post:create", { post: toot, mode: "reply", replyToId: toot.id });
+  ipcSend("post:create", {
+    post: toot,
+    mode: "reply",
+    replyToId: toot.id,
+    ...currentPostTargetPayload(),
+  });
 };
 
 /**
@@ -113,8 +127,7 @@ const onMastodonBoost = (toot: MastodonTootType) => {
   ipcSend("post:repost", {
     post: toot,
     mode: "boost",
-    timelineId: timelineStore.current?.id,
-    userId: timelineStore.currentUser?.id,
+    ...currentPostTargetPayload(),
   });
 };
 
@@ -133,6 +146,14 @@ const timelineStyle = computed(() => ({
   opacity: hazeOpacity.value,
   ...(store.settings.font.family ? { fontFamily: store.settings.font.family } : {}),
 }));
+
+/**
+ * Build the currently selected timeline target for post-window actions.
+ */
+const currentPostTargetPayload = () => ({
+  timelineId: timelineStore.current?.id,
+  userId: timelineStore.currentUser?.id,
+});
 
 type TimelinePostIdSource = MisskeyNoteType | MastodonTootType | AppBskyFeedDefs.FeedViewPost;
 

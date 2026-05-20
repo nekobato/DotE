@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { formatPostDateTime } from "@/utils/postDate";
 
 /**
  * Dropdown menu item displayed in the post action menu.
@@ -15,6 +16,7 @@ type PostActionDropdownAction = {
 
 const props = defineProps<{
   actions: PostActionDropdownAction[];
+  createdAt?: string;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +24,8 @@ const emit = defineEmits<{
 }>();
 
 const isDropdownOpen = ref(false);
+
+const formattedCreatedAt = computed(() => formatPostDateTime(props.createdAt));
 
 /**
  * Emit a selected action command from Element Plus dropdown events.
@@ -42,6 +46,14 @@ const setDropdownOpen = (visible: boolean) => {
 
 <template>
   <div class="dote-post-actions" :class="{ 'is-open': isDropdownOpen }" v-if="props.actions.length">
+    <time
+      class="dote-post-action-created-at"
+      v-if="formattedCreatedAt"
+      :datetime="props.createdAt"
+      :title="formattedCreatedAt"
+    >
+      {{ formattedCreatedAt }}
+    </time>
     <ElDropdown
       trigger="click"
       placement="bottom-end"
@@ -77,13 +89,13 @@ const setDropdownOpen = (visible: boolean) => {
   top: 4px;
   right: 4px;
   display: inline-flex;
+  gap: 8px;
   align-items: center;
   justify-content: center;
   margin: 0 0 0 auto;
   padding: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  background: transparent;
   visibility: hidden;
 }
 
@@ -105,8 +117,9 @@ const setDropdownOpen = (visible: boolean) => {
   color: var(--dote-color-white-t4);
   font-size: var(--post-action--font-size);
   line-height: var(--post-action--line-height);
-  background-color: transparent;
+  background: rgba(255, 255, 255, 0.2);
   border: none;
+  border-radius: 4px;
   cursor: pointer;
   appearance: none;
 
@@ -126,6 +139,18 @@ const setDropdownOpen = (visible: boolean) => {
     height: 16px;
     color: var(--dote-color-white);
   }
+}
+
+.dote-post-action-created-at {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  color: var(--dote-color-white-t3);
+  font-weight: bold;
+  font-size: var(--font-size-10);
+  line-height: var(--font-size-10);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 :global(.dote-post-action-dropdown-popper .el-dropdown-menu) {
@@ -152,8 +177,8 @@ const setDropdownOpen = (visible: boolean) => {
 
 :global(.dote-post-action-dropdown-item) {
   display: inline-flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
   min-width: 112px;
 }
 

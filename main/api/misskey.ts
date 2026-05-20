@@ -1,7 +1,11 @@
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
 import { baseHeader } from "./request";
-import { buildMultipartFormData, requestFormData, requestJson, requestJsonAllowEmpty } from "./helpers";
+import {
+  buildMultipartFormData,
+  requestFormData,
+  requestJson,
+  requestJsonAllowEmpty,
+  resolveUploadFileData,
+} from "./helpers";
 
 export const misskeyCheckMiAuth = async ({ instanceUrl, sessionId }: { instanceUrl: string; sessionId: string }) => {
   const url = new URL(`/api/miauth/${sessionId}/check`, instanceUrl).toString();
@@ -49,20 +53,28 @@ export const misskeyUploadFile = async ({
   instanceUrl,
   token,
   filePath,
+  fileDataBase64,
+  fileName,
   fileType,
   isSensitive,
   comment,
 }: {
   instanceUrl: string;
   token: string;
-  filePath: string;
+  filePath?: string;
+  fileDataBase64?: string;
+  fileName?: string;
   fileType?: string;
   isSensitive?: boolean;
   comment?: string;
 }) => {
   const url = new URL(`/api/drive/files/create`, instanceUrl).toString();
-  const buffer = await readFile(filePath);
-  const filename = basename(filePath);
+  const { data, filename } = await resolveUploadFileData({
+    filePath,
+    fileDataBase64,
+    fileName,
+    fallbackFileName: "upload",
+  });
   const fields = [{ name: "i", value: token }] as { name: string; value: string | number | boolean }[];
   if (typeof isSensitive === "boolean") {
     fields.push({ name: "isSensitive", value: isSensitive });
@@ -75,7 +87,7 @@ export const misskeyUploadFile = async ({
     file: {
       name: "file",
       filename,
-      data: buffer,
+      data,
       contentType: fileType || "application/octet-stream",
     },
   });

@@ -10,6 +10,7 @@ import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
+import type { BlobRef } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import type { MisskeyEntities, MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 import type { Instance, Settings, Timeline, User } from "@shared/types/store";
@@ -28,16 +29,25 @@ type PageProps = {
 
 type UploadStatus = "ready" | "uploading" | "uploaded" | "failed";
 
+type BlueskyImageAspectRatio = {
+  width: number;
+  height: number;
+};
+
 type AttachmentItem = {
   id: string;
   name: string;
-  path: string;
+  path?: string;
+  fileDataBase64?: string;
   size: number;
   type: string;
   previewUrl?: string;
   status: UploadStatus;
   fileId?: string;
   mediaId?: string;
+  blob?: BlobRef;
+  altText?: string;
+  aspectRatio?: BlueskyImageAspectRatio;
   error?: string;
 };
 
@@ -57,6 +67,33 @@ const submitTextMap = {
   boost: "Boost",
   post: "Post",
   repost: "Repost",
+};
+
+const BLUESKY_IMAGE_MAX_COUNT = 4;
+const BLUESKY_IMAGE_MAX_BYTES = 1_000_000;
+const imageExtensionMimeTypes: Record<string, string> = {
+  avif: "image/avif",
+  bmp: "image/bmp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  tif: "image/tiff",
+  tiff: "image/tiff",
+  webp: "image/webp",
+};
+const imageMimeTypeExtensions: Record<string, string> = {
+  "image/avif": "avif",
+  "image/bmp": "bmp",
+  "image/gif": "gif",
+  "image/heic": "heic",
+  "image/heif": "heif",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/tiff": "tiff",
+  "image/webp": "webp",
 };
 
 const props = defineProps({
@@ -88,6 +125,7 @@ const emojiPickerRef = ref<{
 const textInputRef = ref<TextInputRef | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const attachments = ref<AttachmentItem[]>([]);
+let postContextRequestId = 0;
 const misskeyVisibility = ref<"public" | "home" | "followers" | null>(null);
 const misskeyLocalOnly = ref(false);
 const misskeyNoExtractMentions = ref(false);
@@ -99,8 +137,11 @@ const postFontStyle = computed(() => ({
 }));
 const canUseEmojiPicker = computed(() => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0);
 const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
-const canUseAttachments = computed(() => state.instance?.type === "misskey" || state.instance?.type === "mastodon");
+const canUseAttachments = computed(
+  () => state.instance?.type === "misskey" || state.instance?.type === "mastodon" || state.instance?.type === "bluesky",
+);
 const canUseMisskeyOptions = computed(() => state.instance?.type === "misskey");
+const attachmentAccept = computed(() => (state.instance?.type === "bluesky" ? "image/*" : undefined));
 const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.status === "uploading"));
 const hasFailedAttachments = computed(() => attachments.value.some((item) => item.status === "failed"));
 const uploadedMisskeyFileIds = computed(() =>
@@ -108,6 +149,15 @@ const uploadedMisskeyFileIds = computed(() =>
 );
 const uploadedMastodonMediaIds = computed(() =>
   attachments.value.filter((item) => item.status === "uploaded" && item.mediaId).map((item) => item.mediaId as string),
+);
+const uploadedBlueskyImages = computed(() =>
+  attachments.value
+    .filter((item) => item.status === "uploaded" && item.blob)
+    .map((item) => ({
+      blob: item.blob as BlobRef,
+      alt: item.altText ?? "",
+      ...(item.aspectRatio ? { aspectRatio: item.aspectRatio } : {}),
+    })),
 );
 const hasAttachments = computed(() => attachments.value.length > 0);
 const isBoostMode = computed(() => props.data.mode === "boost");
@@ -149,6 +199,87 @@ const handleApiResult = <T,>(result: ApiInvokeResult<T>, message: string): T | u
     return undefined;
   }
   return result.data;
+};
+
+/**
+ * Infer a MIME type from a file extension when clipboard data omits file.type.
+ */
+const inferFileTypeFromName = (fileName: string): string | undefined => {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+  if (!extension) return undefined;
+  return imageExtensionMimeTypes[extension];
+};
+
+/**
+ * Resolve the best MIME type available for upload and local validation.
+ */
+const resolveAttachmentFileType = (file: File): string => {
+  return file.type || inferFileTypeFromName(file.name) || "application/octet-stream";
+};
+
+/**
+ * Resolve a stable upload filename for clipboard images that do not carry a name.
+ */
+const resolveAttachmentFileName = (file: File, fileType: string): string => {
+  if (file.name) return file.name;
+  const extension = imageMimeTypeExtensions[fileType] ?? "bin";
+  return `pasted-image.${extension}`;
+};
+
+/**
+ * Check whether a File represents an image, including clipboard files with empty MIME type.
+ */
+const isImageFile = (file: File): boolean => {
+  return resolveAttachmentFileType(file).startsWith("image/");
+};
+
+/**
+ * Resolve the timeline that should own the current post-window payload.
+ */
+const resolvePostTimeline = (timelines: Timeline[]): Timeline | undefined => {
+  if (props.data.timelineId) {
+    return timelines.find((timeline) => timeline.id === props.data.timelineId);
+  }
+
+  if (props.data.userId) {
+    return (
+      timelines.find((timeline) => timeline.userId === props.data.userId && timeline.available) ??
+      timelines.find((timeline) => timeline.userId === props.data.userId)
+    );
+  }
+
+  return timelines.find((timeline) => timeline.available);
+};
+
+/**
+ * Resolve the user that should be used as the posting account.
+ */
+const resolvePostUser = (users: User[], timeline?: Timeline): User | undefined => {
+  const userId = props.data.userId ?? timeline?.userId;
+  if (!userId) return undefined;
+  return users.find((user) => user.id === userId);
+};
+
+/**
+ * Refresh the post-window account, timeline, instance, and settings from persisted state.
+ */
+const loadPostContext = async () => {
+  const requestId = ++postContextRequestId;
+  const [users, timelines, instances, settings] = await Promise.all([
+    ipcInvoke("db:get-users"),
+    ipcInvoke("db:get-timeline-all"),
+    ipcInvoke("db:get-instance-all"),
+    ipcInvoke("settings:all"),
+  ]);
+
+  if (requestId !== postContextRequestId) return;
+
+  const timeline = resolvePostTimeline(timelines);
+  const user = resolvePostUser(users, timeline);
+  state.settings = settings;
+  state.timeline = timeline;
+  state.user = user;
+  state.instance = instances.find((instance) => instance.id === user?.instanceId);
 };
 
 const mastodonToot = computed(() => {
@@ -254,7 +385,7 @@ const submitType = computed(() => {
   }
   if (state.instance?.type === "bluesky") {
     if (props.data.post) {
-      return text.value ? "quote" : "repost";
+      return text.value || hasAttachments.value ? "quote" : "repost";
     }
     return "post";
   }
@@ -281,6 +412,9 @@ const canSubmit = computed(() => {
     if (state.instance?.type === "mastodon") {
       return text.value.length > 0 || hasAttachments.value;
     }
+    if (state.instance?.type === "bluesky") {
+      return text.value.length > 0 || hasAttachments.value;
+    }
     return text.value.length > 0;
   }
   return true;
@@ -303,6 +437,43 @@ const createAttachmentId = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
+/**
+ * Load image dimensions for Bluesky aspectRatio metadata.
+ */
+const loadImageAspectRatio = (previewUrl?: string): Promise<BlueskyImageAspectRatio | undefined> => {
+  if (!previewUrl) return Promise.resolve(undefined);
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      resolve(width > 0 && height > 0 ? { width, height } : undefined);
+    };
+    image.onerror = () => resolve(undefined);
+    image.src = previewUrl;
+  });
+};
+
+/**
+ * Read a renderer File as base64 so pasted clipboard images can be uploaded without a filesystem path.
+ */
+const readFileAsBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("ファイルデータを読み込めませんでした"));
+        return;
+      }
+      const separatorIndex = reader.result.indexOf(",");
+      resolve(separatorIndex >= 0 ? reader.result.slice(separatorIndex + 1) : reader.result);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("ファイルデータを読み込めませんでした"));
+    reader.readAsDataURL(file);
+  });
+};
+
 const clearAttachments = () => {
   attachments.value.forEach((item) => {
     if (item.previewUrl) {
@@ -310,6 +481,45 @@ const clearAttachments = () => {
     }
   });
   attachments.value = [];
+};
+
+/**
+ * Reset composer-local state when the post window is opened for a new payload.
+ */
+const resetComposerState = () => {
+  text.value = "";
+  textCw.value = "";
+  state.post.error = "";
+  state.post.isSending = false;
+  showEmojiPicker.value = false;
+  showMfmPreview.value = false;
+  showMisskeyOptions.value = false;
+  misskeyVisibility.value = null;
+  misskeyLocalOnly.value = false;
+  misskeyNoExtractMentions.value = false;
+  misskeyNoExtractHashtags.value = false;
+  misskeyNoExtractEmojis.value = false;
+  misskeyNoExtractLinks.value = false;
+  clearAttachments();
+};
+
+/**
+ * Validate Bluesky's image-only attachment limits before adding a file.
+ */
+const validateBlueskyAttachment = (file: File): boolean => {
+  if (attachments.value.length >= BLUESKY_IMAGE_MAX_COUNT) {
+    state.post.error = "Blueskyの画像添付は最大4枚までです";
+    return false;
+  }
+  if (!isImageFile(file)) {
+    state.post.error = "Blueskyに添付できるのは画像ファイルのみです";
+    return false;
+  }
+  if (file.size > BLUESKY_IMAGE_MAX_BYTES) {
+    state.post.error = "Blueskyの画像添付は1,000,000 bytes以下にしてください";
+    return false;
+  }
+  return true;
 };
 
 const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
@@ -324,6 +534,8 @@ const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
       instanceUrl: state.instance?.url,
       token: state.user?.token,
       filePath: item.path,
+      fileDataBase64: item.fileDataBase64,
+      fileName: item.name,
       fileType: item.type,
     });
     const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} へのアップロードに失敗しました`);
@@ -379,6 +591,8 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
       instanceUrl: state.instance?.url,
       token: state.user?.token,
       filePath: item.path,
+      fileDataBase64: item.fileDataBase64,
+      fileName: item.name,
       fileType: item.type,
     });
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} へのアップロードに失敗しました`);
@@ -422,21 +636,96 @@ const uploadMastodonAttachments = async (): Promise<boolean> => {
   return true;
 };
 
+/**
+ * Upload one image file to Bluesky and keep the returned BlobRef on the attachment.
+ */
+const uploadBlueskyImage = async (item: AttachmentItem, did: string): Promise<boolean> => {
+  updateAttachment(item.id, (current) => ({
+    ...current,
+    status: "uploading",
+    error: undefined,
+  }));
+  try {
+    const result = await ipcInvoke("api", {
+      method: "bluesky:uploadImage",
+      did,
+      filePath: item.path,
+      fileDataBase64: item.fileDataBase64,
+      fileName: item.name,
+      fileType: item.type,
+    });
+    const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} へのアップロードに失敗しました`);
+    const blob = (res as { blob?: BlobRef } | undefined)?.blob;
+    if (!blob) {
+      updateAttachment(item.id, (current) => ({
+        ...current,
+        status: "failed",
+        error: "アップロードに失敗しました",
+      }));
+      return false;
+    }
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      status: "uploaded",
+      blob,
+    }));
+    return true;
+  } catch (error) {
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      status: "failed",
+      error: "アップロードに失敗しました",
+    }));
+    if (error instanceof Error) {
+      state.post.error = error.message;
+    } else {
+      state.post.error = "アップロードに失敗しました";
+    }
+    return false;
+  }
+};
+
+/**
+ * Upload pending Bluesky image attachments in selection order.
+ */
+const uploadBlueskyAttachments = async (did: string): Promise<boolean> => {
+  const targets = attachments.value.filter((item) => item.status === "ready" || item.status === "failed");
+  for (const item of targets) {
+    const ok = await uploadBlueskyImage(item, did);
+    if (!ok) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const addAttachment = async (file: File) => {
-  const filePath = getPathForFile(file) || (file as FileWithPath).path;
-  if (!filePath) {
-    state.post.error = "ファイルパスを取得できませんでした";
+  if (state.instance?.type === "bluesky" && !validateBlueskyAttachment(file)) {
     return;
   }
 
-  const previewUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
+  state.post.error = "";
+  const filePath = getPathForFile(file) || (file as FileWithPath).path || undefined;
+  let fileDataBase64: string | undefined;
+  try {
+    fileDataBase64 = filePath ? undefined : await readFileAsBase64(file);
+  } catch (error) {
+    state.post.error = error instanceof Error ? error.message : "ファイルデータを読み込めませんでした";
+    return;
+  }
+  const fileType = resolveAttachmentFileType(file);
+  const previewUrl = isImageFile(file) ? URL.createObjectURL(file) : undefined;
+  const aspectRatio = await loadImageAspectRatio(previewUrl);
   const item: AttachmentItem = {
     id: createAttachmentId(),
-    name: file.name,
+    name: resolveAttachmentFileName(file, fileType),
     path: filePath,
+    fileDataBase64,
     size: file.size,
-    type: file.type,
+    type: fileType,
     previewUrl,
+    altText: "",
+    aspectRatio,
     status: "ready",
   };
 
@@ -451,6 +740,37 @@ const onSelectFiles = async (event: Event) => {
   if (!canUseAttachments.value) return;
 
   for (const file of files) {
+    await addAttachment(file);
+  }
+};
+
+/**
+ * Extract image files from a paste event's clipboard data.
+ */
+const extractClipboardImageFiles = (clipboardData: DataTransfer | null): File[] => {
+  if (!clipboardData) return [];
+
+  const files = Array.from(clipboardData.files).filter(isImageFile);
+  if (files.length) return files;
+
+  return Array.from(clipboardData.items)
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file))
+    .filter(isImageFile);
+};
+
+/**
+ * Treat pasted clipboard images as post attachments while preserving normal text paste behavior.
+ */
+const onPaste = async (event: ClipboardEvent) => {
+  if (isBoostMode.value || !canUseAttachments.value) return;
+
+  const imageFiles = extractClipboardImageFiles(event.clipboardData);
+  if (!imageFiles.length) return;
+
+  event.preventDefault();
+  for (const file of imageFiles) {
     await addAttachment(file);
   }
 };
@@ -564,16 +884,23 @@ const postToBluesky = async () => {
     throw new Error("Blueskyアカウントの認証情報が見つかりませんでした");
   }
 
+  if (!(await uploadBlueskyAttachments(did))) {
+    return;
+  }
+  const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
+
   const result = await ipcInvoke("api", {
     method: "bluesky:createPost",
     did,
     text: text.value,
     quote: quoteRef,
+    images,
   });
 
   const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
   if (res && (res as any).uri) {
     text.value = "";
+    clearAttachments();
     ipcSend("post:close");
   }
 };
@@ -663,22 +990,23 @@ onBeforeUnmount(() => {
   clearAttachments();
 });
 
-onMounted(async () => {
+/**
+ * Prepare the post window for the current payload.
+ */
+const preparePostPayload = async () => {
+  resetComposerState();
+  await loadPostContext();
   await focusPostTextInput();
+};
 
-  const users = await ipcInvoke("db:get-users");
-  const timelines = await ipcInvoke("db:get-timeline-all");
-  const instances = await ipcInvoke("db:get-instance-all");
-  state.settings = await ipcInvoke("settings:all");
-  state.timeline = timelines.find((timeline: any) => timeline.available);
-  state.user = users.find((user: any) => user.id === state.timeline?.userId);
-  state.instance = instances.find((instance: any) => instance.id === state.user?.instanceId);
+onMounted(() => {
+  void preparePostPayload();
 });
 
 watch(
   () => props.data,
   () => {
-    void focusPostTextInput();
+    void preparePostPayload();
   },
   { flush: "post" },
 );
@@ -694,7 +1022,7 @@ document.addEventListener("keydown", (e) => {
 </script>
 
 <template>
-  <div class="post" :style="postFontStyle">
+  <div class="post" :style="postFontStyle" @paste="onPaste">
     <div class="header">
       <ElAvatar :size="32" :src="state.user?.avatarUrl" class="dote-avatar" />
       <span class="username">{{ state.user?.name }}@{{ state.instance?.url.replace("https://", "") }}</span>
@@ -743,7 +1071,14 @@ document.addEventListener("keydown", (e) => {
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
             <span>添付</span>
           </button>
-          <input class="file-input" type="file" multiple ref="fileInputRef" @change="onSelectFiles" />
+          <input
+            class="file-input"
+            type="file"
+            multiple
+            ref="fileInputRef"
+            :accept="attachmentAccept"
+            @change="onSelectFiles"
+          />
         </div>
         <div class="emoji-picker-panel" v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker">
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
@@ -806,6 +1141,16 @@ document.addEventListener("keydown", (e) => {
                 <span class="status" v-if="item.status === 'uploaded'">完了</span>
                 <span class="status error" v-if="item.status === 'failed'">失敗</span>
               </div>
+              <label class="attachment-alt" v-if="state.instance?.type === 'bluesky'">
+                <span>Alt</span>
+                <input
+                  class="nn-text-field attachment-alt-input"
+                  type="text"
+                  v-model="item.altText"
+                  placeholder="画像の説明"
+                  :disabled="item.status === 'uploading'"
+                />
+              </label>
               <div class="attachment-error" v-if="item.error">{{ item.error }}</div>
             </div>
             <button
@@ -1078,6 +1423,19 @@ document.addEventListener("keydown", (e) => {
   &.error {
     color: #ff9b9b;
   }
+}
+.attachment-alt {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px;
+  align-items: center;
+  color: var(--dote-color-white-t5);
+  font-size: 0.6rem;
+}
+.attachment-alt-input {
+  min-width: 0;
+  height: 24px;
+  font-size: 0.65rem;
 }
 .attachment-error {
   color: #ff9b9b;

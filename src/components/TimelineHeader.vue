@@ -235,10 +235,19 @@ const haze = () => {
   ipcSend("set-mode", { mode: "haze" });
 };
 
+/**
+ * Build the current posting target for the post window.
+ */
+const currentPostTargetPayload = () => ({
+  timelineId: timelineStore.current?.id,
+  userId: timelineStore.currentUser?.id,
+});
+
 const post = () => {
   toggleMenu();
   ipcSend("post:create", {
     emojis: currentEmojis.value,
+    ...currentPostTargetPayload(),
   });
 };
 
@@ -531,7 +540,6 @@ onBeforeUnmount(() => {
 .summary {
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   padding: 7px 0 9px; /* for appearance */

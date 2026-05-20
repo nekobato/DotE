@@ -4,6 +4,7 @@ import { computed, toRef } from "vue";
 import { useMisskeyNote } from "@/composables/useMisskeyNote";
 import { useMisskeyReactions } from "@/composables/useMisskeyReactions";
 import { usePostActions } from "@/composables/usePostActions";
+import { resolvePostCreatedAt } from "@/utils/postDate";
 import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
@@ -36,6 +37,8 @@ const { postType, renoteType, postAttachments, setupStreamSubscription } = useMi
 );
 
 const { reactions, isReacted } = useMisskeyReactions(postRef, emojisRef);
+
+const postCreatedAt = computed(() => resolvePostCreatedAt(props.post));
 
 const {
   openPost: openPostAction,
@@ -163,7 +166,7 @@ setupStreamSubscription();
         <span class="count">{{ reaction.count }}</span>
       </button>
     </div>
-    <PostActionDropdown :actions="postActions" @select="runPostAction" />
+    <PostActionDropdown :actions="postActions" :createdAt="postCreatedAt" @select="runPostAction" />
   </div>
 </template>
 
