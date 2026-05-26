@@ -73,6 +73,7 @@ export interface MisskeyNoteProps extends MisskeyNoteBaseProps {
   post: MisskeyNote;
   showReactions?: boolean;
   showActions?: boolean;
+  canDelete?: boolean;
   theme?: "default";
 }
 

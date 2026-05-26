@@ -30,13 +30,17 @@ const props = defineProps({
     type: Boolean as PropType<boolean>,
     default: true,
   },
+  canDelete: {
+    type: Boolean as PropType<boolean>,
+    default: false,
+  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
   },
 });
 
-const emit = defineEmits(["refreshPost", "reaction", "favourite", "boost", "reply"]);
+const emit = defineEmits(["refreshPost", "reaction", "favourite", "boost", "reply", "requestDelete"]);
 
 const post = computed(() => {
   return props.post.reblog || props.post;
@@ -99,11 +103,23 @@ const boostPost = () => {
   emit("boost", post.value);
 };
 
+/**
+ * Emit delete request for this toot or boost wrapper.
+ */
+const requestDeletePost = () => {
+  emit("requestDelete", {
+    postId: props.post.id,
+    targetId: post.value.id,
+    isReblog: Boolean(props.post.reblog),
+  });
+};
+
 const postActions = computed(() => [
   ...(props.showActions
     ? [
         { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
         { command: "boost", icon: "mingcute:repeat-fill", label: "ブースト" },
+        ...(props.canDelete ? [{ command: "delete", icon: "mingcute:delete-2-line", label: "削除" }] : []),
         { command: "refresh", icon: "mingcute:refresh-1-line", label: "更新" },
       ]
     : []),
@@ -120,6 +136,9 @@ const runPostAction = (command: string) => {
       return;
     case "boost":
       boostPost();
+      return;
+    case "delete":
+      requestDeletePost();
       return;
     case "refresh":
       refreshPost();

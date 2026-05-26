@@ -4,7 +4,9 @@ import {
   extractBlueskyAttachments,
   extractPrimaryRecord,
   extractQuotedRecord,
+  extractRepostReason,
   extractReposter,
+  resolveBlueskyFeedItemId,
 } from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
 import { resolvePostCreatedAt } from "@/utils/postDate";
@@ -41,6 +43,10 @@ const props = defineProps({
     type: Boolean as PropType<boolean>,
     default: true,
   },
+  canDelete: {
+    type: Boolean as PropType<boolean>,
+    default: false,
+  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
@@ -52,6 +58,7 @@ const emit = defineEmits<{
   repost: [{ post: AppBskyFeedDefs.PostView }];
   like: [{ uri: string; cid: string }];
   deleteLike: [{ uri: string }];
+  requestDelete: [{ feedItemId: string; uri: string; isRepost: boolean }];
 }>();
 
 const record = computed(() => extractPrimaryRecord(props.post));
@@ -59,6 +66,8 @@ const record = computed(() => extractPrimaryRecord(props.post));
 const postType = computed<BlueskyPostType[]>(() => deriveBlueskyPostKind(props.post));
 
 const repostedBy = computed(() => extractReposter(props.post));
+
+const repostReason = computed(() => extractRepostReason(props.post));
 
 const quotedRecord = computed(() => extractQuotedRecord(props.post));
 
@@ -124,11 +133,32 @@ const deleteLike = () => {
   }
 };
 
+/**
+ * Resolve the Bluesky record that should be deleted for this feed item.
+ */
+const deleteTarget = computed(() => {
+  const feedItemId = resolveBlueskyFeedItemId(props.post);
+  const repostUri = repostReason.value?.uri;
+  if (repostUri) {
+    return { feedItemId, uri: repostUri, isRepost: true };
+  }
+
+  return { feedItemId, uri: props.post.post.uri, isRepost: false };
+});
+
+/**
+ * Emit delete request for this post or repost activity.
+ */
+const requestDeletePost = () => {
+  emit("requestDelete", deleteTarget.value);
+};
+
 const postActions = computed(() => [
   ...(props.showActions
     ? [
         { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
         { command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" },
+        ...(props.canDelete ? [{ command: "delete", icon: "mingcute:delete-2-line", label: "削除" }] : []),
       ]
     : []),
   { command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" },
@@ -144,6 +174,9 @@ const runPostAction = (command: string) => {
       return;
     case "repost":
       openRepostWindow();
+      return;
+    case "delete":
+      requestDeletePost();
       return;
     case "open":
       openPost();

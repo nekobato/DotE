@@ -389,6 +389,29 @@ export const misskeyDeleteReaction = async ({
   });
 };
 
+/**
+ * Delete a Misskey note owned by the authenticated account.
+ */
+export const misskeyDeleteNote = async ({
+  instanceUrl,
+  token,
+  noteId,
+}: {
+  instanceUrl: string;
+  token: string;
+  noteId: string;
+}) => {
+  const url = new URL(`/api/notes/delete`, instanceUrl).toString();
+  return requestJsonAllowEmpty(url, {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+      noteId,
+    }),
+  });
+};
+
 export const misskeyCreateNote = async ({
   instanceUrl,
   token,

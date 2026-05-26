@@ -160,6 +160,16 @@ export const blueskyGetNotifications = async ({
 };
 
 /**
+ * Fetch hydrated Bluesky post views for AT URIs.
+ */
+export const blueskyGetPosts = async ({ did, uris }: { did: string; uris: string[] }) => {
+  return withAgent(did, async (agent) => {
+    const res = await agent.getPosts({ uris });
+    return res.data;
+  });
+};
+
+/**
  * Upload a local image file as a Bluesky blob that can be referenced by a post embed.
  */
 export const blueskyUploadImage = async ({
@@ -299,6 +309,26 @@ export const blueskyLike = async ({ did, uri, cid }: { did: string; uri: string;
 export const blueskyDeleteLike = async ({ did, uri }: { did: string; uri: string }) => {
   return withAgent(did, async (agent) => {
     await agent.deleteLike(uri);
+    return;
+  });
+};
+
+/**
+ * Delete a Bluesky post record owned by the authenticated account.
+ */
+export const blueskyDeletePost = async ({ did, uri }: { did: string; uri: string }) => {
+  return withAgent(did, async (agent) => {
+    await agent.deletePost(uri);
+    return;
+  });
+};
+
+/**
+ * Delete a Bluesky repost record owned by the authenticated account.
+ */
+export const blueskyDeleteRepost = async ({ did, uri }: { did: string; uri: string }) => {
+  return withAgent(did, async (agent) => {
+    await agent.deleteRepost(uri);
     return;
   });
 };

@@ -5,6 +5,7 @@ import { ipcInvoke } from "@/utils/ipc";
 import { MastodonToot } from "@/types/mastodon";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
+import { removePostAcrossTimelines } from "@/utils/removePostAcrossTimelines";
 
 export const useMastodonStore = defineStore("mastodon", () => {
   const store = useStore();
@@ -123,6 +124,42 @@ export const useMastodonStore = defineStore("mastodon", () => {
     updatePostAcrossTimelines(store.timelines, res, timeline.currentUser.id);
   };
 
+  /**
+   * Delete my Mastodon status or undo my boost and remove the local timeline item.
+   */
+  const deleteStatus = async ({
+    postId,
+    targetId,
+    userId,
+    isReblog,
+  }: {
+    postId: string;
+    targetId: string;
+    userId: string;
+    isReblog: boolean;
+  }): Promise<boolean> => {
+    const user = store.$state.users.find((user) => user.id === userId);
+    const instance = store.$state.instances.find((instance) => instance.id === user?.instanceId);
+    if (!user || instance?.type !== "mastodon") {
+      store.$state.errors.push({ message: "Mastodonの削除対象アカウントが見つかりませんでした" });
+      return false;
+    }
+
+    const result = await ipcInvoke("api", {
+      method: isReblog ? "mastodon:unReblog" : "mastodon:deleteStatus",
+      instanceUrl: instance.url,
+      token: user.token,
+      id: targetId,
+    });
+    if (!result.ok) {
+      reportApiError(result, `${postId}の${isReblog ? "ブースト解除" : "投稿削除"}失敗`);
+      return false;
+    }
+
+    removePostAcrossTimelines(store.timelines, userId, postId);
+    return true;
+  };
+
   const fetchPosts = async () => {
     const timeline = getTimelineStore();
     if (!timeline.current || !timeline.currentUser || !timeline.currentInstance) {
@@ -193,6 +230,7 @@ export const useMastodonStore = defineStore("mastodon", () => {
     getList,
     toggleFavourite,
     toggleReblog,
+    deleteStatus,
     updatePost,
     fetchPosts,
     fetchDiffPosts,

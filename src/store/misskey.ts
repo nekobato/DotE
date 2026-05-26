@@ -5,6 +5,7 @@ import { ipcInvoke } from "@/utils/ipc";
 import { MisskeyNote } from "@shared/types/misskey";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
+import { removePostAcrossTimelines } from "@/utils/removePostAcrossTimelines";
 
 type FetchNoteParams = {
   postId: string;
@@ -313,6 +314,32 @@ export const useMisskeyStore = defineStore("misskey", () => {
     });
   };
 
+  /**
+   * Delete my Misskey note and remove it from every local timeline for that account.
+   */
+  const deleteNote = async ({ postId, userId }: { postId: string; userId: string }): Promise<boolean> => {
+    const user = store.$state.users.find((user) => user.id === userId);
+    const instance = store.$state.instances.find((instance) => instance.id === user?.instanceId);
+    if (!user || instance?.type !== "misskey") {
+      store.$state.errors.push({ message: "Misskeyの削除対象アカウントが見つかりませんでした" });
+      return false;
+    }
+
+    const result = await ipcInvoke("api", {
+      method: "misskey:deleteNote",
+      instanceUrl: instance.url,
+      token: user.token,
+      noteId: postId,
+    });
+    if (!result.ok) {
+      reportApiError(result, `${postId}の投稿削除失敗`);
+      return false;
+    }
+
+    removePostAcrossTimelines(store.timelines, userId, postId);
+    return true;
+  };
+
   const addReaction = async ({ postId, reaction }: { postId: string; reaction: string }) => {
     updateNotesById(postId, (note) => {
       incrementReaction(note, reaction);
@@ -564,6 +591,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     addEmoji,
     createMyReaction,
     deleteMyReaction,
+    deleteNote,
     updatePost,
     ensureReactionEmoji,
     addReaction,

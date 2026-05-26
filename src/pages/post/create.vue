@@ -5,9 +5,8 @@ import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
 import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
-import Mfm from "@/components/misskey/Mfm.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
-import type { BlueskyReplyRef } from "@/utils/bluesky";
+import { toBlueskyFeedPost, type BlueskyReplyRef } from "@/utils/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
@@ -73,6 +72,7 @@ const submitTextMap = {
 
 const BLUESKY_IMAGE_MAX_COUNT = 4;
 const BLUESKY_IMAGE_MAX_BYTES = 1_000_000;
+const BLUESKY_CREATED_POST_FETCH_RETRY_DELAYS_MS = [0, 500, 1_000, 1_500, 2_500, 4_000] as const;
 const imageExtensionMimeTypes: Record<string, string> = {
   avif: "image/avif",
   bmp: "image/bmp",
@@ -118,7 +118,6 @@ const state = reactive({
 const text = ref("");
 const textCw = ref("");
 const showEmojiPicker = ref(false);
-const showMfmPreview = ref(false);
 const showMisskeyOptions = ref(false);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
@@ -138,7 +137,6 @@ const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
 const canUseEmojiPicker = computed(() => state.instance?.type === "misskey" && (props.data.emojis?.length ?? 0) > 0);
-const canUseMfmPreview = computed(() => state.instance?.type === "misskey");
 const canUseAttachments = computed(
   () => state.instance?.type === "misskey" || state.instance?.type === "mastodon" || state.instance?.type === "bluesky",
 );
@@ -524,7 +522,6 @@ const resetComposerState = () => {
   state.post.error = "";
   state.post.isSending = false;
   showEmojiPicker.value = false;
-  showMfmPreview.value = false;
   showMisskeyOptions.value = false;
   misskeyVisibility.value = null;
   misskeyLocalOnly.value = false;
@@ -908,6 +905,67 @@ const postToMastodon = async () => {
   }
 };
 
+const wait = (ms: number) => {
+  return new Promise<void>((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+};
+
+const fetchCreatedBlueskyPost = async ({ did, uri }: { did: string; uri: string }) => {
+  let lastError: unknown;
+
+  for (const delay of BLUESKY_CREATED_POST_FETCH_RETRY_DELAYS_MS) {
+    if (delay > 0) {
+      await wait(delay);
+    }
+
+    const result = await ipcInvoke("api", {
+      method: "bluesky:getPosts",
+      did,
+      uris: [uri],
+    });
+
+    if (!result.ok) {
+      lastError = result.error;
+      continue;
+    }
+
+    const posts = (result.data as { posts?: AppBskyFeedDefs.PostView[] }).posts ?? [];
+    const post = posts.find((candidate) => candidate.uri === uri) ?? posts[0];
+    if (post) return post;
+  }
+
+  console.warn("Bluesky投稿は成功しましたが、タイムライン反映用の投稿取得に失敗しました", {
+    uri,
+    lastError,
+  });
+  return undefined;
+};
+
+/**
+ * Hydrate a newly created Bluesky post and send it to the main timeline.
+ */
+const addCreatedBlueskyPostToTimeline = async ({
+  did,
+  uri,
+  timelineId,
+  userId,
+}: {
+  did: string;
+  uri: string;
+  timelineId?: string;
+  userId?: string;
+}) => {
+  const post = await fetchCreatedBlueskyPost({ did, uri });
+  if (!post) return;
+
+  ipcSend("timeline:add-post", {
+    post: toBlueskyFeedPost(post),
+    timelineId,
+    userId,
+  });
+};
+
 const postToBluesky = async () => {
   const targetPost = props.data.post as BlueskyPostType | null;
   const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
@@ -932,6 +990,12 @@ const postToBluesky = async () => {
 
   const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
   if (res && (res as any).uri) {
+    void addCreatedBlueskyPostToTimeline({
+      did,
+      uri: (res as { uri: string }).uri,
+      timelineId: props.data.timelineId ?? state.timeline?.id,
+      userId: props.data.userId ?? state.user?.id,
+    });
     text.value = "";
     clearAttachments();
     ipcSend("post:close");
@@ -990,10 +1054,6 @@ const toggleEmojiPicker = async () => {
     await nextTick();
     emojiPickerRef.value?.focusSearch();
   }
-};
-
-const toggleMfmPreview = () => {
-  showMfmPreview.value = !showMfmPreview.value;
 };
 
 const toggleMisskeyOptions = () => {
@@ -1074,23 +1134,13 @@ document.addEventListener("keydown", (e) => {
           ref="textInputRef"
           :disabled="isBoostMode"
         />
-        <div class="post-tools" v-if="!isBoostMode && (canUseEmojiPicker || canUseMfmPreview)">
+        <div class="post-tools" v-if="!isBoostMode && (canUseEmojiPicker || canUseMisskeyOptions || canUseAttachments)">
           <button v-if="canUseEmojiPicker" class="nn-button size-small tool-button" @click="toggleEmojiPicker">
             <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
             <span>絵文字</span>
           </button>
           <button
-            v-if="canUseMfmPreview"
-            class="nn-button size-small tool-button"
-            :class="{ active: showMfmPreview }"
-            @click="toggleMfmPreview"
-          >
-            <Icon icon="mingcute:eye-2-line" class="nn-icon size-xsmall" />
-            <span>プレビュー</span>
-          </button>
-        </div>
-        <div class="post-tools" v-if="!isBoostMode && canUseMisskeyOptions">
-          <button
+            v-if="canUseMisskeyOptions"
             class="nn-button size-small tool-button"
             :class="{ active: showMisskeyOptions }"
             @click="toggleMisskeyOptions"
@@ -1098,9 +1148,7 @@ document.addEventListener("keydown", (e) => {
             <Icon icon="mingcute:settings-4-line" class="nn-icon size-xsmall" />
             <span>投稿設定</span>
           </button>
-        </div>
-        <div class="post-tools" v-if="!isBoostMode && canUseAttachments">
-          <button class="nn-button size-small tool-button" @click="openFilePicker">
+          <button v-if="canUseAttachments" class="nn-button size-small tool-button" @click="openFilePicker">
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
             <span>添付</span>
           </button>
@@ -1115,13 +1163,6 @@ document.addEventListener("keydown", (e) => {
         </div>
         <div class="emoji-picker-panel" v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker">
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
-        </div>
-        <div class="mfm-preview-panel" v-if="!isBoostMode && canUseMfmPreview && showMfmPreview">
-          <div class="mfm-preview-header">MFM プレビュー</div>
-          <div class="mfm-preview-body">
-            <Mfm :text="text" :emojis="props.data.emojis || []" :host="state.instance?.url" postStyle="all" />
-            <div class="mfm-preview-empty" v-if="text.length === 0">本文を入力するとプレビューが表示されます</div>
-          </div>
         </div>
         <div class="misskey-options" v-if="!isBoostMode && canUseMisskeyOptions && showMisskeyOptions">
           <div class="misskey-options-row">
@@ -1324,6 +1365,7 @@ document.addEventListener("keydown", (e) => {
 }
 .post-tools {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   margin-top: 8px;
@@ -1357,28 +1399,6 @@ document.addEventListener("keydown", (e) => {
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
   background-color: var(--dote-background-color);
-}
-.mfm-preview-panel {
-  margin-top: 8px;
-  overflow: hidden;
-  border: 1px solid var(--dote-color-white-t1);
-  border-radius: 8px;
-  background-color: var(--dote-background-color);
-}
-.mfm-preview-header {
-  padding: 6px 10px;
-  color: var(--dote-color-white-t5);
-  font-size: 0.65rem;
-  border-bottom: 1px solid var(--dote-color-white-t1);
-}
-.mfm-preview-body {
-  max-height: 240px;
-  padding: 8px 10px;
-  overflow-y: auto;
-}
-.mfm-preview-empty {
-  color: var(--dote-color-white-t3);
-  font-size: 0.7rem;
 }
 .misskey-options {
   display: flex;

@@ -29,6 +29,12 @@ export type BlueskyReplyRef = {
   parent: BlueskyPostRef;
 };
 
+const toTimestamp = (value?: string) => {
+  if (!value) return 0;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
 /**
  * Resolve a stable DOM/read-state id for a Bluesky feed item.
  */
@@ -52,6 +58,30 @@ export const withBlueskyFeedItemId = (entry: AppBskyFeedDefs.FeedViewPost): Blue
 };
 
 /**
+ * Wrap a hydrated PostView in the FeedViewPost shape used by timeline components.
+ */
+export const toBlueskyFeedPost = (post: AppBskyFeedDefs.PostView): BlueskyFeedPost => {
+  return withBlueskyFeedItemId({ post });
+};
+
+/**
+ * Resolve the timestamp that determines a Bluesky feed item's displayed order.
+ */
+export const resolveBlueskyFeedItemTimestamp = (entry: AppBskyFeedDefs.FeedViewPost) => {
+  if (entry.reason && AppBskyFeedDefs.isReasonRepost(entry.reason)) {
+    return toTimestamp(entry.reason.indexedAt);
+  }
+
+  const record = entry.post.record;
+  if (AppBskyFeedPost.isRecord(record)) {
+    const createdAt = typeof record.createdAt === "string" ? record.createdAt : undefined;
+    return toTimestamp(entry.post.indexedAt) || toTimestamp(createdAt);
+  }
+
+  return toTimestamp(entry.post.indexedAt);
+};
+
+/**
  * Remove duplicate Bluesky feed items while preserving their order.
  */
 export const uniqueBlueskyFeedItems = (entries: AppBskyFeedDefs.FeedViewPost[]): BlueskyFeedPost[] => {
@@ -63,6 +93,37 @@ export const uniqueBlueskyFeedItems = (entries: AppBskyFeedDefs.FeedViewPost[]):
     seen.add(id);
     return true;
   }).map(withBlueskyFeedItemId);
+};
+
+/**
+ * Merge Bluesky feed items while preserving existing server order.
+ */
+export const mergeBlueskyFeedItemsByDateDesc = (
+  currentEntries: AppBskyFeedDefs.FeedViewPost[],
+  nextEntries: AppBskyFeedDefs.FeedViewPost[],
+): BlueskyFeedPost[] => {
+  const nextById = new Map(uniqueBlueskyFeedItems(nextEntries).map((entry) => [resolveBlueskyFeedItemId(entry), entry]));
+  const current = uniqueBlueskyFeedItems(currentEntries).map((entry) => {
+    const id = resolveBlueskyFeedItemId(entry);
+    return nextById.get(id) ?? entry;
+  });
+  const currentIds = new Set(current.map((entry) => resolveBlueskyFeedItemId(entry)));
+  const additions = Array.from(nextById.values())
+    .filter((entry) => !currentIds.has(resolveBlueskyFeedItemId(entry)))
+    .sort((a, b) => resolveBlueskyFeedItemTimestamp(b) - resolveBlueskyFeedItemTimestamp(a));
+
+  const merged = [...current];
+  additions.forEach((entry) => {
+    const timestamp = resolveBlueskyFeedItemTimestamp(entry);
+    const insertIndex = merged.findIndex((currentEntry) => resolveBlueskyFeedItemTimestamp(currentEntry) < timestamp);
+    if (insertIndex === -1) {
+      merged.push(entry);
+      return;
+    }
+    merged.splice(insertIndex, 0, entry);
+  });
+
+  return merged.map(withBlueskyFeedItemId);
 };
 
 /**
@@ -112,7 +173,11 @@ export const resolveBlueskyReplyRef = (entry: AppBskyFeedDefs.FeedViewPost): Blu
 };
 
 export const deriveBlueskyPostKind = (entry: AppBskyFeedDefs.FeedViewPost): BlueskyPostType[] => {
-  if (entry.reply && AppBskyFeedDefs.isReplyRef(entry.reply)) {
+  const record = entry.post.record;
+  if (
+    (entry.reply && AppBskyFeedDefs.isReplyRef(entry.reply)) ||
+    (AppBskyFeedPost.isRecord(record) && Boolean(record.reply))
+  ) {
     return ["reply"];
   }
 

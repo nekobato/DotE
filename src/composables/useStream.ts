@@ -13,11 +13,25 @@ import { MastodonToot } from "@/types/mastodon";
 import { text2Speech } from "@/utils/text2Speech";
 import { useMisskeyStore } from "@/store/misskey";
 import { useMisskeyTimelineConnectionStore } from "@/store/misskeyTimelineConnection";
+import { useBlueskyStore } from "@/store/bluesky";
+import type { AppBskyFeedDefs } from "@atproto/api";
+
+type TimelineAddPostPayload = {
+  post: MastodonToot | AppBskyFeedDefs.FeedViewPost;
+  timelineId?: string;
+  userId?: string;
+};
+
+const isBlueskyFeedPost = (post: TimelineAddPostPayload["post"]): post is AppBskyFeedDefs.FeedViewPost => {
+  if (!post || typeof post !== "object") return false;
+  return "post" in post && typeof post.post === "object" && post.post !== null && "uri" in post.post;
+};
 
 export function useStream() {
   const store = useStore();
   const timelineStore = useTimelineStore();
   const misskeyStore = useMisskeyStore();
+  const blueskyStore = useBlueskyStore();
   const misskeyTimelineConnectionStore = useMisskeyTimelineConnectionStore();
   let misskeyHealthCheckTimer: number | undefined;
   let ipcDisposers: (() => void)[] = [];
@@ -194,7 +208,15 @@ export function useStream() {
     );
 
     addIpcDisposer(
-      window.ipc?.on("timeline:add-post", (_, data: { post: MastodonToot; timelineId?: string; userId?: string }) => {
+      window.ipc?.on("timeline:add-post", (_, data: TimelineAddPostPayload) => {
+        if (isBlueskyFeedPost(data.post)) {
+          blueskyStore.insertLocalPosts([data.post], {
+            timelineId: data.timelineId,
+            userId: data.userId,
+          });
+          return;
+        }
+
         if (timelineStore.currentInstance?.type !== "mastodon") return;
         if (!data.timelineId || !data.userId) return;
         if (timelineStore.current?.id !== data.timelineId) return;

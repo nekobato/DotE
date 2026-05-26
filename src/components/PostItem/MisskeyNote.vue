@@ -25,6 +25,7 @@ const emit = defineEmits<{
   newReaction: [postId: string];
   repost: [data: { post: MisskeyNote; emojis: { name: string; url: string }[] }];
   reply: [post: MisskeyNote];
+  requestDelete: [post: MisskeyNote];
 }>();
 
 // Composables
@@ -81,12 +82,20 @@ const replyToPost = () => {
   emit("reply", props.post);
 };
 
+/**
+ * Emit delete request for this note.
+ */
+const requestDeletePost = () => {
+  emit("requestDelete", props.post);
+};
+
 const postActions = computed(() => [
   ...(props.showActions
     ? [
         { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
         { command: "reaction", icon: "mingcute:add-fill", label: "リアクション" },
         { command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" },
+        ...(props.canDelete ? [{ command: "delete", icon: "mingcute:delete-2-line", label: "削除" }] : []),
         { command: "refresh", icon: "mingcute:refresh-1-fill", label: "更新" },
       ]
     : []),
@@ -109,6 +118,9 @@ const runPostAction = (command: string) => {
       return;
     case "repost":
       openRepostWindow();
+      return;
+    case "delete":
+      requestDeletePost();
       return;
     case "open":
       openPost();
