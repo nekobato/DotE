@@ -29,6 +29,13 @@ export type BlueskyReplyRef = {
   parent: BlueskyPostRef;
 };
 
+/**
+ * Narrow an unknown value to a plain object-like record.
+ */
+const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null;
+};
+
 const toTimestamp = (value?: string) => {
   if (!value) return 0;
   const timestamp = Date.parse(value);
@@ -65,6 +72,33 @@ export const toBlueskyFeedPost = (post: AppBskyFeedDefs.PostView): BlueskyFeedPo
 };
 
 /**
+ * Check whether a timeline reply's hydrated parent is a regular post view.
+ */
+const isHydratedPostView = (value: unknown): value is AppBskyFeedDefs.PostView => {
+  if (!isObjectRecord(value)) return false;
+  if (typeof value.uri !== "string" || typeof value.cid !== "string") return false;
+  if (!isObjectRecord(value.author)) return false;
+  return typeof value.author.did === "string" && typeof value.author.handle === "string";
+};
+
+/**
+ * Check whether the AppView supplied the hydrated reply context for a feed item.
+ */
+const isHydratedReplyRef = (value: unknown): value is AppBskyFeedDefs.ReplyRef => {
+  return isObjectRecord(value) && "root" in value && "parent" in value;
+};
+
+/**
+ * Decide whether a Bluesky home timeline item should be visible under DotE's reply policy.
+ */
+export const shouldShowBlueskyHomeTimelinePost = (entry: AppBskyFeedDefs.FeedViewPost) => {
+  if (!entry.reply) return true;
+  if (!isHydratedReplyRef(entry.reply)) return false;
+  if (!isHydratedPostView(entry.reply.parent)) return false;
+  return Boolean(entry.reply.parent.author.viewer?.following);
+};
+
+/**
  * Resolve the timestamp that determines a Bluesky feed item's displayed order.
  */
 export const resolveBlueskyFeedItemTimestamp = (entry: AppBskyFeedDefs.FeedViewPost) => {
@@ -87,12 +121,14 @@ export const resolveBlueskyFeedItemTimestamp = (entry: AppBskyFeedDefs.FeedViewP
 export const uniqueBlueskyFeedItems = (entries: AppBskyFeedDefs.FeedViewPost[]): BlueskyFeedPost[] => {
   const seen = new Set<string>();
 
-  return entries.filter((entry) => {
-    const id = resolveBlueskyFeedItemId(entry);
-    if (seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  }).map(withBlueskyFeedItemId);
+  return entries
+    .filter((entry) => {
+      const id = resolveBlueskyFeedItemId(entry);
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .map(withBlueskyFeedItemId);
 };
 
 /**
@@ -102,7 +138,9 @@ export const mergeBlueskyFeedItemsByDateDesc = (
   currentEntries: AppBskyFeedDefs.FeedViewPost[],
   nextEntries: AppBskyFeedDefs.FeedViewPost[],
 ): BlueskyFeedPost[] => {
-  const nextById = new Map(uniqueBlueskyFeedItems(nextEntries).map((entry) => [resolveBlueskyFeedItemId(entry), entry]));
+  const nextById = new Map(
+    uniqueBlueskyFeedItems(nextEntries).map((entry) => [resolveBlueskyFeedItemId(entry), entry]),
+  );
   const current = uniqueBlueskyFeedItems(currentEntries).map((entry) => {
     const id = resolveBlueskyFeedItemId(entry);
     return nextById.get(id) ?? entry;

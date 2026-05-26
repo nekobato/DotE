@@ -11,6 +11,7 @@ import {
   mergeBlueskyFeedItemsByDateDesc,
   resolveBlueskyFeedItemId,
   resolveBlueskyNotificationId,
+  shouldShowBlueskyHomeTimelinePost,
   uniqueBlueskyFeedItems,
   uniqueBlueskyNotifications,
 } from "@/utils/bluesky";
@@ -71,6 +72,13 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     return locallyInsertedPostIds.has(id);
   };
 
+  /**
+   * Apply DotE's Bluesky home timeline reply policy to hydrated feed items.
+   */
+  const filterVisibleHomeTimelinePosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
+    return posts.filter(shouldShowBlueskyHomeTimelinePost);
+  };
+
   const findTargetHomeTimelineIndexes = ({ timelineId, userId }: BlueskyTimelineTarget) => {
     if (!timelineId && !userId) return [];
 
@@ -104,7 +112,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     const timeline = store.$state.timelines[timelineIndex];
     if (!timeline || timeline.channel !== "bluesky:homeTimeline") return;
 
-    const nextPosts = uniqueBlueskyFeedItems(posts);
+    const nextPosts = uniqueBlueskyFeedItems(isLocalInsert ? posts : filterVisibleHomeTimelinePosts(posts));
     if (nextPosts.length === 0) return;
 
     if (isLocalInsert) {
@@ -128,16 +136,16 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   const setPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
     if (timeline.current) {
-      const nextPosts = uniqueBlueskyFeedItems(posts);
-      const nextPostIds = new Set(nextPosts.map((post) => resolveBlueskyFeedItemId(post)));
-      nextPostIds.forEach((id) => locallyInsertedPostIds.delete(id));
+      const receivedPostIds = new Set(posts.map((post) => resolveBlueskyFeedItemId(post)));
+      const nextPosts = uniqueBlueskyFeedItems(filterVisibleHomeTimelinePosts(posts));
+      receivedPostIds.forEach((id) => locallyInsertedPostIds.delete(id));
 
       const currentTimeline = store.$state.timelines[timeline.currentIndex];
       const unconfirmedLocalPosts =
         currentTimeline?.channel === "bluesky:homeTimeline"
           ? (currentTimeline.posts as BlueskyFeedPost[]).filter((post) => {
               const id = resolveBlueskyFeedItemId(post);
-              return !nextPostIds.has(id) && isFreshLocallyInsertedPost(id);
+              return !receivedPostIds.has(id) && isFreshLocallyInsertedPost(id);
             })
           : [];
 
@@ -157,7 +165,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const pushPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
-    const filteredPosts = posts.filter((post) => {
+    const filteredPosts = filterVisibleHomeTimelinePosts(posts).filter((post) => {
       const currentPosts = store.$state.timelines[timeline.currentIndex].posts as BlueskyFeedPost[];
       const nextId = resolveBlueskyFeedItemId(post);
       return !currentPosts.some((currentPost) => resolveBlueskyFeedItemId(currentPost) === nextId);
@@ -170,7 +178,9 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   const unshiftPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
     if (timeline.current) {
-      store.$state.timelines[timeline.currentIndex].posts.unshift(...uniqueBlueskyFeedItems(posts));
+      store.$state.timelines[timeline.currentIndex].posts.unshift(
+        ...uniqueBlueskyFeedItems(filterVisibleHomeTimelinePosts(posts)),
+      );
     }
   };
 
