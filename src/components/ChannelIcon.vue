@@ -28,6 +28,7 @@ const channelNameToIconMap = {
   "mastodon:list": "mingcute:list-check-line",
   "mastodon:notifications": "mingcute:notification-line",
   "bluesky:homeTimeline": "mingcute:home-3-line",
+  "bluesky:notifications": "mingcute:notification-line",
 };
 </script>
 <template>
@@ -37,11 +38,16 @@ const channelNameToIconMap = {
 </template>
 <style lang="scss" scoped>
 .channel-icon {
-  display: contents;
+  display: inline-flex;
+  flex: 0 0 20px;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
 
   > .icon {
-    width: 24px;
-    height: 24px;
+    width: 20px;
+    height: 20px;
     color: var(--dote-color-white);
   }
 }

@@ -22,7 +22,7 @@ export type MastodonChannelName =
   | "mastodon:list"
   | "mastodon:notifications";
 
-export type BlueskyChannelName = "bluesky:homeTimeline";
+export type BlueskyChannelName = "bluesky:homeTimeline" | "bluesky:notifications";
 
 export type ChannelName = MisskeyChannelName | MastodonChannelName | BlueskyChannelName;
 

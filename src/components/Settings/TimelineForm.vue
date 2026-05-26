@@ -107,6 +107,10 @@ const blueskyStreamOptions: {
     label: "ホーム",
     value: "bluesky:homeTimeline",
   },
+  {
+    label: "通知",
+    value: "bluesky:notifications",
+  },
 ];
 
 const followedMisskeyChannels = ref<MisskeyChannel[]>([]);

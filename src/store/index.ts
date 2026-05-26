@@ -4,7 +4,7 @@ import type { MisskeyEntities, MisskeyNote } from "@shared/types/misskey";
 import type { InstanceStore, Settings, Timeline, User } from "@shared/types/store";
 import { defineStore } from "pinia";
 import { useInstanceStore } from "./instance";
-import { BlueskyPost } from "@/types/bluesky";
+import type { BlueskyFeedPost, BlueskyNotification } from "@/types/bluesky";
 
 export const methodOfChannel = {
   "misskey:homeTimeline": "misskey:getTimelineHome",
@@ -24,13 +24,14 @@ export const methodOfChannel = {
   "mastodon:list": "mastodon:getTimelineList",
   "mastodon:notifications": "mastodon:getNotifications",
   "bluesky:homeTimeline": "bluesky:getTimeline",
+  "bluesky:notifications": "bluesky:getNotifications",
 };
 
-export type DotEPost = MisskeyNote | MastodonToot | BlueskyPost;
+export type DotEPost = MisskeyNote | MastodonToot | BlueskyFeedPost;
 
 export type TimelineStore = Timeline & {
   posts: DotEPost[];
-  notifications: MisskeyEntities.Notification[] | MastodonNotification[];
+  notifications: MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[];
   bluesky?: {
     cursor?: string;
   };

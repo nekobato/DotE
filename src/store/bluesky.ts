@@ -2,11 +2,17 @@ import { defineStore } from "pinia";
 import { methodOfChannel, useStore } from ".";
 import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
-import { AppBskyFeedDefs } from "@atproto/api";
+import type { AppBskyFeedDefs, AppBskyNotificationListNotifications } from "@atproto/api";
 import { ChannelName } from "@shared/types/store";
 import { computed } from "vue";
-import { BlueskyPost } from "@/types/bluesky";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import type { BlueskyFeedPost } from "@/types/bluesky";
+import {
+  resolveBlueskyFeedItemId,
+  resolveBlueskyNotificationId,
+  uniqueBlueskyFeedItems,
+  uniqueBlueskyNotifications,
+} from "@/utils/bluesky";
 
 export const useBlueskyStore = defineStore("bluesky", () => {
   const store = useStore();
@@ -36,34 +42,56 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     return result.data;
   };
 
-  const currentPosts = computed<AppBskyFeedDefs.FeedViewPost[]>(() => {
+  const currentPosts = computed<BlueskyFeedPost[]>(() => {
     const timeline = getTimelineStore();
-    return store.timelines[timeline.currentIndex]?.posts || [];
+    return (store.timelines[timeline.currentIndex]?.posts as BlueskyFeedPost[]) || [];
   });
 
   const setPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
     if (timeline.current) {
-      store.$state.timelines[timeline.currentIndex].posts = posts;
+      store.$state.timelines[timeline.currentIndex].posts = uniqueBlueskyFeedItems(posts);
+    }
+  };
+
+  const setNotifications = (notifications: AppBskyNotificationListNotifications.Notification[]) => {
+    const timeline = getTimelineStore();
+    if (timeline.current) {
+      timeline.setNotifications(uniqueBlueskyNotifications(notifications));
     }
   };
 
   const pushPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
     const filteredPosts = posts.filter((post) => {
-      const posts = store.$state.timelines[timeline.currentIndex].posts as BlueskyPost[];
-      return !posts.some((p) => p.post.uri === post.post.uri);
+      const currentPosts = store.$state.timelines[timeline.currentIndex].posts as BlueskyFeedPost[];
+      const nextId = resolveBlueskyFeedItemId(post);
+      return !currentPosts.some((currentPost) => resolveBlueskyFeedItemId(currentPost) === nextId);
     });
     if (timeline.current) {
-      store.$state.timelines[timeline.currentIndex].posts.push(...filteredPosts);
+      store.$state.timelines[timeline.currentIndex].posts.push(...uniqueBlueskyFeedItems(filteredPosts));
     }
   };
 
   const unshiftPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
     const timeline = getTimelineStore();
     if (timeline.current) {
-      store.$state.timelines[timeline.currentIndex].posts.unshift(...posts);
+      store.$state.timelines[timeline.currentIndex].posts.unshift(...uniqueBlueskyFeedItems(posts));
     }
+  };
+
+  const pushNotifications = (notifications: AppBskyNotificationListNotifications.Notification[]) => {
+    const timeline = getTimelineStore();
+    const currentNotifications = timeline.current?.notifications as
+      | AppBskyNotificationListNotifications.Notification[]
+      | undefined;
+    if (!timeline.current || !currentNotifications) return;
+
+    const existingIds = new Set(currentNotifications.map((notification) => resolveBlueskyNotificationId(notification)));
+    const filteredNotifications = uniqueBlueskyNotifications(notifications).filter(
+      (notification) => !existingIds.has(resolveBlueskyNotificationId(notification)),
+    );
+    timeline.addMoreNotifications(filteredNotifications);
   };
 
   const fetchPosts = async () => {
@@ -82,7 +110,16 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       limit: 40,
     });
     const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
-    if (!data || !data.feed) return;
+    if (!data) return;
+
+    if (timeline.current.channel === "bluesky:notifications") {
+      if (!("notifications" in data)) return;
+      setNotifications(data.notifications);
+      setCursor(data.cursor);
+      return;
+    }
+
+    if (!("feed" in data)) return;
     setPosts(data.feed);
     setCursor(data.cursor);
   };
@@ -96,11 +133,17 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       limit: 20,
       cursor: timeline.current?.bluesky?.cursor,
     });
-    const data = unwrapApiResult(
-      result,
-      `${timeline.currentInstance?.name}の古いタイムラインを取得できませんでした`,
-    );
+    const data = unwrapApiResult(result, `${timeline.currentInstance?.name}の古いタイムラインを取得できませんでした`);
     if (!data) return;
+
+    if (channel === "bluesky:notifications") {
+      if (!("notifications" in data)) return;
+      pushNotifications(data.notifications);
+      setCursor(data.cursor);
+      return;
+    }
+
+    if (!("feed" in data)) return;
     pushPosts(data.feed);
     setCursor(data.cursor);
   };
@@ -162,8 +205,10 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     fetchOlderPosts,
     setCursor,
     setPosts,
+    setNotifications,
     pushPosts,
     unshiftPosts,
+    pushNotifications,
     like,
     deleteLike,
   };

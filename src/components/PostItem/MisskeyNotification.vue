@@ -100,16 +100,15 @@ const user = computed(() => {
   }
 });
 
+const postActionNoteId = computed(() => {
+  if (!("note" in props.notification)) return undefined;
+  return props.notification.note.id;
+});
+
 const openPost = () => {
-  if (
-    props.notification.type === "mention" ||
-    props.notification.type === "reaction" ||
-    props.notification.type === "reply" ||
-    props.notification.type === "renote" ||
-    props.notification.type === "quote"
-  ) {
-    ipcSend("open-url", { url: new URL(`/notes/${props.notification.note.id}`, props.currentInstanceUrl).toString() });
-  }
+  const noteId = postActionNoteId.value;
+  if (!noteId || !props.currentInstanceUrl) return;
+  ipcSend("open-url", { url: new URL(`/notes/${noteId}`, props.currentInstanceUrl).toString() });
 };
 
 const openUserPage = (user: MisskeyNote["user"]) => {
@@ -122,7 +121,9 @@ const openUserPage = (user: MisskeyNote["user"]) => {
   });
 };
 
-const postActions = computed(() => [{ command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" }]);
+const postActions = computed(() =>
+  postActionNoteId.value ? [{ command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" }] : [],
+);
 
 /**
  * Run a selected Misskey notification action from the dropdown command.

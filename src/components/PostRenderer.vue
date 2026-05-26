@@ -5,7 +5,10 @@ import MisskeyNotification from "@/components/PostItem/MisskeyNotification.vue";
 import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MastodonNotification from "@/components/PostItem/MastodonNotification.vue";
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import BlueskyNotification from "@/components/PostItem/BlueskyNotification.vue";
+import { resolveBlueskyFeedItemId, resolveBlueskyNotificationId } from "@/utils/bluesky";
 import type { AppBskyFeedDefs } from "@atproto/api";
+import type { BlueskyNotification as BlueskyNotificationType } from "@/types/bluesky";
 
 interface Props {
   platform?: string;
@@ -28,6 +31,7 @@ const emit = defineEmits<{
   newReaction: [noteId: string];
   refreshPost: [noteId: string];
   repost: [data: any];
+  reply: [data: any];
   favourite: [payload: any];
   like: [payload: any];
   deleteLike: [payload: any];
@@ -54,12 +58,21 @@ const shouldShowMastodonNotifications = computed(() => {
 });
 
 const shouldShowBlueskyPosts = computed(() => {
-  return props.platform === "bluesky";
+  return props.platform === "bluesky" && !isNotificationChannel.value;
+});
+
+const shouldShowBlueskyNotifications = computed(() => {
+  return props.platform === "bluesky" && isNotificationChannel.value;
 });
 
 const blueskyPosts = computed<AppBskyFeedDefs.FeedViewPost[]>(() => {
   if (!shouldShowBlueskyPosts.value) return [];
   return (props.posts as AppBskyFeedDefs.FeedViewPost[]) || [];
+});
+
+const blueskyNotifications = computed<BlueskyNotificationType[]>(() => {
+  if (!shouldShowBlueskyNotifications.value) return [];
+  return (props.notifications as BlueskyNotificationType[]) || [];
 });
 </script>
 
@@ -120,14 +133,28 @@ const blueskyPosts = computed<AppBskyFeedDefs.FeedViewPost[]>(() => {
     :lineStyle="config.lineStyle"
   />
 
+  <!-- Bluesky Notifications -->
+  <BlueskyNotification
+    v-if="shouldShowBlueskyNotifications"
+    v-for="notification in blueskyNotifications"
+    :key="resolveBlueskyNotificationId(notification)"
+    :notification="notification"
+    :lineStyle="config.lineStyle"
+    :currentInstanceUrl="config.currentInstanceUrl"
+    @reply="emit('reply', $event)"
+    @repost="emit('repost', $event)"
+  />
+
   <!-- Bluesky Posts -->
   <BlueskyPost
     v-if="shouldShowBlueskyPosts"
     v-for="post in blueskyPosts"
-    :key="post.post.cid"
+    :key="resolveBlueskyFeedItemId(post)"
     :post="post"
     :lineStyle="config.lineStyle"
     :currentInstanceUrl="config.currentInstanceUrl"
+    @reply="emit('reply', $event)"
+    @repost="emit('repost', $event)"
     @like="emit('like', $event)"
     @deleteLike="emit('deleteLike', $event)"
   />

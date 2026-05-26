@@ -12,6 +12,7 @@ const store = useStore();
 const timelineStore = useTimelineStore();
 const settingsStore = useSettingsStore();
 const { initStream, disconnectAllStreams, setupIpcHandlers } = useStream();
+const disposeIpcHandlers = setupIpcHandlers();
 
 window.ipc?.on("set-mode", (_, { mode, reflect }) => {
   console.info(mode);
@@ -21,9 +22,6 @@ window.ipc?.on("set-mode", (_, { mode, reflect }) => {
 });
 
 window.ipc?.on("resume-timeline", () => {});
-
-// IPCイベントハンドラの設定
-setupIpcHandlers();
 
 /**
  * Return the reactive sources that define the active stream subscription.
@@ -76,6 +74,7 @@ onBeforeMount(async () => {
 });
 
 onBeforeUnmount(() => {
+  disposeIpcHandlers();
   disconnectAllStreams();
 });
 </script>

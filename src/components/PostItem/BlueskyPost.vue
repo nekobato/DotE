@@ -48,7 +48,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  repost: [{ post: AppBskyFeedDefs.FeedViewPost }];
+  reply: [post: AppBskyFeedDefs.FeedViewPost];
+  repost: [{ post: AppBskyFeedDefs.PostView }];
   like: [{ uri: string; cid: string }];
   deleteLike: [{ uri: string }];
 }>();
@@ -95,7 +96,14 @@ const openUserPage = () => {
 };
 
 const openRepostWindow = () => {
-  emit("repost", { post: props.post });
+  emit("repost", { post: props.post.post });
+};
+
+/**
+ * Emit reply action for this Bluesky post.
+ */
+const replyToPost = () => {
+  emit("reply", props.post);
 };
 
 const toggleLike = () => {
@@ -117,7 +125,12 @@ const deleteLike = () => {
 };
 
 const postActions = computed(() => [
-  ...(props.showActions ? [{ command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" }] : []),
+  ...(props.showActions
+    ? [
+        { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
+        { command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" },
+      ]
+    : []),
   { command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" },
 ]);
 
@@ -126,6 +139,9 @@ const postActions = computed(() => [
  */
 const runPostAction = (command: string) => {
   switch (command) {
+    case "reply":
+      replyToPost();
+      return;
     case "repost":
       openRepostWindow();
       return;

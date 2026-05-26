@@ -42,7 +42,14 @@ const unwrapApiResult = <T>(result: ApiInvokeResult<T>, message: string): T | un
   return result.data;
 };
 
+const resolveReadableItemId = (item: unknown): string | undefined => {
+  if (typeof item !== "object" || item === null || !("id" in item)) return undefined;
+  const id = (item as { id?: unknown }).id;
+  return typeof id === "string" ? id : undefined;
+};
+
 const fetchOlderPosts = async (channel: ChannelName) => {
+  const lastItem = postsOrNotifications.value[postsOrNotifications.value.length - 1];
   const result = await ipcInvoke("api", {
     method: methodOfChannel[channel],
     channelId: timelineStore.current?.options.channelId, // option
@@ -53,7 +60,7 @@ const fetchOlderPosts = async (channel: ChannelName) => {
     instanceUrl: timelineStore.currentInstance?.url,
     token: timelineStore.currentUser?.token,
     limit: 20,
-    untilId: postsOrNotifications.value[postsOrNotifications.value.length - 1].id,
+    untilId: resolveReadableItemId(lastItem),
   });
 
   const additionalNotes = unwrapApiResult(

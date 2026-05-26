@@ -6,16 +6,110 @@ import {
   AppBskyEmbedRecordWithMedia,
   AppBskyFeedDefs,
   AppBskyFeedPost,
+  AppBskyNotificationListNotifications,
 } from "@atproto/api";
-import { BlueskyPostType } from "@/types/bluesky";
+import type { BlueskyFeedPost, BlueskyPostType } from "@/types/bluesky";
 import type { Attachment } from "@shared/types/post";
 import { BlueskyChannelName } from "@shared/types/store";
 
 export const blueskyChannelsMap: Record<BlueskyChannelName, string> = {
   "bluesky:homeTimeline": "ホーム",
+  "bluesky:notifications": "通知",
 };
 
 export const blueskyChannels: BlueskyChannelName[] = Object.keys(blueskyChannelsMap) as BlueskyChannelName[];
+
+export type BlueskyPostRef = {
+  uri: string;
+  cid: string;
+};
+
+export type BlueskyReplyRef = {
+  root: BlueskyPostRef;
+  parent: BlueskyPostRef;
+};
+
+/**
+ * Resolve a stable DOM/read-state id for a Bluesky feed item.
+ */
+export const resolveBlueskyFeedItemId = (entry: AppBskyFeedDefs.FeedViewPost) => {
+  if (entry.reason && AppBskyFeedDefs.isReasonRepost(entry.reason)) {
+    const reasonId = entry.reason.uri || entry.reason.cid || `${entry.reason.by.did}:${entry.reason.indexedAt}`;
+    return `${entry.post.uri}#${reasonId}`;
+  }
+
+  return entry.post.uri;
+};
+
+/**
+ * Attach the app-local id used by generic timeline store helpers.
+ */
+export const withBlueskyFeedItemId = (entry: AppBskyFeedDefs.FeedViewPost): BlueskyFeedPost => {
+  return {
+    ...entry,
+    id: resolveBlueskyFeedItemId(entry),
+  };
+};
+
+/**
+ * Remove duplicate Bluesky feed items while preserving their order.
+ */
+export const uniqueBlueskyFeedItems = (entries: AppBskyFeedDefs.FeedViewPost[]): BlueskyFeedPost[] => {
+  const seen = new Set<string>();
+
+  return entries.filter((entry) => {
+    const id = resolveBlueskyFeedItemId(entry);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  }).map(withBlueskyFeedItemId);
+};
+
+/**
+ * Resolve a stable id for a Bluesky notification item.
+ */
+export const resolveBlueskyNotificationId = (notification: AppBskyNotificationListNotifications.Notification) => {
+  return `${notification.uri}#${notification.reasonSubject ?? notification.reason}`;
+};
+
+/**
+ * Remove duplicate Bluesky notifications while preserving their order.
+ */
+export const uniqueBlueskyNotifications = (notifications: AppBskyNotificationListNotifications.Notification[]) => {
+  const seen = new Set<string>();
+
+  return notifications.filter((notification) => {
+    const id = resolveBlueskyNotificationId(notification);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+};
+
+/**
+ * Convert a Bluesky post-like value into the strong reference required by reply and quote records.
+ */
+const toBlueskyPostRef = (value: unknown): BlueskyPostRef | undefined => {
+  if (typeof value !== "object" || value === null) return undefined;
+  const post = value as Partial<BlueskyPostRef>;
+  if (typeof post.uri !== "string" || typeof post.cid !== "string") return undefined;
+  return { uri: post.uri, cid: post.cid };
+};
+
+/**
+ * Resolve the root and immediate parent references for replying to a Bluesky feed item.
+ */
+export const resolveBlueskyReplyRef = (entry: AppBskyFeedDefs.FeedViewPost): BlueskyReplyRef => {
+  const parent = toBlueskyPostRef(entry.post);
+  if (!parent) {
+    throw new Error("Blueskyの返信対象が見つかりませんでした");
+  }
+
+  return {
+    root: toBlueskyPostRef(entry.reply?.root) ?? parent,
+    parent,
+  };
+};
 
 export const deriveBlueskyPostKind = (entry: AppBskyFeedDefs.FeedViewPost): BlueskyPostType[] => {
   if (entry.reply && AppBskyFeedDefs.isReplyRef(entry.reply)) {
@@ -29,10 +123,7 @@ export const deriveBlueskyPostKind = (entry: AppBskyFeedDefs.FeedViewPost): Blue
   }
 
   const embed = entry.post.embed;
-  if (
-    embed &&
-    (AppBskyEmbedRecord.isView(embed) || AppBskyEmbedRecordWithMedia.isView(embed))
-  ) {
+  if (embed && (AppBskyEmbedRecord.isView(embed) || AppBskyEmbedRecordWithMedia.isView(embed))) {
     return ["quote", "quoted"];
   }
 
@@ -89,9 +180,7 @@ export const extractBlueskyAttachments = (entry: AppBskyFeedDefs.FeedViewPost): 
   return attachments;
 };
 
-const resolveRecordFromEmbed = (
-  embed: unknown,
-): AppBskyEmbedRecord.ViewRecord | undefined => {
+const resolveRecordFromEmbed = (embed: unknown): AppBskyEmbedRecord.ViewRecord | undefined => {
   if (!embed) return;
 
   if (AppBskyEmbedRecord.isView(embed)) {
@@ -112,24 +201,18 @@ const resolveRecordFromEmbed = (
   return undefined;
 };
 
-export const extractQuotedRecord = (
-  entry: AppBskyFeedDefs.FeedViewPost,
-): AppBskyEmbedRecord.ViewRecord | undefined => {
+export const extractQuotedRecord = (entry: AppBskyFeedDefs.FeedViewPost): AppBskyEmbedRecord.ViewRecord | undefined => {
   return resolveRecordFromEmbed(entry.post.embed);
 };
 
-export const extractRepostReason = (
-  entry: AppBskyFeedDefs.FeedViewPost,
-): AppBskyFeedDefs.ReasonRepost | undefined => {
+export const extractRepostReason = (entry: AppBskyFeedDefs.FeedViewPost): AppBskyFeedDefs.ReasonRepost | undefined => {
   if (entry.reason && AppBskyFeedDefs.isReasonRepost(entry.reason)) {
     return entry.reason;
   }
   return undefined;
 };
 
-export const extractPrimaryRecord = (
-  entry: AppBskyFeedDefs.FeedViewPost,
-): AppBskyFeedPost.Record | undefined => {
+export const extractPrimaryRecord = (entry: AppBskyFeedDefs.FeedViewPost): AppBskyFeedPost.Record | undefined => {
   const record = entry.post.record;
   if (AppBskyFeedPost.isRecord(record)) {
     return record as AppBskyFeedPost.Record;
@@ -137,9 +220,7 @@ export const extractPrimaryRecord = (
   return undefined;
 };
 
-export const extractReposter = (
-  entry: AppBskyFeedDefs.FeedViewPost,
-): AppBskyActorDefs.ProfileViewBasic | undefined => {
+export const extractReposter = (entry: AppBskyFeedDefs.FeedViewPost): AppBskyActorDefs.ProfileViewBasic | undefined => {
   const reason = extractRepostReason(entry);
   return reason?.by;
 };

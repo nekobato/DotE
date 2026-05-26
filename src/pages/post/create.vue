@@ -7,6 +7,7 @@ import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import Mfm from "@/components/misskey/Mfm.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
+import type { BlueskyReplyRef } from "@/utils/bluesky";
 import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
 import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
@@ -23,6 +24,7 @@ type PageProps = {
   emojis?: MisskeyEntities.EmojiSimple[];
   mode?: "boost" | "reply";
   replyToId?: string;
+  blueskyReplyTo?: BlueskyReplyRef;
   timelineId?: string;
   userId?: string;
 };
@@ -179,6 +181,25 @@ const mastodonReplyTarget = computed(() => {
   if (!isReplyMode.value) return null;
   if (state.instance?.type !== "mastodon") return null;
   return props.data.post as MastodonTootType | null;
+});
+
+const blueskyReplyTarget = computed(() => {
+  if (!isReplyMode.value) return null;
+  if (state.instance?.type !== "bluesky") return null;
+  const target = props.data.post as BlueskyPostType | null;
+  if (!target) return null;
+  return { post: target } as AppBskyFeedDefs.FeedViewPost;
+});
+
+const blueskyReplyTo = computed(() => {
+  if (!isReplyMode.value || state.instance?.type !== "bluesky") return undefined;
+  if (props.data.blueskyReplyTo) return props.data.blueskyReplyTo;
+  const target = props.data.post as BlueskyPostType | undefined;
+  if (!target) return undefined;
+  return {
+    root: { uri: target.uri, cid: target.cid },
+    parent: { uri: target.uri, cid: target.cid },
+  };
 });
 
 const replyToId = computed(() => {
@@ -348,11 +369,19 @@ const blueskyPost = computed(() => {
       },
     };
 
-    // Add embed if we're quoting a post
-    if (quotePost) {
+    // Add embed if we're quoting a post.
+    if (quotePost && !isReplyMode.value) {
       mockPost.post.embed = {
         $type: "app.bsky.embed.record#view",
-        record: quotePost,
+        record: {
+          $type: "app.bsky.embed.record#viewRecord",
+          uri: quotePost.uri,
+          cid: quotePost.cid,
+          author: quotePost.author,
+          value: quotePost.record,
+          indexedAt: quotePost.indexedAt,
+          labels: quotePost.labels,
+        },
       };
     }
 
@@ -384,6 +413,9 @@ const submitType = computed(() => {
     return "toot";
   }
   if (state.instance?.type === "bluesky") {
+    if (isReplyMode.value) {
+      return "reply";
+    }
     if (props.data.post) {
       return text.value || hasAttachments.value ? "quote" : "repost";
     }
@@ -878,7 +910,7 @@ const postToMastodon = async () => {
 
 const postToBluesky = async () => {
   const targetPost = props.data.post as BlueskyPostType | null;
-  const quoteRef = targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
+  const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
   const did = state.user?.blueskySession?.did;
   if (!did) {
     throw new Error("Blueskyアカウントの認証情報が見つかりませんでした");
@@ -893,6 +925,7 @@ const postToBluesky = async () => {
     method: "bluesky:createPost",
     did,
     text: text.value,
+    replyTo: blueskyReplyTo.value,
     quote: quoteRef,
     images,
   });
@@ -1211,7 +1244,17 @@ document.addEventListener("keydown", (e) => {
         theme="default"
       />
       <BlueskyPost
-        v-if="blueskyPost"
+        v-if="blueskyReplyTarget"
+        class="post-item"
+        :post="blueskyReplyTarget"
+        :currentInstanceUrl="state.instance?.url"
+        :showReactions="false"
+        :showActions="false"
+        lineStyle="all"
+        theme="default"
+      />
+      <BlueskyPost
+        v-else-if="blueskyPost"
         class="post-item"
         :post="blueskyPost"
         :currentInstanceUrl="state.instance?.url"

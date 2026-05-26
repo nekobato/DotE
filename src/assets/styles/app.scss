@@ -43,11 +43,11 @@ input {
   visibility: hidden;
 }
 
-.post-item {
-  transition: opacity 0.2s ease;
+.dote-post-list > .post-item {
+  transition: border-color 0.2s ease;
 
-  &.is-read {
-    opacity: 0.6;
+  &.dote-post.is-read.is-latest-read {
+    border-top: 4px solid var(--dote-border-color);
   }
 }
 

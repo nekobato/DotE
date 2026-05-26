@@ -13,6 +13,11 @@ type FetchNoteParams = {
   userId: string;
 };
 
+type ReactionMutationOptions = {
+  reportError?: boolean;
+  userId?: string;
+};
+
 export const useMisskeyStore = defineStore("misskey", () => {
   const store = useStore();
   let timelineStore: ReturnType<typeof useTimelineStore>;
@@ -49,10 +54,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     return (post as MisskeyNote).reactionEmojis !== undefined;
   };
 
-  const forEachMisskeyNote = (
-    callback: (note: MisskeyNote) => void,
-    options?: { userId?: string },
-  ) => {
+  const forEachMisskeyNote = (callback: (note: MisskeyNote) => void, options?: { userId?: string }) => {
     const visited = new WeakSet<MisskeyNote>();
     const traverse = (note?: MisskeyNote) => {
       if (!note || visited.has(note)) return;
@@ -73,11 +75,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     });
   };
 
-  const updateNotesById = (
-    noteId: string,
-    updater: (note: MisskeyNote) => void,
-    options?: { userId?: string },
-  ) => {
+  const updateNotesById = (noteId: string, updater: (note: MisskeyNote) => void, options?: { userId?: string }) => {
     forEachMisskeyNote((note) => {
       if (note.id === noteId) {
         updater(note);
@@ -93,6 +91,14 @@ export const useMisskeyStore = defineStore("misskey", () => {
       }
     }, options);
     return found;
+  };
+
+  /**
+   * Resolve the note that Misskey reaction APIs should mutate.
+   */
+  const findReactionTargetNote = (postId: string, userId: string): MisskeyNote | undefined => {
+    const sourceNote = findNoteById(postId, { userId });
+    return (sourceNote?.renote as MisskeyNote | undefined) ?? sourceNote;
   };
 
   const incrementReaction = (note: MisskeyNote, reaction: string, value = 1) => {
@@ -116,83 +122,178 @@ export const useMisskeyStore = defineStore("misskey", () => {
     });
   };
 
-  const fetchNoteById = async ({ postId, instanceUrl, token, userId }: FetchNoteParams) => {
-    const result = await ipcInvoke("api", {
+  /**
+   * Fetch one Misskey note without reporting UI errors.
+   */
+  const fetchNoteResult = async ({
+    postId,
+    instanceUrl,
+    token,
+  }: Omit<FetchNoteParams, "userId">): Promise<ApiInvokeResult<MisskeyNote>> => {
+    return await ipcInvoke("api", {
       method: "misskey:getNote",
       instanceUrl,
       token,
       noteId: postId,
     });
+  };
+
+  /**
+   * Fetch one Misskey note and apply it to all timelines for the same user.
+   */
+  const fetchNoteById = async ({ postId, instanceUrl, token, userId }: FetchNoteParams) => {
+    const result = await fetchNoteResult({ postId, instanceUrl, token });
     const res = unwrapApiResult(result, `${postId}の取得失敗`);
     if (!res) return;
     updatePostAcrossTimelines(store.timelines, res, userId);
   };
 
-  const createMyReaction = async (postId: string, reaction: string) => {
+  /**
+   * Refresh a note after a failed reaction API call and verify the final state.
+   */
+  const verifyReactionState = async ({
+    postId,
+    instanceUrl,
+    token,
+    userId,
+    isExpected,
+  }: FetchNoteParams & { isExpected: (note: MisskeyNote) => boolean }) => {
+    const result = await fetchNoteResult({ postId, instanceUrl, token });
+    if (!result.ok) {
+      console.warn(`${postId}のリアクション状態確認に失敗しました`, result.error);
+      return false;
+    }
+
+    updatePostAcrossTimelines(store.timelines, result.data, userId);
+    return isExpected(result.data);
+  };
+
+  /**
+   * Create my reaction and suppress stale API errors when the server state already matches.
+   */
+  const createMyReaction = async (
+    postId: string,
+    reaction: string,
+    options: ReactionMutationOptions = {},
+  ): Promise<boolean> => {
     const timeline = getTimelineStore();
 
-    if (timeline.currentUser) {
-      const sourceNote = findNoteById(postId);
-      const targetNote = (sourceNote?.renote as MisskeyNote | undefined) ?? sourceNote;
-      if (!targetNote) return;
+    if (timeline.currentUser && timeline.currentInstance?.url) {
+      const userId = options.userId ?? timeline.currentUser.id;
+      const targetNote = findReactionTargetNote(postId, userId);
+      if (!targetNote) return false;
 
       const previousReaction = targetNote.myReaction;
 
       if (previousReaction === reaction) {
-        return;
+        return true;
       }
 
       if (previousReaction && previousReaction !== reaction) {
-        updateNotesById(targetNote.id, (note) => {
-          decrementReaction(note, previousReaction);
-          note.myReaction = undefined;
-        });
+        updateNotesById(
+          targetNote.id,
+          (note) => {
+            decrementReaction(note, previousReaction);
+            note.myReaction = undefined;
+          },
+          { userId },
+        );
       }
 
-      updateNotesById(targetNote.id, (note) => {
-        note.myReaction = reaction;
-        incrementReaction(note, reaction);
-      });
+      updateNotesById(
+        targetNote.id,
+        (note) => {
+          note.myReaction = reaction;
+          incrementReaction(note, reaction);
+        },
+        { userId },
+      );
 
       const result = await ipcInvoke("api", {
         method: "misskey:createReaction",
-        instanceUrl: timeline.currentInstance?.url,
+        instanceUrl: timeline.currentInstance.url,
         token: timeline.currentUser.token,
         noteId: targetNote.id,
         reaction: reaction,
       });
-      if (!result.ok) {
+
+      if (result.ok) {
+        return true;
+      }
+
+      const isAlreadyApplied = await verifyReactionState({
+        postId: targetNote.id,
+        instanceUrl: timeline.currentInstance.url,
+        token: timeline.currentUser.token,
+        userId,
+        isExpected: (note) => note.myReaction === reaction,
+      });
+
+      if (isAlreadyApplied) {
+        return true;
+      }
+
+      if (options.reportError !== false) {
         reportApiError(result, `${targetNote.id}へのリアクション失敗`);
       }
+
+      return false;
     } else {
       throw new Error("user not found");
     }
   };
 
-  const deleteMyReaction = async (postId: string) => {
+  /**
+   * Delete my reaction and suppress stale API errors when the server state already matches.
+   */
+  const deleteMyReaction = async (postId: string, options: ReactionMutationOptions = {}): Promise<boolean> => {
     const timeline = getTimelineStore();
 
-    if (timeline.currentUser) {
-      const sourceNote = findNoteById(postId);
-      const targetNote = (sourceNote?.renote as MisskeyNote | undefined) ?? sourceNote;
-      if (!targetNote || !targetNote.myReaction) return;
+    if (timeline.currentUser && timeline.currentInstance?.url) {
+      const userId = options.userId ?? timeline.currentUser.id;
+      const targetNote = findReactionTargetNote(postId, userId);
+      if (!targetNote) return false;
+      if (!targetNote.myReaction) return true;
 
       const myReaction = targetNote.myReaction;
 
-      updateNotesById(targetNote.id, (note) => {
-        decrementReaction(note, myReaction);
-        note.myReaction = undefined;
-      });
+      updateNotesById(
+        targetNote.id,
+        (note) => {
+          decrementReaction(note, myReaction);
+          note.myReaction = undefined;
+        },
+        { userId },
+      );
 
       const result = await ipcInvoke("api", {
         method: "misskey:deleteReaction",
-        instanceUrl: timeline.currentInstance?.url,
+        instanceUrl: timeline.currentInstance.url,
         token: timeline.currentUser.token,
         noteId: targetNote.id,
       });
-      if (!result.ok) {
+
+      if (result.ok) {
+        return true;
+      }
+
+      const isAlreadyDeleted = await verifyReactionState({
+        postId: targetNote.id,
+        instanceUrl: timeline.currentInstance.url,
+        token: timeline.currentUser.token,
+        userId,
+        isExpected: (note) => !note.myReaction,
+      });
+
+      if (isAlreadyDeleted) {
+        return true;
+      }
+
+      if (options.reportError !== false) {
         reportApiError(result, `${targetNote.id}のリアクション削除失敗`);
       }
+
+      return false;
     } else {
       throw new Error("user not found");
     }

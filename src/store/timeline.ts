@@ -5,6 +5,7 @@ import { computed } from "vue";
 import { DotEPost, TimelineStore, useStore } from ".";
 import type { Timeline, InstanceStore } from "@shared/types/store";
 import { MastodonNotification } from "@/types/mastodon";
+import type { BlueskyNotification } from "@/types/bluesky";
 import { defaultChannelNameFromType } from "@/utils/dote";
 import { useBlueskyStore } from "./bluesky";
 import { useMisskeyStore } from "./misskey";
@@ -116,7 +117,9 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const setNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
+  const setNotifications = (
+    notifications: MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[],
+  ) => {
     if (store.$state.timelines[currentIndex.value]) {
       store.$state.timelines[currentIndex.value].notifications = notifications;
     }
@@ -329,12 +332,14 @@ export const useTimelineStore = defineStore("timeline", () => {
     }
   };
 
-  const addNewNotification = <T extends MisskeyEntities.Notification | MastodonNotification>(notification: T) => {
+  const addNewNotification = <T extends MisskeyEntities.Notification | MastodonNotification | BlueskyNotification>(
+    notification: T,
+  ) => {
     if (!store.timelines[currentIndex.value]?.notifications) return;
     store.timelines[currentIndex.value].notifications = [
       notification,
       ...store.timelines[currentIndex.value].notifications,
-    ] as MisskeyEntities.Notification[] | MastodonNotification[];
+    ] as MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[];
   };
 
   const addMorePosts = (posts: DotEPost[]) => {
@@ -344,12 +349,14 @@ export const useTimelineStore = defineStore("timeline", () => {
     timeline.posts = [...timeline.posts, ...filteredPosts] as DotEPost[];
   };
 
-  const addMoreNotifications = (notifications: MisskeyEntities.Notification[] | MastodonNotification[]) => {
+  const addMoreNotifications = (
+    notifications: MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[],
+  ) => {
     if (!store.timelines[currentIndex.value]?.notifications) return;
     store.timelines[currentIndex.value].notifications = [
       ...store.timelines[currentIndex.value].notifications,
       ...notifications,
-    ] as MisskeyEntities.Notification[] | MastodonNotification[];
+    ] as MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[];
   };
 
   const isTimelineAvailable = computed(() => {

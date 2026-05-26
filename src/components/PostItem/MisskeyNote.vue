@@ -84,10 +84,10 @@ const replyToPost = () => {
 const postActions = computed(() => [
   ...(props.showActions
     ? [
-        { command: "refresh", icon: "mingcute:refresh-1-fill", label: "更新" },
         { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
         { command: "reaction", icon: "mingcute:add-fill", label: "リアクション" },
         { command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" },
+        { command: "refresh", icon: "mingcute:refresh-1-fill", label: "更新" },
       ]
     : []),
   { command: "open", icon: "mingcute:external-link-line", label: "投稿を開く" },

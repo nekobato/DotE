@@ -510,18 +510,6 @@ onBeforeUnmount(() => {
   border: 1px solid transparent;
   border-radius: 4px;
 
-  &.current {
-    box-shadow: 0 0 0 2px var(--dote-color-white-t4);
-  }
-
-  &.open-button {
-    cursor: pointer;
-
-    &.open * {
-      visibility: hidden;
-    }
-  }
-
   .image {
     flex: 0 0 24px;
     width: 24px;
@@ -534,6 +522,18 @@ onBeforeUnmount(() => {
       width: 20px;
       height: 20px;
       border-radius: 2px;
+    }
+  }
+
+  &.current {
+    box-shadow: 0 0 0 2px var(--dote-color-white-t4);
+  }
+
+  &.open-button {
+    cursor: pointer;
+
+    &.open .image {
+      visibility: hidden;
     }
   }
 }

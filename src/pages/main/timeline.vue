@@ -15,6 +15,7 @@ import ScrollToTop from "@/components/ScrollToTop.vue";
 
 // コンポーネント - プラットフォーム固有
 import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
+import BlueskyNotification from "@/components/PostItem/BlueskyNotification.vue";
 import MastodonNotification from "@/components/PostItem/MastodonNotification.vue";
 import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
@@ -33,9 +34,11 @@ import type {
   MastodonNotification as MastodonNotificationType,
   MastodonToot as MastodonTootType,
 } from "@/types/mastodon";
+import type { BlueskyNotification as BlueskyNotificationType } from "@/types/bluesky";
 import { MisskeyEntities, type MisskeyNote as MisskeyNoteType } from "@shared/types/misskey";
 
 // ユーティリティ
+import { resolveBlueskyFeedItemId, resolveBlueskyNotificationId, resolveBlueskyReplyRef } from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
 
 // Composables
@@ -49,6 +52,7 @@ const blueskyStore = useBlueskyStore();
 
 // Composables
 const { scrollPosition, hazeSettings, scrollState, platformData } = useTimelineState();
+const READ_INTERSECTION_RATIO = 0.3;
 
 /**
  * Misskeyの投稿更新をトリガーします。
@@ -131,6 +135,28 @@ const onMastodonBoost = (toot: MastodonTootType) => {
   });
 };
 
+/**
+ * Blueskyのリポスト/引用投稿ウィンドウを開きます。
+ */
+const onBlueskyRepost = (payload: { post: AppBskyFeedDefs.PostView }) => {
+  ipcSend("post:repost", {
+    ...payload,
+    ...currentPostTargetPayload(),
+  });
+};
+
+/**
+ * Blueskyの返信ウィンドウを開きます。
+ */
+const onBlueskyReply = (post: AppBskyFeedDefs.FeedViewPost) => {
+  ipcSend("post:create", {
+    post: post.post,
+    mode: "reply",
+    blueskyReplyTo: resolveBlueskyReplyRef(post),
+    ...currentPostTargetPayload(),
+  });
+};
+
 const timelineContainer = ref<HTMLDivElement | null>(null);
 
 // Computed values from composables
@@ -161,7 +187,7 @@ type TimelinePostIdSource = MisskeyNoteType | MastodonTootType | AppBskyFeedDefs
  * Resolve a stable post id across platforms.
  */
 const resolvePostId = (post: TimelinePostIdSource) => {
-  if ("post" in post && post.post?.cid) return post.post.cid;
+  if ("post" in post && post.post?.uri) return resolveBlueskyFeedItemId(post);
   if ("id" in post && post.id) return post.id;
   return "";
 };
@@ -198,27 +224,24 @@ const lastReadIndex = computed(() => {
 });
 
 /**
- * Check if a post should be marked as read.
+ * Check if a post is the current latest read marker.
  */
-const isReadPost = (post: TimelinePostIdSource) => {
+const isLatestReadPost = (post: TimelinePostIdSource) => {
   const postId = resolvePostId(post);
   if (!postId) return false;
-  const readIndex = lastReadIndex.value;
-  if (readIndex === -1) return false;
-  const index = postIndexMap.value.get(postId);
-  if (index === undefined) return false;
-  const lastReadAt = timelineStore.current?.lastReadAt;
-  if (lastReadAt) {
-    const postCreatedAt = resolvePostCreatedAt(post);
-    if (postCreatedAt) {
-      const postTime = Date.parse(postCreatedAt);
-      const lastTime = Date.parse(lastReadAt);
-      if (!Number.isNaN(postTime) && !Number.isNaN(lastTime) && postTime > lastTime) {
-        return false;
-      }
-    }
-  }
-  return index <= readIndex;
+  return postId === timelineStore.current?.lastReadId;
+};
+
+/**
+ * Resolve CSS classes that express read state on a post.
+ */
+const readPostClasses = (post: TimelinePostIdSource) => {
+  const isLatestRead = isLatestReadPost(post);
+
+  return {
+    "is-read": isLatestRead,
+    "is-latest-read": isLatestRead,
+  };
 };
 
 const postObserver = ref<IntersectionObserver | null>(null);
@@ -243,7 +266,7 @@ const observePosts = () => {
       (entries) => {
         const visibleIndices: number[] = [];
         for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
+          if (!entry.isIntersecting || entry.intersectionRatio < READ_INTERSECTION_RATIO) continue;
           const targetEl = entry.target as HTMLElement;
           const postId = targetEl.dataset?.postId;
           if (!postId) continue;
@@ -254,11 +277,11 @@ const observePosts = () => {
         }
 
         if (visibleIndices.length === 0) return;
-        const oldestVisibleIndex = Math.max(...visibleIndices);
+        const newestVisibleIndex = Math.min(...visibleIndices);
         const currentReadIndex = lastReadIndex.value;
-        if (currentReadIndex === -1 || oldestVisibleIndex > currentReadIndex) {
+        if (currentReadIndex === -1 || newestVisibleIndex < currentReadIndex) {
           const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
-          const target = posts[oldestVisibleIndex];
+          const target = posts[newestVisibleIndex];
           const targetId = target ? resolvePostId(target) : "";
           const targetCreatedAt = target ? resolvePostCreatedAt(target) : "";
           if (targetId) {
@@ -363,7 +386,7 @@ onBeforeUnmount(() => {
             timelineStore.current.channel !== 'misskey:notifications'
           "
           v-for="post in timelineStore.current.posts"
-          :class="['post-item', { 'is-read': isReadPost(post) }]"
+          :class="['post-item', readPostClasses(post)]"
           :data-post-id="resolvePostId(post)"
           :post="post as MisskeyNoteType"
           :emojis="emojis"
@@ -399,7 +422,7 @@ onBeforeUnmount(() => {
           v-for="toot in timelineStore.current?.posts"
           :data-post-id="resolvePostId(toot)"
           :key="toot.id"
-          :class="['post-item', { 'is-read': isReadPost(toot) }]"
+          :class="['post-item', readPostClasses(toot)]"
           :post="toot as MastodonTootType"
           :instanceUrl="timelineStore.currentInstance?.url"
           :lineStyle="store.settings.postStyle"
@@ -417,15 +440,30 @@ onBeforeUnmount(() => {
           :post="notification.status"
           :lineStyle="store.settings.postStyle"
         />
+        <BlueskyNotification
+          v-if="timelineStore.current.channel === 'bluesky:notifications'"
+          v-for="notification in timelineStore.current.notifications as BlueskyNotificationType[]"
+          :key="resolveBlueskyNotificationId(notification)"
+          :notification="notification"
+          :lineStyle="store.settings.postStyle"
+          :currentInstanceUrl="timelineStore.currentInstance?.url"
+          @reply="onBlueskyReply"
+          @repost="onBlueskyRepost"
+        />
         <BlueskyPost
-          v-if="timelineStore.currentInstance?.type === 'bluesky'"
+          v-if="
+            timelineStore.currentInstance?.type === 'bluesky' &&
+            timelineStore.current.channel !== 'bluesky:notifications'
+          "
           v-for="post in timelineStore.current.posts as AppBskyFeedDefs.FeedViewPost[]"
           :data-post-id="resolvePostId(post)"
-          :key="post.post.cid"
-          :class="['post-item', { 'is-read': isReadPost(post) }]"
+          :key="resolvePostId(post)"
+          :class="['post-item', readPostClasses(post)]"
           :post="post"
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
+          @reply="onBlueskyReply"
+          @repost="onBlueskyRepost"
           @like="blueskyStore.like"
           @deleteLike="blueskyStore.deleteLike"
         />

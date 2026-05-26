@@ -18,6 +18,11 @@ type BlueskyPostRef = {
   cid: string;
 };
 
+type BlueskyReplyRef = {
+  root: BlueskyPostRef;
+  parent: BlueskyPostRef;
+};
+
 type BlueskyImageAspectRatio = {
   width: number;
   height: number;
@@ -139,6 +144,21 @@ export const blueskyGetTimeline = async ({
   });
 };
 
+export const blueskyGetNotifications = async ({
+  did,
+  cursor,
+  limit = 30,
+}: {
+  did: string;
+  cursor?: string;
+  limit?: number;
+}) => {
+  return withAgent(did, async (agent) => {
+    const res = await agent.listNotifications({ cursor, limit });
+    return res.data;
+  });
+};
+
 /**
  * Upload a local image file as a Bluesky blob that can be referenced by a post embed.
  */
@@ -241,7 +261,7 @@ export const blueskyCreatePost = async ({
 }: {
   did: string;
   text: string;
-  replyTo?: BlueskyPostRef;
+  replyTo?: BlueskyReplyRef;
   quote?: BlueskyPostRef;
   images?: BlueskyUploadedImage[];
 }) => {
@@ -254,8 +274,8 @@ export const blueskyCreatePost = async ({
 
     if (replyTo) {
       record.reply = {
-        root: { uri: replyTo.uri, cid: replyTo.cid },
-        parent: { uri: replyTo.uri, cid: replyTo.cid },
+        root: { uri: replyTo.root.uri, cid: replyTo.root.cid },
+        parent: { uri: replyTo.parent.uri, cid: replyTo.parent.cid },
       };
     }
 

@@ -20,6 +20,8 @@ export function useStream() {
   const misskeyStore = useMisskeyStore();
   const misskeyTimelineConnectionStore = useMisskeyTimelineConnectionStore();
   let misskeyHealthCheckTimer: number | undefined;
+  let ipcDisposers: (() => void)[] = [];
+  const reactionOperations = new Map<string, Promise<void>>();
 
   const misskeyStream = useMisskeyStream({
     onChannel: (event, data) => {
@@ -104,57 +106,118 @@ export function useStream() {
     { immediate: true },
   );
 
-  // IPCイベントハンドラの設定
-  const setupIpcHandlers = () => {
-    window.ipc?.on("stream:sub-note", (_, data: { postId: string }) => {
-      misskeyStream.subNote(data.postId);
-    });
+  /**
+   * Remove renderer IPC handlers registered by this composable.
+   */
+  const disposeIpcHandlers = () => {
+    ipcDisposers.forEach((dispose) => dispose());
+    ipcDisposers = [];
+  };
 
-    window.ipc?.on("stream:unsub-note", (_, data: { postId: string }) => {
-      misskeyStream.unsubNote(data.postId);
-    });
-
-    window.ipc?.on("main:reaction", async (_, data: { postId: string; reaction: string }) => {
-      const posts = timelineStore.current?.posts as MisskeyNote[];
-      if (!posts) return;
-      let post = posts.find((post) => post.id === data.postId);
-      if (!post) return;
-
-      const targetPost = post.renote ?? post;
-
-      // 既にreactionがある場合
-      if (targetPost.myReaction) {
-        // 同じリアクションの場合はリアクションを削除するということ
-        if (targetPost.myReaction === data.reaction) {
-          return await misskeyStore.deleteMyReaction(targetPost.id);
+  /**
+   * Run reaction operations for the same note sequentially.
+   */
+  const enqueueReactionOperation = (postId: string, operation: () => Promise<void>) => {
+    const previous = reactionOperations.get(postId) ?? Promise.resolve();
+    const next = previous
+      .catch(() => undefined)
+      .then(operation)
+      .catch((error) => {
+        store.$state.errors.push({
+          message: `${postId}へのリアクション失敗`,
+        });
+        console.error("Misskey reaction operation failed", error);
+      })
+      .finally(() => {
+        if (reactionOperations.get(postId) === next) {
+          reactionOperations.delete(postId);
         }
+      });
 
-        // 違うリアクションの場合は、まず削除してから新しいリアクションを追加する
-        await misskeyStore.deleteMyReaction(targetPost.id);
+    reactionOperations.set(postId, next);
+  };
+
+  /**
+   * Apply a Misskey reaction click against the active timeline.
+   */
+  const handleMisskeyReaction = async (data: { postId: string; reaction: string }) => {
+    const posts = timelineStore.current?.posts as MisskeyNote[] | undefined;
+    if (!posts) return;
+    const post = posts.find((post) => post.id === data.postId);
+    if (!post) return;
+
+    const targetPost = (post.renote as MisskeyNote | undefined) ?? post;
+    const userId = timelineStore.currentUser?.id;
+    if (!userId) return;
+
+    // 既にreactionがある場合
+    if (targetPost.myReaction) {
+      // 同じリアクションの場合はリアクションを削除するということ
+      if (targetPost.myReaction === data.reaction) {
+        await misskeyStore.deleteMyReaction(targetPost.id, { userId });
+        return;
       }
 
-      await misskeyStore.createMyReaction(targetPost.id, data.reaction);
-    });
+      // 違うリアクションの場合は、まず削除してから新しいリアクションを追加する
+      await misskeyStore.deleteMyReaction(targetPost.id, { reportError: false, userId });
+    }
 
-    window.ipc?.on("timeline:add-post", (_, data: { post: MastodonToot; timelineId?: string; userId?: string }) => {
-      if (timelineStore.currentInstance?.type !== "mastodon") return;
-      if (!data.timelineId || !data.userId) return;
-      if (timelineStore.current?.id !== data.timelineId) return;
-      if (timelineStore.currentUser?.id !== data.userId) return;
-      timelineStore.addNewPost(data.post);
-      if (data.post.reblog) {
-        timelineStore.updatePost(data.post.reblog as MastodonToot);
-      }
-    });
+    await misskeyStore.createMyReaction(targetPost.id, data.reaction, { userId });
+  };
 
-    window.ipc?.on("resume-timeline", () => {
-      const currentTimeline = timelineStore.current;
-      if (timelineStore.currentInstance?.type !== "misskey") return;
-      if (!currentTimeline) return;
-      if (!misskeyChannels.includes(currentTimeline.channel as MisskeyChannelName)) return;
-      if (currentTimeline.channel === "misskey:search") return;
-      misskeyStream.reconnect(true);
-    });
+  /**
+   * Register renderer IPC handlers and return their disposer.
+   */
+  const setupIpcHandlers = () => {
+    disposeIpcHandlers();
+
+    const addIpcDisposer = (dispose?: () => void) => {
+      if (dispose) ipcDisposers.push(dispose);
+    };
+
+    addIpcDisposer(
+      window.ipc?.on("stream:sub-note", (_, data: { postId: string }) => {
+        misskeyStream.subNote(data.postId);
+      }),
+    );
+
+    addIpcDisposer(
+      window.ipc?.on("stream:unsub-note", (_, data: { postId: string }) => {
+        misskeyStream.unsubNote(data.postId);
+      }),
+    );
+
+    addIpcDisposer(
+      window.ipc?.on("main:reaction", (_, data: { postId: string; reaction: string }) => {
+        enqueueReactionOperation(data.postId, () => handleMisskeyReaction(data));
+      }),
+    );
+
+    addIpcDisposer(
+      window.ipc?.on("timeline:add-post", (_, data: { post: MastodonToot; timelineId?: string; userId?: string }) => {
+        if (timelineStore.currentInstance?.type !== "mastodon") return;
+        if (!data.timelineId || !data.userId) return;
+        if (timelineStore.current?.id !== data.timelineId) return;
+        if (timelineStore.currentUser?.id !== data.userId) return;
+        timelineStore.addNewPost(data.post);
+        if (data.post.reblog) {
+          timelineStore.updatePost(data.post.reblog as MastodonToot);
+        }
+      }),
+    );
+
+    addIpcDisposer(
+      window.ipc?.on("resume-timeline", () => {
+        const currentTimeline = timelineStore.current;
+        if (timelineStore.currentInstance?.type !== "misskey") return;
+        if (!currentTimeline) return;
+        if (!misskeyChannels.includes(currentTimeline.channel as MisskeyChannelName)) return;
+        if (currentTimeline.channel === "misskey:search") return;
+        misskeyStream.reconnect(true);
+      }),
+    );
+
+    return disposeIpcHandlers;
   };
 
   const stopMisskeyHealthCheck = () => {
@@ -295,5 +358,6 @@ export function useStream() {
     initStream,
     disconnectAllStreams,
     setupIpcHandlers,
+    disposeIpcHandlers,
   };
 }
