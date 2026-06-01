@@ -35,6 +35,11 @@ type BlueskyImageAspectRatio = {
   height: number;
 };
 
+type BlueskyCreateRecordResult = {
+  uri: string;
+  cid: string;
+};
+
 type AttachmentItem = {
   id: string;
   name: string;
@@ -966,18 +971,103 @@ const addCreatedBlueskyPostToTimeline = async ({
   });
 };
 
+/**
+ * Check whether this composer payload should create a native Bluesky repost.
+ */
+const shouldCreateNativeBlueskyRepost = (targetPost: BlueskyPostType | null) => {
+  return Boolean(targetPost && !isReplyMode.value && !text.value && !hasAttachments.value);
+};
+
+/**
+ * Build the current user's profile shape for a local Bluesky repost reason.
+ */
+const buildCurrentBlueskyReposter = (did: string): AppBskyFeedDefs.ReasonRepost["by"] => {
+  const handle = state.user?.blueskySession?.handle || state.user?.name || did;
+  return {
+    $type: "app.bsky.actor.defs#profileViewBasic",
+    did,
+    handle,
+    displayName: state.user?.name || handle,
+    avatar: state.user?.avatarUrl || undefined,
+  };
+};
+
+/**
+ * Build a local feed item that looks like the native repost returned by Bluesky timelines.
+ */
+const buildLocalBlueskyRepost = ({
+  did,
+  targetPost,
+  repost,
+}: {
+  did: string;
+  targetPost: BlueskyPostType;
+  repost: BlueskyCreateRecordResult;
+}): AppBskyFeedDefs.FeedViewPost => {
+  const indexedAt = new Date().toISOString();
+  const wasReposted = Boolean(targetPost.viewer?.repost);
+  return {
+    post: {
+      ...targetPost,
+      viewer: {
+        ...(targetPost.viewer ?? {}),
+        repost: repost.uri,
+      },
+      repostCount: wasReposted ? targetPost.repostCount : (targetPost.repostCount ?? 0) + 1,
+    },
+    reason: {
+      $type: "app.bsky.feed.defs#reasonRepost",
+      by: buildCurrentBlueskyReposter(did),
+      uri: repost.uri,
+      cid: repost.cid,
+      indexedAt,
+    },
+  };
+};
+
+/**
+ * Create a native Bluesky repost and insert a local repost feed item.
+ */
+const repostToBluesky = async ({ did, targetPost }: { did: string; targetPost: BlueskyPostType }) => {
+  const result = await ipcInvoke("api", {
+    method: "bluesky:createRepost",
+    did,
+    uri: targetPost.uri,
+    cid: targetPost.cid,
+  });
+
+  const repost = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} へのリポストに失敗しました`) as
+    | BlueskyCreateRecordResult
+    | undefined;
+  if (!repost?.uri) return;
+
+  ipcSend("timeline:add-post", {
+    post: buildLocalBlueskyRepost({ did, targetPost, repost }),
+    timelineId: props.data.timelineId ?? state.timeline?.id,
+    userId: props.data.userId ?? state.user?.id,
+  });
+  text.value = "";
+  clearAttachments();
+  ipcSend("post:close");
+};
+
 const postToBluesky = async () => {
   const targetPost = props.data.post as BlueskyPostType | null;
-  const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
   const did = state.user?.blueskySession?.did;
   if (!did) {
     throw new Error("Blueskyアカウントの認証情報が見つかりませんでした");
+  }
+
+  if (targetPost && shouldCreateNativeBlueskyRepost(targetPost)) {
+    await repostToBluesky({ did, targetPost });
+    return;
   }
 
   if (!(await uploadBlueskyAttachments(did))) {
     return;
   }
   const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
+  const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
 
   const result = await ipcInvoke("api", {
     method: "bluesky:createPost",

@@ -299,6 +299,16 @@ export const blueskyCreatePost = async ({
   });
 };
 
+/**
+ * Create a native Bluesky repost record for the authenticated account.
+ */
+export const blueskyCreateRepost = async ({ did, uri, cid }: { did: string; uri: string; cid: string }) => {
+  return withAgent(did, async (agent) => {
+    const res = await agent.repost(uri, cid);
+    return res;
+  });
+};
+
 export const blueskyLike = async ({ did, uri, cid }: { did: string; uri: string; cid: string }) => {
   return withAgent(did, async (agent) => {
     const res = await agent.like(uri, cid);

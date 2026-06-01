@@ -152,6 +152,15 @@ const onBlueskyRepost = (payload: { post: AppBskyFeedDefs.PostView }) => {
 };
 
 /**
+ * Blueskyのネイティブリポストを解除します。
+ */
+const onBlueskyDeleteRepost = (payload: { postUri: string; repostUri: string }) => {
+  const userId = timelineStore.currentUser?.id;
+  if (!userId) return;
+  void blueskyStore.deleteRepost({ ...payload, userId });
+};
+
+/**
  * Blueskyの返信ウィンドウを開きます。
  */
 const onBlueskyReply = (post: AppBskyFeedDefs.FeedViewPost) => {
@@ -617,6 +626,7 @@ onBeforeUnmount(() => {
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           @reply="onBlueskyReply"
           @repost="onBlueskyRepost"
+          @deleteRepost="onBlueskyDeleteRepost"
         />
         <BlueskyPost
           v-if="
@@ -633,6 +643,7 @@ onBeforeUnmount(() => {
           :canDelete="canDeleteBlueskyPost(post)"
           @reply="onBlueskyReply"
           @repost="onBlueskyRepost"
+          @deleteRepost="onBlueskyDeleteRepost"
           @like="blueskyStore.like"
           @deleteLike="blueskyStore.deleteLike"
           @requestDelete="onBlueskyDeleteRequest"

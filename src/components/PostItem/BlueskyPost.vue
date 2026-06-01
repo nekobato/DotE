@@ -58,6 +58,7 @@ const emit = defineEmits<{
   repost: [{ post: AppBskyFeedDefs.PostView }];
   like: [{ uri: string; cid: string }];
   deleteLike: [{ uri: string }];
+  deleteRepost: [{ postUri: string; repostUri: string }];
   requestDelete: [{ feedItemId: string; uri: string; isRepost: boolean }];
 }>();
 
@@ -85,6 +86,10 @@ const isLiked = computed(() => {
   return !!props.post.post.viewer?.like;
 });
 
+const isReposted = computed(() => {
+  return !!props.post.post.viewer?.repost;
+});
+
 const postAttachments = computed<Attachment[]>(() => extractBlueskyAttachments(props.post));
 
 const postCreatedAt = computed(() => resolvePostCreatedAt(props.post));
@@ -106,6 +111,15 @@ const openUserPage = () => {
 
 const openRepostWindow = () => {
   emit("repost", { post: props.post.post });
+};
+
+/**
+ * Emit unrepost action for a native Bluesky repost created by the current viewer.
+ */
+const deleteRepost = () => {
+  const repostUri = props.post.post.viewer?.repost;
+  if (!repostUri) return;
+  emit("deleteRepost", { postUri: props.post.post.uri, repostUri });
 };
 
 /**
@@ -157,7 +171,11 @@ const postActions = computed(() => [
   ...(props.showActions
     ? [
         { command: "reply", icon: "mingcute:message-2-line", label: "返信" },
-        { command: "repost", icon: "mingcute:repeat-fill", label: "リポスト" },
+        {
+          command: isReposted.value ? "deleteRepost" : "repost",
+          icon: "mingcute:repeat-fill",
+          label: isReposted.value ? "リポスト解除" : "リポスト",
+        },
         ...(props.canDelete ? [{ command: "delete", icon: "mingcute:delete-2-line", label: "削除" }] : []),
       ]
     : []),
@@ -174,6 +192,9 @@ const runPostAction = (command: string) => {
       return;
     case "repost":
       openRepostWindow();
+      return;
+    case "deleteRepost":
+      deleteRepost();
       return;
     case "delete":
       requestDeletePost();

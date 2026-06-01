@@ -8,6 +8,7 @@ import { computed } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import type { BlueskyFeedPost } from "@/types/bluesky";
 import {
+  extractRepostReason,
   mergeBlueskyFeedItemsByDateDesc,
   resolveBlueskyFeedItemId,
   resolveBlueskyNotificationId,
@@ -22,6 +23,19 @@ const LOCAL_BLUESKY_POST_TTL_MS = 5 * 60 * 1000;
 type BlueskyTimelineTarget = {
   timelineId?: string;
   userId?: string;
+};
+
+type BlueskyRepostStateUpdate = {
+  userId: string;
+  postUri: string;
+  repostUri?: string;
+  isReposted: boolean;
+};
+
+type BlueskyRepostDeleteTarget = {
+  userId: string;
+  postUri: string;
+  repostUri: string;
 };
 
 export const useBlueskyStore = defineStore("bluesky", () => {
@@ -184,7 +198,105 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     }
   };
 
+  /**
+   * Run a callback for every Bluesky feed item owned by the same account.
+   */
+  const forEachBlueskyFeedItem = (userId: string, callback: (post: BlueskyFeedPost) => void) => {
+    store.$state.timelines.forEach((timeline) => {
+      if (timeline.userId !== userId || timeline.channel !== "bluesky:homeTimeline") return;
+
+      (timeline.posts as BlueskyFeedPost[]).forEach(callback);
+      (timeline.pendingNewPosts as BlueskyFeedPost[]).forEach(callback);
+    });
+  };
+
+  /**
+   * Apply the viewer.repost flag and repostCount to every local copy of a Bluesky post.
+   */
+  const updateRepostStateAcrossTimelines = ({
+    userId,
+    postUri,
+    repostUri,
+    isReposted,
+  }: BlueskyRepostStateUpdate) => {
+    forEachBlueskyFeedItem(userId, (feedItem) => {
+      if (feedItem.post.uri !== postUri) return;
+
+      const wasReposted = Boolean(feedItem.post.viewer?.repost);
+      const nextViewer = { ...(feedItem.post.viewer ?? {}) };
+      if (isReposted) {
+        if (!repostUri) return;
+        nextViewer.repost = repostUri;
+        feedItem.post.viewer = nextViewer;
+        if (!wasReposted) {
+          feedItem.post.repostCount = (feedItem.post.repostCount ?? 0) + 1;
+        }
+        return;
+      }
+
+      if (!wasReposted) return;
+      delete nextViewer.repost;
+      feedItem.post.viewer = nextViewer;
+      feedItem.post.repostCount = Math.max(0, (feedItem.post.repostCount ?? 0) - 1);
+    });
+  };
+
+  /**
+   * Find the locally cached Bluesky feed item with the given app-local id.
+   */
+  const findBlueskyFeedItemById = (userId: string, feedItemId: string): BlueskyFeedPost | undefined => {
+    for (const timeline of store.$state.timelines) {
+      if (timeline.userId !== userId || timeline.channel !== "bluesky:homeTimeline") continue;
+      const candidates = [...(timeline.posts as BlueskyFeedPost[]), ...(timeline.pendingNewPosts as BlueskyFeedPost[])];
+      const found = candidates.find((post) => resolveBlueskyFeedItemId(post) === feedItemId);
+      if (found) return found;
+    }
+    return undefined;
+  };
+
+  /**
+   * Remove local feed items that represent the same native Bluesky repost.
+   */
+  const removeRepostFeedItemsAcrossTimelines = ({ userId, postUri, repostUri }: BlueskyRepostDeleteTarget) => {
+    store.$state.timelines.forEach((timeline) => {
+      if (timeline.userId !== userId || timeline.channel !== "bluesky:homeTimeline") return;
+
+      const keepNonTargetRepost = (feedItem: BlueskyFeedPost) => {
+        const reason = extractRepostReason(feedItem);
+        const shouldRemove = feedItem.post.uri === postUri && reason?.uri === repostUri;
+        if (shouldRemove) {
+          locallyInsertedPostIds.delete(resolveBlueskyFeedItemId(feedItem));
+        }
+        return !shouldRemove;
+      };
+
+      timeline.posts = (timeline.posts as BlueskyFeedPost[]).filter(keepNonTargetRepost);
+      timeline.pendingNewPosts = (timeline.pendingNewPosts as BlueskyFeedPost[]).filter(keepNonTargetRepost);
+    });
+  };
+
+  /**
+   * Apply repost state carried by locally inserted native repost feed items.
+   */
+  const updateRepostStateFromLocalPosts = (posts: AppBskyFeedDefs.FeedViewPost[], target: BlueskyTimelineTarget) => {
+    const userId = target.userId ?? getTimelineStore().currentUser?.id;
+    if (!userId) return;
+
+    posts.forEach((post) => {
+      const reason = extractRepostReason(post);
+      if (!reason?.uri) return;
+      updateRepostStateAcrossTimelines({
+        userId,
+        postUri: post.post.uri,
+        repostUri: reason.uri,
+        isReposted: true,
+      });
+    });
+  };
+
   const insertLocalPosts = (posts: AppBskyFeedDefs.FeedViewPost[], target: BlueskyTimelineTarget) => {
+    updateRepostStateFromLocalPosts(posts, target);
+
     const targetIndexes = findTargetHomeTimelineIndexes(target);
     targetIndexes.forEach((timelineIndex) => {
       mergePostsIntoTimeline({
@@ -316,6 +428,39 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   };
 
   /**
+   * Delete a native Bluesky repost and update all cached copies of the reposted post.
+   */
+  const deleteRepost = async ({
+    postUri,
+    repostUri,
+    userId,
+  }: {
+    postUri: string;
+    repostUri: string;
+    userId: string;
+  }): Promise<boolean> => {
+    const user = store.$state.users.find((user) => user.id === userId);
+    if (!user?.blueskySession?.did) {
+      store.$state.errors.push({ message: "Blueskyのリポスト解除対象アカウントが見つかりませんでした" });
+      return false;
+    }
+
+    const result = await ipcInvoke("api", {
+      method: "bluesky:deleteRepost",
+      did: user.blueskySession.did,
+      uri: repostUri,
+    });
+    if (!result.ok) {
+      reportApiError(result, `${postUri}のリポスト解除失敗`);
+      return false;
+    }
+
+    updateRepostStateAcrossTimelines({ userId, postUri, repostUri, isReposted: false });
+    removeRepostFeedItemsAcrossTimelines({ userId, postUri, repostUri });
+    return true;
+  };
+
+  /**
    * Delete my Bluesky post or repost and remove the matching feed item locally.
    */
   const deletePost = async ({
@@ -330,6 +475,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     isRepost: boolean;
   }): Promise<boolean> => {
     const user = store.$state.users.find((user) => user.id === userId);
+    const repostedPostUri = isRepost ? findBlueskyFeedItemById(userId, feedItemId)?.post.uri : undefined;
     if (!user?.blueskySession?.did) {
       store.$state.errors.push({ message: "Blueskyの削除対象アカウントが見つかりませんでした" });
       return false;
@@ -346,6 +492,12 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     }
 
     locallyInsertedPostIds.delete(feedItemId);
+    if (isRepost && repostedPostUri) {
+      updateRepostStateAcrossTimelines({ userId, postUri: repostedPostUri, repostUri: uri, isReposted: false });
+      removeRepostFeedItemsAcrossTimelines({ userId, postUri: repostedPostUri, repostUri: uri });
+      return true;
+    }
+
     removePostAcrossTimelines(store.timelines, userId, feedItemId);
     return true;
   };
@@ -362,6 +514,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     pushNotifications,
     like,
     deleteLike,
+    deleteRepost,
     deletePost,
   };
 });

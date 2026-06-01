@@ -55,6 +55,7 @@ export const apiRequest = {
   ["bluesky:getPosts"]: blueskyRequest.blueskyGetPosts,
   ["bluesky:uploadImage"]: blueskyRequest.blueskyUploadImage,
   ["bluesky:createPost"]: blueskyRequest.blueskyCreatePost,
+  ["bluesky:createRepost"]: blueskyRequest.blueskyCreateRepost,
   ["bluesky:like"]: blueskyRequest.blueskyLike,
   ["bluesky:deleteLike"]: blueskyRequest.blueskyDeleteLike,
   ["bluesky:deletePost"]: blueskyRequest.blueskyDeletePost,

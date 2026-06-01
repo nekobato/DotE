@@ -26,6 +26,7 @@ const props = defineProps({
 const emit = defineEmits<{
   reply: [post: AppBskyFeedDefs.FeedViewPost];
   repost: [{ post: AppBskyFeedDefs.PostView }];
+  deleteRepost: [{ postUri: string; repostUri: string }];
 }>();
 
 const authorName = computed(() => props.notification.author.displayName || props.notification.author.handle);
@@ -136,6 +137,7 @@ const openUserPage = () => {
       :showReactions="false"
       @reply="emit('reply', $event)"
       @repost="emit('repost', $event)"
+      @deleteRepost="emit('deleteRepost', $event)"
     />
   </div>
 </template>
