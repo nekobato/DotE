@@ -46,7 +46,7 @@ const postAtttachments = computed(() => {
   const files = props.post?.media_attachments;
   return files?.map((file) => ({
     type: file.type as "image" | "video" | "audio",
-    url: file.url,
+    url: file.url ?? undefined,
     thumbnailUrl: file.preview_url || "",
     size: {
       width: file.meta.original.width,

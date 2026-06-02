@@ -8,7 +8,7 @@ export type MastodonEmoji = {
 export type MediaAttachment = {
   id: string;
   type: string;
-  url: string;
+  url: string | null;
   preview_url: string;
   remote_url: any;
   preview_remote_url: any;

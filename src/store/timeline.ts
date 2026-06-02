@@ -299,12 +299,24 @@ export const useTimelineStore = defineStore("timeline", () => {
   const addNewPost = (post: DotEPost) => {
     const timeline = getCurrentTimeline();
     if (!timeline?.posts) return;
+    const existingIndex = timeline.posts.findIndex((p: DotEPost) => p.id === post.id);
+    if (existingIndex >= 0) {
+      timeline.posts = timeline.posts.map((p: DotEPost, index: number) =>
+        index === existingIndex ? post : p,
+      ) as DotEPost[];
+      return;
+    }
+    const existingPendingIndex = timeline.pendingNewPosts.findIndex((p: DotEPost) => p.id === post.id);
+    if (existingPendingIndex >= 0) {
+      timeline.pendingNewPosts = timeline.pendingNewPosts.map((p: DotEPost, index: number) =>
+        index === existingPendingIndex ? post : p,
+      ) as DotEPost[];
+      return;
+    }
     if (timeline.readmoreLocked) {
       queuePendingPosts([post]);
       return;
     }
-    // detect duplicate
-    if (timeline.posts.some((p: DotEPost) => p.id === post.id)) return;
     timeline.posts = [post, ...timeline.posts] as DotEPost[];
 
     if (store.settings.maxPostCount < timeline.posts.length) {

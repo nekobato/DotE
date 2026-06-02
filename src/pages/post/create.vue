@@ -7,7 +7,7 @@ import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import { toBlueskyFeedPost, type BlueskyReplyRef } from "@/utils/bluesky";
-import type { MastodonToot as MastodonTootType } from "@/types/mastodon";
+import type { MastodonToot as MastodonTootType, MediaAttachment as MastodonMediaAttachment } from "@/types/mastodon";
 import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
 import type { BlobRef } from "@atproto/api";
@@ -28,7 +28,7 @@ type PageProps = {
   userId?: string;
 };
 
-type UploadStatus = "ready" | "uploading" | "uploaded" | "failed";
+type UploadStatus = "ready" | "uploading" | "processing" | "uploaded" | "failed";
 
 type BlueskyImageAspectRatio = {
   width: number;
@@ -57,6 +57,16 @@ type AttachmentItem = {
   error?: string;
 };
 
+type MastodonGetMediaResult =
+  | {
+      state: "processed";
+      media: MastodonMediaAttachment;
+    }
+  | {
+      state: "processing";
+      media?: MastodonMediaAttachment;
+    };
+
 type FileWithPath = File & { path?: string };
 
 type TextInputRef = {
@@ -78,6 +88,8 @@ const submitTextMap = {
 const BLUESKY_IMAGE_MAX_COUNT = 4;
 const BLUESKY_IMAGE_MAX_BYTES = 1_000_000;
 const BLUESKY_CREATED_POST_FETCH_RETRY_DELAYS_MS = [0, 500, 1_000, 1_500, 2_500, 4_000] as const;
+const MASTODON_MEDIA_PROCESSING_TIMEOUT_MS = 120_000;
+const MASTODON_MEDIA_PROCESSING_RETRY_DELAYS_MS = [1_000, 2_000, 3_000, 5_000] as const;
 const imageExtensionMimeTypes: Record<string, string> = {
   avif: "image/avif",
   bmp: "image/bmp",
@@ -147,7 +159,9 @@ const canUseAttachments = computed(
 );
 const canUseMisskeyOptions = computed(() => state.instance?.type === "misskey");
 const attachmentAccept = computed(() => (state.instance?.type === "bluesky" ? "image/*" : undefined));
-const hasUploadingAttachments = computed(() => attachments.value.some((item) => item.status === "uploading"));
+const hasUploadingAttachments = computed(() =>
+  attachments.value.some((item) => item.status === "uploading" || item.status === "processing"),
+);
 const hasFailedAttachments = computed(() => attachments.value.some((item) => item.status === "failed"));
 const uploadedMisskeyFileIds = computed(() =>
   attachments.value.filter((item) => item.status === "uploaded" && item.fileId).map((item) => item.fileId as string),
@@ -613,7 +627,103 @@ const uploadMisskeyAttachments = async (): Promise<boolean> => {
   return true;
 };
 
+/**
+ * Check whether the attachment is still present while a cancellable Mastodon processing wait is running.
+ */
+const hasAttachment = (id: string): boolean => {
+  return attachments.value.some((item) => item.id === id);
+};
+
+/**
+ * Mark an attachment as failed and expose the same message in the composer error area.
+ */
+const failAttachment = (id: string, message: string) => {
+  updateAttachment(id, (current) => ({
+    ...current,
+    status: "failed",
+    error: message,
+  }));
+  state.post.error = message;
+};
+
+/**
+ * Resolve the delay for the next Mastodon media processing poll.
+ */
+const resolveMastodonMediaProcessingDelay = (attempt: number): number => {
+  return MASTODON_MEDIA_PROCESSING_RETRY_DELAYS_MS[
+    Math.min(attempt, MASTODON_MEDIA_PROCESSING_RETRY_DELAYS_MS.length - 1)
+  ];
+};
+
+/**
+ * Poll a Mastodon media attachment until the processed media URL is available.
+ */
+const waitForMastodonMediaProcessing = async (itemId: string, mediaId: string): Promise<boolean> => {
+  const startedAt = Date.now();
+  let attempt = 0;
+
+  updateAttachment(itemId, (current) => ({
+    ...current,
+    status: "processing",
+    mediaId,
+    error: undefined,
+  }));
+
+  while (hasAttachment(itemId)) {
+    const elapsedMs = Date.now() - startedAt;
+    const remainingMs = MASTODON_MEDIA_PROCESSING_TIMEOUT_MS - elapsedMs;
+    if (remainingMs <= 0) {
+      failAttachment(itemId, "メディアの処理がタイムアウトしました。しばらくしてから再試行してください");
+      return false;
+    }
+
+    await wait(Math.min(resolveMastodonMediaProcessingDelay(attempt), remainingMs));
+    if (!hasAttachment(itemId)) return false;
+
+    let result: ApiInvokeResult<unknown>;
+    try {
+      result = await ipcInvoke("api", {
+        method: "mastodon:getMedia",
+        instanceUrl: state.instance?.url,
+        token: state.user?.token,
+        id: mediaId,
+      });
+    } catch (error) {
+      failAttachment(itemId, "メディアの処理確認に失敗しました。再試行してください");
+      console.error("Mastodonメディア処理確認に失敗しました", error);
+      return false;
+    }
+
+    if (!hasAttachment(itemId)) return false;
+
+    if (!result.ok) {
+      failAttachment(itemId, "メディアの処理確認に失敗しました。再試行してください");
+      console.error("Mastodonメディア処理確認に失敗しました", result.error);
+      return false;
+    }
+
+    const mediaResult = result.data as MastodonGetMediaResult | null;
+    if (mediaResult?.state === "processed" && mediaResult.media?.id) {
+      updateAttachment(itemId, (current) => ({
+        ...current,
+        status: "uploaded",
+        mediaId: mediaResult.media.id,
+        error: undefined,
+      }));
+      return true;
+    }
+
+    attempt += 1;
+  }
+
+  return false;
+};
+
 const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
+  if (item.mediaId) {
+    return waitForMastodonMediaProcessing(item.id, item.mediaId);
+  }
+
   updateAttachment(item.id, (current) => ({
     ...current,
     status: "uploading",
@@ -638,10 +748,16 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
       }));
       return false;
     }
+
+    const media = res as MastodonMediaAttachment;
+    if (media.url === null) {
+      return waitForMastodonMediaProcessing(item.id, media.id);
+    }
+
     updateAttachment(item.id, (current) => ({
       ...current,
       status: "uploaded",
-      mediaId: (res as { id: string }).id,
+      mediaId: media.id,
     }));
     return true;
   } catch (error) {
@@ -821,6 +937,18 @@ const removeAttachment = (id: string) => {
   attachments.value = attachments.value.filter((item) => item.id !== id);
 };
 
+/**
+ * Retry a failed attachment upload or resume Mastodon media processing checks.
+ */
+const retryAttachment = async (id: string) => {
+  const item = attachments.value.find((attachment) => attachment.id === id);
+  if (!item || item.status !== "failed") return;
+  if (state.instance?.type !== "mastodon") return;
+
+  state.post.error = "";
+  await uploadMastodonMedia(item);
+};
+
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const replyId = isReplyMode.value ? (replyToId.value ?? null) : null;
@@ -904,6 +1032,11 @@ const postToMastodon = async () => {
   });
   const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} への投稿に失敗しました`);
   if (res?.id) {
+    ipcSend("timeline:add-post", {
+      post: res as MastodonTootType,
+      timelineId: props.data.timelineId ?? state.timeline?.id,
+      userId: props.data.userId ?? state.user?.id,
+    });
     text.value = "";
     clearAttachments();
     ipcSend("post:close");
@@ -1302,6 +1435,7 @@ document.addEventListener("keydown", (e) => {
                 <span>{{ formatFileSize(item.size) }}</span>
                 <span class="status" v-if="item.status === 'ready'">未送信</span>
                 <span class="status" v-if="item.status === 'uploading'">アップロード中</span>
+                <span class="status" v-if="item.status === 'processing'">処理中</span>
                 <span class="status" v-if="item.status === 'uploaded'">完了</span>
                 <span class="status error" v-if="item.status === 'failed'">失敗</span>
               </div>
@@ -1317,13 +1451,23 @@ document.addEventListener("keydown", (e) => {
               </label>
               <div class="attachment-error" v-if="item.error">{{ item.error }}</div>
             </div>
-            <button
-              class="nn-button size-small tool-button remove"
-              :disabled="item.status === 'uploading'"
-              @click="removeAttachment(item.id)"
-            >
-              <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" />
-            </button>
+            <div class="attachment-actions">
+              <button
+                v-if="state.instance?.type === 'mastodon' && item.status === 'failed'"
+                class="nn-button size-small tool-button retry"
+                @click="retryAttachment(item.id)"
+              >
+                <Icon icon="mingcute:refresh-2-line" class="nn-icon size-xsmall" />
+                <span>再試行</span>
+              </button>
+              <button
+                class="nn-button size-small tool-button remove"
+                :disabled="item.status === 'uploading'"
+                @click="removeAttachment(item.id)"
+              >
+                <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" />
+              </button>
+            </div>
           </div>
         </div>
         <DoteAlert class="mt-4" type="error" v-if="state.post.error">
@@ -1477,7 +1621,7 @@ document.addEventListener("keydown", (e) => {
   }
 }
 .tool-button.remove {
-  margin-left: auto;
+  padding: 4px;
 }
 .file-input {
   display: none;
@@ -1593,6 +1737,12 @@ document.addEventListener("keydown", (e) => {
 .attachment-error {
   color: #ff9b9b;
   font-size: 0.6rem;
+}
+.attachment-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-left: auto;
 }
 .post-settings {
   display: flex;

@@ -1,8 +1,19 @@
 import { baseHeader } from "./request";
-import { buildMultipartFormData, requestFormData, requestJson, resolveUploadFileData } from "./helpers";
+import fetch from "electron-fetch";
+import { ApiError, buildMultipartFormData, requestFormData, requestJson, resolveUploadFileData } from "./helpers";
 import { getInstanceMetaCache, setInstanceMetaCache } from "../db";
 
 const INSTANCE_META_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+type MastodonGetMediaResult =
+  | {
+      state: "processed";
+      media: unknown;
+    }
+  | {
+      state: "processing";
+      media?: unknown;
+    };
 
 /**
  * Check whether cached instance metadata is fresh enough to skip a network request.
@@ -304,6 +315,126 @@ export const mastodonUploadMedia = async ({
       Authorization: `Bearer ${token}`,
     },
   });
+};
+
+/**
+ * Read a response body for diagnostics without letting body read failures hide the original request state.
+ */
+const readResponseBody = async (response: Awaited<ReturnType<typeof fetch>>): Promise<string> => {
+  try {
+    return await response.text();
+  } catch (error) {
+    return error instanceof Error ? `Failed to read body: ${error.message}` : "Failed to read body";
+  }
+};
+
+/**
+ * Convert fetch response headers into serializable metadata for IPC error payloads.
+ */
+const sanitizeResponseHeaders = (response: Awaited<ReturnType<typeof fetch>>): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+  return headers;
+};
+
+/**
+ * Parse a Mastodon JSON response body and report invalid responses as API errors.
+ */
+const parseMastodonJsonBody = <T>({
+  body,
+  status,
+  url,
+  headers,
+}: {
+  body: string;
+  status: number;
+  url: string;
+  headers: Record<string, string>;
+}): T => {
+  try {
+    return JSON.parse(body) as T;
+  } catch (error) {
+    throw new ApiError("Failed to parse JSON response", {
+      type: "parse",
+      status,
+      url,
+      bodyPreview: body,
+      headers,
+      message: error instanceof Error ? error.message : "JSON parse error",
+    });
+  }
+};
+
+/**
+ * Get a Mastodon media attachment processing state before attaching it to a status.
+ */
+export const mastodonGetMedia = async ({
+  instanceUrl,
+  token,
+  id,
+}: {
+  instanceUrl: string;
+  token: string;
+  id: string;
+}): Promise<MastodonGetMediaResult> => {
+  const url = new URL(`/api/v1/media/${id}`, instanceUrl).toString();
+  let response: Awaited<ReturnType<typeof fetch>>;
+  try {
+    response = await fetch(url, {
+      headers: {
+        ...baseHeader,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (error) {
+    throw new ApiError("Network request failed", {
+      type: "network",
+      url,
+      message: error instanceof Error ? error.message : "Unknown network error",
+    });
+  }
+
+  const status = response.status;
+  const responseUrl = response.url || url;
+  const headers = sanitizeResponseHeaders(response);
+  const body = await readResponseBody(response);
+
+  if (status === 206) {
+    const contentType = response.headers.get("content-type") ?? "";
+    return contentType.includes("application/json") && body
+      ? { state: "processing", media: parseMastodonJsonBody({ body, status, url: responseUrl, headers }) }
+      : { state: "processing" };
+  }
+
+  if (!response.ok) {
+    throw new ApiError(`HTTP ${status} ${response.statusText}`, {
+      type: "http",
+      status,
+      url: responseUrl,
+      bodyPreview: body,
+      headers,
+      message: response.statusText,
+    });
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) {
+    throw new ApiError("Response is not JSON", {
+      type: "parse",
+      status,
+      url: responseUrl,
+      bodyPreview: body,
+      headers,
+      message: `Expected JSON but received ${contentType || "unknown"}`,
+    });
+  }
+
+  return {
+    state: "processed",
+    media: parseMastodonJsonBody({ body, status, url: responseUrl, headers }),
+  };
 };
 
 export const mastodonPostStatus = async ({
