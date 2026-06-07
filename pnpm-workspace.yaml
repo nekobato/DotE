@@ -1,0 +1,6 @@
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: true
+  electron-winstaller: false
+  esbuild: true
+  phantomjs-prebuilt: true

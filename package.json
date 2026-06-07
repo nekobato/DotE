@@ -14,8 +14,9 @@
   "scripts": {
     "prepare": "rm -rf node_modules/electron/dist && node node_modules/electron/install.js",
     "dev": "vite",
-    "build": "pnpm prepare && vue-tsc && vite build && electron-builder --config electron-builder.config.cjs",
-    "release": "pnpm build && electron-builder --publish always -c --config electron-builder.config.cjs",
+    "build:app": "pnpm prepare && vue-tsc && vite build",
+    "build": "pnpm build:app && CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --config electron-builder.config.cjs -c.mac.identity=- -c.mac.notarize=false",
+    "release": "pnpm build:app && electron-builder --publish always -c --config electron-builder.config.cjs",
     "build:icon": "electron-icon-builder --input=./public/images/logo/icon.png --output=./public",
     "typecheck": "vue-tsc --noEmit && tsc --noEmit",
     "press": "vitepress dev docs",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@iconify/vue": "5.0.1",
+    "@types/node": "25.9.1",
     "@vitejs/plugin-vue": "6.0.7",
     "@vitejs/plugin-vue-jsx": "5.1.5",
     "@vueuse/core": "14.3.0",
