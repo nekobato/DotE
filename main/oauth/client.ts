@@ -1,12 +1,12 @@
 import {
+  oauthClientIdDiscoverableSchema,
   requestLocalLock,
   TokenInvalidError,
   TokenRefreshError,
   TokenRevokedError,
-  type OAuthClientEventMap,
+  type Session,
 } from "@atproto/oauth-client";
 import { NodeOAuthClient } from "@atproto/oauth-client-node";
-import { oauthClientIdDiscoverableSchema } from "@atproto/oauth-types";
 import log from "electron-log";
 import { blueskySessionStore, blueskyStateStore } from "./store";
 import { getBlueskyLoopbackRedirectUri, getBlueskyOAuthConfig } from "../db";
@@ -100,47 +100,48 @@ const oauthDeletionLogLevel = (cause: unknown): "info" | "warn" => {
 /**
  * Bluesky OAuth セッションの更新・削除イベントを安全にログへ記録します。
  */
-const registerBlueskyOAuthSessionLogging = (client: NodeOAuthClient): void => {
-  client.addEventListener("updated", (event: CustomEvent<OAuthClientEventMap["updated"]>) => {
-    const { sub, authMethod = "legacy", tokenSet } = event.detail;
-    const payload = {
-      sub,
-      authMethod,
-      issuer: tokenSet.iss,
-      audience: tokenSet.aud,
-      scope: tokenSet.scope,
-      expiresAt: tokenSet.expires_at,
-      hasRefreshToken: Boolean(tokenSet.refresh_token),
-    };
+const logBlueskyOAuthSessionUpdated = (sub: string, session: Session): void => {
+  const { authMethod, tokenSet } = session;
+  const payload = {
+    sub,
+    authMethod: authMethod.method,
+    keyId: "kid" in authMethod ? authMethod.kid : undefined,
+    issuer: tokenSet.iss,
+    audience: tokenSet.aud,
+    scope: tokenSet.scope,
+    expiresAt: tokenSet.expires_at,
+    hasRefreshToken: Boolean(tokenSet.refresh_token),
+  };
 
-    log.info("[oauth][bluesky] session updated", payload);
-    console.info("[oauth][bluesky] session updated", payload);
-  });
+  log.info("[oauth][bluesky] session updated", payload);
+  console.info("[oauth][bluesky] session updated", payload);
+};
 
-  client.addEventListener("deleted", (event: CustomEvent<OAuthClientEventMap["deleted"]>) => {
-    const { sub, cause } = event.detail;
-    const payload = {
-      sub,
-      cause: summarizeOAuthError(cause),
-      category:
-        cause instanceof TokenRefreshError
-          ? "refresh"
-          : cause instanceof TokenInvalidError
-            ? "invalid"
-            : cause instanceof TokenRevokedError
-              ? "revoked"
-              : "unknown",
-    };
+/**
+ * Bluesky OAuth セッション削除イベントを安全にログへ記録します。
+ */
+const logBlueskyOAuthSessionDeleted = (sub: string, cause: unknown): void => {
+  const payload = {
+    sub,
+    cause: summarizeOAuthError(cause),
+    category:
+      cause instanceof TokenRefreshError
+        ? "refresh"
+        : cause instanceof TokenInvalidError
+          ? "invalid"
+          : cause instanceof TokenRevokedError
+            ? "revoked"
+            : "unknown",
+  };
 
-    if (oauthDeletionLogLevel(cause) === "info") {
-      log.info("[oauth][bluesky] session deleted", payload);
-      console.info("[oauth][bluesky] session deleted", payload);
-      return;
-    }
+  if (oauthDeletionLogLevel(cause) === "info") {
+    log.info("[oauth][bluesky] session deleted", payload);
+    console.info("[oauth][bluesky] session deleted", payload);
+    return;
+  }
 
-    log.warn("[oauth][bluesky] session deleted", payload);
-    console.warn("[oauth][bluesky] session deleted", payload);
-  });
+  log.warn("[oauth][bluesky] session deleted", payload);
+  console.warn("[oauth][bluesky] session deleted", payload);
 };
 
 export const getBlueskyOAuthClient = async (clientId?: string): Promise<NodeOAuthClient> => {
@@ -163,8 +164,9 @@ export const getBlueskyOAuthClient = async (clientId?: string): Promise<NodeOAut
       sessionStore: blueskySessionStore,
       requestLock: requestLocalLock,
       allowHttp: true,
+      onUpdate: logBlueskyOAuthSessionUpdated,
+      onDelete: logBlueskyOAuthSessionDeleted,
     });
-    registerBlueskyOAuthSessionLogging(cachedClient);
     cachedClientId = validatedClientId;
   }
 

@@ -1,7 +1,7 @@
 import { shell } from "electron";
 import crypto from "node:crypto";
 import type { AppBskyActorGetProfile } from "@atproto/api";
-import { oauthRedirectUriSchema } from "@atproto/oauth-types";
+import { oauthRedirectUriSchema } from "@atproto/oauth-client";
 import { getBlueskyOAuthClient, getBlueskyOAuthEnvironment } from "../oauth/client";
 import { waitForOAuthCallback } from "../oauth/callback-router";
 import { createBlueskyAgent } from "../oauth/agent";
