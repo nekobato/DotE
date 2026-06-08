@@ -33,14 +33,14 @@
   },
   "main": "./dist-electron/index.js",
   "dependencies": {
-    "@atproto/api": "0.20.5",
+    "@atproto/api": "0.20.7",
     "@atproto/jwk-jose": "0.2.0",
-    "@atproto/oauth-client": "0.7.1",
-    "@atproto/oauth-client-node": "0.4.0",
+    "@atproto/oauth-client": "0.7.2",
+    "@atproto/oauth-client-node": "0.4.1",
     "electron-fetch": "1.9.1",
     "electron-log": "5.4.4",
     "electron-store": "11.0.2",
-    "electron-updater": "6.8.3",
+    "electron-updater": "6.8.8",
     "font-list": "2.1.0"
   },
   "devDependencies": {
@@ -50,10 +50,10 @@
     "@vitejs/plugin-vue-jsx": "5.1.5",
     "@vueuse/core": "14.3.0",
     "bowser": "2.14.1",
-    "electron": "42.2.0",
-    "electron-builder": "26.8.1",
+    "electron": "42.3.0",
+    "electron-builder": "26.13.0",
     "electron-icon-builder": "2.0.1",
-    "element-plus": "2.14.0",
+    "element-plus": "2.14.1",
     "mfm-js": "0.26.0",
     "misskey-js": "2026.5.4",
     "nanoid": "5.1.11",
@@ -68,13 +68,13 @@
     "stylelint-order": "8.1.1",
     "typescript": "6.0.3",
     "vite": "8.0.14",
-    "vite-plugin-electron": "0.29.1",
-    "vite-plugin-electron-renderer": "0.14.7",
+    "vite-plugin-electron": "1.0.0",
+    "vite-plugin-electron-renderer": "1.0.0",
     "vite-plugin-resolve": "2.5.2",
     "vitepress": "1.6.4",
-    "vue": "3.5.34",
-    "vue-router": "5.0.7",
-    "vue-tsc": "3.3.1"
+    "vue": "3.5.35",
+    "vue-router": "5.1.0",
+    "vue-tsc": "3.3.3"
   },
   "packageManager": "pnpm@11.2.2"
 }
