@@ -6,5 +6,10 @@ import "element-plus/theme-chalk/dark/css-vars.css";
 import "./assets/styles/index.scss";
 import App from "./App.vue";
 import router from "./router";
+import { initializeRendererSentry } from "./sentry";
 
-createApp(App).use(createPinia()).use(router).use(ElementPlus).mount("#app");
+const app = createApp(App).use(createPinia()).use(router).use(ElementPlus);
+
+initializeRendererSentry(app);
+
+app.mount("#app");

@@ -4,6 +4,7 @@ import { createMainWindow } from "./windows/mainWindow";
 import { createPostWindow } from "./windows/postWindow";
 import { createMediaViewerWindow } from "./windows/mediaViewerWindow";
 import { DEBUG, isMac } from "./env";
+import { initializeMainSentry } from "./sentry";
 import { release } from "os";
 import menuTemplate from "./menu";
 import * as db from "./db";
@@ -18,6 +19,8 @@ import { getFonts } from "font-list";
 
 const isElectronRuntime = Boolean(process.versions?.electron);
 const electronApp = (electron as unknown as { app?: typeof app }).app ?? app;
+
+initializeMainSentry();
 
 const extractCustomSchemeUrls = (args: readonly string[]): string[] => {
   return args.filter((arg) => typeof arg === "string" && arg.startsWith(APP_PROTOCOL_PREFIX));
