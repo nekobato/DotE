@@ -41,6 +41,8 @@ export type Timeline = {
   available: boolean;
   lastReadId?: string;
   lastReadAt?: string;
+  lastReadNotificationId?: string;
+  lastReadNotificationAt?: string;
 };
 
 type InsranceBase = {
@@ -123,6 +125,9 @@ export type Settings = {
   misskey: {
     hideCw: boolean;
     showReactions: boolean;
+  };
+  notifications: {
+    markAsRead: "manual" | "onOpen";
   };
   /**
    * Legacy Bluesky OAuth settings.

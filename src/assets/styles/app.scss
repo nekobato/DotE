@@ -49,6 +49,10 @@ input {
   &.dote-post.is-read.is-latest-read {
     border-top: 4px solid var(--dote-border-color);
   }
+
+  &.dote-post.is-unread-notification {
+    border-left: 4px solid var(--color-accent);
+  }
 }
 
 .dote-field-group-title {

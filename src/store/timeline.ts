@@ -11,6 +11,15 @@ import { useBlueskyStore } from "./bluesky";
 import { useMisskeyStore } from "./misskey";
 import { useMastodonStore } from "./mastodon";
 import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
+import {
+  countUnreadNotifications,
+  isBlueskyNotification,
+  isNotificationChannel,
+  isUnreadNotification,
+  resolveLatestNotificationMarker,
+  type DotENotification,
+  type NotificationReadMarker,
+} from "@/utils/notifications";
 
 export const useTimelineStore = defineStore("timeline", () => {
   const store = useStore();
@@ -18,6 +27,7 @@ export const useTimelineStore = defineStore("timeline", () => {
   const currentIndex = computed(() => store.$state.timelines.findIndex((timeline) => timeline.available));
   const timelines = computed(() => store.$state.timelines);
   let lastReadSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  let markNotificationsAsReadTask: Promise<boolean> | undefined;
 
   /**
    * Get the currently active timeline state.
@@ -58,6 +68,21 @@ export const useTimelineStore = defineStore("timeline", () => {
   const resetReadmoreState = (timeline: TimelineStore) => {
     timeline.readmoreLocked = false;
     timeline.pendingNewPosts = [];
+  };
+
+  /**
+   * Remove timeline-only runtime fields before persisting a timeline.
+   */
+  const toPersistedTimeline = (timeline: TimelineStore): Timeline => {
+    const { posts, notifications, bluesky, pendingNewPosts, readmoreLocked, ...timelineForStore } = timeline;
+    return timelineForStore;
+  };
+
+  /**
+   * Persist a timeline without renderer-only fields.
+   */
+  const persistTimeline = async (timeline: TimelineStore) => {
+    await ipcInvoke("db:set-timeline", toPersistedTimeline(timeline));
   };
 
   /**
@@ -103,6 +128,26 @@ export const useTimelineStore = defineStore("timeline", () => {
 
   const pendingNewPostsCount = computed(() => getCurrentTimeline()?.pendingNewPosts?.length ?? 0);
   const isReadmoreLocked = computed(() => getCurrentTimeline()?.readmoreLocked ?? false);
+  const notificationUnreadCountByTimelineId = computed(() => {
+    return store.$state.timelines.reduce<Record<string, number>>((counts, timeline) => {
+      if (!isNotificationChannel(timeline.channel)) {
+        return counts;
+      }
+
+      counts[timeline.id] = countUnreadNotifications({
+        notifications: timeline.notifications as DotENotification[],
+        markerId: timeline.lastReadNotificationId,
+        markerAt: timeline.lastReadNotificationAt,
+      });
+      return counts;
+    }, {});
+  });
+  const currentNotificationUnreadCount = computed(() => {
+    const timeline = getCurrentTimeline();
+    if (!timeline) return 0;
+    return notificationUnreadCountByTimelineId.value[timeline.id] ?? 0;
+  });
+  const isCurrentNotificationTimeline = computed(() => isNotificationChannel(getCurrentTimeline()?.channel));
 
   const setPosts = (posts: DotEPost[]) => {
     const timeline = getCurrentTimeline();
@@ -142,15 +187,143 @@ export const useTimelineStore = defineStore("timeline", () => {
       clearTimeout(lastReadSaveTimer);
     }
     lastReadSaveTimer = setTimeout(async () => {
-      const { posts, notifications, bluesky, pendingNewPosts, readmoreLocked, ...timelineForStore } = timeline;
       try {
-        await ipcInvoke("db:set-timeline", timelineForStore);
+        await persistTimeline(timeline);
       } catch (error) {
         console.error("Failed to persist timeline lastReadId", error);
         timeline.lastReadId = previousLastReadId;
         timeline.lastReadAt = previousLastReadAt;
       }
     }, 400);
+  };
+
+  /**
+   * Resolve unread count for a timeline id.
+   */
+  const getNotificationUnreadCount = (timelineId?: string) => {
+    if (!timelineId) return 0;
+    return notificationUnreadCountByTimelineId.value[timelineId] ?? 0;
+  };
+
+  /**
+   * Check whether a notification is unread in the current timeline.
+   */
+  const isCurrentNotificationUnread = (notification: DotENotification) => {
+    const timeline = getCurrentTimeline();
+    if (!timeline) return false;
+    return isUnreadNotification({
+      notification,
+      markerId: timeline.lastReadNotificationId,
+      markerAt: timeline.lastReadNotificationAt,
+    });
+  };
+
+  /**
+   * Mark locally cached Bluesky notifications as read after updateSeen succeeds.
+   */
+  const markBlueskyNotificationsAsRead = (timeline: TimelineStore) => {
+    timeline.notifications = timeline.notifications.map((notification) => {
+      const item = notification as DotENotification;
+      if (!isBlueskyNotification(item)) return notification;
+      return {
+        ...item,
+        isRead: true,
+      };
+    }) as MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[];
+  };
+
+  /**
+   * Apply DotE's local notification read marker to a timeline.
+   */
+  const applyNotificationReadMarker = (timeline: TimelineStore, marker: NotificationReadMarker) => {
+    timeline.lastReadNotificationId = marker.id;
+    timeline.lastReadNotificationAt = marker.at;
+    markBlueskyNotificationsAsRead(timeline);
+  };
+
+  /**
+   * Synchronize the notification read marker with the active platform.
+   */
+  const markPlatformNotificationsAsRead = async (marker: NotificationReadMarker) => {
+    if (!current.value || !currentUser.value || !currentInstance.value) {
+      throw new Error("ユーザーが見つかりませんでした");
+    }
+
+    if (currentInstance.value.type === "bluesky" && !currentUser.value.blueskySession?.did) {
+      throw new Error("Blueskyセッション情報が見つかりませんでした");
+    }
+
+    const result =
+      currentInstance.value.type === "misskey"
+        ? await ipcInvoke("api", {
+            method: "misskey:markAllNotificationsAsRead",
+            instanceUrl: currentInstance.value.url,
+            token: currentUser.value.token,
+          })
+        : currentInstance.value.type === "mastodon"
+          ? await ipcInvoke("api", {
+              method: "mastodon:updateNotificationMarker",
+              instanceUrl: currentInstance.value.url,
+              token: currentUser.value.token,
+              notificationId: marker.id,
+            })
+          : await ipcInvoke("api", {
+              method: "bluesky:updateSeenNotifications",
+              did: currentUser.value.blueskySession!.did,
+              seenAt: new Date().toISOString(),
+            });
+
+    if (!result.ok) {
+      throw new Error(result.error.message);
+    }
+  };
+
+  /**
+   * Mark loaded notifications in the active notification timeline as read.
+   */
+  const markCurrentNotificationsAsReadInternal = async () => {
+    const timeline = getCurrentTimeline();
+    if (!timeline || !isNotificationChannel(timeline.channel)) return false;
+    if (currentNotificationUnreadCount.value === 0) return false;
+
+    const latestMarker = resolveLatestNotificationMarker(timeline.notifications as DotENotification[]);
+    if (!latestMarker) return false;
+    const marker = {
+      ...latestMarker,
+      at: new Date().toISOString(),
+    };
+
+    const previousLastReadNotificationId = timeline.lastReadNotificationId;
+    const previousLastReadNotificationAt = timeline.lastReadNotificationAt;
+    const previousNotifications = [...timeline.notifications] as TimelineStore["notifications"];
+
+    applyNotificationReadMarker(timeline, marker);
+
+    try {
+      await markPlatformNotificationsAsRead(marker);
+      await persistTimeline(timeline);
+      return true;
+    } catch (error) {
+      timeline.lastReadNotificationId = previousLastReadNotificationId;
+      timeline.lastReadNotificationAt = previousLastReadNotificationAt;
+      timeline.notifications = previousNotifications;
+      store.$state.errors.push({
+        message: "通知の既読化に失敗しました",
+      });
+      console.error("Failed to mark notifications as read", error);
+      return false;
+    }
+  };
+
+  /**
+   * Mark loaded notifications in the active notification timeline as read without overlapping requests.
+   */
+  const markCurrentNotificationsAsRead = async () => {
+    if (markNotificationsAsReadTask) return markNotificationsAsReadTask;
+    markNotificationsAsReadTask = markCurrentNotificationsAsReadInternal().finally(() => {
+      markNotificationsAsReadTask = undefined;
+    });
+    return markNotificationsAsReadTask;
   };
 
   // missky, mastodon, bluesky
@@ -264,14 +437,6 @@ export const useTimelineStore = defineStore("timeline", () => {
       id: timelineId,
     });
     await normalizeTimelinesAfterDeletion();
-  };
-
-  /**
-   * Remove timeline-only runtime fields before persisting a timeline.
-   */
-  const toPersistedTimeline = (timeline: TimelineStore): Timeline => {
-    const { posts, notifications, bluesky, pendingNewPosts, readmoreLocked, ...timelineForStore } = timeline;
-    return timelineForStore;
   };
 
   const changeActiveTimeline = async (index: number) => {
@@ -406,5 +571,10 @@ export const useTimelineStore = defineStore("timeline", () => {
     applyPendingNewPosts,
     pendingNewPostsCount,
     isReadmoreLocked,
+    currentNotificationUnreadCount,
+    isCurrentNotificationTimeline,
+    getNotificationUnreadCount,
+    isCurrentNotificationUnread,
+    markCurrentNotificationsAsRead,
   };
 });

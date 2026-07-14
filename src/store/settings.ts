@@ -69,6 +69,14 @@ export const useSettingsStore = defineStore("settings", () => {
     return await ipcInvoke("settings:set", { key: "text2Speech.enabled", value: value });
   };
 
+  /**
+   * Persist the notification read timing.
+   */
+  const setNotificationMarkAsRead = async (value: Settings["notifications"]["markAsRead"]) => {
+    store.$state.settings.notifications.markAsRead = value;
+    return await ipcInvoke("settings:set", { key: "notifications.markAsRead", value });
+  };
+
   return {
     setOpacity,
     setMode,
@@ -80,6 +88,7 @@ export const useSettingsStore = defineStore("settings", () => {
     setMisskeyHideCw,
     setMisskeyShowReactions,
     setText2SpeechEnabled,
+    setNotificationMarkAsRead,
     fetchSystemFonts,
   };
 });

@@ -271,6 +271,33 @@ export const mastodonGetNotifications = async ({
   });
 };
 
+/**
+ * Save Mastodon's notification read marker for the authenticated user.
+ */
+export const mastodonUpdateNotificationMarker = async ({
+  instanceUrl,
+  token,
+  notificationId,
+}: {
+  instanceUrl: string;
+  token: string;
+  notificationId: string;
+}) => {
+  const url = new URL(`/api/v1/markers`, instanceUrl).toString();
+  const body = new URLSearchParams();
+  body.set("notifications[last_read_id]", notificationId);
+
+  return requestJson(url, {
+    method: "POST",
+    headers: {
+      ...baseHeader,
+      "content-type": "application/x-www-form-urlencoded",
+      Authorization: `Bearer ${token}`,
+    },
+    body: body.toString(),
+  });
+};
+
 export const mastodonUploadMedia = async ({
   instanceUrl,
   token,

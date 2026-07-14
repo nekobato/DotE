@@ -46,6 +46,7 @@ import {
   resolveBlueskyReplyRef,
 } from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
+import { resolveNotificationId, type DotENotification } from "@/utils/notifications";
 
 // Composables
 import { useTimelineState } from "@/composables/useTimelineState";
@@ -252,6 +253,19 @@ const postIdsKey = computed(() => {
   return posts.map((post) => resolvePostId(post)).join("|");
 });
 
+const notificationIdsKey = computed(() => {
+  const notifications = (timelineStore.current?.notifications ?? []) as DotENotification[];
+  return notifications.map((notification) => resolveNotificationId(notification)).join("|");
+});
+
+const shouldAutoMarkNotificationsAsRead = computed(() => {
+  return (
+    store.settings.notifications.markAsRead === "onOpen" &&
+    timelineStore.isCurrentNotificationTimeline &&
+    timelineStore.currentNotificationUnreadCount > 0
+  );
+});
+
 const lastReadIndex = computed(() => {
   const lastReadId = timelineStore.current?.lastReadId;
   if (!lastReadId) return -1;
@@ -277,6 +291,17 @@ const readPostClasses = (post: TimelinePostIdSource) => {
   return {
     "is-read": isLatestRead,
     "is-latest-read": isLatestRead,
+  };
+};
+
+/**
+ * Resolve CSS classes that express read state on a notification.
+ */
+const notificationReadClasses = (notification: DotENotification) => {
+  const isUnread = timelineStore.isCurrentNotificationUnread(notification);
+
+  return {
+    "is-unread-notification": isUnread,
   };
 };
 
@@ -527,6 +552,21 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () =>
+    [
+      timelineStore.current?.id,
+      notificationIdsKey.value,
+      store.settings.notifications.markAsRead,
+      timelineStore.currentNotificationUnreadCount,
+    ] as const,
+  () => {
+    if (!shouldAutoMarkNotificationsAsRead.value) return;
+    void timelineStore.markCurrentNotificationsAsRead();
+  },
+  { immediate: true },
+);
+
 onBeforeUnmount(() => {
   resetPostObserver();
 });
@@ -579,7 +619,7 @@ onBeforeUnmount(() => {
         />
         <MisskeyNotification
           v-if="timelineStore.current.channel === 'misskey:notifications'"
-          class="post-item"
+          :class="['post-item', notificationReadClasses(notification as DotENotification)]"
           v-for="notification in timelineStore.current.notifications as MisskeyEntities.Notification[]"
           :notification="notification"
           :emojis="emojis"
@@ -612,6 +652,7 @@ onBeforeUnmount(() => {
           v-if="timelineStore.current.channel === 'mastodon:notifications'"
           v-for="notification in timelineStore.current?.notifications as MastodonNotificationType[]"
           :key="notification.id"
+          :class="['post-item', notificationReadClasses(notification as DotENotification)]"
           :type="notification.type"
           :by="notification.account"
           :post="notification.status"
@@ -621,6 +662,7 @@ onBeforeUnmount(() => {
           v-if="timelineStore.current.channel === 'bluesky:notifications'"
           v-for="notification in timelineStore.current.notifications as BlueskyNotificationType[]"
           :key="resolveBlueskyNotificationId(notification)"
+          :class="['post-item', notificationReadClasses(notification as DotENotification)]"
           :notification="notification"
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"

@@ -27,6 +27,7 @@ export const apiRequest = {
   ["misskey:getMyAntennas"]: misskeyRequest.misskeyGetMyAntennas,
   ["misskey:getUserLists"]: misskeyRequest.misskeyGetUserLists,
   ["misskey:getNotifications"]: misskeyRequest.misskeyGetNotifications,
+  ["misskey:markAllNotificationsAsRead"]: misskeyRequest.misskeyMarkAllNotificationsAsRead,
 
   ["mastodon:registerApp"]: mastodonRequest.mastodonRegisterApp,
   ["mastodon:getAccessToken"]: mastodonRequest.mastodonGetAccessToken,
@@ -38,6 +39,7 @@ export const apiRequest = {
   ["mastodon:getTimelineHashtag"]: mastodonRequest.mastodonGetTimelineHashtag,
   ["mastodon:getTimelineList"]: mastodonRequest.mastodonGetTimelineList,
   ["mastodon:getNotifications"]: mastodonRequest.mastodonGetNotifications,
+  ["mastodon:updateNotificationMarker"]: mastodonRequest.mastodonUpdateNotificationMarker,
   ["mastodon:uploadMedia"]: mastodonRequest.mastodonUploadMedia,
   ["mastodon:getMedia"]: mastodonRequest.mastodonGetMedia,
   ["mastodon:postStatus"]: mastodonRequest.mastodonPostStatus,
@@ -54,6 +56,7 @@ export const apiRequest = {
   ["bluesky:getProfile"]: blueskyRequest.blueskyGetProfile,
   ["bluesky:getTimeline"]: blueskyRequest.blueskyGetTimeline,
   ["bluesky:getNotifications"]: blueskyRequest.blueskyGetNotifications,
+  ["bluesky:updateSeenNotifications"]: blueskyRequest.blueskyUpdateSeenNotifications,
   ["bluesky:getPosts"]: blueskyRequest.blueskyGetPosts,
   ["bluesky:uploadImage"]: blueskyRequest.blueskyUploadImage,
   ["bluesky:createPost"]: blueskyRequest.blueskyCreatePost,

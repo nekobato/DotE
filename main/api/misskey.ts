@@ -346,6 +346,26 @@ export const misskeyGetNotifications = async ({
   });
 };
 
+/**
+ * Mark all Misskey notifications as read for the authenticated user.
+ */
+export const misskeyMarkAllNotificationsAsRead = async ({
+  instanceUrl,
+  token,
+}: {
+  instanceUrl: string;
+  token: string;
+}) => {
+  const url = new URL(`/api/notifications/mark-all-as-read`, instanceUrl).toString();
+  return requestJsonAllowEmpty(url, {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({
+      i: token,
+    }),
+  });
+};
+
 export const misskeyCreateReaction = async ({
   instanceUrl,
   token,

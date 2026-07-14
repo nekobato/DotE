@@ -160,6 +160,15 @@ export const blueskyGetNotifications = async ({
 };
 
 /**
+ * Mark Bluesky notifications as seen up to the supplied timestamp.
+ */
+export const blueskyUpdateSeenNotifications = async ({ did, seenAt }: { did: string; seenAt?: string }) => {
+  return withAgent(did, async (agent) => {
+    return agent.updateSeenNotifications(seenAt);
+  });
+};
+
+/**
  * Fetch hydrated Bluesky post views for AT URIs.
  */
 export const blueskyGetPosts = async ({ did, uris }: { did: string; uris: string[] }) => {

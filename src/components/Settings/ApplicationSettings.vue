@@ -77,6 +77,17 @@ const themeOptions = [
   },
 ];
 
+const notificationMarkAsReadOptions: { label: string; value: Settings["notifications"]["markAsRead"] }[] = [
+  {
+    label: "手動",
+    value: "manual",
+  },
+  {
+    label: "通知タイムラインを開いたら",
+    value: "onOpen",
+  },
+];
+
 const onChangePostStyle = (value: string | number | boolean) => {
   settingsStore.setPostStyle(value as Settings["postStyle"]);
 };
@@ -114,6 +125,13 @@ const onChangeShowReaction = async (value: string | number | boolean) => {
 
 const onChangeText2Speech = async (value: string | number | boolean) => {
   await settingsStore.setText2SpeechEnabled(!!value);
+};
+
+/**
+ * Persist notification read timing.
+ */
+const onChangeNotificationMarkAsRead = async (value: string | number | boolean) => {
+  await settingsStore.setNotificationMarkAsRead(value as Settings["notifications"]["markAsRead"]);
 };
 </script>
 
@@ -211,6 +229,27 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
       </div>
       <div class="form-actions">
         <ElSwitch :model-value="store.settings.text2Speech.enabled" @change="onChangeText2Speech" />
+      </div>
+    </div>
+
+    <div class="dote-field-row indent-1">
+      <div class="content">
+        <span class="title">通知の既読化</span>
+      </div>
+      <div class="form-actions">
+        <ElSelect
+          class="action-field notification-read-field"
+          :model-value="store.settings.notifications.markAsRead"
+          size="small"
+          @change="onChangeNotificationMarkAsRead"
+        >
+          <ElOption
+            v-for="option in notificationMarkAsReadOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </ElSelect>
       </div>
     </div>
 
@@ -314,5 +353,8 @@ const onChangeText2Speech = async (value: string | number | boolean) => {
 }
 .font-field {
   width: 220px;
+}
+.notification-read-field {
+  width: 190px;
 }
 </style>

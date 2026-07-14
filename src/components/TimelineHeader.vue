@@ -156,9 +156,19 @@ const timelineWithImages = computed(() => {
       accountHost: getInstanceDisplayHost(instance),
       channelLabel: getChannelLabel(timeline.channel),
       images: toTimelineImages(instance, user, timeline.channel),
+      unreadCount: timelineStore.getNotificationUnreadCount(timeline.id),
     };
   });
 });
+
+const currentNotificationUnreadCount = computed(() => timelineStore.currentNotificationUnreadCount);
+
+/**
+ * Format unread counts for compact badge display.
+ */
+const formatUnreadCount = (count: number) => {
+  return count > 99 ? "99+" : String(count);
+};
 
 const currentEmojis = computed(() => {
   if (timelineStore.currentInstance?.type !== "misskey") return [];
@@ -265,10 +275,10 @@ type HeaderActionButton = {
   className: string;
   icon: string;
   title: string;
-  onClick: () => void;
+  onClick: () => void | Promise<void>;
 };
 
-const headerActionButtons: HeaderActionButton[] = [
+const baseHeaderActionButtons: HeaderActionButton[] = [
   {
     className: "haze",
     icon: "mingcute:ghost-line",
@@ -294,6 +304,30 @@ const headerActionButtons: HeaderActionButton[] = [
     onClick: settings,
   },
 ];
+
+/**
+ * Mark the active notification timeline as read.
+ */
+const markNotificationsAsRead = async () => {
+  await timelineStore.markCurrentNotificationsAsRead();
+  toggleMenu();
+};
+
+const headerActionButtons = computed<HeaderActionButton[]>(() => {
+  const notificationActions =
+    timelineStore.isCurrentNotificationTimeline && currentNotificationUnreadCount.value > 0
+      ? [
+          {
+            className: "mark-read",
+            icon: "mingcute:check-circle-line",
+            title: "通知を既読にする",
+            onClick: markNotificationsAsRead,
+          },
+        ]
+      : [];
+
+  return [...baseHeaderActionButtons.slice(0, 3), ...notificationActions, ...baseHeaderActionButtons.slice(3)];
+});
 
 const changeTimeline = async (index: number) => {
   await timelineStore.changeActiveTimeline(index);
@@ -361,6 +395,13 @@ onBeforeUnmount(() => {
           @error="hideTimelineImage"
         />
         <ChannelIcon v-if="currentTimelineImages.channel" :channel="currentTimelineImages.channel" />
+        <span
+          v-if="currentNotificationUnreadCount > 0"
+          class="notification-badge"
+          :aria-label="`未読通知 ${currentNotificationUnreadCount} 件`"
+        >
+          {{ formatUnreadCount(currentNotificationUnreadCount) }}
+        </span>
       </div>
     </div>
     <div
@@ -432,6 +473,13 @@ onBeforeUnmount(() => {
               @error="hideTimelineImage"
             />
             <ChannelIcon v-if="timeline.images.channel" :channel="timeline.images.channel" />
+            <span
+              v-if="timeline.unreadCount > 0"
+              class="notification-badge"
+              :aria-label="`未読通知 ${timeline.unreadCount} 件`"
+            >
+              {{ formatUnreadCount(timeline.unreadCount) }}
+            </span>
           </div>
           <div class="timeline-title">
             <div class="account">
@@ -496,6 +544,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 .timeline-images {
+  position: relative;
   display: inline-flex;
   flex: 0 0 160px;
   gap: 12px;
@@ -505,7 +554,7 @@ onBeforeUnmount(() => {
   width: 160px;
   min-width: 160px;
   height: 24px;
-  overflow: hidden;
+  overflow: visible;
   background: var(--dote-color-white-t2);
   border: 1px solid transparent;
   border-radius: 4px;
@@ -536,6 +585,26 @@ onBeforeUnmount(() => {
       visibility: hidden;
     }
   }
+}
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  color: #ffffff;
+  font-weight: bold;
+  font-size: var(--font-size-10);
+  line-height: 1;
+  white-space: nowrap;
+  background: var(--color-accent);
+  border: 1px solid var(--dote-background-color);
+  border-radius: 9px;
+  pointer-events: none;
 }
 .summary {
   position: relative;

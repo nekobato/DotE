@@ -83,6 +83,9 @@ export const storeDefaults: StoreSchema = {
       hideCw: false,
       showReactions: true,
     },
+    notifications: {
+      markAsRead: "manual",
+    },
   },
   blueskySessions: {},
   instanceMetaCache: {},
@@ -111,6 +114,8 @@ const schema: Schema<StoreSchema> = {
         available: { type: "boolean" },
         lastReadId: { type: "string" },
         lastReadAt: { type: "string" },
+        lastReadNotificationId: { type: "string" },
+        lastReadNotificationAt: { type: "string" },
       },
       required: ["id", "userId", "channel", "available"],
     },
@@ -177,6 +182,12 @@ const schema: Schema<StoreSchema> = {
         properties: {
           hideCw: { type: "boolean" },
           showReactions: { type: "boolean" },
+        },
+      },
+      notifications: {
+        type: "object",
+        properties: {
+          markAsRead: { type: "string", enum: ["manual", "onOpen"] },
         },
       },
       bluesky: {
@@ -561,6 +572,8 @@ export const setSetting = (key: string, value: any) => {
       return store.set("settings.misskey.showReactions", value);
     case "text2Speech.enabled":
       return store.set("settings.text2Speech.enabled", value);
+    case "notifications.markAsRead":
+      return store.set("settings.notifications.markAsRead", value);
     default:
       throw new Error(`${key} is not defined key.`);
   }

@@ -79,6 +79,9 @@ const initialSettings: Settings = {
     hideCw: false,
     showReactions: true,
   },
+  notifications: {
+    markAsRead: "manual",
+  },
 };
 
 // DBから取得した生データ全て
