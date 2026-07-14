@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import path from "node:path";
 import electron from "vite-plugin-electron/simple";
+import { notBundle } from "vite-plugin-electron/plugin";
 import vue from "@vitejs/plugin-vue";
 import vueJsx from "@vitejs/plugin-vue-jsx";
 
@@ -12,11 +13,7 @@ export default defineConfig({
       main: {
         entry: "main/index.ts",
         vite: {
-          build: {
-            rollupOptions: {
-              external: ["font-list"],
-            },
-          },
+          plugins: [notBundle()],
         },
       },
       preload: {
