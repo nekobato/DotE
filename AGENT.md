@@ -15,8 +15,8 @@ DotEはFediverseのクライアントアプリケーションです。Fediverse�
 
 ### 開発環境
 
-- Node.js 22.x
-- pnpm 8.x
+- Node.js: `.node-version` に従う
+- pnpm: `package.json` の `packageManager` に従う
 
 ## プロジェクト構造
 
@@ -76,6 +76,10 @@ DotEはFediverseのクライアントアプリケーションです。Fediverse�
 - Vitestを使用してユニットテストを実行する
 - テストファイルは実装ファイルの隣に配置する
 - テストファイル名は`*.spec.ts`とする
+- `pnpm test` でユニットテストを一度だけ実行する
+- `pnpm typecheck` で型検査を実行する
+- PRでは `.github/workflows/test.yml` が同じコマンドを実行する
+- ユニットテストは `vitest.config.mts` を使い、Electronの起動や実アカウントへの接続を必要としない
 
 ### E2Eテスト
 
