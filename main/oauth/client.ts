@@ -164,8 +164,8 @@ export const getBlueskyOAuthClient = async (clientId?: string): Promise<NodeOAut
       sessionStore: blueskySessionStore,
       requestLock: requestLocalLock,
       allowHttp: true,
-      onUpdate: logBlueskyOAuthSessionUpdated,
-      onDelete: logBlueskyOAuthSessionDeleted,
+      onSessionUpdated: logBlueskyOAuthSessionUpdated,
+      onSessionDeleted: logBlueskyOAuthSessionDeleted,
     });
     cachedClientId = validatedClientId;
   }
