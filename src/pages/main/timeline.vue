@@ -46,7 +46,8 @@ import {
   resolveBlueskyReplyRef,
 } from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
-import { resolveNotificationId, type DotENotification } from "@/utils/notifications";
+import type { DotENotification } from "@/utils/notifications";
+import { useNotificationReadSync } from "@/composables/useNotificationReadSync";
 
 // Composables
 import { useTimelineState } from "@/composables/useTimelineState";
@@ -251,19 +252,6 @@ const postIndexMap = computed(() => {
 const postIdsKey = computed(() => {
   const posts = (timelineStore.current?.posts ?? []) as TimelinePostIdSource[];
   return posts.map((post) => resolvePostId(post)).join("|");
-});
-
-const notificationIdsKey = computed(() => {
-  const notifications = (timelineStore.current?.notifications ?? []) as DotENotification[];
-  return notifications.map((notification) => resolveNotificationId(notification)).join("|");
-});
-
-const shouldAutoMarkNotificationsAsRead = computed(() => {
-  return (
-    store.settings.notifications.markAsRead === "onOpen" &&
-    timelineStore.isCurrentNotificationTimeline &&
-    timelineStore.currentNotificationUnreadCount > 0
-  );
 });
 
 const lastReadIndex = computed(() => {
@@ -552,20 +540,7 @@ watch(
   { immediate: true },
 );
 
-watch(
-  () =>
-    [
-      timelineStore.current?.id,
-      notificationIdsKey.value,
-      store.settings.notifications.markAsRead,
-      timelineStore.currentNotificationUnreadCount,
-    ] as const,
-  () => {
-    if (!shouldAutoMarkNotificationsAsRead.value) return;
-    void timelineStore.markCurrentNotificationsAsRead();
-  },
-  { immediate: true },
-);
+useNotificationReadSync();
 
 onBeforeUnmount(() => {
   resetPostObserver();
