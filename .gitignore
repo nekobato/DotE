@@ -31,6 +31,7 @@ prisma/dev.db-journal
 release
 dist-electron
 .output
+output
 .nuxt
 electron-builder.env
 AGENTS.md

@@ -10,6 +10,7 @@ import { useUsersStore } from "@/store/users";
 import { useInstanceStore } from "@/store/instance";
 import { onClickOutside } from "@vueuse/core";
 import ChannelIcon from "./ChannelIcon.vue";
+import NotificationBadge from "./NotificationBadge.vue";
 import { useStore } from "@/store";
 import { mastodonChannelsMap } from "@/utils/mastodon";
 import { misskeyChannelsMap } from "@/utils/misskey";
@@ -162,13 +163,6 @@ const timelineWithImages = computed(() => {
 });
 
 const currentNotificationUnreadCount = computed(() => timelineStore.currentNotificationUnreadCount);
-
-/**
- * Format unread counts for compact badge display.
- */
-const formatUnreadCount = (count: number) => {
-  return count > 99 ? "99+" : String(count);
-};
 
 const currentEmojis = computed(() => {
   if (timelineStore.currentInstance?.type !== "misskey") return [];
@@ -395,13 +389,7 @@ onBeforeUnmount(() => {
           @error="hideTimelineImage"
         />
         <ChannelIcon v-if="currentTimelineImages.channel" :channel="currentTimelineImages.channel" />
-        <span
-          v-if="currentNotificationUnreadCount > 0"
-          class="notification-badge"
-          :aria-label="`未読通知 ${currentNotificationUnreadCount} 件`"
-        >
-          {{ formatUnreadCount(currentNotificationUnreadCount) }}
-        </span>
+        <NotificationBadge :count="currentNotificationUnreadCount" />
       </div>
     </div>
     <div
@@ -473,13 +461,7 @@ onBeforeUnmount(() => {
               @error="hideTimelineImage"
             />
             <ChannelIcon v-if="timeline.images.channel" :channel="timeline.images.channel" />
-            <span
-              v-if="timeline.unreadCount > 0"
-              class="notification-badge"
-              :aria-label="`未読通知 ${timeline.unreadCount} 件`"
-            >
-              {{ formatUnreadCount(timeline.unreadCount) }}
-            </span>
+            <NotificationBadge :count="timeline.unreadCount" />
           </div>
           <div class="timeline-title">
             <div class="account">
