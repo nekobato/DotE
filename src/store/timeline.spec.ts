@@ -106,6 +106,34 @@ describe("notification read synchronization", () => {
     expect(saved.every((value) => !("notifications" in value) && !("posts" in value))).toBe(true);
   });
 
+  it.each(platforms)("does not persist a stale %s active timeline snapshot after switching away", async (type) => {
+    const { root, timeline: b, store } = setup(type, "b", true);
+    setup(type, "c", false);
+    const first = deferred();
+    invoke.mockImplementation((event) => (event === "api" ? first.promise : Promise.resolve({ ok: true })));
+
+    const readB = store.markCurrentNotificationsAsRead();
+    root.$state.timelines = root.$state.timelines.map((timeline) => ({
+      ...timeline,
+      available: timeline.id === "c",
+    }));
+    expect(b.available).toBe(true);
+
+    first.resolve({ ok: true });
+    expect(await readB).toBe(true);
+
+    const savedB = invoke.mock.calls
+      .filter(([event]) => event === "db:set-timeline")
+      .map(([, value]) => value)
+      .find((value) => value.id === "b");
+    expect(savedB).toMatchObject({
+      id: "b",
+      available: false,
+      lastReadNotificationId: expect.any(String),
+      lastReadNotificationAt: expect.any(String),
+    });
+  });
+
   it.each(platforms)("deduplicates %s requests until persistence finishes", async (type) => {
     const { store } = setup(type);
     const save = deferred();

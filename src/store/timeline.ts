@@ -86,6 +86,18 @@ export const useTimelineStore = defineStore("timeline", () => {
   };
 
   /**
+   * Persist only the notification read marker onto the latest timeline snapshot.
+   */
+  const persistNotificationReadMarker = async (timeline: TimelineStore, marker: NotificationReadMarker) => {
+    const latestTimeline = store.$state.timelines.find((item) => item.id === timeline.id) ?? timeline;
+    await ipcInvoke("db:set-timeline", {
+      ...toPersistedTimeline(latestTimeline),
+      lastReadNotificationId: marker.id,
+      lastReadNotificationAt: marker.at,
+    });
+  };
+
+  /**
    * Queue posts while readmore is active.
    */
   const queuePendingPosts = (posts: DotEPost[]) => {
@@ -306,7 +318,7 @@ export const useTimelineStore = defineStore("timeline", () => {
 
     try {
       await markPlatformNotificationsAsRead(timeline, marker);
-      await persistTimeline(timeline);
+      await persistNotificationReadMarker(timeline, marker);
       return true;
     } catch (error) {
       timeline.lastReadNotificationId = previousLastReadNotificationId;
