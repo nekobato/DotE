@@ -342,6 +342,7 @@ export const misskeyGetNotifications = async ({
       limit,
       sinceId,
       untilId,
+      markAsRead: false,
     }),
   });
 };

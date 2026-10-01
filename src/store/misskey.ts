@@ -522,6 +522,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
     if (!timeline.current || !timeline.currentUser || !timeline.currentInstance) {
       throw new Error("ユーザーが見つかりませんでした");
     }
+    const target = timeline.current;
 
     const result = await ipcInvoke("api", {
       method: methodOfChannel[timeline.current.channel],
@@ -538,9 +539,9 @@ export const useMisskeyStore = defineStore("misskey", () => {
     const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
     if (!data) return;
 
-    if (timeline.current.channel === "misskey:notifications") {
-      timeline.setNotifications(data);
-    } else {
+    if (target.channel === "misskey:notifications") {
+      timeline.setNotifications(data, target.id);
+    } else if (timeline.current?.id === target.id && timeline.current.channel === target.channel) {
       timeline.setPosts(data);
     }
   };

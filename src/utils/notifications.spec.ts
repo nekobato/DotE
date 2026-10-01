@@ -74,6 +74,34 @@ const misskey = (id: string, createdAt = at) =>
   ({ id, createdAt, type: "follow", user: {} }) as MisskeyEntities.Notification;
 
 describe("platform notification markers", () => {
+  it("compares Mastodon IDs beyond Number precision even when the marker is outside the page", () => {
+    const notifications = [mastodon("9007199254740994"), mastodon("9007199254740992")];
+    expect(countUnreadNotifications({ notifications, markerId: "9007199254740993" })).toBe(1);
+    expect(isUnreadNotification({ notification: notifications[0], markerId: "9007199254740993" })).toBe(true);
+    expect(isUnreadNotification({ notification: notifications[1], markerId: "9007199254740993" })).toBe(false);
+  });
+
+  it("uses Mastodon's read ID rather than the time the marker was saved", () => {
+    expect(
+      countUnreadNotifications({
+        notifications: [mastodon("11"), mastodon("10"), mastodon("9")],
+        markerId: "10",
+        markerAt: "2026-10-01T00:00:00.000Z",
+      }),
+    ).toBe(1);
+  });
+
+  it.each([
+    [undefined, "10"],
+    ["9", "10"],
+    ["10", "9"],
+    ["10", "10"],
+  ])("uses the newer local or server Mastodon marker (%s, %s)", (markerId, serverMarkerId) => {
+    const notifications = [mastodon("9"), mastodon("11"), mastodon("10")];
+    expect(countUnreadNotifications({ notifications, markerId, serverMarkerId })).toBe(1);
+    expect(isUnreadNotification({ notification: notifications[0], markerId, serverMarkerId })).toBe(false);
+    expect(isUnreadNotification({ notification: notifications[1], markerId, serverMarkerId })).toBe(true);
+  });
   it.each([
     [misskey("mk-id"), "mk-id", at],
     [mastodon("123"), "123", at],
