@@ -47,6 +47,14 @@ const props = defineProps({
     type: Boolean as PropType<boolean>,
     default: false,
   },
+  repostPending: {
+    type: Boolean,
+    default: false,
+  },
+  repostUri: {
+    type: String as PropType<string | null>,
+    default: undefined,
+  },
   theme: {
     type: String as PropType<"default">,
     default: "default",
@@ -56,6 +64,7 @@ const props = defineProps({
 const emit = defineEmits<{
   reply: [post: AppBskyFeedDefs.FeedViewPost];
   repost: [{ post: AppBskyFeedDefs.PostView }];
+  quote: [{ post: AppBskyFeedDefs.PostView }];
   like: [{ uri: string; cid: string }];
   deleteLike: [{ uri: string }];
   deleteRepost: [{ postUri: string; repostUri: string }];
@@ -86,9 +95,8 @@ const isLiked = computed(() => {
   return !!props.post.post.viewer?.like;
 });
 
-const isReposted = computed(() => {
-  return !!props.post.post.viewer?.repost;
-});
+const repostRecordUri = computed(() => (props.post.post.viewer ? props.post.post.viewer.repost : props.repostUri));
+const isReposted = computed(() => Boolean(repostRecordUri.value));
 
 const postAttachments = computed<Attachment[]>(() => extractBlueskyAttachments(props.post));
 
@@ -109,16 +117,26 @@ const openUserPage = () => {
   });
 };
 
-const openRepostWindow = () => {
+const repost = () => {
+  if (props.repostPending) return;
   emit("repost", { post: props.post.post });
+};
+
+const quote = () => {
+  emit("quote", { post: props.post.post });
+};
+
+const toggleRepost = () => {
+  if (isReposted.value) deleteRepost();
+  else repost();
 };
 
 /**
  * Emit unrepost action for a native Bluesky repost created by the current viewer.
  */
 const deleteRepost = () => {
-  const repostUri = props.post.post.viewer?.repost;
-  if (!repostUri) return;
+  const repostUri = repostRecordUri.value;
+  if (props.repostPending || !repostUri) return;
   emit("deleteRepost", { postUri: props.post.post.uri, repostUri });
 };
 
@@ -174,8 +192,10 @@ const postActions = computed(() => [
         {
           command: isReposted.value ? "deleteRepost" : "repost",
           icon: "mingcute:repeat-fill",
-          label: isReposted.value ? "リポスト解除" : "リポスト",
+          label: props.repostPending ? "リポスト処理中" : isReposted.value ? "リポスト解除" : "リポスト",
+          disabled: props.repostPending,
         },
+        { command: "quote", icon: "mingcute:quote-left-fill", label: "引用" },
         ...(props.canDelete ? [{ command: "delete", icon: "mingcute:delete-2-line", label: "削除" }] : []),
       ]
     : []),
@@ -191,7 +211,10 @@ const runPostAction = (command: string) => {
       replyToPost();
       return;
     case "repost":
-      openRepostWindow();
+      repost();
+      return;
+    case "quote":
+      quote();
       return;
     case "deleteRepost":
       deleteRepost();
@@ -238,6 +261,20 @@ const runPostAction = (command: string) => {
       <PostAttachments :attachments="postAttachments" />
     </PostAttachmentsContainer>
     <div class="reactions" v-if="props.showReactions">
+      <button
+        v-if="props.showActions"
+        type="button"
+        class="reaction"
+        :class="{ reacted: isReposted }"
+        :disabled="props.repostPending"
+        :aria-pressed="isReposted"
+        :aria-label="isReposted ? 'リポスト解除' : 'リポスト'"
+        :title="`Reposts: ${props.post.post.repostCount ?? 0}`"
+        @click="toggleRepost"
+      >
+        <Icon class="repost-icon" icon="mingcute:repeat-fill" :aria-hidden="true" />
+        <span class="count">{{ props.post.post.repostCount ?? 0 }}</span>
+      </button>
       <button
         class="reaction"
         :class="{
@@ -379,6 +416,7 @@ const runPostAction = (command: string) => {
     justify-content: flex-start;
     height: 24px;
     padding: 0 2px;
+    color: var(--dote-color-ink);
     background: transparent;
     border: none;
     border: 1px solid transparent;
@@ -403,7 +441,7 @@ const runPostAction = (command: string) => {
     }
     .count {
       margin-left: 4px;
-      color: #fff;
+      color: inherit;
       font-size: 12px;
       line-height: 20px;
     }

@@ -21,11 +21,20 @@ const props = defineProps({
     type: String as PropType<string>,
     required: false,
   },
+  repostPending: {
+    type: Boolean,
+    default: false,
+  },
+  repostUri: {
+    type: String as PropType<string | null>,
+    default: undefined,
+  },
 });
 
 const emit = defineEmits<{
   reply: [post: AppBskyFeedDefs.FeedViewPost];
   repost: [{ post: AppBskyFeedDefs.PostView }];
+  quote: [{ post: AppBskyFeedDefs.PostView }];
   deleteRepost: [{ postUri: string; repostUri: string }];
 }>();
 
@@ -106,7 +115,6 @@ const notificationPost = computed<AppBskyFeedDefs.FeedViewPost | undefined>(() =
       repostCount: 0,
       likeCount: 0,
       quoteCount: 0,
-      viewer: {},
     },
   };
 });
@@ -135,8 +143,11 @@ const openUserPage = () => {
       :lineStyle="props.lineStyle"
       :currentInstanceUrl="props.currentInstanceUrl"
       :showReactions="false"
+      :repostPending="props.repostPending"
+      :repostUri="props.repostUri"
       @reply="emit('reply', $event)"
       @repost="emit('repost', $event)"
+      @quote="emit('quote', $event)"
       @deleteRepost="emit('deleteRepost', $event)"
     />
   </div>

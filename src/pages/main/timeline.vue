@@ -144,11 +144,19 @@ const onMastodonBoost = (toot: MastodonTootType) => {
 };
 
 /**
- * Blueskyのリポスト/引用投稿ウィンドウを開きます。
+ * Blueskyのネイティブリポストを、選択時のアカウントで作成します。
  */
 const onBlueskyRepost = (payload: { post: AppBskyFeedDefs.PostView }) => {
+  const userId = timelineStore.currentUser?.id;
+  if (!userId) return;
+  void blueskyStore.createRepost({ ...payload, userId, timelineId: timelineStore.current?.id });
+};
+
+/** Blueskyの引用投稿ウィンドウを開きます。 */
+const onBlueskyQuote = (payload: { post: AppBskyFeedDefs.PostView }) => {
   ipcSend("post:repost", {
     ...payload,
+    mode: "quote",
     ...currentPostTargetPayload(),
   });
 };
@@ -641,8 +649,13 @@ onBeforeUnmount(() => {
           :notification="notification"
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
+          :repostPending="
+            blueskyStore.isRepostPending({ userId: timelineStore.current.userId, postUri: notification.uri })
+          "
+          :repostUri="blueskyStore.repostUriFor({ userId: timelineStore.current.userId, postUri: notification.uri })"
           @reply="onBlueskyReply"
           @repost="onBlueskyRepost"
+          @quote="onBlueskyQuote"
           @deleteRepost="onBlueskyDeleteRepost"
         />
         <BlueskyPost
@@ -658,8 +671,12 @@ onBeforeUnmount(() => {
           :lineStyle="store.settings.postStyle"
           :currentInstanceUrl="timelineStore.currentInstance?.url"
           :canDelete="canDeleteBlueskyPost(post)"
+          :repostPending="
+            blueskyStore.isRepostPending({ userId: timelineStore.current.userId, postUri: post.post.uri })
+          "
           @reply="onBlueskyReply"
           @repost="onBlueskyRepost"
+          @quote="onBlueskyQuote"
           @deleteRepost="onBlueskyDeleteRepost"
           @like="blueskyStore.like"
           @deleteLike="blueskyStore.deleteLike"
