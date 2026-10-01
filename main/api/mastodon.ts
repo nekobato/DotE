@@ -272,6 +272,20 @@ export const mastodonGetNotifications = async ({
 };
 
 /**
+ * Fetch Mastodon's notification read marker for the authenticated user.
+ */
+export const mastodonGetNotificationMarker = async ({ instanceUrl, token }: { instanceUrl: string; token: string }) => {
+  const url = new URL(`/api/v1/markers`, instanceUrl);
+  url.searchParams.append("timeline[]", "notifications");
+  return requestJson(url.toString(), {
+    headers: {
+      ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
+/**
  * Save Mastodon's notification read marker for the authenticated user.
  */
 export const mastodonUpdateNotificationMarker = async ({

@@ -95,9 +95,8 @@ export const useMastodonStore = defineStore("mastodon", () => {
       return;
     }
 
-    const toot = store.$state.timelines[timeline.currentIndex].posts.find(
-      (post: DotEPost) => post.id === id,
-    ) as MastodonToot | undefined;
+    const toot = store.$state.timelines[timeline.currentIndex].posts.find((post: DotEPost) => post.id === id) as
+      MastodonToot | undefined;
     if (!toot) return;
 
     if (reblogged) {
@@ -165,23 +164,38 @@ export const useMastodonStore = defineStore("mastodon", () => {
     if (!timeline.current || !timeline.currentUser || !timeline.currentInstance) {
       throw new Error("ユーザーが見つかりませんでした");
     }
+    const target = timeline.current;
+    const instance = timeline.currentInstance;
+    const user = timeline.currentUser;
+    const [result, markerResult] = await Promise.all([
+      ipcInvoke("api", {
+        method: methodOfChannel[target.channel],
+        instanceUrl: instance.url,
+        channelId: target.options?.channelId, // option
+        listId: target.options?.listId, // option
+        tag: target.options?.tag, // option
+        token: user.token,
+        limit: 40,
+      }),
+      target.channel === "mastodon:notifications"
+        ? ipcInvoke("api", {
+            method: "mastodon:getNotificationMarker",
+            instanceUrl: instance.url,
+            token: user.token,
+          })
+        : undefined,
+    ]);
 
-    const result = await ipcInvoke("api", {
-      method: methodOfChannel[timeline.current.channel],
-      instanceUrl: timeline.currentInstance.url,
-      channelId: timeline.current.options?.channelId, // option
-      listId: timeline.current.options?.listId, // option
-      tag: timeline.current.options?.tag, // option
-      token: timeline.currentUser.token,
-      limit: 40,
-    });
-
-    const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
+    const data = unwrapApiResult(result, `${instance.name}のタイムラインを取得できませんでした`);
     if (!data) return;
 
-    if (timeline.current.channel === "mastodon:notifications") {
-      timeline.setNotifications(data);
-    } else {
+    if (target.channel === "mastodon:notifications") {
+      if (markerResult) {
+        const marker = unwrapApiResult(markerResult, "通知の既読位置を取得できませんでした");
+        timeline.setMastodonNotificationReadMarker(target.id, marker?.notifications?.last_read_id);
+      }
+      timeline.setNotifications(data, target.id);
+    } else if (timeline.current?.id === target.id) {
       timeline.setPosts(data);
     }
   };

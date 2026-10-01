@@ -32,6 +32,7 @@ export type DotEPost = MisskeyNote | MastodonToot | BlueskyFeedPost;
 export type TimelineStore = Timeline & {
   posts: DotEPost[];
   notifications: MisskeyEntities.Notification[] | MastodonNotification[] | BlueskyNotification[];
+  mastodonNotificationReadId?: string;
   bluesky?: {
     cursor?: string;
   };

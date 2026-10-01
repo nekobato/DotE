@@ -64,6 +64,14 @@ export const resolveLatestNotificationMarker = (notifications: DotENotification[
   };
 };
 
+/** Compare Mastodon's decimal IDs without losing precision. */
+export const compareMastodonNotificationIds = (a?: string, b?: string): number | null => {
+  if (!a || !b || !/^\d+$/.test(a) || !/^\d+$/.test(b)) return null;
+  const first = BigInt(a);
+  const second = BigInt(b);
+  return first > second ? 1 : first < second ? -1 : 0;
+};
+
 /**
  * Check whether one notification is newer than the saved read marker.
  */
@@ -71,16 +79,24 @@ export const isUnreadNotification = ({
   notification,
   markerId,
   markerAt,
+  serverMarkerId,
 }: {
   notification: DotENotification;
   markerId?: string;
   markerAt?: string;
+  serverMarkerId?: string;
 }): boolean => {
   if (isBlueskyNotification(notification) && !markerId && !markerAt) {
     return !notification.isRead;
   }
 
   const notificationId = resolveNotificationId(notification);
+  if ("created_at" in notification) {
+    const markerOrder = compareMastodonNotificationIds(markerId, serverMarkerId);
+    const readId = serverMarkerId && (markerOrder === null || markerOrder < 0) ? serverMarkerId : markerId;
+    const order = compareMastodonNotificationIds(notificationId, readId);
+    if (order !== null) return order > 0;
+  }
   if (markerId && notificationId === markerId) return false;
 
   const notificationTime = Date.parse(resolveNotificationCreatedAt(notification));
@@ -99,16 +115,23 @@ export const countUnreadNotifications = ({
   notifications,
   markerId,
   markerAt,
+  serverMarkerId,
 }: {
   notifications: DotENotification[];
   markerId?: string;
   markerAt?: string;
+  serverMarkerId?: string;
 }): number => {
   const markerIndex = markerId
     ? notifications.findIndex((notification) => resolveNotificationId(notification) === markerId)
     : -1;
 
-  if (markerIndex >= 0 && !markerAt) {
+  if (
+    markerIndex >= 0 &&
+    !markerAt &&
+    !serverMarkerId &&
+    (!("created_at" in notifications[markerIndex]) || compareMastodonNotificationIds(markerId, markerId) === null)
+  ) {
     return markerIndex;
   }
 
@@ -117,6 +140,7 @@ export const countUnreadNotifications = ({
       notification,
       markerId,
       markerAt,
+      serverMarkerId,
     }),
   ).length;
 };

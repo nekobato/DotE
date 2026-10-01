@@ -78,7 +78,10 @@ beforeEach(() => {
   invoke.mockReset().mockResolvedValue({ ok: true });
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 const platforms = ["misskey", "mastodon", "bluesky"] as const;
 describe("notification read synchronization", () => {
@@ -132,6 +135,116 @@ describe("notification read synchronization", () => {
       lastReadNotificationId: expect.any(String),
       lastReadNotificationAt: expect.any(String),
     });
+    expect(root.timelines.find((timeline) => timeline.id === "b")).toMatchObject({
+      lastReadNotificationId: savedB.lastReadNotificationId,
+      lastReadNotificationAt: savedB.lastReadNotificationAt,
+    });
+  });
+
+  it.each(platforms)("does not save an unconfirmed %s marker when switching timelines", async (type) => {
+    const { root, timeline, store } = setup(type);
+    setup(type, "b", false);
+    timeline.lastReadNotificationId = "1";
+    timeline.lastReadNotificationAt = "2020-01-01T00:00:00.000Z";
+    const notifications = structuredClone(JSON.parse(JSON.stringify(timeline.notifications)));
+    const persisted = new Map(
+      root.timelines.map(
+        ({ notifications, posts, pendingNewPosts, readmoreLocked, ...item }) =>
+          [item.id, JSON.parse(JSON.stringify(item))] as const,
+      ),
+    );
+    const request = deferred();
+    invoke.mockImplementation((event, payload) => {
+      if (event === "api") return request.promise;
+      if (event === "db:set-timeline") persisted.set(payload.id, JSON.parse(JSON.stringify(payload)));
+      if (event === "db:get-timeline-all") return Promise.resolve([...persisted.values()]);
+      return Promise.resolve();
+    });
+
+    const pending = store.markCurrentNotificationsAsRead();
+    expect(store.currentNotificationUnreadCount).toBe(1);
+    await store.changeActiveTimeline(1);
+    request.resolve({ ok: false, error: { message: "offline" } });
+    expect(await pending).toBe(false);
+    await store.changeActiveTimeline(0);
+    store.setNotifications(notifications);
+
+    expect(persisted.get("a")).toMatchObject({
+      lastReadNotificationId: "1",
+      lastReadNotificationAt: "2020-01-01T00:00:00.000Z",
+    });
+    expect(store.currentNotificationUnreadCount).toBe(1);
+  });
+
+  it.each(platforms)("keeps %s arrivals after a successful pending read unread", async (type) => {
+    const { timeline, store } = setup(type);
+    const request = deferred();
+    invoke.mockReturnValueOnce(request.promise);
+    const pending = store.markCurrentNotificationsAsRead();
+    const at = new Date(Date.now() + 1000).toISOString();
+    store.addNewNotification({
+      ...timeline.notifications[0],
+      ...(type === "bluesky"
+        ? { uri: "at://did:plc:a/app.bsky.feed.like/new", indexedAt: at, isRead: false }
+        : type === "mastodon"
+          ? { id: "11", created_at: at }
+          : { id: "11", createdAt: at }),
+    } as BlueskyNotification | MastodonNotification | MisskeyEntities.Notification);
+    request.resolve({ ok: true });
+    expect(await pending).toBe(true);
+    expect(store.currentNotificationUnreadCount).toBe(1);
+    if (type === "bluesky") expect((timeline.notifications[0] as BlueskyNotification).isRead).toBe(false);
+  });
+
+  it.each(platforms)("serializes %s marker persistence with a concurrent selection save", async (type) => {
+    const { root, store } = setup(type);
+    setup(type, "b", false);
+    const persisted = new Map(root.timelines.map((item) => [item.id, JSON.parse(JSON.stringify(item))]));
+    const save = deferred();
+    let firstSave = true;
+    invoke.mockImplementation(async (event, payload) => {
+      if (event === "api") return { ok: true };
+      if (event === "db:set-timeline") {
+        if (payload.id === "a" && firstSave) {
+          firstSave = false;
+          await save.promise;
+        }
+        persisted.set(payload.id, JSON.parse(JSON.stringify(payload)));
+      }
+      if (event === "db:get-timeline-all") return [...persisted.values()];
+    });
+    const read = store.markCurrentNotificationsAsRead();
+    await vi.waitFor(() => expect(invoke.mock.calls.filter(([event]) => event === "db:set-timeline")).toHaveLength(1));
+    const change = store.changeActiveTimeline(1);
+    save.resolve(undefined);
+    expect(await read).toBe(true);
+    await change;
+    expect(persisted.get("a")).toMatchObject({
+      available: false,
+      lastReadNotificationId: expect.any(String),
+      lastReadNotificationAt: expect.any(String),
+    });
+    expect(store.current?.id).toBe("b");
+    expect(root.timelines[0].lastReadNotificationId).toBe(persisted.get("a").lastReadNotificationId);
+  });
+
+  it("does not save a pending notification marker with the debounced post read position", async () => {
+    vi.useFakeTimers();
+    const { timeline, store } = setup("bluesky");
+    const request = deferred();
+    invoke.mockReturnValueOnce(request.promise);
+    const read = store.markCurrentNotificationsAsRead();
+    store.setLastReadId("post-id");
+    await vi.advanceTimersByTimeAsync(400);
+    expect(invoke.mock.calls.find(([event]) => event === "db:set-timeline")?.[1]).toMatchObject({
+      lastReadId: "post-id",
+    });
+    expect(
+      invoke.mock.calls.find(([event]) => event === "db:set-timeline")?.[1].lastReadNotificationId,
+    ).toBeUndefined();
+    request.resolve({ ok: false, error: { message: "offline" } });
+    expect(await read).toBe(false);
+    expect(timeline.lastReadNotificationId).toBeUndefined();
   });
 
   it.each(platforms)("deduplicates %s requests until persistence finishes", async (type) => {
@@ -259,7 +372,7 @@ describe("manual and on-open notification modes", () => {
     invoke.mockReturnValueOnce(first.promise);
     const stop = useNotificationReadSync();
     try {
-      const markerTime = Date.parse(timeline.lastReadNotificationAt!);
+      const markerTime = Date.now();
       store.addNewNotification({
         ...timeline.notifications[0],
         uri: "at://did:plc:a/app.bsky.feed.like/new",
@@ -269,9 +382,10 @@ describe("manual and on-open notification modes", () => {
       await flush();
       expect(invoke).toHaveBeenCalledTimes(1);
       first.resolve({ ok: true });
-      await flush();
-      expect(invoke.mock.calls.filter(([event]) => event === "api")).toHaveLength(2);
-      expect(store.currentNotificationUnreadCount).toBe(0);
+      await vi.waitFor(() => {
+        expect(invoke.mock.calls.filter(([event]) => event === "api")).toHaveLength(2);
+        expect(store.currentNotificationUnreadCount).toBe(0);
+      });
     } finally {
       stop();
     }

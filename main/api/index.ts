@@ -39,6 +39,7 @@ export const apiRequest = {
   ["mastodon:getTimelineHashtag"]: mastodonRequest.mastodonGetTimelineHashtag,
   ["mastodon:getTimelineList"]: mastodonRequest.mastodonGetTimelineList,
   ["mastodon:getNotifications"]: mastodonRequest.mastodonGetNotifications,
+  ["mastodon:getNotificationMarker"]: mastodonRequest.mastodonGetNotificationMarker,
   ["mastodon:updateNotificationMarker"]: mastodonRequest.mastodonUpdateNotificationMarker,
   ["mastodon:uploadMedia"]: mastodonRequest.mastodonUploadMedia,
   ["mastodon:getMedia"]: mastodonRequest.mastodonGetMedia,

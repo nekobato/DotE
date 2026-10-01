@@ -213,12 +213,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   /**
    * Apply the viewer.repost flag and repostCount to every local copy of a Bluesky post.
    */
-  const updateRepostStateAcrossTimelines = ({
-    userId,
-    postUri,
-    repostUri,
-    isReposted,
-  }: BlueskyRepostStateUpdate) => {
+  const updateRepostStateAcrossTimelines = ({ userId, postUri, repostUri, isReposted }: BlueskyRepostStateUpdate) => {
     forEachBlueskyFeedItem(userId, (feedItem) => {
       if (feedItem.post.uri !== postUri) return;
 
@@ -310,8 +305,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   const pushNotifications = (notifications: AppBskyNotificationListNotifications.Notification[]) => {
     const timeline = getTimelineStore();
     const currentNotifications = timeline.current?.notifications as
-      | AppBskyNotificationListNotifications.Notification[]
-      | undefined;
+      AppBskyNotificationListNotifications.Notification[] | undefined;
     if (!timeline.current || !currentNotifications) return;
 
     const existingIds = new Set(currentNotifications.map((notification) => resolveBlueskyNotificationId(notification)));
@@ -330,6 +324,8 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     if (!timeline.currentUser.blueskySession) {
       throw new Error("Blueskyセッション情報が見つかりませんでした");
     }
+    const targetId = timeline.current.id;
+    const targetChannel = timeline.current.channel;
 
     const result = await ipcInvoke("api", {
       method: methodOfChannel[timeline.current.channel],
@@ -338,6 +334,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     });
     const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
     if (!data) return;
+    if (timeline.current?.id !== targetId || timeline.current.channel !== targetChannel) return;
 
     if (timeline.current.channel === "bluesky:notifications") {
       if (!("notifications" in data)) return;
