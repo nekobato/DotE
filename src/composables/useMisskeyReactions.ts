@@ -1,6 +1,6 @@
 import { computed, type ComputedRef, type Ref } from "vue";
 import type { MisskeyNote, ReactionData } from "@shared/types/misskey";
-import { isMyReaction } from "@/utils/misskey";
+import { isMyReaction, resolveMisskeyNote } from "@/utils/misskey";
 
 export function useMisskeyReactions(
   post: ComputedRef<MisskeyNote> | Ref<MisskeyNote> | MisskeyNote,
@@ -22,10 +22,11 @@ export function useMisskeyReactions(
     return emojis.value;
   });
 
+  const reactionNote = computed(() => resolveMisskeyNote(postRef.value));
+
   const reactions = computed((): ReactionData[] => {
-    const currentPost = postRef.value;
-    const reactionsData =
-      currentPost.renote && !currentPost.text ? currentPost.renote.reactions : currentPost.reactions;
+    const currentPost = reactionNote.value;
+    const reactionsData = currentPost.reactions;
 
     return Object.keys(reactionsData)
       .map((key) => {
@@ -42,11 +43,7 @@ export function useMisskeyReactions(
 
         return {
           name: key,
-          url:
-            localEmoji?.url ||
-            currentPost.reactionEmojis[reactionName] ||
-            (currentPost.renote as MisskeyNote)?.reactionEmojis[reactionName] ||
-            "",
+          url: localEmoji?.url || currentPost.reactionEmojis[reactionName] || "",
           count: reactionsData[key],
           isRemote: !localEmoji,
         };
@@ -55,8 +52,7 @@ export function useMisskeyReactions(
   });
 
   const myReaction = computed(() => {
-    const currentPost = postRef.value;
-    return currentPost.renote?.myReaction || currentPost.myReaction;
+    return reactionNote.value.myReaction;
   });
 
   const isReacted = (reactionName: string): boolean => {

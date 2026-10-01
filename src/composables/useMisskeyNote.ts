@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, type ComputedRef, type Ref } from "vue";
 import type { MisskeyNote, PostType, RenoteType } from "@shared/types/misskey";
-import { parseMisskeyAttachments } from "@/utils/misskey";
+import { note as misskeyNote } from "misskey-js";
+import { parseMisskeyAttachments, resolveMisskeyNote } from "@/utils/misskey";
 import { ipcSend } from "@/utils/ipc";
 
 export function useMisskeyNote(
@@ -16,12 +17,8 @@ export function useMisskeyNote(
 
   const postType = computed((): PostType => {
     const currentPost = postRef.value;
-    if (currentPost.renote) {
-      if (currentPost.text) {
-        return "quote";
-      } else {
-        return "renote";
-      }
+    if (currentPost.renoteId != null) {
+      return misskeyNote.isPureRenote(currentPost) ? "renote" : "quote";
     } else if (currentPost.replyId) {
       return "reply";
     } else {
@@ -30,13 +27,10 @@ export function useMisskeyNote(
   });
 
   const renoteType = computed((): RenoteType => {
-    const currentPost = postRef.value;
-    if (currentPost.text) {
-      return "quoted";
-    } else {
-      return "renoted";
-    }
+    return misskeyNote.isPureRenote(postRef.value) ? "renoted" : "quoted";
   });
+
+  const displayNote = computed(() => resolveMisskeyNote(postRef.value));
 
   const postAttachments = computed(() => {
     return parseMisskeyAttachments(postRef.value, currentInstanceUrl);
@@ -59,6 +53,7 @@ export function useMisskeyNote(
   return {
     postType,
     renoteType,
+    displayNote,
     postAttachments,
     setupStreamSubscription,
   };
