@@ -22,30 +22,30 @@ async function render(post: Note) {
   const html = await renderToString(
     createSSRApp(MisskeyNote, { post, emojis: [], lineStyle: "all", hideCw: false, showReactions: false }),
   );
-  return { html, text: html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ") };
+  return html.replace(/\s+/g, " ");
 }
 
 describe("Misskey note counts in the timeline", () => {
   it("displays replies and combined Renotes/quotes with visible labels", async () => {
-    const { text, html } = await render(original);
-    expect(text).toContain("返信 7");
-    expect(text).toContain("Renote・引用 12");
+    const html = await render(original);
+    expect(html).toMatch(/返信\s*<span class="count"[^>]*>7<\/span>/);
+    expect(html).toMatch(/Renote・引用\s*<span class="count"[^>]*>12<\/span>/);
     expect(html).toContain('title="Renoteと引用の合計"');
   });
 
   it("displays zero counts without hiding them", async () => {
-    const { text } = await render({ ...original, repliesCount: 0, renoteCount: 0 });
-    expect(text).toContain("返信 0");
-    expect(text).toContain("Renote・引用 0");
+    const html = await render({ ...original, repliesCount: 0, renoteCount: 0 });
+    expect(html).toMatch(/返信\s*<span class="count"[^>]*>0<\/span>/);
+    expect(html).toMatch(/Renote・引用\s*<span class="count"[^>]*>0<\/span>/);
   });
 
   it("does not invent counts when the API omits them", async () => {
-    const { html } = await render({ ...original, repliesCount: undefined, renoteCount: undefined } as unknown as Note);
+    const html = await render({ ...original, repliesCount: undefined, renoteCount: undefined } as unknown as Note);
     expect(html).not.toContain('class="note-stats"');
   });
 
   it("displays the referenced note's counts on a pure Renote", async () => {
-    const { text } = await render({
+    const html = await render({
       ...original,
       id: "shared",
       text: null,
@@ -54,12 +54,12 @@ describe("Misskey note counts in the timeline", () => {
       repliesCount: 0,
       renoteCount: 0,
     });
-    expect(text).toContain("返信 7");
-    expect(text).toContain("Renote・引用 12");
+    expect(html).toMatch(/返信\s*<span class="count"[^>]*>7<\/span>/);
+    expect(html).toMatch(/Renote・引用\s*<span class="count"[^>]*>12<\/span>/);
   });
 
   it("displays a CW-only quote's counts without mixing in the original counts", async () => {
-    const { text } = await render({
+    const html = await render({
       ...original,
       id: "quoted",
       text: null,
@@ -69,8 +69,8 @@ describe("Misskey note counts in the timeline", () => {
       repliesCount: 2,
       renoteCount: 4,
     });
-    expect(text).toContain("返信 2");
-    expect(text).toContain("Renote・引用 4");
-    expect(text).not.toContain("返信 7");
+    expect(html).toMatch(/返信\s*<span class="count"[^>]*>2<\/span>/);
+    expect(html).toMatch(/Renote・引用\s*<span class="count"[^>]*>4<\/span>/);
+    expect(html).not.toMatch(/返信\s*<span class="count"[^>]*>7<\/span>/);
   });
 });
