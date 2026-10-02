@@ -147,7 +147,10 @@ describe("Misskey reactions dispatched through the timeline IPC handler", () => 
       const { post } = setup(content, operation !== "create");
       const target = targetId === "original" ? post.renote! : post;
       const other = targetId === "original" ? post : post.renote!;
-      const reactionState = (note: MisskeyNote) => ({ myReaction: note.myReaction, reactions: { ...note.reactions } });
+      const reactionState = (note: Pick<MisskeyNote, "myReaction" | "reactions">) => ({
+        myReaction: note.myReaction,
+        reactions: { ...note.reactions },
+      });
       const otherBefore = reactionState(other);
       const handlers = new Map<string, (event: unknown, data: { postId: string; reaction: string }) => void>();
       vi.stubGlobal("window", {
