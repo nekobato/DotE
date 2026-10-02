@@ -1,5 +1,6 @@
 import type { Post } from "@shared/types/post";
 import type { MisskeyNote } from "@shared/types/misskey";
+import { note as misskeyNote } from "misskey-js";
 import { MisskeyChannelName } from "@shared/types/store";
 import { MisskeyStreamChannel } from "./misskeyStream";
 
@@ -27,6 +28,11 @@ export const misskeyStreamChannels: MisskeyStreamChannel[] = [
   "antenna",
   "channel",
 ];
+
+/** Return the shared note for a pure Renote, and the quote itself otherwise. */
+export const resolveMisskeyNote = (post: MisskeyNote): MisskeyNote => {
+  return misskeyNote.isPureRenote(post) && post.renote ? (post.renote as MisskeyNote) : post;
+};
 
 export const parseMisskeyAttachments = (post: MisskeyNote, host?: string): Post["attachments"] => {
   const files = post.files?.length

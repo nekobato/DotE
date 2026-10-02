@@ -6,6 +6,7 @@ import { MisskeyNote } from "@shared/types/misskey";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
 import { removePostAcrossTimelines } from "@/utils/removePostAcrossTimelines";
+import { resolveMisskeyNote } from "@/utils/misskey";
 
 type FetchNoteParams = {
   postId: string;
@@ -99,7 +100,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
    */
   const findReactionTargetNote = (postId: string, userId: string): MisskeyNote | undefined => {
     const sourceNote = findNoteById(postId, { userId });
-    return (sourceNote?.renote as MisskeyNote | undefined) ?? sourceNote;
+    return sourceNote ? resolveMisskeyNote(sourceNote) : undefined;
   };
 
   const incrementReaction = (note: MisskeyNote, reaction: string, value = 1) => {

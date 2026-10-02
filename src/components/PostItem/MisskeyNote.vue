@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Icon } from "@iconify/vue";
 import type { MisskeyNote, MisskeyNoteProps } from "@shared/types/misskey";
 import { computed, toRef } from "vue";
 import { useMisskeyNote } from "@/composables/useMisskeyNote";
@@ -32,7 +33,7 @@ const emit = defineEmits<{
 const postRef = toRef(props, "post");
 const emojisRef = toRef(props, "emojis");
 
-const { postType, renoteType, postAttachments, setupStreamSubscription } = useMisskeyNote(
+const { postType, renoteType, displayNote, postAttachments, setupStreamSubscription } = useMisskeyNote(
   postRef,
   props.currentInstanceUrl,
 );
@@ -161,6 +162,16 @@ setupStreamSubscription();
     <PostAttachmentsContainer v-if="postAttachments?.length" class="attachments">
       <PostAttachments :attachments="postAttachments" />
     </PostAttachmentsContainer>
+    <div class="note-stats" v-if="displayNote.repliesCount != null || displayNote.renoteCount != null">
+      <span class="stat" v-if="displayNote.repliesCount != null">
+        <Icon icon="mingcute:message-2-line" :aria-hidden="true" />
+        返信 <span class="count">{{ displayNote.repliesCount }}</span>
+      </span>
+      <span class="stat" v-if="displayNote.renoteCount != null" title="Renoteと引用の合計">
+        <Icon icon="mingcute:repeat-fill" :aria-hidden="true" />
+        Renote・引用 <span class="count">{{ displayNote.renoteCount }}</span>
+      </span>
+    </div>
     <div class="reactions" v-if="props.showReactions && reactions.length">
       <button
         class="reaction"
@@ -201,6 +212,32 @@ setupStreamSubscription();
 
 .attachments {
   margin-top: 4px;
+}
+
+.note-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 4px;
+  color: var(--dote-color-ink-t5);
+  font-size: var(--font-size-12);
+  line-height: 20px;
+
+  .stat {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    white-space: nowrap;
+
+    > svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  .count {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .reactions {
