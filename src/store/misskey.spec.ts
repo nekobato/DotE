@@ -1,14 +1,32 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
+import { effectScope, ref, type EffectScope } from "vue";
+import { useStream } from "@/composables/useStream";
 import type { MisskeyNote } from "@shared/types/misskey";
 import type { InstanceStore } from "@shared/types/store";
 import { useStore } from ".";
 import { useMisskeyStore } from "./misskey";
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
-vi.mock("@/utils/ipc", () => ({ ipcInvoke: invoke }));
+vi.mock("@/utils/ipc", () => ({ ipcInvoke: invoke, ipcSend: vi.fn() }));
 vi.mock("./bluesky", () => ({ useBlueskyStore: () => ({}) }));
 vi.mock("./mastodon", () => ({ useMastodonStore: () => ({}) }));
+vi.mock("@/utils/misskeyStream", () => ({ useMisskeyStream: () => ({ state: ref("closed") }) }));
+vi.mock("@/utils/mastodonStream", () => ({ useMastodonStream: () => ({}) }));
+vi.mock("@/utils/polling", () => ({
+  useMisskeyPolling: () => ({}),
+  useMastodonPolling: () => ({}),
+  useBlueskyPolling: () => ({}),
+}));
+vi.mock("./misskeyTimelineConnection", () => ({ useMisskeyTimelineConnectionStore: () => ({ isWebSocket: false }) }));
+vi.mock("@/utils/text2Speech", () => ({ text2Speech: vi.fn() }));
+
+let streamScope: EffectScope | undefined;
+afterEach(() => {
+  streamScope?.stop();
+  streamScope = undefined;
+  vi.unstubAllGlobals();
+});
 
 function setup(content: Partial<MisskeyNote>, reacted = false) {
   const root = useStore();
@@ -116,4 +134,44 @@ describe("Misskey reaction API targets for Renotes and quotes", () => {
     expect(other.myReaction).toBe("👍");
     expect(other.reactions["👍"]).toBe(1);
   });
+});
+
+describe("Misskey reactions dispatched through the timeline IPC handler", () => {
+  const clickCases = cases.flatMap(([label, content, targetId]) =>
+    (["create", "delete", "replace"] as const).map((operation) => ({ label, content, targetId, operation })),
+  );
+
+  it.each(clickCases)(
+    "$operation on $label affects only the displayed note",
+    async ({ content, targetId, operation }) => {
+      const { post } = setup(content, operation !== "create");
+      const target = targetId === "original" ? post.renote! : post;
+      const other = targetId === "original" ? post : post.renote!;
+      const reactionState = (note: MisskeyNote) => ({ myReaction: note.myReaction, reactions: { ...note.reactions } });
+      const otherBefore = reactionState(other);
+      const handlers = new Map<string, (event: unknown, data: { postId: string; reaction: string }) => void>();
+      vi.stubGlobal("window", {
+        ipc: {
+          on: (channel: string, handler: (event: unknown, data: { postId: string; reaction: string }) => void) => {
+            handlers.set(channel, handler);
+            return () => handlers.delete(channel);
+          },
+        },
+      });
+      streamScope = effectScope();
+      streamScope.run(() => useStream().setupIpcHandlers());
+      handlers.get("main:reaction")!(undefined, { postId: post.id, reaction: operation === "replace" ? "😎" : "👍" });
+      // Drain the handler's promise queue and its mocked API responses.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+
+      const methods =
+        operation === "replace"
+          ? ["misskey:deleteReaction", "misskey:createReaction"]
+          : [operation === "delete" ? "misskey:deleteReaction" : "misskey:createReaction"];
+      expect(invoke.mock.calls.map(([, payload]) => payload.method)).toEqual(methods);
+      expect(invoke.mock.calls.every(([, payload]) => payload.noteId === targetId)).toBe(true);
+      expect(target.myReaction).toBe(operation === "delete" ? undefined : operation === "replace" ? "😎" : "👍");
+      expect(reactionState(other)).toEqual(otherBefore);
+    },
+  );
 });

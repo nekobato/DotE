@@ -1,7 +1,7 @@
 import { useStore } from "@/store";
 import { useTimelineStore } from "@/store/timeline";
 import { mastodonChannels } from "@/utils/mastodon";
-import { misskeyChannels } from "@/utils/misskey";
+import { misskeyChannels, resolveMisskeyNote } from "@/utils/misskey";
 import { useBlueskyPolling, useMastodonPolling, useMisskeyPolling } from "@/utils/polling";
 import { MisskeyStreamChannel, useMisskeyStream, webSocketState as misskeyWebSocketState } from "@/utils/misskeyStream";
 import { BlueskyChannelName, MastodonChannelName, MisskeyChannelName } from "@shared/types/store";
@@ -160,7 +160,7 @@ export function useStream() {
     const post = posts.find((post) => post.id === data.postId);
     if (!post) return;
 
-    const targetPost = (post.renote as MisskeyNote | undefined) ?? post;
+    const targetPost = resolveMisskeyNote(post);
     const userId = timelineStore.currentUser?.id;
     if (!userId) return;
 
