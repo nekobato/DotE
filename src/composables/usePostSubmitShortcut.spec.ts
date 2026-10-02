@@ -52,6 +52,20 @@ describe("post send shortcut", () => {
     second.scope.stop();
   });
 
+  it.each([
+    { shiftKey: true, metaKey: false },
+    { shiftKey: false, metaKey: true },
+  ])("blocks the default input action when submission is unavailable: %j", async (modifiers) => {
+    const target = new EventTarget();
+    const { scope, submit } = mountShortcut(target, vi.fn(), () => false);
+    await nextTick();
+
+    expect(keydown(target, modifiers).defaultPrevented).toBe(true);
+    expect(keydown(target, modifiers).defaultPrevented).toBe(true);
+    expect(submit).not.toHaveBeenCalled();
+    scope.stop();
+  });
+
   it("does not send again while a submission is pending", async () => {
     const target = new EventTarget();
     let sending = false;

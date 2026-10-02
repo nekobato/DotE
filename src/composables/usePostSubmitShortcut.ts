@@ -11,9 +11,9 @@ export function usePostSubmitShortcut({ target, canSubmit, submit }: PostSubmitS
   return useEventListener<KeyboardEvent>(target, "keydown", (event) => {
     if (event.isComposing || event.keyCode === 229 || event.repeat) return;
     if (event.key !== "Enter" || (!event.shiftKey && !event.metaKey)) return;
+    event.preventDefault();
     if (!canSubmit()) return;
 
-    event.preventDefault();
     void submit();
   });
 }
