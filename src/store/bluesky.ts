@@ -506,10 +506,10 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       };
 
       // Notifications carry a post record without authenticated viewer state.
-      // Hydrate it before reposting so an existing repost is not duplicated.
+      // A cached negative result cannot supply counts or exclude a repost made by another client.
       let targetPost = post;
       const knownRepost = repostUriFor(target);
-      if (!targetPost.viewer && knownRepost === undefined) {
+      if (!targetPost.viewer && knownRepost == null) {
         const result = await ipcInvoke("api", { method: "bluesky:getPosts", did, uris: [post.uri] });
         const data = unwrapApiResult(result, "Blueskyのリポスト対象投稿を取得できませんでした");
         if (!data) return false;

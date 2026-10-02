@@ -263,6 +263,64 @@ describe("Bluesky native repost actions", () => {
     expect(invoke.mock.calls[0][1]).toEqual({ method: "bluesky:getPosts", did: "did:plc:alice", uris: [postUri] });
   });
 
+  it.each([undefined, "at://did:plc:alice/app.bsky.feed.repost/other-client"])(
+    "rehydrates notification counts and viewer state after unreposting (%s)",
+    async (serverRepost) => {
+      const { root, bluesky } = setup();
+      root.timelines.push({
+        ...home("alice-notifications", "alice"),
+        channel: "bluesky:notifications",
+        posts: [],
+        pendingNewPosts: [],
+      });
+      const notificationPost = { ...post(), repostCount: 0 };
+      delete notificationPost.viewer;
+      const action = { userId: "alice", timelineId: "alice-notifications", post: notificationPost };
+      invoke.mockResolvedValueOnce({ ok: true, data: { posts: [post()] } });
+      expect(await bluesky.createRepost(action)).toBe(true);
+      expect(await bluesky.deleteRepost({ ...target, repostUri })).toBe(true);
+      expect(bluesky.repostUriFor(target)).toBeNull();
+
+      invoke
+        .mockClear()
+        .mockImplementation(async (_event, args) =>
+          args.method === "bluesky:getPosts"
+            ? { ok: true, data: { posts: [{ ...post(serverRepost), repostCount: 12 }] } }
+            : success,
+        );
+      expect(await bluesky.createRepost(action)).toBe(true);
+      expect(invoke.mock.calls.map(([, args]) => args.method)).toEqual(
+        serverRepost ? ["bluesky:getPosts"] : ["bluesky:getPosts", "bluesky:createRepost"],
+      );
+      const expectedCount = serverRepost ? 12 : 13;
+      for (const timeline of root.timelines.slice(0, 2)) {
+        expect(timeline.posts.every((entry) => entry.post.repostCount === expectedCount)).toBe(true);
+      }
+      expect(bluesky.repostUriFor(target)).toBe(serverRepost ?? repostUri);
+      expect(root.timelines[2].posts).toEqual([feed()]);
+    },
+  );
+
+  it("preserves the cached unreposted state when notification rehydration fails", async () => {
+    const { root, bluesky } = setup();
+    root.timelines[0].posts = [feed(repostUri)];
+    expect(await bluesky.deleteRepost({ ...target, repostUri })).toBe(true);
+    const before = JSON.stringify(root.timelines);
+    const notificationPost = { ...post(), repostCount: 0 };
+    delete notificationPost.viewer;
+    invoke.mockClear().mockResolvedValueOnce(failure);
+
+    expect(await bluesky.createRepost({ userId: "alice", post: notificationPost })).toBe(false);
+    expect(invoke).toHaveBeenCalledExactlyOnceWith("api", {
+      method: "bluesky:getPosts",
+      did: "did:plc:alice",
+      uris: [postUri],
+    });
+    expect(JSON.stringify(root.timelines)).toBe(before);
+    expect(bluesky.repostUriFor(target)).toBeNull();
+    expect(bluesky.isRepostPending(target)).toBe(false);
+  });
+
   it("exposes the existing repost record found while hydrating a notification without reposting again", async () => {
     const { root, bluesky } = setup();
     const notificationPost = post();
