@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { BlueskyNotification as BlueskyNotificationType } from "@/types/bluesky";
 import { ipcSend } from "@/utils/ipc";
+import { resolveBlueskyProfileUrl } from "@/utils/blueskyWebUrl";
 import { AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 import BlueskyPost from "./BlueskyPost.vue";
-
-const bskyUrl = "https://bsky.app";
 
 const props = defineProps({
   notification: {
@@ -113,7 +112,7 @@ const notificationPost = computed<AppBskyFeedDefs.FeedViewPost | undefined>(() =
 
 const openUserPage = () => {
   ipcSend("open-url", {
-    url: new URL(`/profile/${props.notification.author.handle}`, bskyUrl).toString(),
+    url: resolveBlueskyProfileUrl(props.notification.author.did),
   });
 };
 </script>

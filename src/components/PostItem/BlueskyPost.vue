@@ -9,6 +9,7 @@ import {
   resolveBlueskyFeedItemId,
 } from "@/utils/bluesky";
 import { ipcSend } from "@/utils/ipc";
+import { resolveBlueskyPostUrl, resolveBlueskyProfileUrl } from "@/utils/blueskyWebUrl";
 import { resolvePostCreatedAt } from "@/utils/postDate";
 import { AppBskyFeedDefs } from "@atproto/api";
 import { Icon } from "@iconify/vue";
@@ -19,8 +20,6 @@ import { Attachment } from "@shared/types/post";
 import BlueskyPostContent from "./BlueskyPostContent.vue";
 import { BlueskyPostType } from "@/types/bluesky";
 import PostActionDropdown from "./PostActionDropdown.vue";
-
-const bskyUrl = "https://bsky.app";
 
 const props = defineProps({
   post: {
@@ -95,17 +94,13 @@ const postAttachments = computed<Attachment[]>(() => extractBlueskyAttachments(p
 const postCreatedAt = computed(() => resolvePostCreatedAt(props.post));
 
 const openPost = () => {
-  const postId = props.post.post.uri.split("/").pop();
-  // https://[instanceUrl]/profile/[author.handle]/post/[post.id]
-  // TODO: どうやってWebUIのURLを取得するの
-  ipcSend("open-url", {
-    url: new URL(`/profile/${props.post.post.author.handle}/post/${postId}`, bskyUrl).toString(),
-  });
+  const url = resolveBlueskyPostUrl(props.post.post.uri);
+  if (url) ipcSend("open-url", { url });
 };
 
 const openUserPage = () => {
   ipcSend("open-url", {
-    url: new URL(`/profile/${props.post.post.author.handle}`, bskyUrl).toString(),
+    url: resolveBlueskyProfileUrl(props.post.post.author.did),
   });
 };
 

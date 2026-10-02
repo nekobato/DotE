@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { BlueskyPostType } from "@/types/bluesky";
 import { ipcSend } from "@/utils/ipc";
+import { resolveBlueskyProfileUrl } from "@/utils/blueskyWebUrl";
 import { AppBskyEmbedRecord, AppBskyFeedDefs, AppBskyFeedPost } from "@atproto/api";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
-
-const bskyUrl = "https://bsky.app";
 
 const props = defineProps({
   type: {
@@ -57,14 +56,14 @@ const text = computed(() => {
 
 const openUserPage = () => {
   ipcSend("open-url", {
-    url: new URL(`/profile/${props.author.handle}`, bskyUrl).toString(),
+    url: resolveBlueskyProfileUrl(props.author.did),
   });
 };
 
 const openOriginPage = () => {
   if (!props.originAuthor) return;
   ipcSend("open-url", {
-    url: new URL(`/profile/${props.originAuthor.handle}`, bskyUrl).toString(),
+    url: resolveBlueskyProfileUrl(props.originAuthor.did),
   });
 };
 </script>
