@@ -5,6 +5,7 @@ import BlueskyPost from "@/components/PostItem/BlueskyPost.vue";
 import MastodonToot from "@/components/PostItem/MastodonToot.vue";
 import MisskeyNote from "@/components/PostItem/MisskeyNote.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
+import { usePostSubmitShortcut } from "@/composables/usePostSubmitShortcut";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import { toBlueskyFeedPost, type BlueskyReplyRef } from "@/utils/bluesky";
 import type { MastodonToot as MastodonTootType, MediaAttachment as MastodonMediaAttachment } from "@/types/mastodon";
@@ -442,7 +443,7 @@ const submitType = computed(() => {
 });
 
 const canSubmit = computed(() => {
-  if (state.post.isSending) {
+  if (!state.user || !state.instance || state.post.isSending) {
     return false;
   }
   if (hasUploadingAttachments.value || hasFailedAttachments.value) {
@@ -883,6 +884,7 @@ const addAttachment = async (file: File) => {
 };
 
 const onSelectFiles = async (event: Event) => {
+  if (state.post.isSending) return;
   const target = event.target as HTMLInputElement;
   const files = Array.from(target.files ?? []);
   target.value = "";
@@ -914,7 +916,7 @@ const extractClipboardImageFiles = (clipboardData: DataTransfer | null): File[] 
  * Treat pasted clipboard images as post attachments while preserving normal text paste behavior.
  */
 const onPaste = async (event: ClipboardEvent) => {
-  if (isBoostMode.value || !canUseAttachments.value) return;
+  if (state.post.isSending || isBoostMode.value || !canUseAttachments.value) return;
 
   const imageFiles = extractClipboardImageFiles(event.clipboardData);
   if (!imageFiles.length) return;
@@ -930,6 +932,7 @@ const openFilePicker = () => {
 };
 
 const removeAttachment = (id: string) => {
+  if (state.post.isSending) return;
   const target = attachments.value.find((item) => item.id === id);
   if (target?.previewUrl) {
     URL.revokeObjectURL(target.previewUrl);
@@ -941,6 +944,7 @@ const removeAttachment = (id: string) => {
  * Retry a failed attachment upload or resume Mastodon media processing checks.
  */
 const retryAttachment = async (id: string) => {
+  if (state.post.isSending) return;
   const item = attachments.value.find((attachment) => attachment.id === id);
   if (!item || item.status !== "failed") return;
   if (state.instance?.type !== "mastodon") return;
@@ -1170,8 +1174,7 @@ const repostToBluesky = async ({ did, targetPost }: { did: string; targetPost: B
   });
 
   const repost = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} へのリポストに失敗しました`) as
-    | BlueskyCreateRecordResult
-    | undefined;
+    BlueskyCreateRecordResult | undefined;
   if (!repost?.uri) return;
 
   ipcSend("timeline:add-post", {
@@ -1226,20 +1229,20 @@ const postToBluesky = async () => {
 };
 
 const submit = async () => {
+  if (!canSubmit.value) return;
+  state.post.error = "";
   state.post.isSending = true;
   try {
-    if (text) {
-      switch (state.instance?.type) {
-        case "misskey":
-          await postToMisskey();
-          break;
-        case "mastodon":
-          await postToMastodon();
-          break;
-        case "bluesky":
-          await postToBluesky();
-          break;
-      }
+    switch (state.instance?.type) {
+      case "misskey":
+        await postToMisskey();
+        break;
+      case "mastodon":
+        await postToMastodon();
+        break;
+      case "bluesky":
+        await postToBluesky();
+        break;
     }
   } catch (error) {
     if (error instanceof Error) {
@@ -1283,6 +1286,7 @@ const toggleMisskeyOptions = () => {
   showMisskeyOptions.value = !showMisskeyOptions.value;
 };
 const onSelectEmoji = async (emoji: MisskeyEntities.EmojiSimple) => {
+  if (state.post.isSending) return;
   await insertEmojiAtCursor(emoji.name);
 };
 
@@ -1327,13 +1331,10 @@ watch(
   { flush: "post" },
 );
 
-document.addEventListener("keydown", (e) => {
-  if ((e.key === "Enter" && e.shiftKey) || (e.key === "Enter" && e.metaKey)) {
-    e.preventDefault();
-    if (canSubmit.value) {
-      submit();
-    }
-  }
+usePostSubmitShortcut({
+  target: document,
+  canSubmit: () => canSubmit.value,
+  submit,
 });
 </script>
 
@@ -1355,10 +1356,15 @@ document.addEventListener("keydown", (e) => {
           type="textarea"
           v-model="text"
           ref="textInputRef"
-          :disabled="isBoostMode"
+          :disabled="isBoostMode || state.post.isSending"
         />
         <div class="post-tools" v-if="!isBoostMode && (canUseEmojiPicker || canUseMisskeyOptions || canUseAttachments)">
-          <button v-if="canUseEmojiPicker" class="nn-button size-small tool-button" @click="toggleEmojiPicker">
+          <button
+            v-if="canUseEmojiPicker"
+            class="nn-button size-small tool-button"
+            :disabled="state.post.isSending"
+            @click="toggleEmojiPicker"
+          >
             <Icon icon="mingcute:emoji-line" class="nn-icon size-xsmall" />
             <span>絵文字</span>
           </button>
@@ -1366,12 +1372,18 @@ document.addEventListener("keydown", (e) => {
             v-if="canUseMisskeyOptions"
             class="nn-button size-small tool-button"
             :class="{ active: showMisskeyOptions }"
+            :disabled="state.post.isSending"
             @click="toggleMisskeyOptions"
           >
             <Icon icon="mingcute:settings-4-line" class="nn-icon size-xsmall" />
             <span>投稿設定</span>
           </button>
-          <button v-if="canUseAttachments" class="nn-button size-small tool-button" @click="openFilePicker">
+          <button
+            v-if="canUseAttachments"
+            class="nn-button size-small tool-button"
+            :disabled="state.post.isSending"
+            @click="openFilePicker"
+          >
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
             <span>添付</span>
           </button>
@@ -1381,16 +1393,21 @@ document.addEventListener("keydown", (e) => {
             multiple
             ref="fileInputRef"
             :accept="attachmentAccept"
+            :disabled="state.post.isSending"
             @change="onSelectFiles"
           />
         </div>
-        <div class="emoji-picker-panel" v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker">
+        <div
+          class="emoji-picker-panel"
+          v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker"
+          :inert="state.post.isSending"
+        >
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
         </div>
         <div class="misskey-options" v-if="!isBoostMode && canUseMisskeyOptions && showMisskeyOptions">
           <div class="misskey-options-row">
             <label class="nn-label">公開範囲</label>
-            <select class="nn-select" v-model="misskeyVisibility">
+            <select class="nn-select" v-model="misskeyVisibility" :disabled="state.post.isSending">
               <option :value="null">default</option>
               <option value="public">public</option>
               <option value="home">home</option>
@@ -1399,27 +1416,33 @@ document.addEventListener("keydown", (e) => {
           </div>
           <div class="misskey-options-row">
             <label class="nn-label">CW</label>
-            <input class="nn-text-field cw-input" type="text" v-model="textCw" placeholder="内容に注意が必要な場合" />
+            <input
+              class="nn-text-field cw-input"
+              type="text"
+              v-model="textCw"
+              placeholder="内容に注意が必要な場合"
+              :disabled="state.post.isSending"
+            />
           </div>
           <div class="misskey-options-group">
             <label class="nn-checkbox">
-              <input type="checkbox" v-model="misskeyLocalOnly" />
+              <input type="checkbox" v-model="misskeyLocalOnly" :disabled="state.post.isSending" />
               <span>ローカルのみに投稿</span>
             </label>
             <label class="nn-checkbox">
-              <input type="checkbox" v-model="misskeyNoExtractMentions" />
+              <input type="checkbox" v-model="misskeyNoExtractMentions" :disabled="state.post.isSending" />
               <span>メンションの自動抽出を無効化</span>
             </label>
             <label class="nn-checkbox">
-              <input type="checkbox" v-model="misskeyNoExtractHashtags" />
+              <input type="checkbox" v-model="misskeyNoExtractHashtags" :disabled="state.post.isSending" />
               <span>ハッシュタグの自動抽出を無効化</span>
             </label>
             <label class="nn-checkbox">
-              <input type="checkbox" v-model="misskeyNoExtractEmojis" />
+              <input type="checkbox" v-model="misskeyNoExtractEmojis" :disabled="state.post.isSending" />
               <span>絵文字の自動抽出を無効化</span>
             </label>
             <label class="nn-checkbox">
-              <input type="checkbox" v-model="misskeyNoExtractLinks" />
+              <input type="checkbox" v-model="misskeyNoExtractLinks" :disabled="state.post.isSending" />
               <span>リンクの自動抽出を無効化</span>
             </label>
           </div>
@@ -1446,7 +1469,7 @@ document.addEventListener("keydown", (e) => {
                   type="text"
                   v-model="item.altText"
                   placeholder="画像の説明"
-                  :disabled="item.status === 'uploading'"
+                  :disabled="state.post.isSending || item.status === 'uploading'"
                 />
               </label>
               <div class="attachment-error" v-if="item.error">{{ item.error }}</div>
@@ -1456,13 +1479,14 @@ document.addEventListener("keydown", (e) => {
                 v-if="state.instance?.type === 'mastodon' && item.status === 'failed'"
                 class="nn-button size-small tool-button retry"
                 @click="retryAttachment(item.id)"
+                :disabled="state.post.isSending"
               >
                 <Icon icon="mingcute:refresh-2-line" class="nn-icon size-xsmall" />
                 <span>再試行</span>
               </button>
               <button
                 class="nn-button size-small tool-button remove"
-                :disabled="item.status === 'uploading'"
+                :disabled="state.post.isSending || item.status === 'uploading'"
                 @click="removeAttachment(item.id)"
               >
                 <Icon icon="mingcute:close-line" class="nn-icon size-xsmall" />
