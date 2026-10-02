@@ -22,7 +22,7 @@ import type { ApiInvokeResult } from "@shared/types/ipc";
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
   emojis?: MisskeyEntities.EmojiSimple[];
-  mode?: "boost" | "reply";
+  mode?: "boost" | "reply" | "quote";
   replyToId?: string;
   blueskyReplyTo?: BlueskyReplyRef;
   timelineId?: string;
@@ -435,6 +435,7 @@ const submitType = computed(() => {
       return "reply";
     }
     if (props.data.post) {
+      if (props.data.mode === "quote") return "quote";
       return text.value || hasAttachments.value ? "quote" : "repost";
     }
     return "post";
@@ -1112,7 +1113,9 @@ const addCreatedBlueskyPostToTimeline = async ({
  * Check whether this composer payload should create a native Bluesky repost.
  */
 const shouldCreateNativeBlueskyRepost = (targetPost: BlueskyPostType | null) => {
-  return Boolean(targetPost && !isReplyMode.value && !text.value && !hasAttachments.value);
+  return Boolean(
+    targetPost && props.data.mode !== "quote" && !isReplyMode.value && !text.value && !hasAttachments.value,
+  );
 };
 
 /**

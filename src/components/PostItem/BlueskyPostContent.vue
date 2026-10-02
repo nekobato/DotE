@@ -42,7 +42,7 @@ const props = defineProps({
 });
 
 const text = computed(() => {
-  if (props.quotedRecord) {
+  if (!props.record && props.quotedRecord) {
     const quotedValue = props.quotedRecord.value;
     if (AppBskyFeedPost.isRecord(quotedValue)) {
       return quotedValue.text;

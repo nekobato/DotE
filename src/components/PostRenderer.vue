@@ -31,6 +31,8 @@ const emit = defineEmits<{
   newReaction: [noteId: string];
   refreshPost: [noteId: string];
   repost: [data: any];
+  quote: [data: { post: AppBskyFeedDefs.PostView }];
+  deleteRepost: [data: { postUri: string; repostUri: string }];
   reply: [data: any];
   favourite: [payload: any];
   like: [payload: any];
@@ -143,6 +145,8 @@ const blueskyNotifications = computed<BlueskyNotificationType[]>(() => {
     :currentInstanceUrl="config.currentInstanceUrl"
     @reply="emit('reply', $event)"
     @repost="emit('repost', $event)"
+    @quote="emit('quote', $event)"
+    @deleteRepost="emit('deleteRepost', $event)"
   />
 
   <!-- Bluesky Posts -->
@@ -155,6 +159,8 @@ const blueskyNotifications = computed<BlueskyNotificationType[]>(() => {
     :currentInstanceUrl="config.currentInstanceUrl"
     @reply="emit('reply', $event)"
     @repost="emit('repost', $event)"
+    @quote="emit('quote', $event)"
+    @deleteRepost="emit('deleteRepost', $event)"
     @like="emit('like', $event)"
     @deleteLike="emit('deleteLike', $event)"
   />

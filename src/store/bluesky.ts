@@ -4,7 +4,8 @@ import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
 import type { AppBskyFeedDefs, AppBskyNotificationListNotifications } from "@atproto/api";
 import type { ChannelName } from "@shared/types/store";
-import { computed } from "vue";
+import { computed, reactive } from "vue";
+import type { User } from "@shared/types/store";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import type { BlueskyFeedPost } from "@/types/bluesky";
 import {
@@ -30,6 +31,7 @@ type BlueskyRepostStateUpdate = {
   postUri: string;
   repostUri?: string;
   isReposted: boolean;
+  repostCount?: number;
 };
 
 type BlueskyRepostDeleteTarget = {
@@ -42,6 +44,26 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   const store = useStore();
   let timelineStore: ReturnType<typeof useTimelineStore>;
   const locallyInsertedPostIds = new Map<string, number>();
+  const pendingReposts = reactive(new Set<string>());
+  const repostRecords = reactive(new Map<string, string | null>());
+
+  const repostKey = ({ userId, postUri }: { userId: string; postUri: string }) => `${userId}:${postUri}`;
+  const isRepostPending = (target: { userId: string; postUri: string }) => pendingReposts.has(repostKey(target));
+  const repostUriFor = (target: { userId: string; postUri: string }) => repostRecords.get(repostKey(target));
+  const isSameAccount = (userId: string, did: string) =>
+    store.$state.users.find((user) => user.id === userId)?.blueskySession?.did === did;
+
+  /** Keep notification actions in sync with newly fetched authenticated post views. */
+  const syncRepostRecords = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
+    const userId = getTimelineStore().currentUser?.id;
+    if (!userId) return;
+    posts.forEach(({ post }) => {
+      const key = repostKey({ userId, postUri: post.uri });
+      if (post.viewer && repostRecords.has(key) && !pendingReposts.has(key)) {
+        repostRecords.set(key, post.viewer.repost ?? null);
+      }
+    });
+  };
 
   // 初期化時に循環参照を避けるため、遅延初期化
   const getTimelineStore = () => {
@@ -148,6 +170,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   };
 
   const setPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
+    syncRepostRecords(posts);
     const timeline = getTimelineStore();
     if (timeline.current) {
       const receivedPostIds = new Set(posts.map((post) => resolveBlueskyFeedItemId(post)));
@@ -178,6 +201,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   };
 
   const pushPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
+    syncRepostRecords(posts);
     const timeline = getTimelineStore();
     const filteredPosts = filterVisibleHomeTimelinePosts(posts).filter((post) => {
       const currentPosts = store.$state.timelines[timeline.currentIndex].posts as BlueskyFeedPost[];
@@ -190,6 +214,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   };
 
   const unshiftPosts = (posts: AppBskyFeedDefs.FeedViewPost[]) => {
+    syncRepostRecords(posts);
     const timeline = getTimelineStore();
     if (timeline.current) {
       store.$state.timelines[timeline.currentIndex].posts.unshift(
@@ -213,7 +238,14 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   /**
    * Apply the viewer.repost flag and repostCount to every local copy of a Bluesky post.
    */
-  const updateRepostStateAcrossTimelines = ({ userId, postUri, repostUri, isReposted }: BlueskyRepostStateUpdate) => {
+  const updateRepostStateAcrossTimelines = ({
+    userId,
+    postUri,
+    repostUri,
+    isReposted,
+    repostCount,
+  }: BlueskyRepostStateUpdate) => {
+    repostRecords.set(repostKey({ userId, postUri }), isReposted ? (repostUri ?? null) : null);
     forEachBlueskyFeedItem(userId, (feedItem) => {
       if (feedItem.post.uri !== postUri) return;
 
@@ -223,7 +255,9 @@ export const useBlueskyStore = defineStore("bluesky", () => {
         if (!repostUri) return;
         nextViewer.repost = repostUri;
         feedItem.post.viewer = nextViewer;
-        if (!wasReposted) {
+        if (repostCount !== undefined) {
+          feedItem.post.repostCount = repostCount;
+        } else if (!wasReposted) {
           feedItem.post.repostCount = (feedItem.post.repostCount ?? 0) + 1;
         }
         return;
@@ -424,6 +458,128 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     targetPost.post.likeCount--;
   };
 
+  /** Serialize native repost actions per account and post, including duplicate menu selections. */
+  const runRepostAction = async (
+    target: { userId: string; postUri: string },
+    failureMessage: string,
+    action: (user: User) => Promise<boolean>,
+  ): Promise<boolean> => {
+    const key = repostKey(target);
+    if (pendingReposts.has(key)) return false;
+    const user = store.$state.users.find((user) => user.id === target.userId);
+    if (!user?.blueskySession?.did) {
+      store.$state.errors.push({ message: "Blueskyのリポスト対象アカウントが見つかりませんでした" });
+      return false;
+    }
+
+    pendingReposts.add(key);
+    try {
+      return await action(user);
+    } catch (error) {
+      store.$state.errors.push({ message: failureMessage });
+      console.error(failureMessage, error);
+      return false;
+    } finally {
+      pendingReposts.delete(key);
+    }
+  };
+
+  /** Create a native repost immediately and insert its activity into the original account's timelines. */
+  const createRepost = async ({
+    post,
+    timelineId,
+    userId,
+  }: {
+    post: AppBskyFeedDefs.PostView;
+    timelineId?: string;
+    userId: string;
+  }): Promise<boolean> => {
+    const target = { userId, postUri: post.uri };
+    return runRepostAction(target, "Blueskyへのリポストに失敗しました", async (user) => {
+      const did = user.blueskySession!.did;
+      const by: AppBskyFeedDefs.ReasonRepost["by"] = {
+        $type: "app.bsky.actor.defs#profileViewBasic",
+        did,
+        handle: user.blueskySession!.handle || user.name || did,
+        displayName: user.name,
+        avatar: user.avatarUrl || undefined,
+      };
+
+      // Notifications carry a post record without authenticated viewer state.
+      // A cached negative result cannot supply counts or exclude a repost made by another client.
+      let targetPost = post;
+      const knownRepost = repostUriFor(target);
+      if (!targetPost.viewer && knownRepost == null) {
+        const result = await ipcInvoke("api", { method: "bluesky:getPosts", did, uris: [post.uri] });
+        const data = unwrapApiResult(result, "Blueskyのリポスト対象投稿を取得できませんでした");
+        if (!data) return false;
+        const hydratedPost = data.posts?.find((item: AppBskyFeedDefs.PostView) => item.uri === post.uri);
+        if (!hydratedPost) {
+          store.$state.errors.push({ message: "Blueskyのリポスト対象投稿が見つかりませんでした" });
+          return false;
+        }
+        targetPost = hydratedPost;
+      }
+
+      if (!isSameAccount(userId, did)) return false;
+
+      const existingRepost = targetPost.viewer ? targetPost.viewer.repost : knownRepost;
+      if (existingRepost) {
+        updateRepostStateAcrossTimelines({
+          ...target,
+          repostUri: existingRepost,
+          isReposted: true,
+          repostCount: targetPost.repostCount,
+        });
+        return true;
+      }
+
+      const result = await ipcInvoke("api", {
+        method: "bluesky:createRepost",
+        did,
+        uri: targetPost.uri,
+        cid: targetPost.cid,
+      });
+      const repost = unwrapApiResult(result, "Blueskyへのリポストに失敗しました");
+      if (!repost?.uri || !repost?.cid) {
+        if (result.ok) store.$state.errors.push({ message: "Blueskyのリポスト結果を取得できませんでした" });
+        return false;
+      }
+      if (!isSameAccount(userId, did)) return true;
+
+      const sourceTimeline = store.$state.timelines.find(
+        (timeline) =>
+          timeline.id === timelineId && timeline.userId === userId && timeline.channel === "bluesky:homeTimeline",
+      );
+      const latestPost =
+        (sourceTimeline?.posts as BlueskyFeedPost[] | undefined)?.find((entry) => entry.post.uri === post.uri)?.post ??
+        targetPost;
+      const repostCount = (latestPost.repostCount ?? 0) + (latestPost.viewer?.repost === repost.uri ? 0 : 1);
+
+      insertLocalPosts(
+        [
+          {
+            post: {
+              ...targetPost,
+              viewer: { ...(targetPost.viewer ?? {}), repost: repost.uri },
+              repostCount,
+            },
+            reason: {
+              $type: "app.bsky.feed.defs#reasonRepost",
+              by,
+              uri: repost.uri,
+              cid: repost.cid,
+              indexedAt: new Date().toISOString(),
+            },
+          },
+        ],
+        { timelineId, userId },
+      );
+      updateRepostStateAcrossTimelines({ ...target, repostUri: repost.uri, isReposted: true, repostCount });
+      return true;
+    });
+  };
+
   /**
    * Delete a native Bluesky repost and update all cached copies of the reposted post.
    */
@@ -436,25 +592,23 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     repostUri: string;
     userId: string;
   }): Promise<boolean> => {
-    const user = store.$state.users.find((user) => user.id === userId);
-    if (!user?.blueskySession?.did) {
-      store.$state.errors.push({ message: "Blueskyのリポスト解除対象アカウントが見つかりませんでした" });
-      return false;
-    }
+    return runRepostAction({ userId, postUri }, "Blueskyのリポスト解除に失敗しました", async (user) => {
+      const did = user.blueskySession!.did;
+      const result = await ipcInvoke("api", {
+        method: "bluesky:deleteRepost",
+        did,
+        uri: repostUri,
+      });
+      if (!result.ok) {
+        reportApiError(result, `${postUri}のリポスト解除失敗`);
+        return false;
+      }
+      if (!isSameAccount(userId, did)) return true;
 
-    const result = await ipcInvoke("api", {
-      method: "bluesky:deleteRepost",
-      did: user.blueskySession.did,
-      uri: repostUri,
+      updateRepostStateAcrossTimelines({ userId, postUri, repostUri, isReposted: false });
+      removeRepostFeedItemsAcrossTimelines({ userId, postUri, repostUri });
+      return true;
     });
-    if (!result.ok) {
-      reportApiError(result, `${postUri}のリポスト解除失敗`);
-      return false;
-    }
-
-    updateRepostStateAcrossTimelines({ userId, postUri, repostUri, isReposted: false });
-    removeRepostFeedItemsAcrossTimelines({ userId, postUri, repostUri });
-    return true;
   };
 
   /**
@@ -473,6 +627,9 @@ export const useBlueskyStore = defineStore("bluesky", () => {
   }): Promise<boolean> => {
     const user = store.$state.users.find((user) => user.id === userId);
     const repostedPostUri = isRepost ? findBlueskyFeedItemById(userId, feedItemId)?.post.uri : undefined;
+    if (isRepost && repostedPostUri) {
+      return deleteRepost({ userId, postUri: repostedPostUri, repostUri: uri });
+    }
     if (!user?.blueskySession?.did) {
       store.$state.errors.push({ message: "Blueskyの削除対象アカウントが見つかりませんでした" });
       return false;
@@ -489,12 +646,6 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     }
 
     locallyInsertedPostIds.delete(feedItemId);
-    if (isRepost && repostedPostUri) {
-      updateRepostStateAcrossTimelines({ userId, postUri: repostedPostUri, repostUri: uri, isReposted: false });
-      removeRepostFeedItemsAcrossTimelines({ userId, postUri: repostedPostUri, repostUri: uri });
-      return true;
-    }
-
     removePostAcrossTimelines(store.timelines, userId, feedItemId);
     return true;
   };
@@ -511,6 +662,9 @@ export const useBlueskyStore = defineStore("bluesky", () => {
     pushNotifications,
     like,
     deleteLike,
+    createRepost,
+    isRepostPending,
+    repostUriFor,
     deleteRepost,
     deletePost,
   };
