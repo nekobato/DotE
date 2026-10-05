@@ -147,6 +147,7 @@ const runPostAction = (command: string) => {
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
+        :canVote="true"
         @openUserPage="openUserPage"
       />
       <MisskeyNotificationContent

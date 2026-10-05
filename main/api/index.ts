@@ -23,6 +23,7 @@ export const apiRequest = {
   ["misskey:getNote"]: misskeyRequest.misskeyGetNote,
   ["misskey:getMeta"]: misskeyRequest.misskeyGetMeta,
   ["misskey:createNote"]: misskeyRequest.misskeyCreateNote,
+  ["misskey:voteInPoll"]: misskeyRequest.misskeyVoteInPoll,
   ["misskey:getFollowedChannels"]: misskeyRequest.misskeyGetFollowedChannels,
   ["misskey:getMyAntennas"]: misskeyRequest.misskeyGetMyAntennas,
   ["misskey:getUserLists"]: misskeyRequest.misskeyGetUserLists,

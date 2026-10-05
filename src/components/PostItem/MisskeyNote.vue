@@ -145,6 +145,7 @@ setupStreamSubscription();
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
+        :canVote="props.showActions"
         @openUserPage="openUserPage"
       />
       <MisskeyNoteContent
@@ -156,6 +157,7 @@ setupStreamSubscription();
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
+        :canVote="props.showActions"
         @openUserPage="openUserPage"
       />
     </div>
