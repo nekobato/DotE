@@ -18,6 +18,7 @@ import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref, watch } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import { normalizeBlueskyPostLanguages } from "@shared/bluesky-post-languages";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
@@ -151,6 +152,9 @@ const misskeyNoExtractMentions = ref(false);
 const misskeyNoExtractHashtags = ref(false);
 const misskeyNoExtractEmojis = ref(false);
 const misskeyNoExtractLinks = ref(false);
+const blueskyLanguages = ref("");
+const blueskyLanguageError = ref("");
+const blueskyLanguageInputRef = ref<HTMLInputElement | null>(null);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
@@ -550,6 +554,8 @@ const resetComposerState = () => {
   misskeyNoExtractHashtags.value = false;
   misskeyNoExtractEmojis.value = false;
   misskeyNoExtractLinks.value = false;
+  blueskyLanguages.value = "";
+  blueskyLanguageError.value = "";
   clearAttachments();
 };
 
@@ -1207,6 +1213,7 @@ const postToBluesky = async () => {
   }
   const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
   const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
+  const langs = normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
 
   const result = await ipcInvoke("api", {
     method: "bluesky:createPost",
@@ -1215,6 +1222,7 @@ const postToBluesky = async () => {
     replyTo: blueskyReplyTo.value,
     quote: quoteRef,
     images,
+    ...(langs.length ? { langs } : {}),
   });
 
   const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
@@ -1231,8 +1239,23 @@ const postToBluesky = async () => {
   }
 };
 
+const validateBlueskyLanguages = (): boolean => {
+  try {
+    normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
+    blueskyLanguageError.value = "";
+    return true;
+  } catch (error) {
+    blueskyLanguageError.value = (error as Error).message;
+    return false;
+  }
+};
+
 const submit = async () => {
   if (!canSubmit.value) return;
+  if (state.instance?.type === "bluesky" && !isBoostMode.value && !validateBlueskyLanguages()) {
+    blueskyLanguageInputRef.value?.focus();
+    return;
+  }
   state.post.error = "";
   state.post.isSending = true;
   try {
@@ -1357,6 +1380,7 @@ usePostSubmitShortcut({
           class="post-field"
           :autosize="{ minRows: 2 }"
           type="textarea"
+          aria-label="投稿本文"
           v-model="text"
           ref="textInputRef"
           :disabled="isBoostMode || state.post.isSending"
@@ -1406,6 +1430,29 @@ usePostSubmitShortcut({
           :inert="state.post.isSending"
         >
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
+        </div>
+        <div class="bluesky-language" v-if="!isBoostMode && state.instance?.type === 'bluesky'">
+          <label for="bluesky-post-languages">投稿の言語（任意）</label>
+          <input
+            class="nn-text-field"
+            id="bluesky-post-languages"
+            name="blueskyLanguages"
+            type="text"
+            ref="blueskyLanguageInputRef"
+            v-model="blueskyLanguages"
+            placeholder="ja, en-US"
+            autocapitalize="none"
+            :spellcheck="false"
+            :disabled="state.post.isSending"
+            :aria-invalid="Boolean(blueskyLanguageError)"
+            aria-describedby="bluesky-language-hint bluesky-language-error"
+            @input="blueskyLanguageError = ''"
+            @blur="validateBlueskyLanguages"
+          />
+          <span class="hint" id="bluesky-language-hint"
+            >最大3件を半角カンマで区切ります。空欄は言語を指定しません。</span
+          >
+          <span class="error" id="bluesky-language-error" role="alert">{{ blueskyLanguageError }}</span>
         </div>
         <div class="misskey-options" v-if="!isBoostMode && canUseMisskeyOptions && showMisskeyOptions">
           <div class="misskey-options-row">
@@ -1470,6 +1517,7 @@ usePostSubmitShortcut({
                 <input
                   class="nn-text-field attachment-alt-input"
                   type="text"
+                  :aria-label="`${item.name} の画像の説明（Alt）`"
                   v-model="item.altText"
                   placeholder="画像の説明"
                   :disabled="state.post.isSending || item.status === 'uploading'"
@@ -1584,7 +1632,7 @@ usePostSubmitShortcut({
     border-radius: 50%;
   }
   .username {
-    color: #fff;
+    color: var(--color-text-body);
     font-size: 0.8rem;
   }
   .post-action {
@@ -1657,9 +1705,9 @@ usePostSubmitShortcut({
   height: 240px;
   margin-top: 8px;
   overflow: hidden;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .misskey-options {
   display: flex;
@@ -1667,9 +1715,9 @@ usePostSubmitShortcut({
   gap: 12px;
   margin-top: 8px;
   padding: 10px;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .misskey-options-row {
   display: flex;
@@ -1690,15 +1738,39 @@ usePostSubmitShortcut({
   height: 28px;
   font-size: 0.7rem;
 }
+.bluesky-language {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+
+  input {
+    width: 100%;
+    min-height: 32px;
+    font-size: 0.75rem;
+  }
+  .hint {
+    color: var(--dote-color-white-t5);
+  }
+  .error {
+    color: var(--color-text-body);
+    font-weight: bold;
+
+    &:empty {
+      display: none;
+    }
+  }
+}
 .attachments-panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
   padding: 8px;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .attachment-item {
   display: grid;
@@ -1706,9 +1778,9 @@ usePostSubmitShortcut({
   gap: 8px;
   align-items: center;
   padding: 6px;
+  background: var(--dote-color-white-t1);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background: var(--dote-color-white-t1);
   &.failed {
     border-color: rgba(255, 120, 120, 0.5);
   }
@@ -1731,11 +1803,11 @@ usePostSubmitShortcut({
   overflow: hidden;
 }
 .attachment-name {
+  overflow: hidden;
   color: var(--dote-color-white);
   font-size: 0.7rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .attachment-meta {
   display: flex;
