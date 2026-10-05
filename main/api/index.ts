@@ -42,6 +42,7 @@ export const apiRequest = {
   ["mastodon:getNotificationMarker"]: mastodonRequest.mastodonGetNotificationMarker,
   ["mastodon:updateNotificationMarker"]: mastodonRequest.mastodonUpdateNotificationMarker,
   ["mastodon:uploadMedia"]: mastodonRequest.mastodonUploadMedia,
+  ["mastodon:updateMedia"]: mastodonRequest.mastodonUpdateMedia,
   ["mastodon:getMedia"]: mastodonRequest.mastodonGetMedia,
   ["mastodon:postStatus"]: mastodonRequest.mastodonPostStatus,
   ["mastodon:deleteStatus"]: mastodonRequest.mastodonDeleteStatus,
