@@ -487,6 +487,7 @@ export const mastodonPostStatus = async ({
   sensitive,
   spoilerText,
   visibility,
+  language,
 }: {
   instanceUrl: string;
   token: string;
@@ -496,6 +497,7 @@ export const mastodonPostStatus = async ({
   sensitive?: boolean;
   spoilerText?: string;
   visibility?: "public" | "unlisted" | "private" | "direct";
+  language?: string;
 }) => {
   const url = new URL(`/api/v1/statuses`, instanceUrl).toString();
   return requestJson(url, {
@@ -511,7 +513,31 @@ export const mastodonPostStatus = async ({
       sensitive,
       spoiler_text: spoilerText,
       visibility,
+      language,
     }),
+  });
+};
+
+/** Update an uploaded attachment's description before publishing it. */
+export const mastodonUpdateMedia = async ({
+  instanceUrl,
+  token,
+  id,
+  description,
+}: {
+  instanceUrl: string;
+  token: string;
+  id: string;
+  description: string;
+}) => {
+  const url = new URL(`/api/v1/media/${encodeURIComponent(id)}`, instanceUrl).toString();
+  return requestJson(url, {
+    method: "PUT",
+    headers: {
+      ...baseHeader,
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ description }),
   });
 };
 
