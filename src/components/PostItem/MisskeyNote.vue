@@ -33,10 +33,7 @@ const emit = defineEmits<{
 const postRef = toRef(props, "post");
 const emojisRef = toRef(props, "emojis");
 
-const { postType, renoteType, displayNote, postAttachments, setupStreamSubscription } = useMisskeyNote(
-  postRef,
-  props.currentInstanceUrl,
-);
+const { postType, renoteType, displayNote, postAttachments, setupStreamSubscription } = useMisskeyNote(postRef);
 
 const { reactions, isReacted } = useMisskeyReactions(postRef, emojisRef);
 
@@ -145,6 +142,7 @@ setupStreamSubscription();
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
+        :canVote="props.showActions"
         @openUserPage="openUserPage"
       />
       <MisskeyNoteContent
@@ -156,6 +154,7 @@ setupStreamSubscription();
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
+        :canVote="props.showActions"
         @openUserPage="openUserPage"
       />
     </div>

@@ -45,7 +45,7 @@ const postAtttachments = computed(() => {
     : props.notification.note.renote?.files?.length
       ? props.notification.note.renote.files
       : [];
-  return files?.length ? parseMisskeyAttachments(props.notification.note as MisskeyNote, props.currentInstanceUrl) : [];
+  return files?.length ? parseMisskeyAttachments(props.notification.note as MisskeyNote) : [];
 });
 
 const reactions = computed(() => {
@@ -147,6 +147,7 @@ const runPostAction = (command: string) => {
         :currentInstanceUrl="props.currentInstanceUrl"
         :hideCw="props.hideCw"
         :emojis="props.emojis"
+        :canVote="true"
         @openUserPage="openUserPage"
       />
       <MisskeyNotificationContent

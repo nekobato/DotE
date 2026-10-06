@@ -19,6 +19,9 @@ import { ElAvatar, ElInput } from "element-plus";
 import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref, watch } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
 import { normalizeBlueskyPostLanguages } from "@shared/bluesky-post-languages";
+import { createMisskeyPollDraft, normalizeMisskeyPoll } from "@shared/misskey-poll";
+import MisskeyPollEditor from "@/components/misskey/MisskeyPollEditor.vue";
+import { resolveMisskeyNote } from "@/utils/misskey";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
@@ -140,6 +143,10 @@ const textCw = ref("");
 const showEmojiPicker = ref(false);
 const showMisskeyOptions = ref(false);
 const showMastodonOptions = ref(false);
+const hasMisskeyPoll = ref(false);
+const misskeyPollDraft = ref(createMisskeyPollDraft());
+const misskeyPollError = ref("");
+const misskeyPollEditorRef = ref<{ $el: HTMLFieldSetElement } | null>(null);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
@@ -362,12 +369,23 @@ const misskeyNote = computed(() => {
     const renotePost = props.data.post as MisskeyNoteType;
     return {
       text: text.value,
+      ...(hasMisskeyPoll.value
+        ? {
+            poll: {
+              multiple: misskeyPollDraft.value.multiple,
+              expiresAt: misskeyPollDraft.value.expiredAfter
+                ? new Date(Date.now() + misskeyPollDraft.value.expiredAfter).toISOString()
+                : null,
+              choices: misskeyPollDraft.value.choices.map((choice) => ({ text: choice, votes: 0, isVoted: false })),
+            },
+          }
+        : {}),
       user: {
         name: state.user?.name,
         host: state.instance?.url,
         avatarUrl: state.user?.avatarUrl,
       },
-      renote: renotePost ? (renotePost.renote && !renotePost.text ? renotePost.renote : renotePost) : null,
+      renote: renotePost ? resolveMisskeyNote(renotePost) : null,
     } as MisskeyNoteType;
   }
   return null;
@@ -425,7 +443,7 @@ const submitType = computed(() => {
       return "reply";
     }
     if (misskeyNote.value?.renote) {
-      return text.value ? "quote" : "renote";
+      return text.value || hasAttachments.value || hasMisskeyPoll.value ? "quote" : "renote";
     }
     return "note";
   }
@@ -469,7 +487,7 @@ const canSubmit = computed(() => {
     submitType.value === "post"
   ) {
     if (state.instance?.type === "misskey") {
-      return text.value.length > 0 || hasAttachments.value;
+      return text.value.length > 0 || hasAttachments.value || hasMisskeyPoll.value;
     }
     if (state.instance?.type === "mastodon") {
       return text.value.length > 0 || hasAttachments.value;
@@ -556,6 +574,9 @@ const resetComposerState = () => {
   showEmojiPicker.value = false;
   showMisskeyOptions.value = false;
   showMastodonOptions.value = false;
+  hasMisskeyPoll.value = false;
+  misskeyPollDraft.value = createMisskeyPollDraft();
+  misskeyPollError.value = "";
   misskeyVisibility.value = null;
   misskeyLocalOnly.value = false;
   misskeyNoExtractMentions.value = false;
@@ -1008,11 +1029,7 @@ const retryAttachment = async (id: string) => {
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const replyId = isReplyMode.value ? (replyToId.value ?? null) : null;
-  const renoteId = isReplyMode.value
-    ? null
-    : targetNote?.renoteId && !targetNote.text
-      ? targetNote.renoteId
-      : (targetNote?.id ?? null);
+  const renoteId = isReplyMode.value ? null : targetNote ? resolveMisskeyNote(targetNote).id : null;
   if (!(await uploadMisskeyAttachments())) {
     return;
   }
@@ -1033,7 +1050,7 @@ const postToMisskey = async () => {
     noExtractHashtags: misskeyNoExtractHashtags.value,
     noExtractEmojis: misskeyNoExtractEmojis.value,
     noExtractLinks: misskeyNoExtractLinks.value,
-    // poll: null,
+    ...(hasMisskeyPoll.value ? { poll: normalizeMisskeyPoll(misskeyPollDraft.value) } : {}),
     replyId,
     renoteId: renoteId || null,
     ...(fileIds ? { fileIds } : {}),
@@ -1042,6 +1059,9 @@ const postToMisskey = async () => {
   if (res?.createdNote) {
     text.value = "";
     textCw.value = "";
+    hasMisskeyPoll.value = false;
+    misskeyPollDraft.value = createMisskeyPollDraft();
+    misskeyPollError.value = "";
     clearAttachments();
     ipcSend("post:close");
   }
@@ -1319,6 +1339,16 @@ const submit = async () => {
     blueskyLanguageInputRef.value?.focus();
     return;
   }
+  if (state.instance?.type === "misskey" && hasMisskeyPoll.value && !isBoostMode.value) {
+    try {
+      normalizeMisskeyPoll(misskeyPollDraft.value);
+      misskeyPollError.value = "";
+    } catch (error) {
+      misskeyPollError.value = (error as Error).message;
+      misskeyPollEditorRef.value?.$el.querySelector<HTMLInputElement>('input[type="text"]')?.focus();
+      return;
+    }
+  }
   state.post.error = "";
   state.post.isSending = true;
   try {
@@ -1499,6 +1529,18 @@ usePostSubmitShortcut({
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
             <span>添付</span>
           </button>
+          <button
+            v-if="canUseMisskeyOptions"
+            class="nn-button size-small tool-button"
+            type="button"
+            :aria-expanded="hasMisskeyPoll"
+            :disabled="state.post.isSending"
+            @click="hasMisskeyPoll = !hasMisskeyPoll"
+          >
+            <Icon icon="mingcute:chart-horizontal-line" class="nn-icon size-xsmall" /><span>{{
+              hasMisskeyPoll ? "投票を外す" : "投票"
+            }}</span>
+          </button>
           <input
             class="file-input"
             type="file"
@@ -1509,6 +1551,14 @@ usePostSubmitShortcut({
             @change="onSelectFiles"
           />
         </div>
+        <MisskeyPollEditor
+          v-if="!isBoostMode && canUseMisskeyOptions && hasMisskeyPoll"
+          ref="misskeyPollEditorRef"
+          v-model="misskeyPollDraft"
+          :disabled="state.post.isSending"
+          :error="misskeyPollError"
+          @edit="misskeyPollError = ''"
+        />
         <div
           class="emoji-picker-panel"
           v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker"

@@ -1,4 +1,5 @@
 import { baseHeader } from "./request";
+import { normalizeMisskeyPoll, type MisskeyPollInput } from "../../shared/misskey-poll";
 import {
   buildMultipartFormData,
   requestFormData,
@@ -410,6 +411,27 @@ export const misskeyDeleteReaction = async ({
   });
 };
 
+/** Cast a single choice; Misskey returns an empty 204 response. */
+export const misskeyVoteInPoll = async ({
+  instanceUrl,
+  token,
+  noteId,
+  choice,
+}: {
+  instanceUrl: string;
+  token: string;
+  noteId: string;
+  choice: number;
+}) => {
+  if (!Number.isInteger(choice) || choice < 0) throw new Error("投票の選択肢が正しくありません");
+  const url = new URL("/api/notes/polls/vote", instanceUrl).toString();
+  return requestJsonAllowEmpty(url, {
+    method: "POST",
+    headers: baseHeader,
+    body: JSON.stringify({ i: token, noteId, choice }),
+  });
+};
+
 /**
  * Delete a Misskey note owned by the authenticated account.
  */
@@ -451,7 +473,7 @@ export const misskeyCreateNote = async ({
 }: {
   instanceUrl: string;
   token: string;
-  text: string;
+  text: string | null;
   cw: string | null;
   visibility?: string;
   localOnly?: boolean;
@@ -461,7 +483,7 @@ export const misskeyCreateNote = async ({
   noExtractLinks?: boolean;
   replyId?: string;
   renoteId?: string;
-  poll?: any;
+  poll?: MisskeyPollInput | null;
   fileIds?: string[];
 }) => {
   const url = new URL(`/api/notes/create`, instanceUrl).toString();
@@ -480,7 +502,7 @@ export const misskeyCreateNote = async ({
       noExtractLinks,
       replyId,
       renoteId,
-      poll,
+      poll: poll ? normalizeMisskeyPoll(poll) : poll,
       ...(fileIds && fileIds.length > 0 ? { fileIds } : {}),
     }),
   });
