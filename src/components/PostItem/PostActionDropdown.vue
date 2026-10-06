@@ -1,29 +1,23 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
-import { computed, ref } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 import { formatPostDateTime } from "@/utils/postDate";
-
-/**
- * Dropdown menu item displayed in the post action menu.
- */
-type PostActionDropdownAction = {
-  command: string;
-  icon: string;
-  label: string;
-  disabled?: boolean;
-};
+import type { PostAction } from "@/types/post-action";
 
 const props = defineProps<{
-  actions: PostActionDropdownAction[];
+  actions: PostAction[];
   createdAt?: string;
 }>();
 
 const emit = defineEmits<{
   select: [command: string];
+  open: [];
 }>();
 
 const isDropdownOpen = ref(false);
+const trigger = useTemplateRef<HTMLButtonElement>("trigger");
+defineExpose({ focusTrigger: () => trigger.value?.focus() });
 
 const formattedCreatedAt = computed(() => formatPostDateTime(props.createdAt));
 
@@ -41,6 +35,7 @@ const selectAction = (command: string | number | object) => {
  */
 const setDropdownOpen = (visible: boolean) => {
   isDropdownOpen.value = visible;
+  if (visible) emit("open");
 };
 </script>
 
@@ -61,7 +56,7 @@ const setDropdownOpen = (visible: boolean) => {
       @command="selectAction"
       @visible-change="setDropdownOpen"
     >
-      <button class="dote-post-action" type="button" aria-label="投稿アクション" title="投稿アクション">
+      <button ref="trigger" class="dote-post-action" type="button" aria-label="投稿アクション" title="投稿アクション">
         <Icon class="nn-icon size-xsmall" icon="mingcute:chat-4-line" />
       </button>
       <template #dropdown>
@@ -96,13 +91,13 @@ const setDropdownOpen = (visible: boolean) => {
   padding: 0;
   overflow: hidden;
   background: transparent;
-  visibility: hidden;
+  opacity: 0;
 }
 
 :global(.dote-post:hover .dote-post-actions),
 :global(.dote-post:focus-within .dote-post-actions),
 :global(.dote-post .dote-post-actions.is-open) {
-  visibility: visible;
+  opacity: 1;
 }
 
 .dote-post-action {

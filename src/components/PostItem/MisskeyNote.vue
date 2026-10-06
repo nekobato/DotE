@@ -10,6 +10,7 @@ import MisskeyNoteContent from "./MisskeyNoteContent.vue";
 import PostAttachments from "./PostAttachments.vue";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostActionDropdown from "./PostActionDropdown.vue";
+import MisskeyNoteActions from "./MisskeyNoteActions.vue";
 
 const props = withDefaults(defineProps<MisskeyNoteProps>(), {
   emojis: () => [],
@@ -188,7 +189,15 @@ setupStreamSubscription();
         <span class="count">{{ reaction.count }}</span>
       </button>
     </div>
-    <PostActionDropdown :actions="postActions" :createdAt="postCreatedAt" @select="runPostAction" />
+    <MisskeyNoteActions
+      v-if="props.showActions && props.currentInstanceUrl"
+      :note="displayNote"
+      :currentInstanceUrl="props.currentInstanceUrl"
+      :actions="postActions"
+      :createdAt="postCreatedAt"
+      @select="runPostAction"
+    />
+    <PostActionDropdown v-else :actions="postActions" :createdAt="postCreatedAt" @select="runPostAction" />
   </div>
 </template>
 

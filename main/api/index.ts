@@ -1,4 +1,5 @@
 import * as misskeyRequest from "./misskey";
+import * as misskeyNoteManagement from "./misskey-note-management";
 import * as mastodonRequest from "./mastodon";
 import * as blueskyRequest from "./bluesky";
 import { blueskyStartOAuth } from "./bluesky-oauth";
@@ -21,6 +22,14 @@ export const apiRequest = {
   ["misskey:deleteNote"]: misskeyRequest.misskeyDeleteNote,
   ["misskey:getNoteReactions"]: misskeyRequest.misskeyGetNoteReactions,
   ["misskey:getNote"]: misskeyRequest.misskeyGetNote,
+  ["misskey:getNoteState"]: misskeyNoteManagement.misskeyGetNoteState,
+  ["misskey:favoriteNote"]: misskeyNoteManagement.misskeyFavoriteNote,
+  ["misskey:unfavoriteNote"]: misskeyNoteManagement.misskeyUnfavoriteNote,
+  ["misskey:getClips"]: misskeyNoteManagement.misskeyGetClips,
+  ["misskey:addNoteToClip"]: misskeyNoteManagement.misskeyAddNoteToClip,
+  ["misskey:muteThread"]: misskeyNoteManagement.misskeyMuteThread,
+  ["misskey:unmuteThread"]: misskeyNoteManagement.misskeyUnmuteThread,
+  ["misskey:unrenote"]: misskeyNoteManagement.misskeyUnrenote,
   ["misskey:getMeta"]: misskeyRequest.misskeyGetMeta,
   ["misskey:createNote"]: misskeyRequest.misskeyCreateNote,
   ["misskey:voteInPoll"]: misskeyRequest.misskeyVoteInPoll,
