@@ -93,6 +93,12 @@ describe("Bluesky post records", () => {
     assertValidRecord();
   });
 
+  it("keeps well-formed reserved primary subtags accepted by the ATProto Lexicon", async () => {
+    await blueskyCreatePost({ did, text: "本文", langs: ["abcde", "qaaa"] });
+    expect(postedRecord().langs).toEqual(["abcde", "qaaa"]);
+    assertValidRecord();
+  });
+
   it.each([["en_US"], ["日本語"], ["ja", "en", "fr", "de"]])(
     "rejects invalid or excessive languages before authentication or publication: %j",
     async (...langs) => {
