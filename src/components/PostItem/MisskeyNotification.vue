@@ -45,7 +45,7 @@ const postAtttachments = computed(() => {
     : props.notification.note.renote?.files?.length
       ? props.notification.note.renote.files
       : [];
-  return files?.length ? parseMisskeyAttachments(props.notification.note as MisskeyNote, props.currentInstanceUrl) : [];
+  return files?.length ? parseMisskeyAttachments(props.notification.note as MisskeyNote) : [];
 });
 
 const reactions = computed(() => {

@@ -4,10 +4,7 @@ import { note as misskeyNote } from "misskey-js";
 import { parseMisskeyAttachments, resolveMisskeyNote } from "@/utils/misskey";
 import { ipcSend } from "@/utils/ipc";
 
-export function useMisskeyNote(
-  post: ComputedRef<MisskeyNote> | Ref<MisskeyNote> | MisskeyNote,
-  currentInstanceUrl?: string,
-) {
+export function useMisskeyNote(post: ComputedRef<MisskeyNote> | Ref<MisskeyNote> | MisskeyNote) {
   const postRef = computed(() => {
     if (typeof post === "object" && "value" in post) {
       return post.value;
@@ -33,7 +30,7 @@ export function useMisskeyNote(
   const displayNote = computed(() => resolveMisskeyNote(postRef.value));
 
   const postAttachments = computed(() => {
-    return parseMisskeyAttachments(postRef.value, currentInstanceUrl);
+    return parseMisskeyAttachments(postRef.value);
   });
 
   const setupStreamSubscription = () => {

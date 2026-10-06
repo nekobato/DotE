@@ -33,10 +33,7 @@ const emit = defineEmits<{
 const postRef = toRef(props, "post");
 const emojisRef = toRef(props, "emojis");
 
-const { postType, renoteType, displayNote, postAttachments, setupStreamSubscription } = useMisskeyNote(
-  postRef,
-  props.currentInstanceUrl,
-);
+const { postType, renoteType, displayNote, postAttachments, setupStreamSubscription } = useMisskeyNote(postRef);
 
 const { reactions, isReacted } = useMisskeyReactions(postRef, emojisRef);
 

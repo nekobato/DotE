@@ -49,6 +49,34 @@ const quoteContent: [string, Partial<MisskeyNote>][] = [
 ];
 
 describe("Misskey note classification and displayed counts", () => {
+  const poll = { multiple: false, choices: [{ text: "Yes", votes: 0, isVoted: false }] };
+
+  it("keeps a poll-only composer preview out of clickable attachments without requiring a note URL", () => {
+    const result = useMisskeyNote(note({ id: undefined, poll }));
+    expect(result.postAttachments.value).toEqual([]);
+    expect(result.displayNote.value.poll).toEqual(poll);
+  });
+
+  it("keeps media alongside a poll without adding a duplicate poll attachment", () => {
+    const file = {
+      type: "image/png",
+      url: "https://misskey.example/image.png",
+      properties: { width: 640, height: 480 },
+      isSensitive: false,
+    } as NonNullable<MisskeyNote["files"]>[number];
+    const result = useMisskeyNote(renote({ renote: note({ poll, files: [file] }) }));
+    expect(result.postAttachments.value).toEqual([
+      {
+        type: "image",
+        url: file.url,
+        thumbnailUrl: "",
+        size: { width: 640, height: 480 },
+        isSensitive: false,
+      },
+    ]);
+    expect(result.displayNote.value.poll).toEqual(poll);
+  });
+
   it.each([
     ["note", {}],
     ["reply", { replyId: "reply-target" }],
