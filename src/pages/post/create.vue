@@ -18,6 +18,7 @@ import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref, watch } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import { normalizeBlueskyPostLanguages } from "@shared/bluesky-post-languages";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
@@ -158,6 +159,9 @@ const mastodonSensitive = ref(false);
 const mastodonLanguage = ref("");
 const mastodonLanguageError = ref("");
 const mastodonLanguageInputRef = ref<HTMLInputElement | null>(null);
+const blueskyLanguages = ref("");
+const blueskyLanguageError = ref("");
+const blueskyLanguageInputRef = ref<HTMLInputElement | null>(null);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
@@ -562,6 +566,8 @@ const resetComposerState = () => {
   mastodonSensitive.value = false;
   mastodonLanguage.value = "";
   mastodonLanguageError.value = "";
+  blueskyLanguages.value = "";
+  blueskyLanguageError.value = "";
   clearAttachments();
 };
 
@@ -1257,6 +1263,7 @@ const postToBluesky = async () => {
   }
   const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
   const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
+  const langs = normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
 
   const result = await ipcInvoke("api", {
     method: "bluesky:createPost",
@@ -1265,6 +1272,7 @@ const postToBluesky = async () => {
     replyTo: blueskyReplyTo.value,
     quote: quoteRef,
     images,
+    ...(langs.length ? { langs } : {}),
   });
 
   const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
@@ -1288,12 +1296,27 @@ const validateMastodonLanguage = (): boolean => {
   return !mastodonLanguageError.value;
 };
 
+const validateBlueskyLanguages = (): boolean => {
+  try {
+    normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
+    blueskyLanguageError.value = "";
+    return true;
+  } catch (error) {
+    blueskyLanguageError.value = (error as Error).message;
+    return false;
+  }
+};
+
 const submit = async () => {
   if (!canSubmit.value) return;
   if (state.instance?.type === "mastodon" && !isBoostMode.value && !validateMastodonLanguage()) {
     showMastodonOptions.value = true;
     await nextTick();
     mastodonLanguageInputRef.value?.focus();
+    return;
+  }
+  if (state.instance?.type === "bluesky" && !isBoostMode.value && !validateBlueskyLanguages()) {
+    blueskyLanguageInputRef.value?.focus();
     return;
   }
   state.post.error = "";
@@ -1492,6 +1515,29 @@ usePostSubmitShortcut({
           :inert="state.post.isSending"
         >
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
+        </div>
+        <div class="bluesky-language" v-if="!isBoostMode && state.instance?.type === 'bluesky'">
+          <label for="bluesky-post-languages">投稿の言語（任意）</label>
+          <input
+            class="nn-text-field"
+            id="bluesky-post-languages"
+            name="blueskyLanguages"
+            type="text"
+            ref="blueskyLanguageInputRef"
+            v-model="blueskyLanguages"
+            placeholder="ja, en-US"
+            autocapitalize="none"
+            :spellcheck="false"
+            :disabled="state.post.isSending"
+            :aria-invalid="Boolean(blueskyLanguageError)"
+            aria-describedby="bluesky-language-hint bluesky-language-error"
+            @input="blueskyLanguageError = ''"
+            @blur="validateBlueskyLanguages"
+          />
+          <span class="hint" id="bluesky-language-hint"
+            >最大3件を半角カンマで区切ります。空欄は言語を指定しません。</span
+          >
+          <span class="error" id="bluesky-language-error" role="alert">{{ blueskyLanguageError }}</span>
         </div>
         <div class="misskey-options" v-if="!isBoostMode && canUseMisskeyOptions && showMisskeyOptions">
           <div class="misskey-options-row">
@@ -1868,6 +1914,30 @@ usePostSubmitShortcut({
 
   &:empty {
     display: none;
+  }
+}
+.bluesky-language {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+
+  input {
+    width: 100%;
+    min-height: 32px;
+    font-size: 0.75rem;
+  }
+  .hint {
+    color: var(--dote-color-white-t5);
+  }
+  .error {
+    color: var(--color-text-body);
+    font-weight: bold;
+
+    &:empty {
+      display: none;
+    }
   }
 }
 .attachments-panel {
