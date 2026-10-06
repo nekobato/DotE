@@ -83,6 +83,16 @@ describe("Bluesky post records", () => {
     expect(postedRecord()).not.toHaveProperty("langs");
   });
 
+  it("accepts valid private-use, grandfathered and extlang tags unsupported by Intl", async () => {
+    await blueskyCreatePost({
+      did,
+      text: "本文",
+      langs: [" x-private ", "X-PRIVATE", "i-klingon", "zh-cmn-Hans-CN"],
+    });
+    expect(postedRecord().langs).toEqual(["x-private", "i-klingon", "zh-cmn-Hans-CN"]);
+    assertValidRecord();
+  });
+
   it.each([["en_US"], ["日本語"], ["ja", "en", "fr", "de"]])(
     "rejects invalid or excessive languages before authentication or publication: %j",
     async (...langs) => {
