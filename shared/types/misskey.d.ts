@@ -83,6 +83,7 @@ export interface MisskeyNoteContentProps extends MisskeyNoteBaseProps {
   originUser?: MisskeyNote["user"];
   type: MisskeyEntities.Notification["type"] | "renoted" | "quoted";
   noParent?: boolean;
+  canVote?: boolean;
 }
 
 export interface ReactionData {

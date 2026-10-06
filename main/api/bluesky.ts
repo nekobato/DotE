@@ -1,4 +1,4 @@
-import { Agent, BlobRef } from "@atproto/api";
+import { Agent, AppBskyRichtextFacet, BlobRef, RichText } from "@atproto/api";
 import type {
   AppBskyEmbedImages,
   AppBskyEmbedRecord,
@@ -9,6 +9,7 @@ import type { OAuthSession } from "@atproto/oauth-client";
 import { createBlueskyAgent } from "../oauth/agent";
 import { getBlueskyOAuthClient } from "../oauth/client";
 import { resolveUploadFileData } from "./helpers";
+import { normalizeBlueskyPostLanguages } from "../../shared/bluesky-post-languages";
 
 const BLUESKY_IMAGE_MAX_COUNT = 4;
 const BLUESKY_IMAGE_MAX_BYTES = 1_000_000;
@@ -277,18 +278,32 @@ export const blueskyCreatePost = async ({
   replyTo,
   quote,
   images,
+  langs,
 }: {
   did: string;
   text: string;
   replyTo?: BlueskyReplyRef;
   quote?: BlueskyPostRef;
   images?: BlueskyUploadedImage[];
+  langs?: string[];
 }) => {
+  const languages = normalizeBlueskyPostLanguages(langs);
   return withAgent(did, async (agent) => {
+    const richText = new RichText({ text });
+    await richText.detectFacets(agent);
+    // Unresolved handles remain plain text; an empty DID is not a valid mention.
+    const facets = richText.facets
+      ?.map((facet) => ({
+        ...facet,
+        features: facet.features.filter((feature) => !AppBskyRichtextFacet.isMention(feature) || Boolean(feature.did)),
+      }))
+      .filter((facet) => facet.features.length);
     const record: AppBskyFeedPost.Record = {
       $type: "app.bsky.feed.post",
-      text,
+      text: richText.text,
       createdAt: new Date().toISOString(),
+      ...(facets?.length ? { facets } : {}),
+      ...(languages.length ? { langs: languages } : {}),
     };
 
     if (replyTo) {

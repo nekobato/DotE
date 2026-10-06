@@ -4,10 +4,12 @@ import type { MisskeyNoteContentProps } from "@shared/types/misskey";
 import { computed, toRef } from "vue";
 import { useMisskeyNoteContent } from "@/composables/useMisskeyNoteContent";
 import Mfm from "../misskey/Mfm.vue";
+import MisskeyPoll from "./MisskeyPoll.vue";
 
 const props = withDefaults(defineProps<MisskeyNoteContentProps>(), {
   emojis: () => [],
   noParent: false,
+  canVote: false,
 });
 
 const emit = defineEmits<{
@@ -98,6 +100,12 @@ const lineClass = computed(() => {
         />
       </div>
     </div>
+    <MisskeyPoll
+      v-if="isContentVisible && !isTextHide && props.note.poll"
+      :note="props.note"
+      :currentInstanceUrl="props.currentInstanceUrl"
+      :canVote="props.canVote"
+    />
   </div>
 </template>
 

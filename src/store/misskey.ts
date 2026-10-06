@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { reactive } from "vue";
 import { DotEPost, methodOfChannel, useStore, type TimelineStore } from ".";
 import { useTimelineStore } from "./timeline";
 import { ipcInvoke } from "@/utils/ipc";
@@ -7,6 +8,7 @@ import type { ApiInvokeResult } from "@shared/types/ipc";
 import { updatePostAcrossTimelines } from "@/utils/updatePostAcrossTimelines";
 import { removePostAcrossTimelines } from "@/utils/removePostAcrossTimelines";
 import { resolveMisskeyNote } from "@/utils/misskey";
+import { canVoteMisskeyPoll, type MisskeyPoll } from "@shared/misskey-poll";
 
 type FetchNoteParams = {
   postId: string;
@@ -27,6 +29,9 @@ export const useMisskeyStore = defineStore("misskey", () => {
   const reactionEmojiRefreshInFlight = new Set<string>();
   const reactionEmojiRefreshPending = new Set<string>();
   const reactionEmojiRefreshDelay = 500;
+  const pollVotesInFlight = reactive(new Set<string>());
+
+  const isVotingInPoll = (userId: string, noteId: string) => pollVotesInFlight.has(`${userId}:${noteId}`);
 
   // 初期化時に循環参照を避けるため、遅延初期化
   const getTimelineStore = () => {
@@ -73,6 +78,12 @@ export const useMisskeyStore = defineStore("misskey", () => {
       timeline.posts.forEach((post: DotEPost) => {
         if (!isMisskeyNotePost(post)) return;
         traverse(post);
+      });
+      timeline.pendingNewPosts?.forEach((post) => {
+        if (isMisskeyNotePost(post)) traverse(post);
+      });
+      timeline.notifications?.forEach((notification) => {
+        if ("note" in notification) traverse(notification.note as MisskeyNote);
       });
     });
   };
@@ -148,6 +159,91 @@ export const useMisskeyStore = defineStore("misskey", () => {
     const res = unwrapApiResult(result, `${postId}の取得失敗`);
     if (!res) return;
     updatePostAcrossTimelines(store.timelines, res, userId);
+  };
+
+  /** Bind each vote and refresh to the account that started it, even after a timeline switch. */
+  const voteInPoll = async ({
+    note,
+    choice,
+    userId,
+    instanceUrl,
+  }: {
+    note: MisskeyNote;
+    choice: number;
+    userId: string;
+    instanceUrl: string;
+  }): Promise<boolean> => {
+    const user = store.users.find((item) => item.id === userId);
+    const instance = store.instances.find((item) => item.id === user?.instanceId);
+    const target = findNoteById(note.id, { userId }) ?? note;
+    const key = `${userId}:${note.id}`;
+    if (
+      !user ||
+      instance?.type !== "misskey" ||
+      instance.url !== instanceUrl ||
+      !target.poll ||
+      !canVoteMisskeyPoll(target.poll, choice) ||
+      pollVotesInFlight.has(key)
+    )
+      return false;
+
+    const token = user.token;
+    const instanceId = user.instanceId;
+    const previousVotes = target.poll.choices[choice].votes;
+    pollVotesInFlight.add(key);
+    const applyPoll = (poll: MisskeyPoll) => {
+      const clone = () => ({ ...poll, choices: poll.choices.map((item) => ({ ...item })) });
+      updateNotesById(
+        note.id,
+        (item) => {
+          item.poll = clone();
+        },
+        { userId },
+      );
+      // Notifications and composer-independent views may not be cached in posts.
+      note.poll = clone();
+    };
+    try {
+      const result = await ipcInvoke("api", {
+        method: "misskey:voteInPoll",
+        instanceUrl,
+        token,
+        noteId: note.id,
+        choice,
+      });
+      const refreshed = await fetchNoteResult({ postId: note.id, instanceUrl, token }).catch(() => undefined);
+      const currentUser = store.users.find((item) => item.id === userId);
+      if (
+        currentUser?.token !== token ||
+        currentUser.instanceId !== instanceId ||
+        store.instances.find((item) => item.id === instanceId)?.url !== instanceUrl
+      )
+        return false;
+      if (refreshed?.ok && refreshed.data?.poll) {
+        applyPoll(refreshed.data.poll);
+        if (refreshed.data.poll.choices[choice]?.isVoted) return true;
+      }
+      if (result.ok) {
+        // A successful 204 is definitive even when the follow-up read is stale or unavailable.
+        const poll = target.poll ?? note.poll;
+        if (poll)
+          applyPoll({
+            ...poll,
+            choices: poll.choices.map((item, index) =>
+              index === choice && !item.isVoted
+                ? { ...item, votes: Math.max(item.votes, previousVotes + 1), isVoted: true }
+                : { ...item },
+            ),
+          });
+        return true;
+      }
+      reportApiError(result, "投票に失敗しました。投稿を更新してからもう一度お試しください");
+      return false;
+    } catch {
+      return false;
+    } finally {
+      pollVotesInFlight.delete(key);
+    }
   };
 
   /**
@@ -593,6 +689,8 @@ export const useMisskeyStore = defineStore("misskey", () => {
     addEmoji,
     createMyReaction,
     deleteMyReaction,
+    voteInPoll,
+    isVotingInPoll,
     deleteNote,
     updatePost,
     ensureReactionEmoji,

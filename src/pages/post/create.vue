@@ -18,6 +18,10 @@ import type { Instance, Settings, Timeline, User } from "@shared/types/store";
 import { ElAvatar, ElInput } from "element-plus";
 import { computed, nextTick, onBeforeUnmount, onMounted, PropType, reactive, ref, watch } from "vue";
 import type { ApiInvokeResult } from "@shared/types/ipc";
+import { normalizeBlueskyPostLanguages } from "@shared/bluesky-post-languages";
+import { createMisskeyPollDraft, normalizeMisskeyPoll } from "@shared/misskey-poll";
+import MisskeyPollEditor from "@/components/misskey/MisskeyPollEditor.vue";
+import { resolveMisskeyNote } from "@/utils/misskey";
 
 type PageProps = {
   post?: MisskeyNoteType | MastodonTootType | BlueskyPostType;
@@ -54,6 +58,7 @@ type AttachmentItem = {
   mediaId?: string;
   blob?: BlobRef;
   altText?: string;
+  savedMastodonDescription?: string;
   aspectRatio?: BlueskyImageAspectRatio;
   error?: string;
 };
@@ -137,6 +142,11 @@ const text = ref("");
 const textCw = ref("");
 const showEmojiPicker = ref(false);
 const showMisskeyOptions = ref(false);
+const showMastodonOptions = ref(false);
+const hasMisskeyPoll = ref(false);
+const misskeyPollDraft = ref(createMisskeyPollDraft());
+const misskeyPollError = ref("");
+const misskeyPollEditorRef = ref<{ $el: HTMLFieldSetElement } | null>(null);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
@@ -151,6 +161,14 @@ const misskeyNoExtractMentions = ref(false);
 const misskeyNoExtractHashtags = ref(false);
 const misskeyNoExtractEmojis = ref(false);
 const misskeyNoExtractLinks = ref(false);
+const mastodonVisibility = ref<"public" | "unlisted" | "private" | "direct" | "">("");
+const mastodonSensitive = ref(false);
+const mastodonLanguage = ref("");
+const mastodonLanguageError = ref("");
+const mastodonLanguageInputRef = ref<HTMLInputElement | null>(null);
+const blueskyLanguages = ref("");
+const blueskyLanguageError = ref("");
+const blueskyLanguageInputRef = ref<HTMLInputElement | null>(null);
 const postFontStyle = computed(() => ({
   ...(state.settings?.font.family ? { fontFamily: state.settings.font.family } : {}),
 }));
@@ -351,12 +369,23 @@ const misskeyNote = computed(() => {
     const renotePost = props.data.post as MisskeyNoteType;
     return {
       text: text.value,
+      ...(hasMisskeyPoll.value
+        ? {
+            poll: {
+              multiple: misskeyPollDraft.value.multiple,
+              expiresAt: misskeyPollDraft.value.expiredAfter
+                ? new Date(Date.now() + misskeyPollDraft.value.expiredAfter).toISOString()
+                : null,
+              choices: misskeyPollDraft.value.choices.map((choice) => ({ text: choice, votes: 0, isVoted: false })),
+            },
+          }
+        : {}),
       user: {
         name: state.user?.name,
         host: state.instance?.url,
         avatarUrl: state.user?.avatarUrl,
       },
-      renote: renotePost ? (renotePost.renote && !renotePost.text ? renotePost.renote : renotePost) : null,
+      renote: renotePost ? resolveMisskeyNote(renotePost) : null,
     } as MisskeyNoteType;
   }
   return null;
@@ -414,7 +443,7 @@ const submitType = computed(() => {
       return "reply";
     }
     if (misskeyNote.value?.renote) {
-      return text.value ? "quote" : "renote";
+      return text.value || hasAttachments.value || hasMisskeyPoll.value ? "quote" : "renote";
     }
     return "note";
   }
@@ -458,7 +487,7 @@ const canSubmit = computed(() => {
     submitType.value === "post"
   ) {
     if (state.instance?.type === "misskey") {
-      return text.value.length > 0 || hasAttachments.value;
+      return text.value.length > 0 || hasAttachments.value || hasMisskeyPoll.value;
     }
     if (state.instance?.type === "mastodon") {
       return text.value.length > 0 || hasAttachments.value;
@@ -544,12 +573,22 @@ const resetComposerState = () => {
   state.post.isSending = false;
   showEmojiPicker.value = false;
   showMisskeyOptions.value = false;
+  showMastodonOptions.value = false;
+  hasMisskeyPoll.value = false;
+  misskeyPollDraft.value = createMisskeyPollDraft();
+  misskeyPollError.value = "";
   misskeyVisibility.value = null;
   misskeyLocalOnly.value = false;
   misskeyNoExtractMentions.value = false;
   misskeyNoExtractHashtags.value = false;
   misskeyNoExtractEmojis.value = false;
   misskeyNoExtractLinks.value = false;
+  mastodonVisibility.value = "";
+  mastodonSensitive.value = false;
+  mastodonLanguage.value = "";
+  mastodonLanguageError.value = "";
+  blueskyLanguages.value = "";
+  blueskyLanguageError.value = "";
   clearAttachments();
 };
 
@@ -740,6 +779,7 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
+      description: item.altText ?? "",
     });
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} へのアップロードに失敗しました`);
     if (!res || !(res as { id?: string }).id) {
@@ -752,6 +792,10 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
     }
 
     const media = res as MastodonMediaAttachment;
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      savedMastodonDescription: item.altText ?? "",
+    }));
     if (media.url === null) {
       return waitForMastodonMediaProcessing(item.id, media.id);
     }
@@ -782,6 +826,34 @@ const uploadMastodonAttachments = async (): Promise<boolean> => {
   for (const item of targets) {
     const ok = await uploadMastodonMedia(item);
     if (!ok) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/** Save edits made after an upload succeeded but the post failed. */
+const syncMastodonMediaDescriptions = async (): Promise<boolean> => {
+  for (const item of attachments.value) {
+    if (item.status !== "uploaded" || !item.mediaId) continue;
+    const description = item.altText ?? "";
+    if (description === item.savedMastodonDescription) continue;
+
+    const message = `${item.name} の説明を保存できませんでした。再度投稿して再試行してください`;
+    try {
+      const result = await ipcInvoke("api", {
+        method: "mastodon:updateMedia",
+        instanceUrl: state.instance?.url,
+        token: state.user?.token,
+        id: item.mediaId,
+        description,
+      });
+      const media = handleApiResult<MastodonMediaAttachment>(result, message);
+      if (!media?.id) throw new Error(message);
+      updateAttachment(item.id, (current) => ({ ...current, savedMastodonDescription: description, error: undefined }));
+    } catch (error) {
+      state.post.error = message;
+      updateAttachment(item.id, (current) => ({ ...current, error: message }));
       return false;
     }
   }
@@ -957,11 +1029,7 @@ const retryAttachment = async (id: string) => {
 const postToMisskey = async () => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const replyId = isReplyMode.value ? (replyToId.value ?? null) : null;
-  const renoteId = isReplyMode.value
-    ? null
-    : targetNote?.renoteId && !targetNote.text
-      ? targetNote.renoteId
-      : (targetNote?.id ?? null);
+  const renoteId = isReplyMode.value ? null : targetNote ? resolveMisskeyNote(targetNote).id : null;
   if (!(await uploadMisskeyAttachments())) {
     return;
   }
@@ -982,7 +1050,7 @@ const postToMisskey = async () => {
     noExtractHashtags: misskeyNoExtractHashtags.value,
     noExtractEmojis: misskeyNoExtractEmojis.value,
     noExtractLinks: misskeyNoExtractLinks.value,
-    // poll: null,
+    ...(hasMisskeyPoll.value ? { poll: normalizeMisskeyPoll(misskeyPollDraft.value) } : {}),
     replyId,
     renoteId: renoteId || null,
     ...(fileIds ? { fileIds } : {}),
@@ -991,6 +1059,9 @@ const postToMisskey = async () => {
   if (res?.createdNote) {
     text.value = "";
     textCw.value = "";
+    hasMisskeyPoll.value = false;
+    misskeyPollDraft.value = createMisskeyPollDraft();
+    misskeyPollError.value = "";
     clearAttachments();
     ipcSend("post:close");
   }
@@ -1023,6 +1094,9 @@ const postToMastodon = async () => {
   if (!(await uploadMastodonAttachments())) {
     return;
   }
+  if (!(await syncMastodonMediaDescriptions())) {
+    return;
+  }
   const mediaIds = uploadedMastodonMediaIds.value.length ? uploadedMastodonMediaIds.value : undefined;
   const result = await ipcInvoke("api", {
     method: "mastodon:postStatus",
@@ -1031,9 +1105,10 @@ const postToMastodon = async () => {
     status: text.value,
     ...(replyToId.value ? { inReplyToId: replyToId.value } : {}),
     mediaIds,
-    // sensitive: false,
-    // spoilerText: null,
-    // visibility: "public",
+    sensitive: mastodonSensitive.value,
+    spoilerText: textCw.value,
+    ...(mastodonVisibility.value ? { visibility: mastodonVisibility.value } : {}),
+    ...(mastodonLanguage.value.trim() ? { language: mastodonLanguage.value.trim().toLowerCase() } : {}),
   });
   const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} への投稿に失敗しました`);
   if (res?.id) {
@@ -1043,6 +1118,7 @@ const postToMastodon = async () => {
       userId: props.data.userId ?? state.user?.id,
     });
     text.value = "";
+    textCw.value = "";
     clearAttachments();
     ipcSend("post:close");
   }
@@ -1207,6 +1283,7 @@ const postToBluesky = async () => {
   }
   const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
   const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
+  const langs = normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
 
   const result = await ipcInvoke("api", {
     method: "bluesky:createPost",
@@ -1215,6 +1292,7 @@ const postToBluesky = async () => {
     replyTo: blueskyReplyTo.value,
     quote: quoteRef,
     images,
+    ...(langs.length ? { langs } : {}),
   });
 
   const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
@@ -1231,8 +1309,46 @@ const postToBluesky = async () => {
   }
 };
 
+const validateMastodonLanguage = (): boolean => {
+  const language = mastodonLanguage.value.trim();
+  mastodonLanguageError.value =
+    language && !/^[a-z]{2}$/i.test(language) ? "言語は2文字のコードで指定してください（例: ja、en）" : "";
+  return !mastodonLanguageError.value;
+};
+
+const validateBlueskyLanguages = (): boolean => {
+  try {
+    normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
+    blueskyLanguageError.value = "";
+    return true;
+  } catch (error) {
+    blueskyLanguageError.value = (error as Error).message;
+    return false;
+  }
+};
+
 const submit = async () => {
   if (!canSubmit.value) return;
+  if (state.instance?.type === "mastodon" && !isBoostMode.value && !validateMastodonLanguage()) {
+    showMastodonOptions.value = true;
+    await nextTick();
+    mastodonLanguageInputRef.value?.focus();
+    return;
+  }
+  if (state.instance?.type === "bluesky" && !isBoostMode.value && !validateBlueskyLanguages()) {
+    blueskyLanguageInputRef.value?.focus();
+    return;
+  }
+  if (state.instance?.type === "misskey" && hasMisskeyPoll.value && !isBoostMode.value) {
+    try {
+      normalizeMisskeyPoll(misskeyPollDraft.value);
+      misskeyPollError.value = "";
+    } catch (error) {
+      misskeyPollError.value = (error as Error).message;
+      misskeyPollEditorRef.value?.$el.querySelector<HTMLInputElement>('input[type="text"]')?.focus();
+      return;
+    }
+  }
   state.post.error = "";
   state.post.isSending = true;
   try {
@@ -1357,10 +1473,21 @@ usePostSubmitShortcut({
           class="post-field"
           :autosize="{ minRows: 2 }"
           type="textarea"
+          aria-label="投稿本文"
           v-model="text"
           ref="textInputRef"
           :disabled="isBoostMode || state.post.isSending"
         />
+        <label class="mastodon-visibility" v-if="!isBoostMode && state.instance?.type === 'mastodon'">
+          <span>公開範囲</span>
+          <select class="nn-select" v-model="mastodonVisibility" name="visibility" :disabled="state.post.isSending">
+            <option value="">サーバー設定に従う</option>
+            <option value="public">公開</option>
+            <option value="unlisted">未収載</option>
+            <option value="private">フォロワーのみ</option>
+            <option value="direct">メンションした相手のみ</option>
+          </select>
+        </label>
         <div class="post-tools" v-if="!isBoostMode && (canUseEmojiPicker || canUseMisskeyOptions || canUseAttachments)">
           <button
             v-if="canUseEmojiPicker"
@@ -1382,6 +1509,18 @@ usePostSubmitShortcut({
             <span>投稿設定</span>
           </button>
           <button
+            v-if="state.instance?.type === 'mastodon'"
+            class="nn-button size-small tool-button"
+            :class="{ active: showMastodonOptions }"
+            :disabled="state.post.isSending"
+            :aria-expanded="showMastodonOptions"
+            aria-controls="mastodon-post-options"
+            @click="showMastodonOptions = !showMastodonOptions"
+          >
+            <Icon icon="mingcute:settings-4-line" class="nn-icon size-xsmall" :aria-hidden="true" />
+            <span>投稿設定</span>
+          </button>
+          <button
             v-if="canUseAttachments"
             class="nn-button size-small tool-button"
             :disabled="state.post.isSending"
@@ -1389,6 +1528,18 @@ usePostSubmitShortcut({
           >
             <Icon icon="mingcute:attachment-line" class="nn-icon size-xsmall" />
             <span>添付</span>
+          </button>
+          <button
+            v-if="canUseMisskeyOptions"
+            class="nn-button size-small tool-button"
+            type="button"
+            :aria-expanded="hasMisskeyPoll"
+            :disabled="state.post.isSending"
+            @click="hasMisskeyPoll = !hasMisskeyPoll"
+          >
+            <Icon icon="mingcute:chart-horizontal-line" class="nn-icon size-xsmall" /><span>{{
+              hasMisskeyPoll ? "投票を外す" : "投票"
+            }}</span>
           </button>
           <input
             class="file-input"
@@ -1400,12 +1551,43 @@ usePostSubmitShortcut({
             @change="onSelectFiles"
           />
         </div>
+        <MisskeyPollEditor
+          v-if="!isBoostMode && canUseMisskeyOptions && hasMisskeyPoll"
+          ref="misskeyPollEditorRef"
+          v-model="misskeyPollDraft"
+          :disabled="state.post.isSending"
+          :error="misskeyPollError"
+          @edit="misskeyPollError = ''"
+        />
         <div
           class="emoji-picker-panel"
           v-if="!isBoostMode && canUseEmojiPicker && showEmojiPicker"
           :inert="state.post.isSending"
         >
           <EmojiPicker ref="emojiPickerRef" :emojis="props.data.emojis || []" @select="onSelectEmoji" />
+        </div>
+        <div class="bluesky-language" v-if="!isBoostMode && state.instance?.type === 'bluesky'">
+          <label for="bluesky-post-languages">投稿の言語（任意）</label>
+          <input
+            class="nn-text-field"
+            id="bluesky-post-languages"
+            name="blueskyLanguages"
+            type="text"
+            ref="blueskyLanguageInputRef"
+            v-model="blueskyLanguages"
+            placeholder="ja, en-US"
+            autocapitalize="none"
+            :spellcheck="false"
+            :disabled="state.post.isSending"
+            :aria-invalid="Boolean(blueskyLanguageError)"
+            aria-describedby="bluesky-language-hint bluesky-language-error"
+            @input="blueskyLanguageError = ''"
+            @blur="validateBlueskyLanguages"
+          />
+          <span class="hint" id="bluesky-language-hint"
+            >最大3件を半角カンマで区切ります。空欄は言語を指定しません。</span
+          >
+          <span class="error" id="bluesky-language-error" role="alert">{{ blueskyLanguageError }}</span>
         </div>
         <div class="misskey-options" v-if="!isBoostMode && canUseMisskeyOptions && showMisskeyOptions">
           <div class="misskey-options-row">
@@ -1450,6 +1632,51 @@ usePostSubmitShortcut({
             </label>
           </div>
         </div>
+        <fieldset
+          class="mastodon-options"
+          id="mastodon-post-options"
+          v-if="!isBoostMode && state.instance?.type === 'mastodon' && showMastodonOptions"
+          :disabled="state.post.isSending"
+        >
+          <legend class="nn-label">Mastodon 投稿設定</legend>
+          <label class="option-field">
+            <span class="nn-label">CW（内容の警告）</span>
+            <input
+              class="nn-text-field option-input"
+              type="text"
+              name="spoilerText"
+              v-model="textCw"
+              placeholder="内容に注意が必要な場合"
+            />
+          </label>
+          <label class="nn-checkbox">
+            <input type="checkbox" name="sensitive" v-model="mastodonSensitive" />
+            <span>添付メディアを閲覧注意にする</span>
+          </label>
+          <label class="option-field">
+            <span class="nn-label">言語</span>
+            <input
+              class="nn-text-field option-input"
+              type="text"
+              name="language"
+              ref="mastodonLanguageInputRef"
+              v-model="mastodonLanguage"
+              placeholder="ja、en など"
+              maxlength="2"
+              pattern="[A-Za-z]{2}"
+              autocapitalize="none"
+              :spellcheck="false"
+              :aria-invalid="Boolean(mastodonLanguageError)"
+              aria-describedby="mastodon-language-hint mastodon-language-error"
+              @input="mastodonLanguageError = ''"
+              @blur="validateMastodonLanguage"
+            />
+          </label>
+          <span class="option-hint" id="mastodon-language-hint"
+            >2文字の言語コード（日本語: ja、英語: en）。空欄はサーバー設定に従います。</span
+          >
+          <span class="option-error" id="mastodon-language-error" role="alert">{{ mastodonLanguageError }}</span>
+        </fieldset>
         <div class="attachments-panel" v-if="!isBoostMode && attachments.length">
           <div class="attachment-item" v-for="item in attachments" :key="item.id" :class="[item.status]">
             <div class="attachment-preview" v-if="item.previewUrl">
@@ -1465,11 +1692,15 @@ usePostSubmitShortcut({
                 <span class="status" v-if="item.status === 'uploaded'">完了</span>
                 <span class="status error" v-if="item.status === 'failed'">失敗</span>
               </div>
-              <label class="attachment-alt" v-if="state.instance?.type === 'bluesky'">
+              <label
+                class="attachment-alt"
+                v-if="state.instance?.type === 'bluesky' || state.instance?.type === 'mastodon'"
+              >
                 <span>Alt</span>
                 <input
                   class="nn-text-field attachment-alt-input"
                   type="text"
+                  :aria-label="`${item.name} の画像の説明（Alt）`"
                   v-model="item.altText"
                   placeholder="画像の説明"
                   :disabled="state.post.isSending || item.status === 'uploading'"
@@ -1584,7 +1815,7 @@ usePostSubmitShortcut({
     border-radius: 50%;
   }
   .username {
-    color: #fff;
+    color: var(--color-text-body);
     font-size: 0.8rem;
   }
   .post-action {
@@ -1657,9 +1888,9 @@ usePostSubmitShortcut({
   height: 240px;
   margin-top: 8px;
   overflow: hidden;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .misskey-options {
   display: flex;
@@ -1667,9 +1898,9 @@ usePostSubmitShortcut({
   gap: 12px;
   margin-top: 8px;
   padding: 10px;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .misskey-options-row {
   display: flex;
@@ -1690,15 +1921,84 @@ usePostSubmitShortcut({
   height: 28px;
   font-size: 0.7rem;
 }
+.mastodon-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 8px 0 0;
+  padding: 10px;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+}
+.mastodon-visibility {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.7rem;
+
+  select {
+    max-width: 100%;
+  }
+}
+.option-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.option-input {
+  width: 100%;
+  min-height: 32px;
+  font-size: 0.75rem;
+}
+.option-hint {
+  color: var(--dote-color-white-t5);
+  font-size: 0.7rem;
+}
+.option-error {
+  color: var(--color-text-body);
+  font-weight: bold;
+  font-size: 0.7rem;
+
+  &:empty {
+    display: none;
+  }
+}
+.bluesky-language {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.7rem;
+
+  input {
+    width: 100%;
+    min-height: 32px;
+    font-size: 0.75rem;
+  }
+  .hint {
+    color: var(--dote-color-white-t5);
+  }
+  .error {
+    color: var(--color-text-body);
+    font-weight: bold;
+
+    &:empty {
+      display: none;
+    }
+  }
+}
 .attachments-panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
   padding: 8px;
+  background-color: var(--dote-background-color);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background-color: var(--dote-background-color);
 }
 .attachment-item {
   display: grid;
@@ -1706,9 +2006,9 @@ usePostSubmitShortcut({
   gap: 8px;
   align-items: center;
   padding: 6px;
+  background: var(--dote-color-white-t1);
   border: 1px solid var(--dote-color-white-t1);
   border-radius: 8px;
-  background: var(--dote-color-white-t1);
   &.failed {
     border-color: rgba(255, 120, 120, 0.5);
   }
@@ -1731,11 +2031,11 @@ usePostSubmitShortcut({
   overflow: hidden;
 }
 .attachment-name {
+  overflow: hidden;
   color: var(--dote-color-white);
   font-size: 0.7rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .attachment-meta {
   display: flex;
