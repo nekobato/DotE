@@ -55,6 +55,7 @@ type AttachmentItem = {
   mediaId?: string;
   blob?: BlobRef;
   altText?: string;
+  savedMastodonDescription?: string;
   aspectRatio?: BlueskyImageAspectRatio;
   error?: string;
 };
@@ -138,6 +139,7 @@ const text = ref("");
 const textCw = ref("");
 const showEmojiPicker = ref(false);
 const showMisskeyOptions = ref(false);
+const showMastodonOptions = ref(false);
 const emojiPickerRef = ref<{
   focusSearch: () => void;
   resetSearch: () => void;
@@ -152,6 +154,11 @@ const misskeyNoExtractMentions = ref(false);
 const misskeyNoExtractHashtags = ref(false);
 const misskeyNoExtractEmojis = ref(false);
 const misskeyNoExtractLinks = ref(false);
+const mastodonVisibility = ref<"public" | "unlisted" | "private" | "direct" | "">("");
+const mastodonSensitive = ref(false);
+const mastodonLanguage = ref("");
+const mastodonLanguageError = ref("");
+const mastodonLanguageInputRef = ref<HTMLInputElement | null>(null);
 const blueskyLanguages = ref("");
 const blueskyLanguageError = ref("");
 const blueskyLanguageInputRef = ref<HTMLInputElement | null>(null);
@@ -548,12 +555,17 @@ const resetComposerState = () => {
   state.post.isSending = false;
   showEmojiPicker.value = false;
   showMisskeyOptions.value = false;
+  showMastodonOptions.value = false;
   misskeyVisibility.value = null;
   misskeyLocalOnly.value = false;
   misskeyNoExtractMentions.value = false;
   misskeyNoExtractHashtags.value = false;
   misskeyNoExtractEmojis.value = false;
   misskeyNoExtractLinks.value = false;
+  mastodonVisibility.value = "";
+  mastodonSensitive.value = false;
+  mastodonLanguage.value = "";
+  mastodonLanguageError.value = "";
   blueskyLanguages.value = "";
   blueskyLanguageError.value = "";
   clearAttachments();
@@ -746,6 +758,7 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
+      description: item.altText ?? "",
     });
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} へのアップロードに失敗しました`);
     if (!res || !(res as { id?: string }).id) {
@@ -758,6 +771,10 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
     }
 
     const media = res as MastodonMediaAttachment;
+    updateAttachment(item.id, (current) => ({
+      ...current,
+      savedMastodonDescription: item.altText ?? "",
+    }));
     if (media.url === null) {
       return waitForMastodonMediaProcessing(item.id, media.id);
     }
@@ -788,6 +805,34 @@ const uploadMastodonAttachments = async (): Promise<boolean> => {
   for (const item of targets) {
     const ok = await uploadMastodonMedia(item);
     if (!ok) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/** Save edits made after an upload succeeded but the post failed. */
+const syncMastodonMediaDescriptions = async (): Promise<boolean> => {
+  for (const item of attachments.value) {
+    if (item.status !== "uploaded" || !item.mediaId) continue;
+    const description = item.altText ?? "";
+    if (description === item.savedMastodonDescription) continue;
+
+    const message = `${item.name} の説明を保存できませんでした。再度投稿して再試行してください`;
+    try {
+      const result = await ipcInvoke("api", {
+        method: "mastodon:updateMedia",
+        instanceUrl: state.instance?.url,
+        token: state.user?.token,
+        id: item.mediaId,
+        description,
+      });
+      const media = handleApiResult<MastodonMediaAttachment>(result, message);
+      if (!media?.id) throw new Error(message);
+      updateAttachment(item.id, (current) => ({ ...current, savedMastodonDescription: description, error: undefined }));
+    } catch (error) {
+      state.post.error = message;
+      updateAttachment(item.id, (current) => ({ ...current, error: message }));
       return false;
     }
   }
@@ -1029,6 +1074,9 @@ const postToMastodon = async () => {
   if (!(await uploadMastodonAttachments())) {
     return;
   }
+  if (!(await syncMastodonMediaDescriptions())) {
+    return;
+  }
   const mediaIds = uploadedMastodonMediaIds.value.length ? uploadedMastodonMediaIds.value : undefined;
   const result = await ipcInvoke("api", {
     method: "mastodon:postStatus",
@@ -1037,9 +1085,10 @@ const postToMastodon = async () => {
     status: text.value,
     ...(replyToId.value ? { inReplyToId: replyToId.value } : {}),
     mediaIds,
-    // sensitive: false,
-    // spoilerText: null,
-    // visibility: "public",
+    sensitive: mastodonSensitive.value,
+    spoilerText: textCw.value,
+    ...(mastodonVisibility.value ? { visibility: mastodonVisibility.value } : {}),
+    ...(mastodonLanguage.value.trim() ? { language: mastodonLanguage.value.trim().toLowerCase() } : {}),
   });
   const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} への投稿に失敗しました`);
   if (res?.id) {
@@ -1049,6 +1098,7 @@ const postToMastodon = async () => {
       userId: props.data.userId ?? state.user?.id,
     });
     text.value = "";
+    textCw.value = "";
     clearAttachments();
     ipcSend("post:close");
   }
@@ -1239,6 +1289,13 @@ const postToBluesky = async () => {
   }
 };
 
+const validateMastodonLanguage = (): boolean => {
+  const language = mastodonLanguage.value.trim();
+  mastodonLanguageError.value =
+    language && !/^[a-z]{2}$/i.test(language) ? "言語は2文字のコードで指定してください（例: ja、en）" : "";
+  return !mastodonLanguageError.value;
+};
+
 const validateBlueskyLanguages = (): boolean => {
   try {
     normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
@@ -1252,6 +1309,12 @@ const validateBlueskyLanguages = (): boolean => {
 
 const submit = async () => {
   if (!canSubmit.value) return;
+  if (state.instance?.type === "mastodon" && !isBoostMode.value && !validateMastodonLanguage()) {
+    showMastodonOptions.value = true;
+    await nextTick();
+    mastodonLanguageInputRef.value?.focus();
+    return;
+  }
   if (state.instance?.type === "bluesky" && !isBoostMode.value && !validateBlueskyLanguages()) {
     blueskyLanguageInputRef.value?.focus();
     return;
@@ -1385,6 +1448,16 @@ usePostSubmitShortcut({
           ref="textInputRef"
           :disabled="isBoostMode || state.post.isSending"
         />
+        <label class="mastodon-visibility" v-if="!isBoostMode && state.instance?.type === 'mastodon'">
+          <span>公開範囲</span>
+          <select class="nn-select" v-model="mastodonVisibility" name="visibility" :disabled="state.post.isSending">
+            <option value="">サーバー設定に従う</option>
+            <option value="public">公開</option>
+            <option value="unlisted">未収載</option>
+            <option value="private">フォロワーのみ</option>
+            <option value="direct">メンションした相手のみ</option>
+          </select>
+        </label>
         <div class="post-tools" v-if="!isBoostMode && (canUseEmojiPicker || canUseMisskeyOptions || canUseAttachments)">
           <button
             v-if="canUseEmojiPicker"
@@ -1403,6 +1476,18 @@ usePostSubmitShortcut({
             @click="toggleMisskeyOptions"
           >
             <Icon icon="mingcute:settings-4-line" class="nn-icon size-xsmall" />
+            <span>投稿設定</span>
+          </button>
+          <button
+            v-if="state.instance?.type === 'mastodon'"
+            class="nn-button size-small tool-button"
+            :class="{ active: showMastodonOptions }"
+            :disabled="state.post.isSending"
+            :aria-expanded="showMastodonOptions"
+            aria-controls="mastodon-post-options"
+            @click="showMastodonOptions = !showMastodonOptions"
+          >
+            <Icon icon="mingcute:settings-4-line" class="nn-icon size-xsmall" :aria-hidden="true" />
             <span>投稿設定</span>
           </button>
           <button
@@ -1497,6 +1582,51 @@ usePostSubmitShortcut({
             </label>
           </div>
         </div>
+        <fieldset
+          class="mastodon-options"
+          id="mastodon-post-options"
+          v-if="!isBoostMode && state.instance?.type === 'mastodon' && showMastodonOptions"
+          :disabled="state.post.isSending"
+        >
+          <legend class="nn-label">Mastodon 投稿設定</legend>
+          <label class="option-field">
+            <span class="nn-label">CW（内容の警告）</span>
+            <input
+              class="nn-text-field option-input"
+              type="text"
+              name="spoilerText"
+              v-model="textCw"
+              placeholder="内容に注意が必要な場合"
+            />
+          </label>
+          <label class="nn-checkbox">
+            <input type="checkbox" name="sensitive" v-model="mastodonSensitive" />
+            <span>添付メディアを閲覧注意にする</span>
+          </label>
+          <label class="option-field">
+            <span class="nn-label">言語</span>
+            <input
+              class="nn-text-field option-input"
+              type="text"
+              name="language"
+              ref="mastodonLanguageInputRef"
+              v-model="mastodonLanguage"
+              placeholder="ja、en など"
+              maxlength="2"
+              pattern="[A-Za-z]{2}"
+              autocapitalize="none"
+              :spellcheck="false"
+              :aria-invalid="Boolean(mastodonLanguageError)"
+              aria-describedby="mastodon-language-hint mastodon-language-error"
+              @input="mastodonLanguageError = ''"
+              @blur="validateMastodonLanguage"
+            />
+          </label>
+          <span class="option-hint" id="mastodon-language-hint"
+            >2文字の言語コード（日本語: ja、英語: en）。空欄はサーバー設定に従います。</span
+          >
+          <span class="option-error" id="mastodon-language-error" role="alert">{{ mastodonLanguageError }}</span>
+        </fieldset>
         <div class="attachments-panel" v-if="!isBoostMode && attachments.length">
           <div class="attachment-item" v-for="item in attachments" :key="item.id" :class="[item.status]">
             <div class="attachment-preview" v-if="item.previewUrl">
@@ -1512,7 +1642,10 @@ usePostSubmitShortcut({
                 <span class="status" v-if="item.status === 'uploaded'">完了</span>
                 <span class="status error" v-if="item.status === 'failed'">失敗</span>
               </div>
-              <label class="attachment-alt" v-if="state.instance?.type === 'bluesky'">
+              <label
+                class="attachment-alt"
+                v-if="state.instance?.type === 'bluesky' || state.instance?.type === 'mastodon'"
+              >
                 <span>Alt</span>
                 <input
                   class="nn-text-field attachment-alt-input"
@@ -1737,6 +1870,51 @@ usePostSubmitShortcut({
   width: 100%;
   height: 28px;
   font-size: 0.7rem;
+}
+.mastodon-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 8px 0 0;
+  padding: 10px;
+  border: 1px solid var(--dote-color-white-t1);
+  border-radius: 8px;
+}
+.mastodon-visibility {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  align-items: center;
+  margin-top: 8px;
+  font-size: 0.7rem;
+
+  select {
+    max-width: 100%;
+  }
+}
+.option-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.option-input {
+  width: 100%;
+  min-height: 32px;
+  font-size: 0.75rem;
+}
+.option-hint {
+  color: var(--dote-color-white-t5);
+  font-size: 0.7rem;
+}
+.option-error {
+  color: var(--color-text-body);
+  font-weight: bold;
+  font-size: 0.7rem;
+
+  &:empty {
+    display: none;
+  }
 }
 .bluesky-language {
   display: flex;
