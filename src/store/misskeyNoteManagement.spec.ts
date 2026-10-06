@@ -258,6 +258,31 @@ describe("Misskey unrenote scope", () => {
     });
   });
 
+  it("refreshes queued originals and nested Renotes after unrenote without changing another account's queue", async () => {
+    const { root, store } = setup();
+    root.timelines = timelines();
+    for (const timeline of root.timelines) {
+      const original = structuredClone(timelines()[0].posts[0]) as MisskeyNote;
+      timeline.pendingNewPosts.push(original, {
+        ...structuredClone(timelines()[0].posts[3]),
+        renote: structuredClone(original),
+      } as MisskeyNote);
+    }
+    invoke
+      .mockResolvedValueOnce({ ok: true, data: { id: "remote-alice" } })
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: true, data: { id: "original", reactionEmojis: {}, renoteCount: 2 } });
+    expect(await store.unrenote(params)).toBe(true);
+    const queued = root.timelines[0].pendingNewPosts as MisskeyNote[];
+    expect(queued.map((post) => post.id)).toEqual(["original", "other"]);
+    expect(queued[0].renoteCount).toBe(2);
+    expect(queued[1].renote?.renoteCount).toBe(2);
+    const untouched = root.timelines[1].pendingNewPosts as MisskeyNote[];
+    expect(untouched.map((post) => post.id)).toEqual(["pending-quote", "original", "other"]);
+    expect(untouched[1].renoteCount).toBe(4);
+    expect(untouched[2].renote?.renoteCount).toBe(4);
+  });
+
   it("does not remove any post when unrenote is rejected", async () => {
     const { root, store, entry } = setup();
     root.timelines = timelines();

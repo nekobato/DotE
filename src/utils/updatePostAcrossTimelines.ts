@@ -50,8 +50,8 @@ const updateNestedReference = (post: DotEPost, updated: DotEPost): boolean => {
   return false;
 };
 
-const updatePostsInTimeline = (timeline: TimelineStore, updated: IdentifiedPost): number => {
-  if (!Array.isArray(timeline.posts) || timeline.posts.length === 0) {
+const updatePosts = (posts: DotEPost[], updated: IdentifiedPost): number => {
+  if (!Array.isArray(posts) || posts.length === 0) {
     return 0;
   }
 
@@ -59,8 +59,8 @@ const updatePostsInTimeline = (timeline: TimelineStore, updated: IdentifiedPost)
   const updatedIsMastodon = isMastodonToot(updated);
 
   let count = 0;
-  for (let index = 0; index < timeline.posts.length; index += 1) {
-    const post = timeline.posts[index];
+  for (let index = 0; index < posts.length; index += 1) {
+    const post = posts[index];
     const postIsMisskey = isMisskeyNote(post);
     const postIsMastodon = isMastodonToot(post);
     const isCompatible =
@@ -69,7 +69,7 @@ const updatePostsInTimeline = (timeline: TimelineStore, updated: IdentifiedPost)
       (!postIsMisskey && !postIsMastodon && !updatedIsMisskey && !updatedIsMastodon);
 
     if (hasId(post) && post.id === updated.id && isCompatible) {
-      timeline.posts.splice(index, 1, updated);
+      posts.splice(index, 1, updated);
       count += 1;
       continue;
     }
@@ -93,7 +93,7 @@ export const updatePostAcrossTimelines = (
 
   const updatedCount = timelines.reduce((total, timeline) => {
     if (timeline.userId !== userId) return total;
-    return total + updatePostsInTimeline(timeline, updated);
+    return total + updatePosts(timeline.posts, updated) + updatePosts(timeline.pendingNewPosts, updated);
   }, 0);
 
   return { updatedCount };
