@@ -39,7 +39,19 @@ export const initializeRendererSentry = (app: VueApp): void => {
   }
 
   Sentry.init({
-    sendDefaultPii: false,
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+      genAI: { inputs: false, outputs: false },
+      databaseQueryData: false,
+      graphQL: { document: false, variables: false },
+      queues: false,
+      stackFrameVariables: false,
+    },
+    beforeSendLog: () => null,
   });
   bindVueErrorHandler(app);
 };
