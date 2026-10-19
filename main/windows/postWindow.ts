@@ -1,6 +1,7 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
 import { isDevelopment, pageRoot, preload } from "../static";
+import { applicationArguments, secureApplicationWindow } from "./windowSecurity";
 
 const pageName = "/post";
 
@@ -14,6 +15,7 @@ export function createPostWindow() {
     resizable: true,
     webPreferences: {
       preload: preload,
+      additionalArguments: applicationArguments(),
     },
     useContentSize: false,
     center: true,
@@ -28,6 +30,7 @@ export function createPostWindow() {
     trafficLightPosition: { x: 8, y: 12 },
   });
 
+  secureApplicationWindow(win);
   if (isDevelopment) {
     win.loadURL(pageRoot.development + "#" + pageName);
     win.webContents.openDevTools({ mode: "detach" });

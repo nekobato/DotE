@@ -1,5 +1,6 @@
 import { join } from "path";
-import electron, { BrowserWindow, screen } from "electron";
+import { BrowserWindow, screen } from "electron";
+import { applicationArguments, secureApplicationWindow } from "./windowSecurity";
 import { getSettingAll } from "../db";
 import { isDevelopment, pageRoot, preload } from "../static";
 
@@ -17,6 +18,7 @@ export async function createMainWindow() {
     resizable: true,
     webPreferences: {
       preload: preload,
+      additionalArguments: applicationArguments(),
     },
     frame: true,
     transparent: false,
@@ -29,6 +31,7 @@ export async function createMainWindow() {
     icon: join("build", `app_icon.png`),
   });
 
+  secureApplicationWindow(win);
   if (isDevelopment) {
     await win.loadURL(pageRoot.development + "#" + pageName);
     win.webContents.openDevTools({ mode: "detach" });
@@ -39,12 +42,6 @@ export async function createMainWindow() {
 
   win.on("ready-to-show", () => {
     win.show();
-  });
-
-  win.webContents?.on("will-navigate", (e, url) => {
-    e.preventDefault();
-    if (!url.startsWith("https://")) return;
-    electron.shell.openExternal(url);
   });
 
   return win;

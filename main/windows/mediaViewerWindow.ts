@@ -1,6 +1,7 @@
 import { join } from "path";
 import { BrowserWindow } from "electron";
 import { isDevelopment, pageRoot, preload } from "../static";
+import { applicationArguments, secureApplicationWindow } from "./windowSecurity";
 
 const pageName = "/media-viewer";
 
@@ -10,6 +11,7 @@ export function createMediaViewerWindow() {
     resizable: true,
     webPreferences: {
       preload: preload,
+      additionalArguments: applicationArguments(),
       devTools: isDevelopment,
     },
     frame: false,
@@ -21,6 +23,7 @@ export function createMediaViewerWindow() {
     roundedCorners: false,
   });
 
+  secureApplicationWindow(win);
   win.visibleOnAllWorkspaces = true;
 
   if (isDevelopment) {
