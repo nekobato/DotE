@@ -30,8 +30,8 @@ export const notifyOAuthRedirect = (callbackUrl: string) => {
     const parsed = new URL(callbackUrl);
     pendingCallbacks.push(parsed);
     emitter.emit(CALLBACK_EVENT);
-  } catch (error) {
-    console.error("[oauth] Failed to parse redirect URI", { callbackUrl, error });
+  } catch {
+    console.error("[oauth] Failed to parse redirect URI");
   }
 };
 
