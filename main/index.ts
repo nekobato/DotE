@@ -1,5 +1,6 @@
 import electron, { app, BrowserWindow, dialog, globalShortcut, ipcMain, Menu, powerMonitor, protocol } from "electron";
 import path from "node:path";
+import { openExternalWebUrl } from "./externalWebUrl";
 import { createMainWindow } from "./windows/mainWindow";
 import { createPostWindow } from "./windows/postWindow";
 import { createMediaViewerWindow } from "./windows/mediaViewerWindow";
@@ -238,7 +239,7 @@ const start = async () => {
         setGlobalShortcut();
         break;
       case "open-url":
-        electron.shell.openExternal(data.url);
+        await openExternalWebUrl(data?.url);
         break;
       case "media-viewer:open":
         const pointerDisplay = electron.screen.getDisplayNearestPoint(electron.screen.getCursorScreenPoint());
