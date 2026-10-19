@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
 import fetch, { Response } from "electron-fetch";
 import type { ApiErrorPayload } from "@shared/types/ipc";
 
@@ -156,7 +154,7 @@ const normalizeBase64Payload = (value: string): string => {
 };
 
 /**
- * Resolve upload file bytes from either an on-disk path or renderer-provided base64 data.
+ * Accept only bytes already available to the renderer, never renderer-selected native paths.
  */
 export const resolveUploadFileData = async ({
   filePath,
@@ -164,17 +162,13 @@ export const resolveUploadFileData = async ({
   fileName,
   fallbackFileName,
 }: UploadFileDataSource): Promise<{ data: Buffer; filename: string }> => {
-  if (fileDataBase64) {
+  if (filePath !== undefined) {
+    throw new Error("ファイルパスを指定したアップロードは許可されていません");
+  }
+  if (typeof fileDataBase64 === "string") {
     return {
       data: Buffer.from(normalizeBase64Payload(fileDataBase64), "base64"),
       filename: fileName || fallbackFileName,
-    };
-  }
-
-  if (filePath) {
-    return {
-      data: await readFile(filePath),
-      filename: basename(filePath),
     };
   }
 

@@ -9,7 +9,7 @@ import { usePostSubmitShortcut } from "@/composables/usePostSubmitShortcut";
 import type { BlueskyPost as BlueskyPostType } from "@/types/bluesky";
 import { toBlueskyFeedPost, type BlueskyReplyRef } from "@/utils/bluesky";
 import type { MastodonToot as MastodonTootType, MediaAttachment as MastodonMediaAttachment } from "@/types/mastodon";
-import { getPathForFile, ipcInvoke, ipcSend } from "@/utils/ipc";
+import { ipcInvoke, ipcSend } from "@/utils/ipc";
 import { AppBskyFeedDefs } from "@atproto/api";
 import type { BlobRef } from "@atproto/api";
 import { Icon } from "@iconify/vue";
@@ -48,7 +48,6 @@ type BlueskyCreateRecordResult = {
 type AttachmentItem = {
   id: string;
   name: string;
-  path?: string;
   fileDataBase64?: string;
   size: number;
   type: string;
@@ -72,8 +71,6 @@ type MastodonGetMediaResult =
       state: "processing";
       media?: MastodonMediaAttachment;
     };
-
-type FileWithPath = File & { path?: string };
 
 type TextInputRef = {
   focus?: () => void;
@@ -154,6 +151,7 @@ const emojiPickerRef = ref<{
 const textInputRef = ref<TextInputRef | null>(null);
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const attachments = ref<AttachmentItem[]>([]);
+const pendingAttachmentReads = ref(0);
 let postContextRequestId = 0;
 const misskeyVisibility = ref<"public" | "home" | "followers" | null>(null);
 const misskeyLocalOnly = ref(false);
@@ -473,7 +471,7 @@ const submitType = computed(() => {
 });
 
 const canSubmit = computed(() => {
-  if (!state.user || !state.instance || state.post.isSending) {
+  if (!state.user || !state.instance || state.post.isSending || pendingAttachmentReads.value > 0) {
     return false;
   }
   if (hasUploadingAttachments.value || hasFailedAttachments.value) {
@@ -622,7 +620,6 @@ const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
       method: "misskey:uploadFile",
       instanceUrl: state.instance?.url,
       token: state.user?.token,
-      filePath: item.path,
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
@@ -775,7 +772,6 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
       method: "mastodon:uploadMedia",
       instanceUrl: state.instance?.url,
       token: state.user?.token,
-      filePath: item.path,
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
@@ -873,7 +869,6 @@ const uploadBlueskyImage = async (item: AttachmentItem, did: string): Promise<bo
     const result = await ipcInvoke("api", {
       method: "bluesky:uploadImage",
       did,
-      filePath: item.path,
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
@@ -924,36 +919,39 @@ const uploadBlueskyAttachments = async (did: string): Promise<boolean> => {
 };
 
 const addAttachment = async (file: File) => {
-  if (state.instance?.type === "bluesky" && !validateBlueskyAttachment(file)) {
-    return;
-  }
-
-  state.post.error = "";
-  const filePath = getPathForFile(file) || (file as FileWithPath).path || undefined;
-  let fileDataBase64: string | undefined;
+  pendingAttachmentReads.value += 1;
   try {
-    fileDataBase64 = filePath ? undefined : await readFileAsBase64(file);
-  } catch (error) {
-    state.post.error = error instanceof Error ? error.message : "ファイルデータを読み込めませんでした";
-    return;
-  }
-  const fileType = resolveAttachmentFileType(file);
-  const previewUrl = isImageFile(file) ? URL.createObjectURL(file) : undefined;
-  const aspectRatio = await loadImageAspectRatio(previewUrl);
-  const item: AttachmentItem = {
-    id: createAttachmentId(),
-    name: resolveAttachmentFileName(file, fileType),
-    path: filePath,
-    fileDataBase64,
-    size: file.size,
-    type: fileType,
-    previewUrl,
-    altText: "",
-    aspectRatio,
-    status: "ready",
-  };
+    if (state.instance?.type === "bluesky" && !validateBlueskyAttachment(file)) {
+      return;
+    }
 
-  attachments.value = [...attachments.value, item];
+    state.post.error = "";
+    let fileDataBase64: string | undefined;
+    try {
+      fileDataBase64 = await readFileAsBase64(file);
+    } catch (error) {
+      state.post.error = error instanceof Error ? error.message : "ファイルデータを読み込めませんでした";
+      return;
+    }
+    const fileType = resolveAttachmentFileType(file);
+    const previewUrl = isImageFile(file) ? URL.createObjectURL(file) : undefined;
+    const aspectRatio = await loadImageAspectRatio(previewUrl);
+    const item: AttachmentItem = {
+      id: createAttachmentId(),
+      name: resolveAttachmentFileName(file, fileType),
+      fileDataBase64,
+      size: file.size,
+      type: fileType,
+      previewUrl,
+      altText: "",
+      aspectRatio,
+      status: "ready",
+    };
+
+    attachments.value = [...attachments.value, item];
+  } finally {
+    pendingAttachmentReads.value -= 1;
+  }
 };
 
 const onSelectFiles = async (event: Event) => {
