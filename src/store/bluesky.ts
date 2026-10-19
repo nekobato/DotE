@@ -1,3 +1,4 @@
+import { captureTimelineRequest } from "./timelineRequest";
 import { defineStore } from "pinia";
 import { methodOfChannel, useStore } from ".";
 import { useTimelineStore } from "./timeline";
@@ -351,6 +352,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const fetchPosts = async () => {
     const timeline = getTimelineStore();
+    const request = captureTimelineRequest(store, timeline);
     if (!timeline.current || !timeline.currentUser || !timeline.currentInstance) {
       throw new Error("ユーザーが見つかりませんでした");
     }
@@ -366,6 +368,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       did: timeline.currentUser.blueskySession.did,
       limit: 40,
     });
+    if (!request.isValid()) return;
     const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
     if (!data) return;
     if (timeline.current?.id !== targetId || timeline.current.channel !== targetChannel) return;
@@ -384,6 +387,8 @@ export const useBlueskyStore = defineStore("bluesky", () => {
 
   const fetchOlderPosts = async (channel: ChannelName) => {
     const timeline = getTimelineStore();
+    const request = captureTimelineRequest(store, timeline);
+    if (!request.isCurrent() || timeline.current?.channel !== channel) return;
 
     const result = await ipcInvoke("api", {
       method: methodOfChannel[channel],
@@ -391,6 +396,7 @@ export const useBlueskyStore = defineStore("bluesky", () => {
       limit: 20,
       cursor: timeline.current?.bluesky?.cursor,
     });
+    if (!request.isCurrent()) return;
     const data = unwrapApiResult(result, `${timeline.currentInstance?.name}の古いタイムラインを取得できませんでした`);
     if (!data) return;
 
