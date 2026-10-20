@@ -153,6 +153,41 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 const attachments = ref<AttachmentItem[]>([]);
 const pendingAttachmentReads = ref(0);
 let postContextRequestId = 0;
+let composerGeneration = 0;
+let disposed = false;
+
+const captureComposerOperation = () => ({
+  generation: composerGeneration,
+  payload: props.data,
+  user: state.user
+    ? { ...state.user, ...(state.user.blueskySession ? { blueskySession: { ...state.user.blueskySession } } : {}) }
+    : undefined,
+  instance: state.instance ? { ...state.instance } : undefined,
+  timelineId: props.data.timelineId ?? state.timeline?.id,
+  userId: props.data.userId ?? state.user?.id,
+});
+type ComposerOperation = ReturnType<typeof captureComposerOperation>;
+const isCurrentOperation = (operation: ComposerOperation): boolean =>
+  !disposed &&
+  operation.generation === composerGeneration &&
+  operation.payload === props.data &&
+  operation.user?.id === state.user?.id &&
+  operation.user?.instanceId === state.user?.instanceId &&
+  operation.user?.token === state.user?.token &&
+  operation.instance?.id === state.instance?.id &&
+  operation.instance?.type === state.instance?.type &&
+  operation.instance?.url === state.instance?.url &&
+  operation.user?.blueskySession?.did === state.user?.blueskySession?.did;
+
+const assertCurrentOperation = (operation: ComposerOperation) => {
+  if (!isCurrentOperation(operation)) throw new Error("Composer operation was superseded");
+};
+const invokeComposerApi = async (operation: ComposerOperation, payload: Record<string, unknown>) => {
+  assertCurrentOperation(operation);
+  const result = await ipcInvoke("api", payload);
+  assertCurrentOperation(operation);
+  return result;
+};
 const misskeyVisibility = ref<"public" | "home" | "followers" | null>(null);
 const misskeyLocalOnly = ref(false);
 const misskeyNoExtractMentions = ref(false);
@@ -609,21 +644,23 @@ const validateBlueskyAttachment = (file: File): boolean => {
   return true;
 };
 
-const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
+const uploadMisskeyFile = async (item: AttachmentItem, operation: ComposerOperation): Promise<boolean> => {
   updateAttachment(item.id, (current) => ({
     ...current,
     status: "uploading",
     error: undefined,
   }));
   try {
-    const result = await ipcInvoke("api", {
+    const result = await invokeComposerApi(operation, {
       method: "misskey:uploadFile",
-      instanceUrl: state.instance?.url,
-      token: state.user?.token,
+      instanceUrl: operation.instance?.url,
+      token: operation.user?.token,
+
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
     });
+    assertCurrentOperation(operation);
     const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} へのアップロードに失敗しました`);
     if (!res || !(res as { id?: string }).id) {
       updateAttachment(item.id, (current) => ({
@@ -640,6 +677,7 @@ const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
     }));
     return true;
   } catch (error) {
+    if (!isCurrentOperation(operation)) return false;
     updateAttachment(item.id, (current) => ({
       ...current,
       status: "failed",
@@ -654,10 +692,11 @@ const uploadMisskeyFile = async (item: AttachmentItem): Promise<boolean> => {
   }
 };
 
-const uploadMisskeyAttachments = async (): Promise<boolean> => {
+const uploadMisskeyAttachments = async (operation: ComposerOperation): Promise<boolean> => {
   const targets = attachments.value.filter((item) => item.status === "ready" || item.status === "failed");
   for (const item of targets) {
-    const ok = await uploadMisskeyFile(item);
+    const ok = await uploadMisskeyFile(item, operation);
+    assertCurrentOperation(operation);
     if (!ok) {
       return false;
     }
@@ -696,7 +735,11 @@ const resolveMastodonMediaProcessingDelay = (attempt: number): number => {
 /**
  * Poll a Mastodon media attachment until the processed media URL is available.
  */
-const waitForMastodonMediaProcessing = async (itemId: string, mediaId: string): Promise<boolean> => {
+const waitForMastodonMediaProcessing = async (
+  itemId: string,
+  mediaId: string,
+  operation: ComposerOperation,
+): Promise<boolean> => {
   const startedAt = Date.now();
   let attempt = 0;
 
@@ -716,23 +759,24 @@ const waitForMastodonMediaProcessing = async (itemId: string, mediaId: string): 
     }
 
     await wait(Math.min(resolveMastodonMediaProcessingDelay(attempt), remainingMs));
-    if (!hasAttachment(itemId)) return false;
+    if (!isCurrentOperation(operation) || !hasAttachment(itemId)) return false;
 
     let result: ApiInvokeResult<unknown>;
     try {
-      result = await ipcInvoke("api", {
+      result = await invokeComposerApi(operation, {
         method: "mastodon:getMedia",
-        instanceUrl: state.instance?.url,
-        token: state.user?.token,
+        instanceUrl: operation.instance?.url,
+        token: operation.user?.token,
         id: mediaId,
       });
     } catch (error) {
+      if (!isCurrentOperation(operation)) return false;
       failAttachment(itemId, "メディアの処理確認に失敗しました。再試行してください");
       console.error("Mastodonメディア処理確認に失敗しました", error);
       return false;
     }
 
-    if (!hasAttachment(itemId)) return false;
+    if (!isCurrentOperation(operation) || !hasAttachment(itemId)) return false;
 
     if (!result.ok) {
       failAttachment(itemId, "メディアの処理確認に失敗しました。再試行してください");
@@ -757,9 +801,9 @@ const waitForMastodonMediaProcessing = async (itemId: string, mediaId: string): 
   return false;
 };
 
-const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
+const uploadMastodonMedia = async (item: AttachmentItem, operation = captureComposerOperation()): Promise<boolean> => {
   if (item.mediaId) {
-    return waitForMastodonMediaProcessing(item.id, item.mediaId);
+    return waitForMastodonMediaProcessing(item.id, item.mediaId, operation);
   }
 
   updateAttachment(item.id, (current) => ({
@@ -768,15 +812,17 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
     error: undefined,
   }));
   try {
-    const result = await ipcInvoke("api", {
+    const result = await invokeComposerApi(operation, {
       method: "mastodon:uploadMedia",
-      instanceUrl: state.instance?.url,
-      token: state.user?.token,
+      instanceUrl: operation.instance?.url,
+      token: operation.user?.token,
+
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
       description: item.altText ?? "",
     });
+    assertCurrentOperation(operation);
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} へのアップロードに失敗しました`);
     if (!res || !(res as { id?: string }).id) {
       updateAttachment(item.id, (current) => ({
@@ -793,7 +839,7 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
       savedMastodonDescription: item.altText ?? "",
     }));
     if (media.url === null) {
-      return waitForMastodonMediaProcessing(item.id, media.id);
+      return waitForMastodonMediaProcessing(item.id, media.id, operation);
     }
 
     updateAttachment(item.id, (current) => ({
@@ -803,6 +849,7 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
     }));
     return true;
   } catch (error) {
+    if (!isCurrentOperation(operation)) return false;
     updateAttachment(item.id, (current) => ({
       ...current,
       status: "failed",
@@ -817,10 +864,11 @@ const uploadMastodonMedia = async (item: AttachmentItem): Promise<boolean> => {
   }
 };
 
-const uploadMastodonAttachments = async (): Promise<boolean> => {
+const uploadMastodonAttachments = async (operation: ComposerOperation): Promise<boolean> => {
   const targets = attachments.value.filter((item) => item.status === "ready" || item.status === "failed");
   for (const item of targets) {
-    const ok = await uploadMastodonMedia(item);
+    const ok = await uploadMastodonMedia(item, operation);
+    assertCurrentOperation(operation);
     if (!ok) {
       return false;
     }
@@ -829,7 +877,7 @@ const uploadMastodonAttachments = async (): Promise<boolean> => {
 };
 
 /** Save edits made after an upload succeeded but the post failed. */
-const syncMastodonMediaDescriptions = async (): Promise<boolean> => {
+const syncMastodonMediaDescriptions = async (operation: ComposerOperation): Promise<boolean> => {
   for (const item of attachments.value) {
     if (item.status !== "uploaded" || !item.mediaId) continue;
     const description = item.altText ?? "";
@@ -837,17 +885,19 @@ const syncMastodonMediaDescriptions = async (): Promise<boolean> => {
 
     const message = `${item.name} の説明を保存できませんでした。再度投稿して再試行してください`;
     try {
-      const result = await ipcInvoke("api", {
+      const result = await invokeComposerApi(operation, {
         method: "mastodon:updateMedia",
-        instanceUrl: state.instance?.url,
-        token: state.user?.token,
+        instanceUrl: operation.instance?.url,
+        token: operation.user?.token,
         id: item.mediaId,
         description,
       });
+      assertCurrentOperation(operation);
       const media = handleApiResult<MastodonMediaAttachment>(result, message);
       if (!media?.id) throw new Error(message);
       updateAttachment(item.id, (current) => ({ ...current, savedMastodonDescription: description, error: undefined }));
     } catch (error) {
+      if (!isCurrentOperation(operation)) return false;
       state.post.error = message;
       updateAttachment(item.id, (current) => ({ ...current, error: message }));
       return false;
@@ -859,20 +909,26 @@ const syncMastodonMediaDescriptions = async (): Promise<boolean> => {
 /**
  * Upload one image file to Bluesky and keep the returned BlobRef on the attachment.
  */
-const uploadBlueskyImage = async (item: AttachmentItem, did: string): Promise<boolean> => {
+const uploadBlueskyImage = async (
+  item: AttachmentItem,
+  did: string,
+  operation: ComposerOperation,
+): Promise<boolean> => {
   updateAttachment(item.id, (current) => ({
     ...current,
     status: "uploading",
     error: undefined,
   }));
   try {
-    const result = await ipcInvoke("api", {
+    const result = await invokeComposerApi(operation, {
       method: "bluesky:uploadImage",
       did,
+
       fileDataBase64: item.fileDataBase64,
       fileName: item.name,
       fileType: item.type,
     });
+    assertCurrentOperation(operation);
     const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} へのアップロードに失敗しました`);
     const blob = (res as { blob?: BlobRef } | undefined)?.blob;
     if (!blob) {
@@ -890,6 +946,7 @@ const uploadBlueskyImage = async (item: AttachmentItem, did: string): Promise<bo
     }));
     return true;
   } catch (error) {
+    if (!isCurrentOperation(operation)) return false;
     updateAttachment(item.id, (current) => ({
       ...current,
       status: "failed",
@@ -907,10 +964,11 @@ const uploadBlueskyImage = async (item: AttachmentItem, did: string): Promise<bo
 /**
  * Upload pending Bluesky image attachments in selection order.
  */
-const uploadBlueskyAttachments = async (did: string): Promise<boolean> => {
+const uploadBlueskyAttachments = async (did: string, operation: ComposerOperation): Promise<boolean> => {
   const targets = attachments.value.filter((item) => item.status === "ready" || item.status === "failed");
   for (const item of targets) {
-    const ok = await uploadBlueskyImage(item, did);
+    const ok = await uploadBlueskyImage(item, did, operation);
+    assertCurrentOperation(operation);
     if (!ok) {
       return false;
     }
@@ -918,7 +976,8 @@ const uploadBlueskyAttachments = async (did: string): Promise<boolean> => {
   return true;
 };
 
-const addAttachment = async (file: File) => {
+const addAttachment = async (file: File, operation = captureComposerOperation()) => {
+  if (!isCurrentOperation(operation)) return;
   pendingAttachmentReads.value += 1;
   try {
     if (state.instance?.type === "bluesky" && !validateBlueskyAttachment(file)) {
@@ -926,19 +985,27 @@ const addAttachment = async (file: File) => {
     }
 
     state.post.error = "";
+
     let fileDataBase64: string | undefined;
     try {
       fileDataBase64 = await readFileAsBase64(file);
+      if (!isCurrentOperation(operation)) return;
     } catch (error) {
+      if (!isCurrentOperation(operation)) return;
       state.post.error = error instanceof Error ? error.message : "ファイルデータを読み込めませんでした";
       return;
     }
     const fileType = resolveAttachmentFileType(file);
     const previewUrl = isImageFile(file) ? URL.createObjectURL(file) : undefined;
     const aspectRatio = await loadImageAspectRatio(previewUrl);
+    if (!isCurrentOperation(operation)) {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      return;
+    }
     const item: AttachmentItem = {
       id: createAttachmentId(),
       name: resolveAttachmentFileName(file, fileType),
+
       fileDataBase64,
       size: file.size,
       type: fileType,
@@ -950,11 +1017,12 @@ const addAttachment = async (file: File) => {
 
     attachments.value = [...attachments.value, item];
   } finally {
-    pendingAttachmentReads.value -= 1;
+    if (isCurrentOperation(operation)) pendingAttachmentReads.value -= 1;
   }
 };
 
 const onSelectFiles = async (event: Event) => {
+  const operation = captureComposerOperation();
   if (state.post.isSending) return;
   const target = event.target as HTMLInputElement;
   const files = Array.from(target.files ?? []);
@@ -963,7 +1031,7 @@ const onSelectFiles = async (event: Event) => {
   if (!canUseAttachments.value) return;
 
   for (const file of files) {
-    await addAttachment(file);
+    await addAttachment(file, operation);
   }
 };
 
@@ -987,6 +1055,7 @@ const extractClipboardImageFiles = (clipboardData: DataTransfer | null): File[] 
  * Treat pasted clipboard images as post attachments while preserving normal text paste behavior.
  */
 const onPaste = async (event: ClipboardEvent) => {
+  const operation = captureComposerOperation();
   if (state.post.isSending || isBoostMode.value || !canUseAttachments.value) return;
 
   const imageFiles = extractClipboardImageFiles(event.clipboardData);
@@ -994,7 +1063,7 @@ const onPaste = async (event: ClipboardEvent) => {
 
   event.preventDefault();
   for (const file of imageFiles) {
-    await addAttachment(file);
+    await addAttachment(file, operation);
   }
 };
 
@@ -1024,21 +1093,16 @@ const retryAttachment = async (id: string) => {
   await uploadMastodonMedia(item);
 };
 
-const postToMisskey = async () => {
+const postToMisskey = async (operation: ComposerOperation) => {
   const targetNote = props.data.post as MisskeyNoteType | null;
   const replyId = isReplyMode.value ? (replyToId.value ?? null) : null;
   const renoteId = isReplyMode.value ? null : targetNote ? resolveMisskeyNote(targetNote).id : null;
-  if (!(await uploadMisskeyAttachments())) {
-    return;
-  }
-  const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : undefined;
-
   const visibility = misskeyVisibility.value;
-  const result = await ipcInvoke("api", {
+  const payload = {
     method: "misskey:createNote",
-    instanceUrl: state.instance?.url,
-    token: state.user?.token,
-    i: state.user?.token,
+    instanceUrl: operation.instance?.url,
+    token: operation.user?.token,
+    i: operation.user?.token,
     ...(visibility ? { visibility } : {}),
     // visibleUserIds: [],
     text: text.value || null,
@@ -1051,8 +1115,14 @@ const postToMisskey = async () => {
     ...(hasMisskeyPoll.value ? { poll: normalizeMisskeyPoll(misskeyPollDraft.value) } : {}),
     replyId,
     renoteId: renoteId || null,
+  };
+  if (!(await uploadMisskeyAttachments(operation))) return;
+  const fileIds = uploadedMisskeyFileIds.value.length ? uploadedMisskeyFileIds.value : undefined;
+  const result = await invokeComposerApi(operation, {
+    ...payload,
     ...(fileIds ? { fileIds } : {}),
   });
+  assertCurrentOperation(operation);
   const res = handleApiResult(result, `${state.instance?.name ?? "Misskey"} への投稿に失敗しました`);
   if (res?.createdNote) {
     text.value = "";
@@ -1065,55 +1135,53 @@ const postToMisskey = async () => {
   }
 };
 
-const postToMastodon = async () => {
+const postToMastodon = async (operation: ComposerOperation) => {
   if (isBoostMode.value) {
     if (!boostTargetId.value) {
       state.post.error = "ブースト対象の投稿が見つかりませんでした";
       return;
     }
-    const result = await ipcInvoke("api", {
+    const result = await invokeComposerApi(operation, {
       method: "mastodon:reblog",
-      instanceUrl: state.instance?.url,
-      token: state.user?.token,
+      instanceUrl: operation.instance?.url,
+      token: operation.user?.token,
       id: boostTargetId.value,
     });
+    assertCurrentOperation(operation);
     const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} のブーストに失敗しました`);
     if (res) {
       ipcSend("timeline:add-post", {
         post: res as MastodonTootType,
-        timelineId: props.data.timelineId ?? state.timeline?.id,
-        userId: props.data.userId ?? state.user?.id,
+        timelineId: operation.timelineId,
+        userId: operation.userId,
       });
       ipcSend("post:close");
     }
     return;
   }
 
-  if (!(await uploadMastodonAttachments())) {
-    return;
-  }
-  if (!(await syncMastodonMediaDescriptions())) {
-    return;
-  }
-  const mediaIds = uploadedMastodonMediaIds.value.length ? uploadedMastodonMediaIds.value : undefined;
-  const result = await ipcInvoke("api", {
+  const payload = {
     method: "mastodon:postStatus",
-    instanceUrl: state.instance?.url,
-    token: state.user?.token,
+    instanceUrl: operation.instance?.url,
+    token: operation.user?.token,
     status: text.value,
     ...(replyToId.value ? { inReplyToId: replyToId.value } : {}),
-    mediaIds,
     sensitive: mastodonSensitive.value,
     spoilerText: textCw.value,
     ...(mastodonVisibility.value ? { visibility: mastodonVisibility.value } : {}),
     ...(mastodonLanguage.value.trim() ? { language: mastodonLanguage.value.trim().toLowerCase() } : {}),
-  });
+  };
+  if (!(await uploadMastodonAttachments(operation))) return;
+  if (!(await syncMastodonMediaDescriptions(operation))) return;
+  const mediaIds = uploadedMastodonMediaIds.value.length ? uploadedMastodonMediaIds.value : undefined;
+  const result = await invokeComposerApi(operation, { ...payload, mediaIds });
+  assertCurrentOperation(operation);
   const res = handleApiResult(result, `${state.instance?.name ?? "Mastodon"} への投稿に失敗しました`);
   if (res?.id) {
     ipcSend("timeline:add-post", {
       post: res as MastodonTootType,
-      timelineId: props.data.timelineId ?? state.timeline?.id,
-      userId: props.data.userId ?? state.user?.id,
+      timelineId: operation.timelineId,
+      userId: operation.userId,
     });
     text.value = "";
     textCw.value = "";
@@ -1173,6 +1241,7 @@ const addCreatedBlueskyPostToTimeline = async ({
   timelineId?: string;
   userId?: string;
 }) => {
+  // Publication already succeeded. Hydrate only its immutable owner, even after the composer closes.
   const post = await fetchCreatedBlueskyPost({ did, uri });
   if (!post) return;
 
@@ -1242,13 +1311,17 @@ const buildLocalBlueskyRepost = ({
 /**
  * Create a native Bluesky repost and insert a local repost feed item.
  */
-const repostToBluesky = async ({ did, targetPost }: { did: string; targetPost: BlueskyPostType }) => {
-  const result = await ipcInvoke("api", {
+const repostToBluesky = async (
+  { did, targetPost }: { did: string; targetPost: BlueskyPostType },
+  operation: ComposerOperation,
+) => {
+  const result = await invokeComposerApi(operation, {
     method: "bluesky:createRepost",
     did,
     uri: targetPost.uri,
     cid: targetPost.cid,
   });
+  assertCurrentOperation(operation);
 
   const repost = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} へのリポストに失敗しました`) as
     BlueskyCreateRecordResult | undefined;
@@ -1256,50 +1329,51 @@ const repostToBluesky = async ({ did, targetPost }: { did: string; targetPost: B
 
   ipcSend("timeline:add-post", {
     post: buildLocalBlueskyRepost({ did, targetPost, repost }),
-    timelineId: props.data.timelineId ?? state.timeline?.id,
-    userId: props.data.userId ?? state.user?.id,
+    timelineId: operation.timelineId,
+    userId: operation.userId,
   });
   text.value = "";
   clearAttachments();
   ipcSend("post:close");
 };
 
-const postToBluesky = async () => {
+const postToBluesky = async (operation: ComposerOperation) => {
   const targetPost = props.data.post as BlueskyPostType | null;
-  const did = state.user?.blueskySession?.did;
+  const did = operation.user?.blueskySession?.did;
   if (!did) {
     throw new Error("Blueskyアカウントの認証情報が見つかりませんでした");
   }
 
   if (targetPost && shouldCreateNativeBlueskyRepost(targetPost)) {
-    await repostToBluesky({ did, targetPost });
+    await repostToBluesky({ did, targetPost }, operation);
     return;
   }
 
-  if (!(await uploadBlueskyAttachments(did))) {
-    return;
-  }
-  const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
   const quoteRef = !isReplyMode.value && targetPost ? { uri: targetPost.uri, cid: targetPost.cid } : undefined;
   const langs = normalizeBlueskyPostLanguages(blueskyLanguages.value.split(","));
-
-  const result = await ipcInvoke("api", {
+  const reply = blueskyReplyTo.value;
+  const payload = {
     method: "bluesky:createPost",
     did,
     text: text.value,
-    replyTo: blueskyReplyTo.value,
+    replyTo: reply ? { root: { ...reply.root }, parent: { ...reply.parent } } : undefined,
     quote: quoteRef,
-    images,
     ...(langs.length ? { langs } : {}),
-  });
+  };
+  if (!(await uploadBlueskyAttachments(did, operation))) return;
+  const images = uploadedBlueskyImages.value.length ? uploadedBlueskyImages.value : undefined;
+  const result = await invokeComposerApi(operation, { ...payload, images });
+  assertCurrentOperation(operation);
 
   const res = handleApiResult(result, `${state.instance?.name ?? "Bluesky"} への投稿に失敗しました`);
   if (res && (res as any).uri) {
     void addCreatedBlueskyPostToTimeline({
       did,
       uri: (res as { uri: string }).uri,
-      timelineId: props.data.timelineId ?? state.timeline?.id,
-      userId: props.data.userId ?? state.user?.id,
+      timelineId: operation.timelineId,
+      userId: operation.userId,
+    }).catch(() => {
+      console.warn("Bluesky投稿の反映用データを取得できませんでした");
     });
     text.value = "";
     clearAttachments();
@@ -1349,26 +1423,28 @@ const submit = async () => {
   }
   state.post.error = "";
   state.post.isSending = true;
+  const operation = captureComposerOperation();
   try {
     switch (state.instance?.type) {
       case "misskey":
-        await postToMisskey();
+        await postToMisskey(operation);
         break;
       case "mastodon":
-        await postToMastodon();
+        await postToMastodon(operation);
         break;
       case "bluesky":
-        await postToBluesky();
+        await postToBluesky(operation);
         break;
     }
   } catch (error) {
+    if (!isCurrentOperation(operation)) return;
     if (error instanceof Error) {
       state.post.error = error.message;
     } else {
       state.post.error = "投稿中にエラーが発生しました";
     }
   } finally {
-    state.post.isSending = false;
+    if (isCurrentOperation(operation)) state.post.isSending = false;
   }
 };
 
@@ -1424,6 +1500,9 @@ const focusPostTextInput = async () => {
 };
 
 onBeforeUnmount(() => {
+  disposed = true;
+  composerGeneration += 1;
+  postContextRequestId += 1;
   clearAttachments();
 });
 
@@ -1431,8 +1510,14 @@ onBeforeUnmount(() => {
  * Prepare the post window for the current payload.
  */
 const preparePostPayload = async () => {
+  const generation = ++composerGeneration;
   resetComposerState();
+  pendingAttachmentReads.value = 0;
+  state.user = undefined;
+  state.instance = undefined;
+  state.timeline = undefined;
   await loadPostContext();
+  if (disposed || generation !== composerGeneration) return;
   await focusPostTextInput();
 };
 
@@ -1445,7 +1530,7 @@ watch(
   () => {
     void preparePostPayload();
   },
-  { flush: "post" },
+  { flush: "sync" },
 );
 
 usePostSubmitShortcut({
