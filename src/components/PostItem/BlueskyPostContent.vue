@@ -75,12 +75,9 @@ const openOriginPage = () => {
       <div class="acted-by" v-if="originAuthor">
         <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'repost' || props.type === 'reposted'" />
         <Icon icon="mingcute:left-fill" v-if="props.type === 'reply'" />
-        <span
-          class="username origin"
-          v-if="originAuthor"
-          v-html="originAuthor.displayName || originAuthor.handle"
-          @click="openOriginPage"
-        />
+        <span class="username origin" v-if="originAuthor" @click="openOriginPage">{{
+          originAuthor.displayName || originAuthor.handle
+        }}</span>
       </div>
     </div>
     <div class="dote-post-content" :class="[props.lineStyle]">
@@ -94,7 +91,7 @@ const openOriginPage = () => {
         @click="openOriginPage"
       />
       <div class="text-container" :class="[lineStyle]">
-        <span class="text" v-html="text" />
+        <span class="text">{{ text }}</span>
       </div>
     </div>
   </div>
