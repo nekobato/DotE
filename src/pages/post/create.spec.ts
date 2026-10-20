@@ -116,6 +116,19 @@ const flush = async () => {
 };
 
 beforeEach(() => {
+  vi.stubGlobal(
+    "FileReader",
+    class {
+      result: string | null = null;
+      onload?: () => void;
+      readAsDataURL(file: File) {
+        void file.arrayBuffer().then((bytes) => {
+          this.result = `data:${file.type};base64,${Buffer.from(bytes).toString("base64")}`;
+          this.onload?.();
+        });
+      }
+    },
+  );
   vi.stubGlobal("Document", EventTarget);
   vi.stubGlobal("document", new EventTarget());
   vi.stubGlobal(
@@ -178,6 +191,57 @@ const apiCalls = (method: string) =>
     .map(([, payload]) => payload);
 
 describe("Mastodon composer", () => {
+  it("waits for a selected native video's bytes before allowing Send", async () => {
+    let finishRead!: () => void;
+    vi.stubGlobal(
+      "FileReader",
+      class {
+        result = "data:video/mp4;base64,dmlkZW8=";
+        onload?: () => void;
+        readAsDataURL() {
+          finishRead = () => this.onload?.();
+        }
+      },
+    );
+    const composer = await mount();
+    composer.body().props["onUpdate:modelValue"]("video post");
+    await nextTick();
+    const selection = composer
+      .find((node) => node.props.class === "file-input")
+      .props.onChange({ target: { files: [new File(["video"], "video.mp4", { type: "video/mp4" })], value: "" } });
+    await composer.send();
+    expect(apiCalls("mastodon:postStatus")).toHaveLength(0);
+    expect(ipcSend).not.toHaveBeenCalledWith("post:close");
+    finishRead();
+    await selection;
+    await composer.send();
+    expect(apiCalls("mastodon:uploadMedia")[0]).toMatchObject({ fileDataBase64: "dmlkZW8=", fileType: "video/mp4" });
+    expect(apiCalls("mastodon:postStatus")[0].mediaIds).toEqual(["media"]);
+  });
+  it.each(["selection", "paste"])("uploads only the %s File's bytes, ignoring a forged native path", async (source) => {
+    const composer = await mount();
+    const file = new File(["chosen-by-user"], "chosen.png", { type: "image/png" });
+    Object.defineProperty(file, "path", { value: "/private/secret" });
+    if (source === "selection") {
+      await composer
+        .find((node) => node.props.class === "file-input")
+        .props.onChange({ target: { files: [file], value: "" } });
+    } else {
+      const preventDefault = vi.fn();
+      await composer
+        .find((node) => node.props.onPaste)
+        .props.onPaste({ clipboardData: { files: [file], items: [] }, preventDefault });
+      expect(preventDefault).toHaveBeenCalledOnce();
+    }
+    await composer.send();
+    const request = apiCalls("mastodon:uploadMedia")[0];
+    expect(request).toMatchObject({
+      fileName: "chosen.png",
+      fileType: "image/png",
+      fileDataBase64: Buffer.from("chosen-by-user").toString("base64"),
+    });
+    expect(request).not.toHaveProperty("filePath");
+  });
   it("sends the selected options and normalizes the language while retaining the reply target", async () => {
     const composer = await mount({ mode: "reply", replyToId: "parent" });
     composer.body().props["onUpdate:modelValue"]("本文");
