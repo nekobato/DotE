@@ -5,6 +5,7 @@ import { computed, type PropType } from "vue";
 import PostAttachments from "./PostAttachments.vue";
 import { MastodonToot } from "@/types/mastodon";
 import { parseMastodonText } from "@/utils/mastodon";
+import { vSafeHtml } from "@/utils/safeHtmlDirective";
 import { resolvePostCreatedAt } from "@/utils/postDate";
 import PostAttachmentsContainer from "./PostAttachmentsContainer.vue";
 import PostActionDropdown from "./PostActionDropdown.vue";
@@ -176,7 +177,7 @@ const runPostAction = (command: string) => {
             @click="openUserPage(post.account)"
           />
           <div class="text-container" :class="[lineStyle]">
-            <span class="text" v-html="parseMastodonText(post.content, post.emojis)" />
+            <span class="text" v-safe-html="parseMastodonText(post.content, post.emojis)">{{ post.content }}</span>
           </div>
         </div>
       </div>

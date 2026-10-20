@@ -2,6 +2,7 @@
 import { MastodonToot } from "@/types/mastodon";
 import { ipcSend } from "@/utils/ipc";
 import { parseMastodonText } from "@/utils/mastodon";
+import { vSafeHtml } from "@/utils/safeHtmlDirective";
 import { Icon } from "@iconify/vue";
 import { computed, type PropType } from "vue";
 import PostAttachments from "./PostAttachments.vue";
@@ -110,7 +111,7 @@ const runPostAction = (command: string) => {
             v-if="props.post && props.by"
           />
           <div class="text-container" :class="[lineStyle]" v-if="post">
-            <span class="text" v-html="parseMastodonText(post.content, post.emojis)" />
+            <span class="text" v-safe-html="parseMastodonText(post.content, post.emojis)">{{ post.content }}</span>
           </div>
           <div class="notification-text-container" :class="[lineStyle]" v-else>
             <span class="text" v-if="props.type === 'follow'">
