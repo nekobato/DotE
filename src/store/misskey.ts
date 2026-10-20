@@ -1,3 +1,4 @@
+import { captureTimelineRequest } from "./timelineRequest";
 import { defineStore } from "pinia";
 import { reactive } from "vue";
 import { DotEPost, methodOfChannel, useStore, type TimelineStore } from ".";
@@ -616,6 +617,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   const fetchPosts = async () => {
     const timeline = getTimelineStore();
+    const request = captureTimelineRequest(store, timeline);
     if (!timeline.current || !timeline.currentUser || !timeline.currentInstance) {
       throw new Error("ユーザーが見つかりませんでした");
     }
@@ -633,6 +635,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
       limit: 40,
     });
 
+    if (!request.isValid()) return;
     const data = unwrapApiResult(result, `${timeline.currentInstance?.name}のタイムラインを取得できませんでした`);
     if (!data) return;
 
@@ -645,6 +648,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
   const fetchDiffPosts = async () => {
     const timeline = getTimelineStore();
+    const request = captureTimelineRequest(store, timeline);
     if (store.timelines[timeline.currentIndex]?.posts?.length === 0) return;
     if (timeline.current && timeline.currentUser && timeline.currentInstance) {
       try {
@@ -660,6 +664,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
           sinceId: store.timelines[timeline.currentIndex]?.posts[0]?.id,
           limit: 40,
         });
+        if (!request.isCurrent()) return;
         const data = unwrapApiResult(
           result,
           `${timeline.currentInstance?.name}の追加タイムラインを取得できませんでした`,
@@ -676,6 +681,7 @@ export const useMisskeyStore = defineStore("misskey", () => {
 
         timeline.setPosts([...filteredPosts, ...store.timelines[timeline.currentIndex]?.posts]);
       } catch (e) {
+        if (!request.isCurrent()) return;
         store.$state.errors.push({
           message: `${timeline.currentInstance?.name}の追加タイムラインを取得できませんでした`,
         });
