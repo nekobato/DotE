@@ -16,6 +16,7 @@ import type { ApiErrorPayload, ApiInvokeResult } from "../shared/types/ipc";
 import { notifyOAuthRedirect } from "./oauth/callback-router";
 import { APP_PROTOCOL_PREFIX, APP_PROTOCOL_SCHEME } from "./oauth/constants";
 import { getFonts } from "font-list";
+import { trustedIpcHandler } from "./windows/windowSecurity";
 
 const isElectronRuntime = Boolean(process.versions?.electron);
 const electronApp = (electron as unknown as { app?: typeof app }).app ?? app;
@@ -226,7 +227,7 @@ const start = async () => {
     mainWindow?.webContents.send("app:update-state", getAutoUpdateState());
   });
 
-  ipcMain.on("renderer-event", async (_, event: string, payload?: any) => {
+  const onRendererEvent = trustedIpcHandler(async (event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
     switch (event) {
       case "set-mode":
@@ -301,9 +302,10 @@ const start = async () => {
         throw new Error(`${event} is not defined event.`);
     }
   });
+  ipcMain.on("renderer-event", onRendererEvent);
 
   // invoke
-  ipcMain.handle("renderer-event", async (_, event: string, payload?: any) => {
+  const onRendererInvoke = trustedIpcHandler(async (event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
     console.log(event, data);
     switch (event) {
@@ -364,6 +366,7 @@ const start = async () => {
         throw new Error(`${event} is not defined event.`);
     }
   });
+  ipcMain.handle("renderer-event", onRendererInvoke);
 
   mainWindow.on("resize", () => {
     const [width, height] = mainWindow?.getSize() || [0, 0];
