@@ -1,5 +1,6 @@
 import type { App as VueApp, ComponentPublicInstance } from "vue";
 import * as Sentry from "@sentry/electron/renderer";
+import { filterDiagnosticBreadcrumb } from "@shared/diagnostics";
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
@@ -52,6 +53,7 @@ export const initializeRendererSentry = (app: VueApp): void => {
       stackFrameVariables: false,
     },
     beforeSendLog: () => null,
+    beforeBreadcrumb: filterDiagnosticBreadcrumb,
   });
   bindVueErrorHandler(app);
 };

@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/electron/main";
+import { filterDiagnosticBreadcrumb } from "../shared/diagnostics";
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
@@ -26,6 +27,7 @@ export const initializeMainSentry = (): void => {
       stackFrameVariables: false,
     },
     beforeSendLog: () => null,
+    beforeBreadcrumb: filterDiagnosticBreadcrumb,
     attachScreenshot: false,
     enableRendererProfiling: false,
     enableOpenTelemetrySetup: false,

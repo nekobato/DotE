@@ -110,7 +110,7 @@ export const useStore = defineStore("store", {
         await this.initTimelines();
         console.info("[store] init -> initSettings");
         await this.initSettings();
-        console.info("[store] init:done", this.$state);
+        console.info("[store] init:done");
       } catch (error) {
         console.error("[store] init:failed", error);
         throw error;
@@ -120,7 +120,7 @@ export const useStore = defineStore("store", {
       console.info("[store] initUsers:start");
       try {
         this.$state.users = await ipcInvoke("db:get-users");
-        console.info("[store] initUsers:done", this.$state.users);
+        console.info("[store] initUsers:done", { count: this.$state.users.length });
       } catch (error) {
         console.error("[store] initUsers:failed", error);
         throw error;
@@ -150,7 +150,7 @@ export const useStore = defineStore("store", {
             };
           }
         });
-        console.info("[store] initInstances:done", this.$state.instances);
+        console.info("[store] initInstances:done", { count: this.$state.instances.length });
       } catch (error) {
         console.error("[store] initInstances:failed", error);
         throw error;
@@ -258,7 +258,7 @@ export const useStore = defineStore("store", {
             readmoreLocked: false,
           };
         });
-        console.info("[store] initTimelines:done", this.$state.timelines);
+        console.info("[store] initTimelines:done", { count: this.$state.timelines.length });
       } catch (error) {
         console.error("[store] initTimelines:failed", error);
         throw error;
@@ -268,7 +268,7 @@ export const useStore = defineStore("store", {
       console.info("[store] initSettings:start");
       try {
         this.$state.settings = await ipcInvoke("settings:all");
-        console.info("[store] initSettings:done", this.$state.settings);
+        console.info("[store] initSettings:done");
       } catch (error) {
         console.error("[store] initSettings:failed", error);
         throw error;

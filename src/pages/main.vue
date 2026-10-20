@@ -64,7 +64,6 @@ watch(
 
 onBeforeMount(async () => {
   await store.init();
-  console.info("store", store);
 
   if (timelineStore.isTimelineAvailable) {
     await router.push("/main/timeline");

@@ -12,6 +12,7 @@ import { apiRequest } from "./api";
 import { checkForAppUpdates, getAutoUpdateState, installDownloadedUpdate, setupAutoUpdater } from "./autoupdate";
 import type { Settings } from "../shared/types/store";
 import { ApiError } from "./api/helpers";
+import { summarizeDiagnosticError } from "../shared/diagnostics";
 import type { ApiErrorPayload, ApiInvokeResult } from "../shared/types/ipc";
 import { notifyOAuthRedirect } from "./oauth/callback-router";
 import { APP_PROTOCOL_PREFIX, APP_PROTOCOL_SCHEME } from "./oauth/constants";
@@ -105,27 +106,6 @@ const registerCustomProtocolClient = () => {
 let mainWindow: BrowserWindow | null = null;
 let mediaViewerWindow: BrowserWindow | null = null;
 let postWindow: BrowserWindow | null = null;
-
-const sanitizePayload = (payload: unknown): unknown => {
-  if (!payload || typeof payload !== "object") {
-    return payload;
-  }
-
-  if (Array.isArray(payload)) {
-    return payload.map((item) => sanitizePayload(item));
-  }
-
-  const sensitiveKeys = new Set(["token", "accessToken", "refreshToken", "password", "authorization", "i"]);
-
-  return Object.entries(payload as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [key, value]) => {
-    if (sensitiveKeys.has(key)) {
-      acc[key] = "***";
-    } else {
-      acc[key] = sanitizePayload(value);
-    }
-    return acc;
-  }, {});
-};
 
 const normalizeApiError = (error: unknown, fallback: Partial<ApiErrorPayload> = {}): ApiErrorPayload => {
   if (error instanceof ApiError) {
@@ -307,19 +287,15 @@ const start = async () => {
   // invoke
   const onRendererInvoke = trustedIpcHandler(async (event: string, payload?: any) => {
     const data = payload ? JSON.parse(payload) : null;
-    console.log(event, data);
     switch (event) {
       case "api":
         const method: keyof typeof apiRequest = data.method;
-        if (!apiRequest[method]) {
+        if (!Object.prototype.hasOwnProperty.call(apiRequest, method)) {
           const errorPayload: ApiErrorPayload = {
             type: "unknown",
             message: `${data.method} is not defined method.`,
           };
-          console.error(`[ipc][api] ${method} undefined`, {
-            payload: sanitizePayload(data),
-            error: errorPayload,
-          });
+          console.error("[ipc][api] method unavailable");
           return { ok: false, error: errorPayload } satisfies ApiInvokeResult<unknown>;
         }
 
@@ -329,8 +305,7 @@ const start = async () => {
         } catch (error) {
           const errorPayload = normalizeApiError(error, { url: data.instanceUrl });
           console.error(`[ipc][api] ${method} failed`, {
-            payload: sanitizePayload(data),
-            error: errorPayload,
+            ...summarizeDiagnosticError(errorPayload),
           });
           return { ok: false, error: errorPayload } satisfies ApiInvokeResult<unknown>;
         }
