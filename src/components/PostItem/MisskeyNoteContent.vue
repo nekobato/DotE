@@ -5,6 +5,7 @@ import { computed, toRef } from "vue";
 import { useMisskeyNoteContent } from "@/composables/useMisskeyNoteContent";
 import Mfm from "../misskey/Mfm.vue";
 import MisskeyPoll from "./MisskeyPoll.vue";
+import MisskeyIdentity from "../misskey/MisskeyIdentity.vue";
 
 const props = withDefaults(defineProps<MisskeyNoteContentProps>(), {
   emojis: () => [],
@@ -50,18 +51,17 @@ const lineClass = computed(() => {
 <template>
   <div class="note-content" :class="[props.type, { 'no-parent': props.noParent }]">
     <div class="dote-post-info" v-if="isContentVisible">
-      <span class="username" v-html="getUsername(props.note.user)" @click="openUserPage(props.note.user)" />
+      <span class="username" @click="openUserPage(props.note.user)">
+        <MisskeyIdentity :text="getUsername(props.note.user)" :emojis="noteEmojis" />
+      </span>
       <div class="acted-by" v-if="resolvedOriginUser">
         <Icon icon="mingcute:refresh-3-line" v-if="props.type === 'renoted'" />
         <Icon icon="mingcute:left-fill" v-if="props.type === 'mention'" />
         <Icon icon="mingcute:star-fill" v-if="props.type === 'reaction'" />
         <Icon icon="mingcute:chart-horizontal-line" v-if="props.type === 'pollEnded'" />
-        <span
-          class="username origin"
-          v-if="resolvedOriginUser"
-          v-html="originUsername"
-          @click="openUserPage(resolvedOriginUser)"
-        />
+        <span class="username origin" v-if="resolvedOriginUser" @click="openUserPage(resolvedOriginUser)"
+          ><MisskeyIdentity :text="originUsername" :emojis="noteEmojis"
+        /></span>
       </div>
     </div>
     <div class="dote-post-content" :class="[props.lineStyle]">

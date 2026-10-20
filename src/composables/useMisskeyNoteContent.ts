@@ -1,6 +1,6 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 import type { MisskeyNote } from "@shared/types/misskey";
-import { emojisObject2Array, parseMisskeyText } from "@/utils/misskey";
+import { emojisObject2Array } from "@/utils/misskey";
 
 export function useMisskeyNoteContent(
   note: ComputedRef<MisskeyNote> | Ref<MisskeyNote> | MisskeyNote,
@@ -10,9 +10,7 @@ export function useMisskeyNoteContent(
     | { name: string; url: string }[],
   originNote?: ComputedRef<MisskeyNote | undefined> | Ref<MisskeyNote | undefined> | MisskeyNote,
   originUser?:
-    | ComputedRef<MisskeyNote["user"] | undefined>
-    | Ref<MisskeyNote["user"] | undefined>
-    | MisskeyNote["user"],
+    ComputedRef<MisskeyNote["user"] | undefined> | Ref<MisskeyNote["user"] | undefined> | MisskeyNote["user"],
   currentInstanceUrl?: string,
   hideCw = false,
 ) {
@@ -62,16 +60,7 @@ export function useMisskeyNoteContent(
   });
 
   const getUsername = (user?: MisskeyNote["user"]) => {
-    if (!user) return "";
-    if (user.name) {
-      if (noteEmojis.value) {
-        return parseMisskeyText(user.name, noteEmojis.value);
-      } else {
-        return user.name;
-      }
-    } else {
-      return user.username;
-    }
+    return user?.name || user?.username || "";
   };
 
   // CW (Content Warning) 関連
