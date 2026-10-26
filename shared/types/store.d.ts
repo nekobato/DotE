@@ -65,6 +65,9 @@ export type InstanceMisskeyStore = InstanceMisskey & {
 
 export type InstanceMastodon = InsranceBase & {
   type: "mastodon";
+};
+
+export type InstanceMastodonStore = InstanceMastodon & {
   mastodon: {
     clientName: string;
     meta: MastodonMeta;
@@ -76,7 +79,7 @@ export type InstanceBluesky = InsranceBase & {
 };
 
 export type Instance = InstanceMisskey | InstanceMastodon | InstanceBluesky;
-export type InstanceStore = InstanceMisskeyStore | InstanceMastodon | InstanceBluesky;
+export type InstanceStore = InstanceMisskeyStore | InstanceMastodonStore | InstanceBluesky;
 
 export type User = {
   id: string; // uuid

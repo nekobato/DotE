@@ -10,6 +10,7 @@ import { NodeOAuthClient } from "@atproto/oauth-client-node";
 import log from "electron-log";
 import { blueskySessionStore, blueskyStateStore } from "./store";
 import { getBlueskyLoopbackRedirectUri, getBlueskyOAuthConfig } from "../db";
+import { blueskyOAuthFetch } from "./fetch";
 
 let cachedClient: NodeOAuthClient | null = null;
 let cachedClientId: string | null = null;
@@ -157,9 +158,13 @@ export const getBlueskyOAuthClient = async (clientId?: string): Promise<NodeOAut
   const validatedClientId = clientIdResult.data;
 
   if (!cachedClient || cachedClientId !== validatedClientId) {
-    const clientMetadata = await NodeOAuthClient.fetchMetadata({ clientId: validatedClientId });
+    const clientMetadata = await NodeOAuthClient.fetchMetadata({
+      clientId: validatedClientId,
+      fetch: blueskyOAuthFetch,
+    });
     cachedClient = new NodeOAuthClient({
       clientMetadata,
+      fetch: blueskyOAuthFetch,
       stateStore: blueskyStateStore,
       sessionStore: blueskySessionStore,
       requestLock: requestLocalLock,

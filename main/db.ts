@@ -319,7 +319,7 @@ export const upsertInstance = (instance: {
   url: string;
   iconUrl?: string;
 }) => {
-  const { id, type, name, url, iconUrl } = instance;
+  const { id, type, name, url, iconUrl = "" } = instance;
 
   if (!type) throw new Error("type is required");
   if (!name) throw new Error("name is required");
@@ -343,7 +343,7 @@ export const upsertInstance = (instance: {
       }),
     );
 
-    return instance;
+    return { ...instance, iconUrl };
   } else {
     const newInstance = {
       id: nanoid(),
