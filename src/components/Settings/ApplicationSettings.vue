@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStore } from "@/store";
 import { useSettingsStore } from "@/store/settings";
-import { keyboardEventToElectronAccelerator } from "@/utils/dote";
+import { useGlobalShortcutRecorder } from "@/composables/useGlobalShortcutRecorder";
 import { Icon } from "@iconify/vue";
 import type { Settings } from "@shared/types/store";
 import { ElSlider, ElSwitch, ElInputNumber, ElSelect, ElOption } from "element-plus";
@@ -9,7 +9,13 @@ import { onMounted, ref, watch } from "vue";
 
 const store = useStore();
 const settingsStore = useSettingsStore();
-const shortcutInput = ref<HTMLElement | null>(null);
+const shortcutInput = ref<HTMLInputElement | null>(null);
+const { inputAttrs, isRecording, isStarting, isSaving, errorMessage, start, cancel, onKeydown } =
+  useGlobalShortcutRecorder(
+    shortcutInput,
+    () => store.settings.shortcuts.toggleTimeline,
+    (shortcut) => settingsStore.setShortcutKey("toggleTimeline", shortcut),
+  );
 const systemFonts = ref<string[]>([]);
 const isFontsLoading = ref(false);
 
@@ -97,22 +103,6 @@ const onChangePostStyle = (value: string | number | boolean) => {
  */
 const onChangeTheme = (value: string | number | boolean) => {
   settingsStore.setTheme(value as Settings["theme"]);
-};
-
-const focusShortcutInput = () => {
-  shortcutInput.value?.focus();
-};
-
-const onKeyDownOnShortcut = (key: keyof Settings["shortcuts"]) => {
-  return async (e: KeyboardEvent) => {
-    const shortcut = keyboardEventToElectronAccelerator(e);
-
-    if (shortcut === "" || shortcut === store.settings.shortcuts.toggleTimeline) {
-      return;
-    }
-
-    settingsStore.setShortcutKey(key, shortcut);
-  };
 };
 
 const onChangeHideCw = async (value: string | number | boolean) => {
@@ -277,22 +267,37 @@ const onChangeNotificationMarkAsRead = async (value: string | number | boolean) 
       </div>
     </div>
     <h2 class="dote-field-group-title">グローバルショートカットキー</h2>
-    <div class="dote-field-row indent-1">
+    <div class="dote-field-row indent-1 wrap">
       <div class="content">
-        <span class="title">ウィンドウを表示/非表示切り替え</span>
+        <label class="title" for="shortcut">ウィンドウを表示/非表示切り替え</label>
       </div>
-      <div class="form-actions">
+      <div class="form-actions shortcut-settings">
         <input
           id="shortcut"
+          ref="shortcutInput"
           class="shortcut-input"
           type="text"
-          :value="store.settings.shortcuts.toggleTimeline"
-          @keydown.prevent="onKeyDownOnShortcut('toggleTimeline')($event)"
-          readonly
-          @click="focusShortcutInput"
-          ref="shortcutInput"
-          placeholder="キーの組み合わせを入力してください"
+          v-bind="inputAttrs"
+          aria-describedby="shortcut-help shortcut-error"
+          :aria-busy="isStarting || isSaving"
+          @focus="start"
+          @click="start"
+          @blur="cancel"
+          @keydown.capture="onKeydown"
         />
+        <p id="shortcut-help" class="shortcut-help" role="status">
+          {{
+            isStarting
+              ? "入力準備中…"
+              : isSaving
+                ? "保存中…"
+                : isRecording
+                  ? "キーの組み合わせを入力してください。"
+                  : "クリックして記録を開始します。"
+          }}
+          Escapeで取消、Backspace / Deleteで解除できます。
+        </p>
+        <p v-if="errorMessage" id="shortcut-error" class="shortcut-help" role="alert">{{ errorMessage }}</p>
       </div>
     </div>
   </div>
@@ -339,8 +344,20 @@ const onChangeNotificationMarkAsRead = async (value: string | number | boolean) 
 .max-post-count {
   width: 80px;
 }
+.shortcut-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+.shortcut-help {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
 .shortcut-input {
-  width: 140px;
+  box-sizing: border-box;
+  width: min(100%, 240px);
   padding: 2px 8px;
   font-size: var(--font-size-14);
   background-color: transparent;

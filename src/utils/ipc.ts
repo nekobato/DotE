@@ -67,6 +67,10 @@ interface IpcEventMaps {
     args: void;
     result: Settings;
   };
+  "shortcuts:set-recording": {
+    args: { recording: boolean };
+    result: boolean;
+  };
   "system:get-fonts": {
     args: void;
     result: string[];

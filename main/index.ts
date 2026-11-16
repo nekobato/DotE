@@ -163,12 +163,18 @@ const toggleTimeline = async () => {
   }
 };
 
-function setGlobalShortcut() {
-  const settings = db.getSettingAll();
-  if (globalShortcut.isRegistered(settings.shortcuts.toggleTimeline)) {
-    globalShortcut.unregister(settings.shortcuts.toggleTimeline);
+let registeredShortcut = "";
+
+function setGlobalShortcut(accelerator = db.getSettingAll().shortcuts.toggleTimeline) {
+  try {
+    if (accelerator && globalShortcut.isRegistered(accelerator)) return true;
+    if (accelerator && !globalShortcut.register(accelerator, toggleTimeline)) return false;
+  } catch {
+    return false;
   }
-  globalShortcut.register(settings.shortcuts.toggleTimeline, toggleTimeline);
+  if (registeredShortcut) globalShortcut.unregister(registeredShortcut);
+  registeredShortcut = accelerator;
+  return true;
 }
 
 const setMainWindowMode = async (mode: string) => {
@@ -201,6 +207,11 @@ const start = async () => {
   setGlobalShortcut();
 
   mainWindow = await createMainWindow();
+  const resumeShortcuts = () => globalShortcut.setSuspended(false);
+  mainWindow.on("blur", resumeShortcuts);
+  mainWindow.on("closed", resumeShortcuts);
+  mainWindow.webContents.on("did-start-loading", resumeShortcuts);
+  mainWindow.webContents.on("render-process-gone", resumeShortcuts);
   mediaViewerWindow = createMediaViewerWindow();
   postWindow = createPostWindow();
 
@@ -327,7 +338,15 @@ const start = async () => {
       case "db:upsert-instance":
         return db.upsertInstance(data);
       case "settings:set":
+        if (data.key === "shortcuts.toggleTimeline") {
+          if (typeof data.value !== "string") throw new Error("Invalid global shortcut");
+          if (!setGlobalShortcut(data.value)) throw new Error("The global shortcut could not be registered");
+        }
         return db.setSetting(data.key, data.value);
+      case "shortcuts:set-recording":
+        if (typeof data?.recording !== "boolean" || (data.recording && !mainWindow?.isFocused())) return false;
+        globalShortcut.setSuspended(data.recording);
+        return true;
       case "settings:all":
         return db.getSettingAll();
       case "system:get-fonts":
@@ -342,7 +361,10 @@ const start = async () => {
         throw new Error(`${event} is not defined event.`);
     }
   });
-  ipcMain.handle("renderer-event", onRendererInvoke);
+  ipcMain.handle("renderer-event", (event, name, payload) => {
+    if (name === "shortcuts:set-recording" && event.sender !== mainWindow?.webContents) return false;
+    return onRendererInvoke(event, name, payload);
+  });
 
   mainWindow.on("resize", () => {
     const [width, height] = mainWindow?.getSize() || [0, 0];
@@ -362,6 +384,7 @@ const start = async () => {
 
 if (isElectronRuntime && electronApp) {
   electronApp.on("before-quit", () => {
+    globalShortcut.setSuspended(false);
     globalShortcut.unregisterAll();
     postWindow?.removeAllListeners();
     mainWindow = null;

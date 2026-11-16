@@ -69,6 +69,7 @@
     "stylelint-config-recommended-vue": "2.0.0",
     "stylelint-order": "8.1.2",
     "typescript": "6.0.3",
+    "v-record-hotkey": "1.0.1",
     "vite": "8.3.5",
     "vite-plugin-electron": "1.1.2",
     "vite-plugin-electron-renderer": "1.0.0",

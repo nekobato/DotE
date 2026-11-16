@@ -50,8 +50,8 @@ export const useSettingsStore = defineStore("settings", () => {
   };
 
   const setShortcutKey = async (key: keyof Settings["shortcuts"], value: string) => {
+    await ipcInvoke("settings:set", { key: `shortcuts.${key}`, value });
     store.$state.settings.shortcuts[key] = value;
-    return await ipcInvoke("settings:set", { key: `shortcuts.${key}`, value });
   };
 
   const setMisskeyHideCw = async (value: boolean) => {

@@ -130,6 +130,9 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      v-record-hotkey:
+        specifier: 1.0.1
+        version: 1.0.1(vue@3.5.44(typescript@6.0.3))
       vite:
         specifier: 8.3.5
         version: 8.3.5(@types/node@26.6.5)(jiti@2.7.0)(sass-embedded@1.106.1)(sass@1.106.1)(yaml@2.9.0)
@@ -5511,6 +5514,11 @@ packages:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
     deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
+
+  v-record-hotkey@1.0.1:
+    resolution: {integrity: sha512-26a+1Aq8u2KDr8uVreR497qj/3F8XWF7Lwhp4npUAYvIaih/Dr7dcepD29AMDYiERNp/x43X1VYClXBd3oA0cQ==}
+    peerDependencies:
+      vue: '>=3.3.0'
 
   validate-npm-package-license@3.0.4:
     resolution: {integrity: sha512-DpKm2Ui/xN7/HQKCtpZxoRWBhZ9Z0kqtygG8XCgNQ8ZlDnxuQmWhj566j8fN4Cu3/JmbhsDo7fcAJq4s9h27Ew==}
@@ -11530,6 +11538,10 @@ snapshots:
   uuid@3.4.0: {}
 
   uuid@8.3.2: {}
+
+  v-record-hotkey@1.0.1(vue@3.5.44(typescript@6.0.3)):
+    dependencies:
+      vue: 3.5.44(typescript@6.0.3)
 
   validate-npm-package-license@3.0.4:
     dependencies:

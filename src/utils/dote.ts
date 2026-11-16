@@ -1,6 +1,7 @@
 // chat以外は権利をいただく
 
 import { ChannelName, InstanceType } from "@shared/types/store";
+import type { RecordedHotkey } from "v-record-hotkey";
 
 // ref: https://github.com/misskey-dev/misskey/blob/develop/packages/misskey-js/src/consts.ts
 export const doteMisskeyPermissions: string[] = [
@@ -60,36 +61,37 @@ export const defaultChannelNameFromType = (type?: InstanceType): ChannelName => 
   }
 };
 
-export const keyboardEventToElectronAccelerator = (e: KeyboardEvent): string => {
-  const shortcut = [];
-  if (e.metaKey) {
-    shortcut.push("Meta");
+export const recordedHotkeyToElectronAccelerator = (hotkey: RecordedHotkey): string | null => {
+  const numpadKeys: Record<string, string> = {
+    NumpadDecimal: "numdec",
+    NumpadAdd: "numadd",
+    NumpadSubtract: "numsub",
+    NumpadMultiply: "nummult",
+    NumpadDivide: "numdiv",
+  };
+  let key = hotkey.key;
+  if (/^Key[A-Z]$/.test(hotkey.code)) {
+    key = hotkey.code.slice(3);
+  } else if (/^Digit[0-9]$/.test(hotkey.code)) {
+    key = hotkey.code.slice(5);
+  } else if (/^Numpad[0-9]$/.test(hotkey.code)) {
+    key = `num${hotkey.code.slice(6)}`;
+  } else if (numpadKeys[hotkey.code]) {
+    key = numpadKeys[hotkey.code];
+  } else if (key === " ") {
+    key = "Space";
+  } else if (key === "+") {
+    key = "Plus";
+  } else if (/^Arrow(Up|Down|Left|Right)$/.test(key)) {
+    key = key.slice(5);
+  } else if (
+    !/^[\x21-\x7e]$/.test(key) &&
+    !/^F([1-9]|1[0-9]|2[0-4])$/.test(key) &&
+    !/^(Tab|CapsLock|NumLock|ScrollLock|Backspace|Delete|Insert|Enter|Home|End|PageUp|PageDown|Escape|VolumeUp|VolumeDown|VolumeMute|MediaNextTrack|MediaPreviousTrack|MediaStop|MediaPlayPause|PrintScreen)$/.test(
+      key,
+    )
+  ) {
+    return null;
   }
-  if (e.ctrlKey) {
-    shortcut.push("Ctrl");
-  }
-  if (e.altKey) {
-    shortcut.push("Alt");
-  }
-  if (e.shiftKey) {
-    shortcut.push("Shift");
-  }
-  switch (e.key) {
-    case " ":
-      shortcut.push("Space");
-      break;
-    case "+":
-      shortcut.push("Plus");
-      break;
-    default:
-      if (/Key[A-Z]/.test(e.code)) {
-        shortcut.push(e.code.replace("Key", ""));
-      } else if (/Arrow.+/.test(e.key)) {
-        shortcut.push(e.key.replace("Arrow", ""));
-      } else {
-        shortcut.push(e.key);
-      }
-      break;
-  }
-  return shortcut.join("+");
+  return [...hotkey.modifiers, key].join("+");
 };
