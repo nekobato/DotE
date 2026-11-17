@@ -61,8 +61,11 @@ Misskey、Mastodon、Blueskyの主要なFediverseプラットフォームに対�
 
 ### macOS
 
-最新バージョンをダウンロード：
-[macOS用DotEをダウンロード](https://github.com/nekobato/DotE/releases/latest)
+現在の公開リリースは macOS の Apple Silicon（arm64）向けのみです。Intel Mac 向けの配布物はありません。
+
+[最新リリース](https://github.com/nekobato/DotE/releases/latest)の Assets から `DotE-<version>-arm64.dmg`（現在は `DotE-0.0.23-arm64.dmg`）をダウンロードしてください。
+
+最低対応 macOS バージョンは未確認です。arm64 向けであることは、すべての macOS バージョンでの動作を保証するものではありません。
 
 ### Windows
 
@@ -147,8 +150,11 @@ DotE is a specialized Fediverse client designed for "passive viewing" scenarios.
 
 ### macOS
 
-Download the latest version:
-[Download DotE for macOS](https://github.com/nekobato/DotE/releases/latest)
+The current public release is for macOS on Apple Silicon (arm64) only. No Intel Mac build is provided.
+
+Download `DotE-<version>-arm64.dmg` (currently `DotE-0.0.23-arm64.dmg`) from the Assets section of the [latest release](https://github.com/nekobato/DotE/releases/latest).
+
+The minimum supported macOS version has not been verified. An arm64 build does not guarantee compatibility with every macOS version.
 
 ### Windows
 
