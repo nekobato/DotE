@@ -12,7 +12,7 @@
   <p>
     <a href="#features">機能</a> •
     <a href="#screenshots">スクリーンショット</a> •
-    <a href="#installation">インストール</a> •
+    <a href="#installation">ダウンロード</a> •
     <a href="#usage">使い方</a> •
     <a href="#development">開発</a> •
     <a href="#license">ライセンス</a>
@@ -57,16 +57,9 @@ Misskey、Mastodon、Blueskyの主要なFediverseプラットフォームに対�
   <p><em>左: 透明モードで他のアプリと共存 / 右: 通常モードでの表示</em></p>
 </div>
 
-## 💾 インストール <a name="installation"></a>
+## 💾 ダウンロード <a name="installation"></a>
 
-### macOS
-
-最新バージョンをダウンロード：
-[macOS用DotEをダウンロード](https://github.com/nekobato/DotE/releases/latest)
-
-### Windows
-
-近日対応予定です。開発状況は[GitHub Releases](https://github.com/nekobato/DotE/releases)でご確認ください。
+[Download macOS / Apple Silicon DMG](https://github.com/nekobato/DotE/releases/download/v0.0.23/DotE-0.0.23-arm64.dmg)
 
 ## 📖 使い方 <a name="usage"></a>
 
@@ -143,16 +136,9 @@ DotE is a specialized Fediverse client designed for "passive viewing" scenarios.
 - **Text-to-Speech**: Automatically read new posts aloud
 - **Multi-Platform Support**: Connect to Misskey, Mastodon, and Bluesky accounts
 
-## 💾 Installation
+## 💾 Download
 
-### macOS
-
-Download the latest version:
-[Download DotE for macOS](https://github.com/nekobato/DotE/releases/latest)
-
-### Windows
-
-Coming soon. Check [GitHub Releases](https://github.com/nekobato/DotE/releases) for updates.
+[Download macOS / Apple Silicon DMG](https://github.com/nekobato/DotE/releases/download/v0.0.23/DotE-0.0.23-arm64.dmg)
 
 ## 📄 License
 
